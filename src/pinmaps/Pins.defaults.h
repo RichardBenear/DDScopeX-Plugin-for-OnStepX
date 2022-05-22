@@ -7,7 +7,10 @@
 #ifndef SERIAL_A
 #define SERIAL_A               Serial
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 #endif
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 #endif

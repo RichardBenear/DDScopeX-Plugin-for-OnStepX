@@ -26,6 +26,7 @@
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 #define MaxESP3                     13     // adds 4th axis and option to flash the WeMos D1 Mini WiFi through OnStep
 #define MaxESP4                     14     // as above but based on ESP32-S2. *** EXPERIMENTAL, MAY BE REMOVED AT ANY TIME ***
 #define CNC3                        15     // Arduino CNC Sheild on WeMos D1 R32 (ESP32)
@@ -33,6 +34,11 @@
 #define STM32Blue                   16     // Khalid and Dave's PCB for STM32 Blue pill (STM32F103CB and STM32F303CC)
 
 #define PINMAP_LAST                 16
+=======
+#define STM32Blue                   15     // Khalid and Dave's PCB for STM32 Blue pill (STM32F103CB and STM32F303CC)
+#define DDT                         16
+#define PINMAP_LAST                 17
+>>>>>>> Stashed changes
 =======
 #define STM32Blue                   15     // Khalid and Dave's PCB for STM32 Blue pill (STM32F103CB and STM32F303CC)
 #define DDT                         16
