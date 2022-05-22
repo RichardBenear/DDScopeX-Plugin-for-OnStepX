@@ -6,7 +6,10 @@
 #if SERIAL_A_BAUD_DEFAULT != OFF
 #ifndef SERIAL_A
 #define SERIAL_A               Serial
+<<<<<<< Updated upstream
 #endif
+=======
+>>>>>>> Stashed changes
 #endif
 
 /*

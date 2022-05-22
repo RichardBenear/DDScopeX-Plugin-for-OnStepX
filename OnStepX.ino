@@ -55,6 +55,7 @@ NVS nv;
 
 #include "src/telescope/Telescope.h"
 extern Telescope telescope;
+//#define REMOTE
 
 #if DEBUG == PROFILER
   extern void profiler();
@@ -70,8 +71,9 @@ void sensesPoll() {
 
 void setup() {
   #if DEBUG != OFF
+  SERIAL_A.begin(SERIAL_A_BAUD_DEFAULT);
     SERIAL_DEBUG.begin(SERIAL_DEBUG_BAUD);
-    delay(2000);
+    delay(5000);
   #endif
 
   // start low level hardware
@@ -102,6 +104,7 @@ void setup() {
   #if DEBUG == PROFILER
     tasks.add(142, 0, true, 7, profiler, "Profilr");
   #endif
+  
 }
 
 void loop() {
