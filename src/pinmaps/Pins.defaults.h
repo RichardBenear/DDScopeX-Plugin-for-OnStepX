@@ -6,13 +6,7 @@
 #if SERIAL_A_BAUD_DEFAULT != OFF
 #ifndef SERIAL_A
 #define SERIAL_A               Serial
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 #endif
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 #endif
 
 /*
@@ -34,17 +28,6 @@
 #define SERIAL_TMC_RX           12               // Recieving data
 */
 
-<<<<<<< Updated upstream
-=======
-#ifndef SDA_PIN
-//#define SDA_PIN                    21
-#endif
-
-#ifndef SCL_PIN
-//#define SCL_PIN                    22
-#endif
-
->>>>>>> Stashed changes
 #ifndef AUX0_PIN
 #define AUX0_PIN                    OFF
 #endif
