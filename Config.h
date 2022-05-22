@@ -16,16 +16,18 @@
 // CONTROLLER ======================================================================================================================
 
 // PINMAP ---------------------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#PINMAP
-#define PINMAP                        OFF //    OFF, Choose from: MksGenL2, MiniPCB2, MaxPCB2, MaxESP3, CNC3, STM32Blue,     <-Req'd
+#define PINMAP                        DDT //    OFF, Choose from: MksGenL2, MiniPCB2, MaxPCB2, MaxESP3, CNC3, STM32Blue,     <-Req'd
                                           //         MaxSTM3, FYSETC_S6_2, etc.  Other boards and more info. in ~/src/Constants.h
 
 // SERIAL PORT COMMAND CHANNELS ------------------------------------ see https://onstep.groups.io/g/main/wiki/6-Configuration#SERIAL
-#define SERIAL_A_BAUD_DEFAULT        9600 //   9600, n. Where n=9600,19200,57600,115200,230400,460800 (common baud rates.)    Infreq
-#define SERIAL_B_BAUD_DEFAULT        9600 //   9600, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Option
+#define SERIAL_A_BAUD_DEFAULT       9600 //   9600, n. Where n=9600,19200,57600,115200,230400,460800 (common baud rates.)    Infreq
+#define SERIAL_B_BAUD_DEFAULT       57600 //   9600, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Option
 #define SERIAL_B_ESP_FLASHING         OFF //    OFF, ON Upload ESP8266 WiFi firmware through SERIAL_B with :ESPFLASH# cmd.    Option
 #define SERIAL_C_BAUD_DEFAULT         OFF //    OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
 #define SERIAL_D_BAUD_DEFAULT         OFF //    OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
 #define SERIAL_E_BAUD_DEFAULT         OFF //    OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
+#define SERIAL_GPS                Serial4
+#define SERIAL_GPS_BAUD              9600
 
 // USER FEEDBACK -------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#USER_FEEDBACK
 #define STATUS_LED                    OFF //    OFF, Steady illumination if no error, blinks w/error code otherwise.          Option
@@ -35,7 +37,7 @@
 #define RETICLE_LED_MEMORY            OFF //    OFF, ON Remember reticle brightness across power cycles.                      Option
 
 // WEATHER SENSOR ------------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#SENSORS
-#define WEATHER                       OFF //    OFF, BME280 (I2C 0x77,) BME280_0x76, BME280_SPI (see pinmap for CS.)          Option
+#define WEATHER                    BME280 //    OFF, BME280 (I2C 0x77,) BME280_0x76, BME280_SPI (see pinmap for CS.)          Option
                                           //         BMP280 (I2C 0x77,) BMP280_0x76, BMP280_SPI (see pinmap for CS.)
                                           //         BME280 or BMP280 for temperature, pressure.  BME280 for humidity also.
 
@@ -51,7 +53,7 @@
 // Others: SERVO_II and SERVO_PD have settings in Extended.config.h
 
 // AXIS1 RA/AZM -------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration---Rotator-and-Focusers#AXIS1
-#define AXIS1_DRIVER_MODEL            OFF //    OFF, Enter motor driver model (above) in both axes to activate the mount.    <-Often
+#define AXIS1_DRIVER_MODEL       OFF//    OFF, Enter motor driver model (above) in both axes to activate the mount.    <-Often
 
 // If runtime axis settings are enabled changes in the section below may be ignored unless you reset to defaults:
 // \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ 
@@ -88,7 +90,7 @@
 #define AXIS1_WRAP                    OFF //    OFF, ON Allows unlimited RA/Azm range and ignores min/max/meridian limits.    Option
 
 // AXIS2 DEC/ALT ------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration---Rotator-and-Focusers#AXIS2
-#define AXIS2_DRIVER_MODEL            OFF //    OFF, Enter motor driver model (above) in both axes to activate the mount.    <-Often
+#define AXIS2_DRIVER_MODEL       OFF //    OFF, Enter motor driver model (above) in both axes to activate the mount.    <-Often
 
 // If runtime axis settings are enabled changes in the section below may be ignored unless you reset to defaults:
 // \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/
@@ -122,33 +124,33 @@
 #define AXIS2_TANGENT_ARM_CORRECTION  OFF //    OFF, ON enables tangent arm geometry correction for Axis2.                    Infreq
 
 // MOUNT ------------------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#MOUNT_TYPE
-#define MOUNT_TYPE                    GEM //    GEM, GEM for German Equatorial, FORK for Equatorial Fork, or ALTAZM          <-Req'd
+#define MOUNT_TYPE                 ALTAZM //    GEM, GEM for German Equatorial, FORK for Equatorial Fork, or ALTAZM          <-Req'd
                                           //         Dobsonian etc. mounts. GEM Eq mounts perform meridian flips.
 #define MOUNT_COORDS          TOPOCENTRIC // ...RIC, Applies refraction to coordinates to/from OnStep, except exactly         Infreq
                                           //              at the poles. Use TOPO_STRICT to apply refraction even in that case.
                                           //              Use OBSERVED_PLACE for no refraction.
 
 // TIME AND LOCATION -------------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#TLS
-#define TIME_LOCATION_SOURCE          OFF //    OFF, DS3231 (I2c,) DS3234 (Spi,) TEENSY (T3.2 internal,) or GPS source.       Option
+#define TIME_LOCATION_SOURCE          GPS //    OFF, DS3231 (I2c,) DS3234 (Spi,) TEENSY (T3.2 internal,) or GPS source.       Option
                                           //         Provides Date/Time, and if available, PPS & Lat/Long also.
 #define TIME_LOCATION_PPS_SENSE       OFF //    OFF, HIGH senses PPS (pulse per second,) signal rising edge, or use LOW for   Option
                                           //         falling edge, or use BOTH for rising and falling edges.
                                           //         Better tracking accuracy especially for Mega2560's w/ceramic resonator.
 
 // USER FEEDBACK -------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#USER_FEEDBACK
-#define STATUS_MOUNT_LED              OFF //    OFF, ON Flashes proportional to rate of movement or solid on for slews.       Option
-#define STATUS_BUZZER                 OFF //    OFF, ON, n. Where n=100..6000 (Hz freq.) for speaker. ON for piezo buzzer.    Option
-#define STATUS_BUZZER_DEFAULT         OFF //    OFF, ON default starts w/buzzer enabled.                                      Option
+#define STATUS_MOUNT_LED               ON //    OFF, ON Flashes proportional to rate of movement or solid on for slews.       Option
+#define STATUS_BUZZER                1200 //    OFF, ON, n. Where n=100..6000 (Hz freq.) for speaker. ON for piezo buzzer.    Option
+#define STATUS_BUZZER_DEFAULT          ON //    OFF, ON default starts w/buzzer enabled.                                      Option
 #define STATUS_BUZZER_MEMORY          OFF //    OFF, ON to remember buzzer setting across power cycles.                       Option
 
 // ST4 INTERFACE ------------------------------------------------------ see https://onstep.groups.io/g/main/wiki/6-Configuration#ST4
 // *** It is up to you to verify the interface meets the electrical specifications of any connected device, use at your own risk ***
 #define ST4_INTERFACE                 OFF //    OFF, ON enables interface. <= 1X guides unless hand control mode.             Option
                                           //         During goto btn press: aborts slew or continue meridian flip pause home
-#define ST4_HAND_CONTROL               ON //     ON, ON for hand controller special features and SHC support.                 Option
+#define ST4_HAND_CONTROL              OFF //     ON, ON for hand controller special features and SHC support.                 Option
                                           //         Hold [E]+[W] btns >2s: Guide rate   [E]-  [W]+  [N] trk on/off [S] sync
                                           //         Hold [N]+[S] btns >2s: Usr cat item [E]-  [W]+  [N] goto [S] snd on/off
-#define ST4_HAND_CONTROL_FOCUSER       ON //     ON, ON alternate to above: Focuser move [E]f1 [W]f2 [N]-     [S]+            Option
+#define ST4_HAND_CONTROL_FOCUSER      OFF //     ON, ON alternate to above: Focuser move [E]f1 [W]f2 [N]-     [S]+            Option
 
 // GUIDING BEHAVIOUR ---------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#GUIDING
 #define GUIDE_TIME_LIMIT               10 //     10, Ten seconds. Or n. Where n=1..120 second time limit guard.               Adjust

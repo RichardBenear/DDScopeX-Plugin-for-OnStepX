@@ -3,3 +3,7 @@
 *.json
 *.json
 *.json
+./src/plugins/Plugins.config.h
+./Config.h
+./Extended.config.h
+./src/Constants.h
