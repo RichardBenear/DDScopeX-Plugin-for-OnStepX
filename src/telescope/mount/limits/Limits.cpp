@@ -116,11 +116,14 @@ uint8_t Limits::errorCode() {
   ERR_ALT_MAX, ERR_WEATHER_INIT, ERR_SITE_INIT, ERR_NV_INIT};
 
   // priority highest to lowest
+  
   if (axis1.fault() || axis2.fault()) return (uint8_t)ERR_MOTOR_FAULT;
+  
   if (error.limitSense.axis1.min || error.limitSense.axis1.max ||
       error.limitSense.axis2.min || error.limitSense.axis2.max) return (uint8_t)ERR_LIMIT_SENSE;
   if (error.altitude.min) return (uint8_t)ERR_ALT_MIN;
   if (error.altitude.max) return (uint8_t)ERR_ALT_MAX;
+  
   if (transform.mountType == ALTAZM) {
     if (error.limit.axis1.min || error.limit.axis1.max) return (uint8_t)ERR_AZM;
     if (error.limit.axis2.min) return (uint8_t)ERR_ALT_MIN;
@@ -129,10 +132,12 @@ uint8_t Limits::errorCode() {
     if (error.limit.axis1.min || error.limit.axis1.max) return (uint8_t)ERR_UNDER_POLE;
     if (error.limit.axis2.min || error.limit.axis2.max) return (uint8_t)ERR_DEC;
   }
+  
   if (error.meridian.east || error.meridian.west) return (uint8_t)ERR_MERIDIAN;
   if (initError.nv || initError.value) return (uint8_t)ERR_NV_INIT;
   if (initError.tls) return (uint8_t)ERR_SITE_INIT;
   if (initError.weather) return (uint8_t)ERR_WEATHER_INIT;
+  
   return ERR_NONE;
 }
 

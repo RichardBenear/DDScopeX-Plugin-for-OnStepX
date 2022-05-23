@@ -76,7 +76,7 @@ void setup() {
 
   // start low level hardware
   VLF("MSG: Setup, HAL initalize");
-  HAL_INIT();
+  HAL_INIT(); 
   HAL_NV_INIT();
   delay(2000);
 
@@ -90,6 +90,7 @@ void setup() {
   VF("MSG: Setup, start input sense polling task (rate 1ms priority 7)... ");
   if (tasks.add(1, 0, true, 7, sensesPoll, "SenPoll")) { VLF("success"); } else { VLF("FAILED!"); }
 
+ VLF("starting telescope.init");
   // start telescope object
   telescope.init(FirmwareName, FirmwareVersionMajor, FirmwareVersionMinor, FirmwareVersionPatch, FirmwareVersionConfig);
 

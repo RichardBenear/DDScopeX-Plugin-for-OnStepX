@@ -158,9 +158,12 @@ CommandError Axis::resetPosition(double value) {
 }
 
 // reset motor and target angular position, in steps
+ 
 CommandError Axis::resetPositionSteps(long value) {
   if (autoRate != AR_NONE) return CE_SLEW_IN_MOTION;
+  VLF("motor reset0");
   if (motor->getFrequencySteps() != 0) return CE_SLEW_IN_MOTION;
+   VLF("motor reset1");
   motor->resetPositionSteps(value);
   return CE_NONE;
 }

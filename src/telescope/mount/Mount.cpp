@@ -34,22 +34,25 @@ void Mount::init() {
 
   // read the settings
   nv.readBytes(NV_MOUNT_SETTINGS_BASE, &settings, sizeof(MountSettings));
-
+#if AXIS1_DRIVER_MODEL != EXTERNAL
   // get the main axes ready
   delay(100);
   if (!axis1.init(&motor1)) {  DLF("ERR: Axis1, no motion controller exiting!"); return;  }
   axis1.setBacklash(settings.backlash.axis1);
   axis1.setMotionLimitsCheck(false);
   if (AXIS1_POWER_DOWN == ON) axis1.setPowerDownTime(DEFAULT_POWER_DOWN_TIME);
-
+#endif
+#if AXIS2_DRIVER_MODEL != EXTERNAL
   delay(100);
   if (!axis2.init(&motor2)) {  DLF("ERR: Axis2, no motion controller exiting!"); return;  }
   axis2.setBacklash(settings.backlash.axis2);
   axis2.setMotionLimitsCheck(false);
   if (AXIS2_POWER_DOWN == ON) axis1.setPowerDownTime(DEFAULT_POWER_DOWN_TIME);
-
+#endif
   // initialize the critical subsystems
+   VLF("starting site.init");
   site.init();
+   VLF("starting transform.init");
   transform.init();
 
   // setup compensated tracking as configured
@@ -60,10 +63,15 @@ void Mount::init() {
   }
 
   // initialize the other subsystems
+  VLF("starting home.init");
   home.init();
+   VLF("starting home.reset");
   home.reset();
+   VLF("starting limits.init");
   limits.init();
+   VLF("starting guide.init");
   guide.init();
+   
 
   if (transform.mountType == FORK) {
     limits.settings.pastMeridianE = Deg360;
@@ -79,8 +87,11 @@ void Mount::init() {
   }
 
   #if SLEW_GOTO == ON
-    goTo.init();
+  VF("starting goTo.init");
+    //goTo.init();
+    VLF("starting library.init");
     library.init();
+    VLF("starting park.init");
     park.init();
   #endif
 
@@ -159,8 +170,8 @@ void Mount::enable(bool state) {
     update();
   }
 
-  axis1.enable(state);
-  axis2.enable(state);
+  //axis1.enable(state);
+  //axis2.enable(state);
 }
 
 // allow syncing to the encoders instead of from them

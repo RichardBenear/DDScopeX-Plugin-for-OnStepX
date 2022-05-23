@@ -269,6 +269,7 @@ void StepDirMotor::modeSwitch() {
 float StepDirMotor::getFrequencySteps() {
   if (lastPeriod == 0) return 0;
   #if STEP_WAVE_FORM == SQUARE
+  VF("last period ="); VL(lastPeriod);
     return 8000000.0F/lastPeriod;
   #else
     return 16000000.0F/lastPeriod;

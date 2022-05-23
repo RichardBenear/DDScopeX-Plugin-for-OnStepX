@@ -65,16 +65,20 @@ void Telescope::init(const char *fwName, int fwMajor, int fwMinor, const char *f
     if (nv.verify()) { VLF("MSG: NV, ready for reset to defaults"); }
   } else { VLF("MSG: NV, correct key found"); }
 
+ VLF("starting gpio.init");
   gpio.init();
 
   #if SERIAL_B_ESP_FLASHING == ON
     addonFlasher.init();
   #endif
 
+ VLF("starting weather.init");
   weather.init();
 
   #ifdef MOUNT_PRESENT
+   VLF("starting mount.init");
     mount.init();
+     VLF("starting status.init");
     status.init();
   #endif
 
