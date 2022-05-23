@@ -448,7 +448,7 @@ void HomeScreen::touchPoll() {
     } else { // since already ON, toggle OFF
       odrive.odriveAZOff = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-      odrive.idleOdriveMotor(AZ);
+      odriveMotor.power(AZ);
     }
   }
             
@@ -461,7 +461,7 @@ void HomeScreen::touchPoll() {
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       odrive.turnOnOdriveMotor(ALT);
     } else { // toggle OFF
-      odrive.idleOdriveMotor(ALT); // Idle the Odrive channel
+      odriveMotor.power(ALT); // Idle the Odrive channel
       odrive.odriveALTOff = true;
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
     }

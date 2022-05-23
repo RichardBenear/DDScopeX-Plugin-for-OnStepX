@@ -4,9 +4,6 @@
 #ifndef ODRIVE_H
 #define ODRIVE_H
 
-
-
-
 enum Component
 {
     ENCODER,
@@ -14,27 +11,23 @@ enum Component
     CONTROLLER,
     AXIS
 };
-
-#define odALT 0 // ODrive Motor 0 - Do not change
-#define odAZM 1 // ODrive Motor 1 - Do not change
-
-//#define ODRIVE_SLEW_MODE_STEPPER //when defined, slewing is at the Onstep step rate
-//                                instead of the ODrive trapezoidal max velocity rate
     
-class ODrive 
+class ODriveExt
 {
   public:
+    // getters
     float getOdriveBusVoltage();
     float getEncoderPositionDeg(int axis);
     float getMotorPositionTurns(int axis);
     int   getMotorPositionCounts(int axis);
+    float getMotorPositionDelta(int axis);
     float getMotorCurrent(int axis);
-    float getMotorTemp(int motor);
+    float getMotorTemp(int axis);
     float getOdriveVelGain(int axis);
     float getOdriveVelIntGain(int axis);
     float getOdrivePosGain(int axis);
-    float getMotorPositionDelta(int axis);
     
+    // actions
     void setOdriveVelGain(int axis, float level);
     void setOdriveVelIntGain(int axis, float level);
     void setOdrivePosGain(int axis, float level);
@@ -50,11 +43,6 @@ class ODrive
     int dumpOdriveErrors(int axis, int comp);
     int getOdriveRequestedState();
 
-    bool axis1Enabled;
-    bool axis2Enabled;
-    bool odriveAZOff;
-    bool odriveALTOff;
-    //Mount mount;
   private:
 };
 

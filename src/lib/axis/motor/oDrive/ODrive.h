@@ -42,7 +42,7 @@
   #define ODRIVE_SYNC_LIMIT OFF
 #endif
 
-#include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino
+#include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino 
 
 typedef struct ODriveDriverSettings {
   int16_t model;

@@ -364,7 +364,7 @@ void ODriveScreen::touchPoll() {
     } else { // since already ON, toggle OFF
       odrive.odriveAZOff = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-      odrive.idleOdriveMotor(AZ);
+      odriveMotor.power(AZ);
     }
   }
             
@@ -377,7 +377,7 @@ void ODriveScreen::touchPoll() {
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       odrive.turnOnOdriveMotor(ALT);
     } else { // toggle OFF
-      odrive.idleOdriveMotor(ALT); // Idle the Odrive channel
+      odriveMotor.power(ALT); // Idle the Odrive channel
       odrive.odriveALTOff = true;
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
     }
@@ -391,8 +391,8 @@ void ODriveScreen::touchPoll() {
     if (!OdStopButton) {
       ddTone.click();
       display.setLocalCmd(":Q#"); // stops move
-      odrive.idleOdriveMotor(AZ); // turn off the motors
-      odrive.idleOdriveMotor(ALT);
+      odriveMotor.power(AZ); // turn off the motors
+      odriveMotor.power(ALT);
       OdStopButton = true;
       odrive.odriveAZOff = true;
       odrive.odriveALTOff = true;
