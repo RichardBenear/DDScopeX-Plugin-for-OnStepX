@@ -36,14 +36,24 @@ bool TmcDriver::init(int model, int16_t mosi, int16_t sck, int16_t cs, int16_t m
         digitalWriteEx(mosi, HIGH);
         digitalWriteEx(sck, HIGH);
 
-        deviceAddress = axisNumber - 1;
         rx = SERIAL_TMC_RX;
         tx = SERIAL_TMC_TX;
-        #ifdef SERIAL_TMC_AXIS5_REMAP
-          if (deviceAddress = 4) deviceAddress = 2;
+
+        #ifdef TMC_UART_DRIVER_ADDRESS_REMAP_AXIS5
+          if (deviceAddress == 4) deviceAddress = 2;
         #endif
+        #ifdef TMC_UART_DRIVER_ADDRESS_REMAP
+          deviceAddress = TMC_UART_DRIVER_ADDRESS_REMAP(axisNumber - 1);
+        #else
+          deviceAddress = axisNumber - 1;
+        #endif
+
         VF("MSG: TmcDriver, hardware serial UART driver pins rx="); V(rx); VF(", tx="); V(tx); VF(", baud="); V(SERIAL_TMC_BAUD); VLF("bps");
-        tmcUartDriver->setup(SERIAL_TMC, SERIAL_TMC_BAUD, deviceAddress, rx, tx);
+        #if SERIAL_TMC_INVERT == ON
+          tmcUartDriver->setup(SERIAL_TMC, SERIAL_TMC_BAUD, deviceAddress, rx, tx, true);
+        #else
+          tmcUartDriver->setup(SERIAL_TMC, SERIAL_TMC_BAUD, deviceAddress, rx, tx);
+        #endif
       #endif
 
       if (rx != OFF) {

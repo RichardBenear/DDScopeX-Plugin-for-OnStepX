@@ -5,7 +5,6 @@
 #define SERIAL_LOCAL_MODE ON
 #define STANDARD_IPSERIAL_CHANNEL ON
 #define PERSISTENT_IPSERIAL_CHANNEL ON
-
 #include <Arduino.h>
 #include "Constants.h"
 #include "lib/Constants.h"

@@ -12,6 +12,9 @@
 // Serial2 RX2 Pin PA3, TX2 Pin PA2
 // Serial3 RX3 Pin PC11, TX3 Pin PC10
 
+#if SERIAL_A_BAUD_DEFAULT != OFF
+  #define SERIAL_A              Serial
+#endif
 #if SERIAL_B_BAUD_DEFAULT != OFF
   #define SERIAL_B              Serial1
 #endif
@@ -34,50 +37,50 @@
 #define SERIAL_TMC_NO_RX                         // Recieving data doesn't work with software serial
 
 // Thermistor (temperature) sensor inputs have built-in 4.7K Ohm pullups and a 10uF cap for noise supression
-#define Temp0Pin                PC0              // Temp0   (on TE0, THERMO0)
-#define Temp1Pin                PC1              // Temp1   (on TE1, THERMO1)
-#define Temp2Pin                PC2              // Temp2   (on TE2, THERMO2)
-#define Temp3Pin                PC3              // Temp3   (on TB , THERMO3)
+#define TEMP0_PIN               PC0              // Temp0   (on TE0, THERMO0)
+#define TEMP1_PIN               PC1              // Temp1   (on TE1, THERMO1)
+#define TEMP2_PIN               PC2              // Temp2   (on TE2, THERMO2)
+#define TEMP3_PIN               PC3              // Temp3   (on TB , THERMO3)
 
 #if FOCUSER_TEMPERATURE_PIN == OFF
   #undef FOCUSER_TEMPERATURE_PIN
-  #define FOCUSER_TEMPERATURE_PIN Temp0Pin
+  #define FOCUSER_TEMPERATURE_PIN TEMP0_PIN
 #endif
 #if FEATURE1_TEMP_PIN == OFF
   #undef FEATURE1_TEMP_PIN
-  #define FEATURE1_TEMP_PIN     Temp1Pin
+  #define FEATURE1_TEMP_PIN     TEMP1_PIN
 #endif
 #if FEATURE2_TEMP_PIN == OFF
   #undef FEATURE2_TEMP_PIN
-  #define FEATURE2_TEMP_PIN     Temp2Pin
+  #define FEATURE2_TEMP_PIN     TEMP2_PIN
 #endif
 #if FEATURE3_TEMP_PIN == OFF
   #undef FEATURE3_TEMP_PIN
-  #define FEATURE3_TEMP_PIN     Temp3Pin
+  #define FEATURE3_TEMP_PIN     TEMP3_PIN
 #endif
 
 // Fans (From Marlin) we use for Auxiliary Features (switches etc.)  Probably with a little crafty wiring these can be 3V3 or 5V.
-#define Fan0Pin                 PB0              // Fan0    (on FAN0)
-#define Fan1Pin                 PB1              // Fan1    (on FAN1)
-#define Fan2Pin                 PB2              // Fan2    (on FAN2)
+#define FAN0_PIN                 PB0             // Fan0    (on FAN0)
+#define FAN1_PIN                 PB1             // Fan1    (on FAN1)
+#define FAN2_PIN                 PB2             // Fan2    (on FAN2)
 
 // Heaters (From Marlin) we use for Auxiliary Features (switches, dew heaters, etc.)
-#define Heater0Pin              PB3              // Heater0 (on E0-OUT, E0-Heater)
-#define Heater1Pin              PB4              // Heater1 (on E1-OUT, E1-Heater)
-#define Heater2Pin              PB15             // Heater2 (on E2-OUT, E2-Heater)
-#define Heater3Pin              PC8              // Heater3 (on BED-OUT, Heated-Bed)
+#define HEATER0_PIN              PB3             // Heater0 (on E0-OUT, E0-Heater)
+#define HEATER1_PIN              PB4             // Heater1 (on E1-OUT, E1-Heater)
+#define HEATER2_PIN              PB15            // Heater2 (on E2-OUT, E2-Heater)
+#define HEATER3_PIN              PC8             // Heater3 (on BED-OUT, Heated-Bed)
 
 // The multi-purpose pins (Aux3..Aux8 can be analog pwm/dac if supported)
 // I defined 7 Aux pins so they match up with the first 7 Auxiliary Feature slots avaliable in OnStep
 // Aux1-3 can be used for pretty much anything
 // Aux4-7 are more for dew-heaters
-#define AUX1_PIN                Fan0Pin
-#define AUX2_PIN                Fan1Pin
-#define AUX3_PIN                Fan2Pin
-#define AUX4_PIN                Heater0Pin
-#define AUX5_PIN                Heater1Pin
-#define AUX6_PIN                Heater2Pin
-#define AUX7_PIN                Heater3Pin
+#define AUX1_PIN                FAN0_PIN
+#define AUX2_PIN                FAN1_PIN
+#define AUX3_PIN                FAN2_PIN
+#define AUX4_PIN                HEATER0_PIN
+#define AUX5_PIN                HEATER1_PIN
+#define AUX6_PIN                HEATER2_PIN
+#define AUX7_PIN                HEATER3_PIN
 
 // Misc. pins
 #ifndef DS3234_CS_PIN

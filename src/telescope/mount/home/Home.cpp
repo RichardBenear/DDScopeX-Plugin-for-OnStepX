@@ -100,35 +100,29 @@ CommandError Home::reset(bool fullReset) {
     if (guide.state == GU_HOME_GUIDE) guide.stop();
     return CE_SLEW_IN_MOTION;
   }
-VLF("starting home.init.again");
+
   // refresh the home position
   init();
 
   // stop tracking and set default rate
-  VLF("tracking off");
   mount.tracking(false);
   mount.trackingRate = hzToSidereal(SIDEREAL_RATE_HZ);
 
   // make sure the motors are powered off
-  VLF("motors off");
   if (fullReset) mount.enable(false);
   
   // setup axis1 and axis2
-   VLF("axis 1 off");
   axis1.resetPosition(0.0L);
-    VLF("axis 2 off");
   axis2.resetPosition(0.0L);
 
   if (transform.mountType == ALTAZM) {
-      VLF("axis 1 set coord");
     axis1.setInstrumentCoordinate(position.z);
-    VLF("axis 2 set coord");
     axis2.setInstrumentCoordinate(position.a);
   } else {
     axis1.setInstrumentCoordinate(position.h);
     axis2.setInstrumentCoordinate(position.d);
   }
- VLF("axis 1 set back");
+
   axis1.setBacklash(mount.settings.backlash.axis1);
   axis2.setBacklash(mount.settings.backlash.axis2);
 

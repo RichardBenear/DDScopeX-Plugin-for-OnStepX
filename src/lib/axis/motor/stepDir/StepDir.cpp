@@ -108,7 +108,7 @@ bool StepDirMotor::init() {
     stepSet = Pins->stepState;
     stepClr = !stepSet;
   #endif
-  pinMode(Pins->step, OUTPUT);
+  pinModeEx(Pins->step, OUTPUT);
   digitalWriteF(Pins->step, stepClr);
 
   // init default driver enable pin
@@ -269,7 +269,6 @@ void StepDirMotor::modeSwitch() {
 float StepDirMotor::getFrequencySteps() {
   if (lastPeriod == 0) return 0;
   #if STEP_WAVE_FORM == SQUARE
-  VF("last period ="); VL(lastPeriod);
     return 8000000.0F/lastPeriod;
   #else
     return 16000000.0F/lastPeriod;
@@ -316,7 +315,7 @@ IRAM_ATTR void StepDirMotor::updateMotorDirection() {
 }
 
 #if STEP_WAVE_FORM == SQUARE
-  IRAM_ATTR void StepDirMotor::move(const int8_t stepPin) {
+  IRAM_ATTR void StepDirMotor::move(const int16_t stepPin) {
     if (direction > DirNone) return;
 
     if (microstepModeControl == MMC_SLEWING_REQUEST && (motorSteps + backlashSteps) % homeSteps == 0) {
@@ -373,7 +372,7 @@ IRAM_ATTR void StepDirMotor::updateMotorDirection() {
     takeStep = !takeStep;
   }
 
-  IRAM_ATTR void StepDirMotor::moveFF(const int8_t stepPin) {
+  IRAM_ATTR void StepDirMotor::moveFF(const int16_t stepPin) {
     if (microstepModeControl >= MMC_SLEWING_PAUSE) return;
 
     if (takeStep) {
@@ -386,7 +385,7 @@ IRAM_ATTR void StepDirMotor::updateMotorDirection() {
     takeStep = !takeStep;
   }
 
-  IRAM_ATTR void StepDirMotor::moveFR(const int8_t stepPin) {
+  IRAM_ATTR void StepDirMotor::moveFR(const int16_t stepPin) {
     if (microstepModeControl >= MMC_SLEWING_PAUSE) return;
 
     if (takeStep) {
@@ -400,7 +399,7 @@ IRAM_ATTR void StepDirMotor::updateMotorDirection() {
   }
 #else
 
-  IRAM_ATTR void StepDirMotor::move(const int8_t stepPin) {
+  IRAM_ATTR void StepDirMotor::move(const int16_t stepPin) {
     digitalWriteF(stepPin, stepClr);
 
     if (direction > DirNone) return;
@@ -456,7 +455,7 @@ IRAM_ATTR void StepDirMotor::updateMotorDirection() {
     }
   }
 
-  IRAM_ATTR void StepDirMotor::moveFF(const int8_t stepPin) {
+  IRAM_ATTR void StepDirMotor::moveFF(const int16_t stepPin) {
     digitalWriteF(stepPin, stepClr);
 
     if (microstepModeControl >= MMC_SLEWING_PAUSE) return;
@@ -468,7 +467,7 @@ IRAM_ATTR void StepDirMotor::updateMotorDirection() {
     }
   }
 
-  IRAM_ATTR void StepDirMotor::moveFR(const int8_t stepPin) {
+  IRAM_ATTR void StepDirMotor::moveFR(const int16_t stepPin) {
     digitalWriteF(stepPin, stepClr);
 
     if (microstepModeControl >= MMC_SLEWING_PAUSE) return;

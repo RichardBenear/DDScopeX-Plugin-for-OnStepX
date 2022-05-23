@@ -18,14 +18,9 @@
   #error "Configuration (Config.h): SerialC isn't supported, disable this option."
 #endif
 
-#if DRIVER_UART_HARDWARE_SERIAL == ON
-  #error "Configuration (Config.h): TMC2209 hardware serial isn't supported, disable this option."
-#else
-  // Use the following settings for any TMC2209 that may be present
-  #define SERIAL_TMC            SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
-  #define SERIAL_TMC_BAUD       115200           // Baud rate
-  #define SERIAL_TMC_NO_RX                       // Recieving data doesn't work with software serial
-#endif
+// Specify the ESP32 I2C pins
+#define HAL_SDA_PIN             21
+#define HAL_SCL_PIN             22
 
 // Hint that the direction pins are shared
 #define SHARED_DIRECTION_PINS

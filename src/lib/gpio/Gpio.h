@@ -30,6 +30,10 @@
   #include "Sws.h"
 #endif
 
+#if GPIO_DEVICE == SSR74HC595
+  #include "Ssr74HC595.h"
+#endif
+
 #if GPIO_DEVICE == OFF
   #include "../commands/CommandErrors.h"
   class Gpio {

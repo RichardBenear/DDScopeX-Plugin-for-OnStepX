@@ -9,29 +9,52 @@
 // Serial1: RX1 Pin GPIO10, TX1 Pin GPIO9 (on SPI Flash pins, must be moved to be used)
 // Serial2: RX2 Pin GPIO16, TX2 Pin GPIO17
 
+#if SERIAL_A_BAUD_DEFAULT != OFF
+  #define SERIAL_A              Serial
+#endif
 #if SERIAL_B_BAUD_DEFAULT != OFF
   #define SERIAL_B              Serial2
 #endif
-#if SERIAL_C_BAUD_DEFAULT != OFF
-  #error "Configuration (Config.h): SerialC isn't supported, disable this option."
-#endif
+
+// map the driver addresses so axis5 becomes axis3 in hardware serial mode
+#define TMC_UART_DRIVER_ADDRESS_REMAP_AXIS5
 
 #if DRIVER_UART_HARDWARE_SERIAL == ON
   // Use the following settings for any TMC2209 that may be present
   #define SERIAL_TMC            Serial1          // Use a single hardware serial port to up to four drivers
   #define SERIAL_TMC_BAUD       460800           // Baud rate
-  #define SERIAL_TMC_TX         23               // Transmit data
   #define SERIAL_TMC_RX         39               // Recieving data
-#else
+  #define SERIAL_TMC_TX         23               // Transmit data
+#elif DRIVER_UART_HARDWARE_SERIAL == OFF
   // Use the following settings for any TMC2209 that may be present
-  #define SERIAL_TMC            SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
+  #define SERIAL_TMC            SoftSerial       // Use software serial with TX on M3 (CS) of each axis
   #define SERIAL_TMC_BAUD       115200           // Baud rate
   #define SERIAL_TMC_NO_RX                       // Recieving data doesn't work with software serial
+#else
+  #error "Configuration (Config.h): For MaxESP3, set DRIVER_UART_HARDWARE_SERIAL to ON (pins TX23,RX39) or OFF (uses CS.)"
 #endif
 
-//SDA/SCL pins. 21/22 are the default values
-#define SDA_PIN                 21
-#define SCL_PIN                 22
+// Specify the ESP32 I2C pins
+#define HAL_SDA_PIN             21
+#define HAL_SCL_PIN             22
+
+// GPIO SSR74HC595 pins (if used, code below only works for pins 0 to 31)
+#define GPIO_SSR74HC595_LATCH_PIN OFF
+#define GPIO_SSR74HC595_CLOCK_PIN OFF
+#define GPIO_SSR74HC595_DATA_PIN  OFF
+#define GPIO_SSR74HC595_COUNT     8              // 8, 16, 24, or 32 (for 1, 2, 3, or 4 74HC595's)
+#if GPIO_SSR74HC595_LATCH_PIN != OFF
+  #define GPIO_SSR74HC595_LATCH_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_LATCH_PIN); }
+  #define GPIO_SSR74HC595_LATCH_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_LATCH_PIN); }
+#endif
+#if GPIO_SSR74HC595_CLOCK_PIN != OFF
+  #define GPIO_SSR74HC595_CLOCK_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_CLOCK_PIN); }
+  #define GPIO_SSR74HC595_CLOCK_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_CLOCK_PIN); }
+#endif
+#if GPIO_SSR74HC595_DATA_PIN != OFF
+  #define GPIO_SSR74HC595_DATA_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_DATA_PIN); }
+  #define GPIO_SSR74HC595_DATA_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_DATA_PIN); }
+#endif
 
 // Hint that the direction pins are shared
 #define SHARED_DIRECTION_PINS

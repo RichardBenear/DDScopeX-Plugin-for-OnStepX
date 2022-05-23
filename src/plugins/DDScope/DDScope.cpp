@@ -25,7 +25,7 @@
 #include "../../Common.h"
 #include "DDScope.h"
 #include "display/Display.h"
-#include "odrive/ODrive.h"
+#include "../../lib/axis/motor/oDrive/ODrive.h"
 #include "screens/HomeScreen.h"
 #include "../../telescope/mount/site/Site.h"
 
@@ -61,18 +61,18 @@ void DDScope::init() {
   pinMode(FOCUSER_SLEEP_PIN, OUTPUT); 
   digitalWrite(FOCUSER_SLEEP_PIN,HIGH); // Focuser motor driver not sleeping
 
+  SerialLocal serialLocal;
+
   // Initialize TFT Display and Touchscreen
   VLF("MSG: Initializing Display");
-  SerialLocal serialLocal;
   display.init();
-
- // Initialize Odrive 
-  VLF("MSG: Initializing ODrive");
-  odrive.init();
 
   // Initialize the SD card and startup screen
   VLF("MSG: Initializing SD Card");
   display.sdInit();
+
+  VLF("MSG: Initializing ODrive");
+  odriveMotor.init();
 
   // task parameters are:
   // handle  = tasks.add(period_ms, duration_ms, repeat_true_or_false, priority_0to7, callback_function);
@@ -97,6 +97,7 @@ void DDScope::update() {
     case ALIGN_SCREEN:    alignScreen.updateStatus();
     case CATALOG_SCREEN:  catalogScreen.updateStatus();
     case PLANETS_SCREEN:  planetsScreen.updateStatus();
+    case CUST_CAT_SCREEN: catalogScreen.updateStatus();
   }
 
   tasks.yield(100);

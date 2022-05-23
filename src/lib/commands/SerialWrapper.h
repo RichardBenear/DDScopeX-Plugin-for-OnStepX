@@ -13,7 +13,7 @@
   #endif
   #include "../serial/Serial_Local.h"
 #endif
-#include "../serial/Serial_Local.h"
+
 static uint8_t _wrapper_channels = 0;
 
 #define isChannel(x) (x == thisChannel)

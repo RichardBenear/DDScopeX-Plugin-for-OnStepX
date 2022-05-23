@@ -6,7 +6,7 @@
 #include "ODriveScreen.h"
 #include "../display/Display.h"
 #include "../odrive/Odrive.h"
-#include "../odrive/ODriveArduino.h"
+#include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino
 #include "../odrive/ODriveEnums.h"
 
 #define OD_ERR_OFFSET_X           4 

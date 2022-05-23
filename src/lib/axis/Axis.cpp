@@ -115,6 +115,8 @@ bool Axis::init(Motor *motor) {
 
   // setup motor
   if (!motor->init()) { DLF("ERR: Axis::init(); no motor exiting!"); return false; }
+  // special ODrive case, a way to pass the stepsPerMeasure to it
+  if (motor->getParameterTypeCode() == 'O') settings.param6 = settings.stepsPerMeasure;
   motor->setParameters(settings.param1, settings.param2, settings.param3, settings.param4, settings.param5, settings.param6);
   motor->setReverse(settings.reverse);
   motor->setBacklashFrequencySteps(backlashFreq*settings.stepsPerMeasure);
@@ -158,12 +160,9 @@ CommandError Axis::resetPosition(double value) {
 }
 
 // reset motor and target angular position, in steps
- 
 CommandError Axis::resetPositionSteps(long value) {
   if (autoRate != AR_NONE) return CE_SLEW_IN_MOTION;
-  VLF("motor reset0");
   if (motor->getFrequencySteps() != 0) return CE_SLEW_IN_MOTION;
-   VLF("motor reset1");
   motor->resetPositionSteps(value);
   return CE_NONE;
 }

@@ -9,7 +9,7 @@
 
 // GENERAL ---------------------------------------
 #if defined(TMC_UART_DRIVER_PRESENT) && (!defined(SERIAL_TMC) || !defined(SERIAL_TMC_BAUD))
-  #error "Configuration (Config.h): This platform doesn't support TMC UART mode drivers"
+  #error "Configuration (Config.h): This PINMAP doesn't support TMC UART mode drivers"
 #endif
 
 // TELESCOPE -------------------------------------
@@ -19,7 +19,7 @@
 
 #if SERIAL_A_BAUD_DEFAULT != 9600 && SERIAL_A_BAUD_DEFAULT != 19200 && SERIAL_A_BAUD_DEFAULT != 38400 && \
     SERIAL_A_BAUD_DEFAULT != 57600 && SERIAL_A_BAUD_DEFAULT != 115200 && SERIAL_A_BAUD_DEFAULT != 230400 && \
-    SERIAL_A_BAUD_DEFAULT != 460800
+    SERIAL_A_BAUD_DEFAULT != 460800 && SERIAL_A_BAUD_DEFAULT != OFF
   #warning "Configuration (Config.h): Setting SERIAL_A_BAUD_DEFAULT unknown, use 9600, 19200, 38400, 57600, 115200, 230400, of 460800 (baud.)"
 #endif
 
@@ -93,7 +93,8 @@
 // AXIS1 RA/AZM
 #if AXIS1_DRIVER_MODEL != OFF && \
     (AXIS1_DRIVER_MODEL < DRIVER_FIRST || AXIS1_DRIVER_MODEL > DRIVER_LAST) && \
-    (AXIS1_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS1_DRIVER_MODEL > SERVO_DRIVER_LAST)
+    (AXIS1_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS1_DRIVER_MODEL > SERVO_DRIVER_LAST) && \
+    (AXIS1_DRIVER_MODEL < ODRIVE_DRIVER_FIRST || AXIS1_DRIVER_MODEL > ODRIVE_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS1_DRIVER_MODEL unknown, use OFF or a valid DRIVER (from Constants.h)"
 #endif
 
@@ -179,7 +180,8 @@
 // AXIS2 DEC/ALT
 #if AXIS2_DRIVER_MODEL != OFF && \
     (AXIS2_DRIVER_MODEL < DRIVER_FIRST || AXIS2_DRIVER_MODEL > DRIVER_LAST) && \
-    (AXIS2_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS2_DRIVER_MODEL > SERVO_DRIVER_LAST)
+    (AXIS2_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS2_DRIVER_MODEL > SERVO_DRIVER_LAST) && \
+    (AXIS2_DRIVER_MODEL < ODRIVE_DRIVER_FIRST || AXIS2_DRIVER_MODEL > ODRIVE_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS2_DRIVER_MODEL unknown, use a valid DRIVER (from Constants.h)"
 #endif
 

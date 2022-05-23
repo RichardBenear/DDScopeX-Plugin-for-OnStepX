@@ -34,7 +34,7 @@
 //#define TASKS_PROFILER_ENABLE
 
 // Normally tasks are skipped if they become too late, to instead delay them for later processing uncomment:
-#define TASKS_QUEUE_MISSED
+//#define TASKS_QUEUE_MISSED
 
 #include "HAL_PROFILER.h"
 #include "HAL_HWTIMERS.h"

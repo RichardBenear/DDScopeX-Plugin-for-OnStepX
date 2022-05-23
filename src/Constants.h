@@ -7,28 +7,26 @@
 // PINMAPS
 #define PINMAP_FIRST                1
 
-#define FYSETC_S6                   1      // FYSETC S6 Version 1.2, 3D printer board, a 6-axis design
-#define FYSETC_S6_1                 2      // FYSETC S6 Version 1.2
-#define FYSETC_S6_2                 3      // FYSETC S6 Version 2.0, 3D printer board, a 6-axis design
+#define FYSETC_E4                   1      // FYSETC E4 Version 1.0, *** EXPERIMENTAL, MAY BE REMOVED AT ANY TIME ***
 
-#define MiniPCB                     4      // small 2-axis design for embedded or mounting behind a panel, Teensy3.2
-#define MiniPCB13                   5      // improved version 1.3 adds better support for ESP-01 flashing and optional I2C
+#define FYSETC_S6                   2      // FYSETC S6 Version 1.2, 3D printer board, a 6-axis design
+#define FYSETC_S6_1                 3      // FYSETC S6 Version 1.2
+#define FYSETC_S6_2                 4      // FYSETC S6 Version 2.0, 3D printer board, a 6-axis design
 
-#define MiniPCB2                    6      // 2-axis design for small alum. case, Teensy3.2
+#define MiniPCB                     5      // small 2-axis design for embedded or mounting behind a panel, Teensy3.2
+#define MiniPCB13                   6      // improved version 1.3 adds better support for ESP-01 flashing and optional I2C
 
-#define MaxPCB                      7      // first generation custom 4-axis board, Teensy3.5/Teensy3.6
-#define MaxPCB2                     8      // improved second generation for alum. case, Teensy3.5/Teensy3.6
-#define MaxPCB3                     9      // improved third generation for alum. case, Teensy4.1
-#define MaxSTM3                     10     // update to the MaxPCB3 using an Blackpill F411CE instead of the Teensy3.5/3.6
-#define MaxSTM3I                    11     // as above but using an onboard STM32F411CE with M24C64 EEPROM as default
+#define MiniPCB2                    7      // 2-axis design for small alum. case, Teensy3.2
 
-#define MaxESP3                     12     // adds 4th axis and option to flash the WeMos D1 Mini WiFi through OnStep
-#define MaxESP4                     13     // as above but based on ESP32-S2. *** EXPERIMENTAL, MAY BE REMOVED AT ANY TIME ***
-#define CNC3                        14     // Arduino CNC Sheild on WeMos D1 R32 (ESP32)
+#define MaxPCB                      8      // first generation custom 4-axis board, Teensy3.5/Teensy3.6
+#define MaxPCB2                     9      // improved second generation for alum. case, Teensy3.5/Teensy3.6
+#define MaxPCB3                     10     // improved third generation for alum. case, Teensy4.1
+#define MaxSTM3                     11     // update to the MaxPCB3 using an Blackpill F411CE instead of the Teensy3.5/3.6
+#define MaxSTM3I                    12     // as above but using an onboard STM32F411CE with M24C64 EEPROM as default
 
 #define STM32Blue                   15     // Khalid and Dave's PCB for STM32 Blue pill (STM32F103CB and STM32F303CC)
 #define DDT                         16
-#define PINMAP_LAST                 16
+#define PINMAP_LAST                 17
 
 // WEATHER sensors (temperature, pressure, and humidity)
 #define WEATHER_FIRST               1
@@ -107,7 +105,7 @@
 #define INTERVALOMETER              5      // control an camera shutter
 #define AUX_FEATURE_PURPOSE_LAST    5
 
-// GPIO devices (pin# 512 up to 527)
+// GPIO devices (pin# 512 up to 543)
 // these can work for most digital I/O EXCEPT: STEP/DIR, 1-WIRE/I2C/SPI (CS is ok), the ST4 port, and the PPS pin
 #define GPIO_FIRST                  1
 #define DS2413                      1      // DS2413 2-channel GPIO
@@ -115,8 +113,9 @@
 #define MCP23017                    3      // MCP23017 16-channel GPIO
 #define X9555                       4      // TCA/PCA9555 16-channel GPIO
 #define X8575                       5      // PCF8575 16-channel GPIO
-#define SWS                         6      // Smart Web Server 4-channel GPIO (on Encoder pins, if otherwise unused)
-#define GPIO_LAST                   6
+#define SWS                         6      // Smart Web Server 8-channel GPIO (usually on the four Encoder pins, if otherwise unused)
+#define SSR74HC595                  7      // 74HC595 8,16,24,32-channel GPIO (serial shift register, output only)
+#define GPIO_LAST                   7
 
 // --------------------------------------------------------------------------------------------------------------------------
 

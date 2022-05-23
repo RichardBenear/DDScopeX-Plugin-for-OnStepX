@@ -53,7 +53,7 @@
 #define HAL_INIT() { \
   analogWriteResolution(ANALOG_WRITE_PWM_BITS); \
   SERIAL_BT_BEGIN(); \
-  HAL_Wire.begin(SDA_PIN, SCL_PIN, HAL_WIRE_CLOCK); \
+  if (HAL_SDA_PIN != OFF && HAL_SCL_PIN != OFF) HAL_Wire.begin(HAL_SDA_PIN, HAL_SCL_PIN, HAL_WIRE_CLOCK); \
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -68,3 +68,6 @@
 
 // Allow MCU reset -----------------------------------------------------------------------------------
 #define HAL_RESET() ESP.restart()
+
+// a really short fixed delay (none needed)
+#define HAL_DELAY_25NS()

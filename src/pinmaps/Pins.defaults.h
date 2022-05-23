@@ -2,12 +2,20 @@
 // Null pin map, assigns OFF to all values not already assigned
 #pragma once
 
-// SerialA is manidatory
+// usually the default serial port
+#if SERIAL_A_BAUD_DEFAULT != OFF
 #ifndef SERIAL_A
-#define SERIAL_A                    Serial
+#define SERIAL_A               Serial
+#endif
 #endif
 
 /*
+// map the driver addresses so axis X is 0, Y is 1, Z is 2, and E0 is 3 instead of the actual...
+#define TMC_UART_DRIVER_ADDRESS_REMAP(x) (x)
+
+// map the driver addresses so axis5 becomes axis3 in hardware serial mode
+#define TMC_UART_DRIVER_ADDRESS_REMAP_AXIS5
+
 // Example for a board using SoftwareSerial ports to any number of drivers
 #define SERIAL_TMC              SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
 #define SERIAL_TMC_BAUD         115200           // Baud rate
@@ -18,16 +26,7 @@
 #define SERIAL_TMC_BAUD         500000           // Baud rate
 #define SERIAL_TMC_TX           11               // Transmit data
 #define SERIAL_TMC_RX           12               // Recieving data
-#define SERIAL_TMC_AXIS5_REMAP                   // Identify Focuser2 (Axis5) as Axis3
 */
-
-#ifndef SDA_PIN
-#define SDA_PIN                    21
-#endif
-
-#ifndef SCL_PIN
-#define SCL_PIN                    22
-#endif
 
 #ifndef AUX0_PIN
 #define AUX0_PIN                    OFF

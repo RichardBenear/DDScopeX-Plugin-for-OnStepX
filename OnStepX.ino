@@ -55,6 +55,7 @@ NVS nv;
 
 #include "src/telescope/Telescope.h"
 extern Telescope telescope;
+//#define REMOTE
 
 #if DEBUG == PROFILER
   extern void profiler();
@@ -70,13 +71,14 @@ void sensesPoll() {
 
 void setup() {
   #if DEBUG != OFF
+  SERIAL_A.begin(SERIAL_A_BAUD_DEFAULT);
     SERIAL_DEBUG.begin(SERIAL_DEBUG_BAUD);
-    delay(2000);
+    delay(5000);
   #endif
 
   // start low level hardware
   VLF("MSG: Setup, HAL initalize");
-  HAL_INIT(); 
+  HAL_INIT();
   HAL_NV_INIT();
   delay(2000);
 
@@ -90,7 +92,6 @@ void setup() {
   VF("MSG: Setup, start input sense polling task (rate 1ms priority 7)... ");
   if (tasks.add(1, 0, true, 7, sensesPoll, "SenPoll")) { VLF("success"); } else { VLF("FAILED!"); }
 
- VLF("starting telescope.init");
   // start telescope object
   telescope.init(FirmwareName, FirmwareVersionMajor, FirmwareVersionMinor, FirmwareVersionPatch, FirmwareVersionConfig);
 
@@ -103,6 +104,7 @@ void setup() {
   #if DEBUG == PROFILER
     tasks.add(142, 0, true, 7, profiler, "Profilr");
   #endif
+  
 }
 
 void loop() {

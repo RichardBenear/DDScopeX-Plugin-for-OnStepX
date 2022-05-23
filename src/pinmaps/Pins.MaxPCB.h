@@ -8,6 +8,9 @@
 // Serial1: RX1 Pin 0, TX1 Pin 1
 // Serial4: RX4 Pin 31, TX4 Pin 32
 
+#if SERIAL_A_BAUD_DEFAULT != OFF
+  #define SERIAL_A              Serial
+#endif
 #if SERIAL_B_BAUD_DEFAULT != OFF
   #define SERIAL_B              Serial1
 #endif
@@ -23,17 +26,22 @@
   #define SERIAL_E_BAUD_DEFAULT 9600
 #endif
 
+// map the driver addresses so axis5 becomes axis3 in hardware serial mode
+#define TMC_UART_DRIVER_ADDRESS_REMAP_AXIS5
+
 #if DRIVER_UART_HARDWARE_SERIAL == ON
   // Use the following settings for any TMC2209 that may be present
   #define SERIAL_TMC           Serial4          // Use a single hardware serial port to up to four drivers
   #define SERIAL_TMC_BAUD      460800           // Baud rate
-  #define SERIAL_TMC_TX        OFF              // Transmit data
   #define SERIAL_TMC_RX        OFF              // Recieving data
-#else
+  #define SERIAL_TMC_TX        OFF              // Transmit data
+#elif DRIVER_UART_HARDWARE_SERIAL == OFF
   // Use the following settings for any TMC2209 that may be present
-  #define SERIAL_TMC           SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
+  #define SERIAL_TMC           SoftSerial       // Use software serial with TX on M3 (CS) of each axis
   #define SERIAL_TMC_BAUD      230400           // Baud rate
   #define SERIAL_TMC_NO_RX                      // Recieving data doesn't work with software serial
+#else
+  #error "Configuration (Config.h): For MaxPCB2, set DRIVER_UART_HARDWARE_SERIAL to ON (Serial4) or OFF (uses CS.)"
 #endif
 
 // The multi-purpose pins (Aux3..Aux8 can be analog pwm/dac if supported)

@@ -18,13 +18,13 @@
 // DEBUG ------------------------------------------------------------ see https://onstep.groups.io/g/main/wiki/6-Configuration#DEBUG
 // Enable additional debugging and/or status messages on the specified SERIAL_DEBUG port
 // Note that the SERIAL_DEBUG port cannot be used for normal communication with OnStep
-#define DEBUG                      VERBOSE //    OFF, Use ON for background error messages only, use VERBOSE for all           Infreq
+#define DEBUG                     VERBOSE //    OFF, Use ON for background error messages only, use VERBOSE for all           Infreq
                                           //         error and status messages, use CONSOLE for VT100 debug console,
                                           //         or use PROFILER for VT100 task profiler.
 #define DEBUG_SERVO                   OFF //    OFF, n. Where n=1 to 9 as the designated axis for logging servo activity.     Option
-#define DEBUG_ECHO_COMMANDS           ON //    OFF, Use ON to log command/responses to the debug serial port.                Option
+#define DEBUG_ECHO_COMMANDS            ON //    OFF, Use ON to log command/responses to the debug serial port.                Option
 #define SERIAL_DEBUG               Serial // Serial, Use any available h/w serial port. Serial1 or Serial2, etc.              Option
-#define SERIAL_DEBUG_BAUD          115200 //   9600, n. Where n=9600,19200,57600,115200 (common baud rates.)                  Option
+#define SERIAL_DEBUG_BAUD          57600 //   9600, n. Where n=9600,19200,57600,115200 (common baud rates.)                  Option
 
 // ESP32 VIRTUAL SERIAL BLUETOOTH AND IP COMMAND CHANNELS --------------------------------------------------------------------------
 #define SERIAL_BT_MODE                OFF //    OFF, Use SLAVE to enable the interface (ESP32 only.)                          Option
@@ -36,10 +36,11 @@
                                           //         SWS: for 8-ch Serial gpio (normally 4 unused encoder pins.)
                                           //         MCP23008: for 8-ch I2C gpio.
                                           //         MCP23017, X9555, or X8575: for 16-ch I2C gpio.
+                                          //         SSR74HC595: for up to 32-ch gpio (serial shift register, output only.)
                                           //         Works w/most OnStep features, channels assigned in order pin# 512 and up.
 
 // UART STEP/DIR DRIVER SUPPORT ----------------------------------------------------------------------------------------------------
-#define DRIVER_UART_HARDWARE_SERIAL   OFF //    OFF, Uses SoftwareSerial (transmit only) or ON for hardware serial.           Option
+#define DRIVER_UART_HARDWARE_SERIAL   OFF //    OFF, Uses SoftwareSerial or ON for hardware serial.                           Option
 
 // =================================================================================================================================
 // MOUNT ===========================================================================================================================
@@ -53,7 +54,7 @@
 #define AXIS1_SERVO_D                 1.0 //    1.0, Derivative; overshoot supression.                                        Adjust
 #define AXIS1_SERVO_P_GOTO            2.0 //    2.0, Proportional; as above except active only while slewing.                 Adjust 
 #define AXIS1_SERVO_I_GOTO            5.0 //    5.0, Integral; as above except active only while slewing.                     Adjust
-#define AXIS1_SERVO_D_GOTO            1.0 //    1.0, Derivative; ; as above except active only while slewing.                 Adjust
+#define AXIS1_SERVO_D_GOTO            1.0 //    1.0, Derivative; as above except active only while slewing.                   Adjust
 
 // AXIS2 DEC/ALT ------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration---Rotator-and-Focusers#AXIS2
 

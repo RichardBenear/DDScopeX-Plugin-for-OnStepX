@@ -13,13 +13,35 @@
 // Serial1: RX1 Pin GPIO10, TX1 Pin GPIO9 (on SPI Flash pins, must be moved to be used)
 // Serial2: RX2 Pin GPIO13, TX2 Pin GPIO5
 
+#if SERIAL_A_BAUD_DEFAULT != OFF
+  #define SERIAL_A              Serial
+#endif
 #if SERIAL_B_BAUD_DEFAULT != OFF
   #define SERIAL_B              Serial2
   #define SERIAL_B_RX           13
   #define SERIAL_B_TX           5
 #endif
-#if SERIAL_C_BAUD_DEFAULT != OFF
-  #error "Configuration (Config.h): SerialC isn't supported, disable this option."
+
+// Specify the ESP32 I2C pins
+#define HAL_SDA_PIN             21
+#define HAL_SCL_PIN             22
+
+// GPIO SSR74HC595 pins (if used, code below only works for pins 0 to 31)
+#define GPIO_SSR74HC595_LATCH_PIN OFF
+#define GPIO_SSR74HC595_CLOCK_PIN OFF
+#define GPIO_SSR74HC595_DATA_PIN  OFF
+#define GPIO_SSR74HC595_COUNT     8              // 8, 16, 24, or 32 (for 1, 2, 3, or 4 74HC595's)
+#if GPIO_SSR74HC595_LATCH_PIN != OFF
+  #define GPIO_SSR74HC595_LATCH_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_LATCH_PIN); }
+  #define GPIO_SSR74HC595_LATCH_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_LATCH_PIN); }
+#endif
+#if GPIO_SSR74HC595_CLOCK_PIN != OFF
+  #define GPIO_SSR74HC595_CLOCK_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_CLOCK_PIN); }
+  #define GPIO_SSR74HC595_CLOCK_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_CLOCK_PIN); }
+#endif
+#if GPIO_SSR74HC595_DATA_PIN != OFF
+  #define GPIO_SSR74HC595_DATA_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_DATA_PIN); }
+  #define GPIO_SSR74HC595_DATA_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_DATA_PIN); }
 #endif
 
 // The multi-purpose pins (Aux3..Aux8 can be analog pwm/dac if supported)
