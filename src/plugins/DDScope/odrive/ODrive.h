@@ -4,10 +4,8 @@
 #ifndef ODRIVE_H
 #define ODRIVE_H
 
-#include "../../../telescope/mount/Mount.h"
 
-#define AZ      1 // Odrive Motor 1
-#define ALT     0 // Odrive Motor 0
+
 
 enum Component
 {
@@ -26,12 +24,6 @@ enum Component
 class ODrive 
 {
   public:
-    void init();
-
-    bool idleOdriveMotor(int axis);
-    void stopMotors();
-    bool turnOnOdriveMotor(int axis);
-
     float getOdriveBusVoltage();
     float getEncoderPositionDeg(int axis);
     float getMotorPositionTurns(int axis);
@@ -65,6 +57,7 @@ class ODrive
     //Mount mount;
   private:
 };
-extern ODrive odrive;
+
+extern ODrive oDrive;
 
 #endif

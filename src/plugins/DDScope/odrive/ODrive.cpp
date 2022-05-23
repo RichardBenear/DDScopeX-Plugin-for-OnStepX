@@ -12,53 +12,9 @@
 #include "ODriveArduino.h"
 #include "../../../lib/axis/Axis.h"
 #include "../../../lib/tasks/OnTask.h"
+#include "../../../lib/axis/motor/oDrive/ODrive.h"
 
-//====================================================
-/***** Primitive ascii commands and examples ********
- p motor position velocity_ff torque_ff
-    p for position
-    motor is the motor number, 0 or 1.
-    position is the desired position, in [turns].
-    velocity_ff is the velocity feed-forward term, in [turns/s] (optional).
-    torque_ff is the torque feed-forward term, in [Nm] (optional).
-  Example: p 0 -2 0 0
 
-Reading:
- r [property]
-  property name of the property, as seen in ODrive Tool
-  response: text representation of the requested value
-Example: r vbus_voltage => response: 24.087744 <new line>
-  Writing:
-    w [property] [value]
-    property name of the property, as seen in ODrive Tool
-    value text representation of the value to be written
-Example: w axis0.controller.input_pos -123.456
-
-Request feedback
-  f motor
-response:
-  pos vel
-    f for feedback
-    pos is the encoder position in [turns] (float)
-    vel is the encoder velocity in [turns/s] (float)
-
-System commands:
-ss - Save config
-se - Erase config
-sr - Reboot
-sc - Clear errors
-****************************************************/
-
-/**************************************
-// Set up serial pins to the ODrive
-**************************************/
-// Teensy 3 and 4 (all versions) - Serial3
-// pin 15: RX - connect to ODrive TX
-// pin 14: TX - connect to ODrive RX
-HardwareSerial& odrive_serial = Serial3;
-
-// ODrive object for Arduino class member functions
-ODriveArduino odriveArduino(odrive_serial);
 
 unsigned long dumpErrorUpdate;
 int updateMotorsHandle = 0;
@@ -68,14 +24,6 @@ bool ODpositionUpdateEnabled = true;
 
 void updateMotorWrapper() { odrive.updateOdriveMotorPositions(); }
 
-// General Initalization of ODrive board
-void ODrive::init() {
-  digitalWrite(ODRIVE_RST, HIGH); // bring ODrive out of Reset
-  delay(1000); // allow time for ODrive to boot
-  odrive_serial.begin(19200); 
-  VLF("MSG: ODrive channel Init");
-  //updateMotorsHandle = tasks.add(5000, 0, true, 6, updateMotorWrapper, "UpdateMotors");
-}
 
 //==============================================
 //======= ODrive Controller Error Status =======
@@ -90,7 +38,7 @@ bool ODrive::idleOdriveMotor(int axis) {
   requested_state = AXIS_STATE_IDLE;
   //SerialA << "Axis" << axis << ": Requesting state " << requested_state << '\n';
   
-  if(!odriveArduino.run_state(motornum, requested_state, false, 0.01f)) {
+  if(!odriveArduino.runState(motornum, requested_state, false, 0.01f)) {
     VLF("MSG: Closed loop timeout");
     return false; 
   } else {
@@ -120,7 +68,7 @@ bool ODrive::turnOnOdriveMotor(int axis) {
   int requested_state;
   int motornum = axis;
   requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL;
-  if(!odriveArduino.run_state(motornum, requested_state, false, 0.5f)) {
+  if(!odriveArduino.runState(motornum, requested_state, false, 0.5f)) {
     VLF("MSG: Closed loop timeout");
   return false; 
   } else {
@@ -208,11 +156,11 @@ void ODrive::updateOdriveMotorPositions() {
   if (az > 180) az = az - 360.00; // flip sign too
   az_pos = az/360.00; // convert to turns
   
-  // SetPosition is in "turns". Always fractional.
+  // setPosition is in "turns". Always fractional.
   // Altitude range is between 0.0 and 0.5 turns
   // Azimuth range is between 0.5 and -0.5 turns
-  if (!odriveAZOff ) odriveArduino.SetPosition(odAZM, az_pos); 
-  if (!odriveALTOff ) odriveArduino.SetPosition(odALT, alt_pos);
+  if (!odriveAZOff ) odriveArduino.setPosition(odAZM, az_pos); 
+  if (!odriveALTOff ) odriveArduino.setPosition(odALT, alt_pos);
 }
 
 #else // Slew at the ODrive controller trapezoidal vel limit speed, then track with Onstep
@@ -259,11 +207,11 @@ void ODrive::updateOdriveMotorPositions() {
   if (az > 180) az = az - 360.00; // flip sign too
   az_pos = az/360.00; // convert to turns
   
-  // SetPosition is in "turns". Always fractional.
+  // setPosition is in "turns". Always fractional.
   // Altitude range is between 0.0 and 0.5 turns
   // Azimuth range is between 0.5 and -0.5 turns
-  if (!odriveAZOff ) odriveArduino.SetPosition(odAZM, az_pos); 
-  if (!odriveALTOff ) odriveArduino.SetPosition(odALT, alt_pos);
+  if (!odriveAZOff ) odriveArduino.setPosition(odAZM, az_pos); 
+  if (!odriveALTOff ) odriveArduino.setPosition(odALT, alt_pos);
 }
 #endif
 
@@ -387,36 +335,36 @@ void ODrive::demoModeOn() {
   // !!!!! still need to disable the updateMotors task here
   switch(demo_pos) {
     case 0:
-      odriveArduino.SetPosition(odAZM, pos_one);
-      odriveArduino.SetPosition(odALT, pos_one);
+      odriveArduino.setPosition(odAZM, pos_one);
+      odriveArduino.setPosition(odALT, pos_one);
       ++demo_pos;
       break;
     case 1:
-      odriveArduino.SetPosition(odAZM, pos_two);
-      odriveArduino.SetPosition(odALT, pos_two);
+      odriveArduino.setPosition(odAZM, pos_two);
+      odriveArduino.setPosition(odALT, pos_two);
       ++demo_pos;
       break;
     case 2:
-      odriveArduino.SetPosition(odAZM, pos_three);
-      odriveArduino.SetPosition(odALT, pos_one);
+      odriveArduino.setPosition(odAZM, pos_three);
+      odriveArduino.setPosition(odALT, pos_one);
       ++demo_pos;
       break;
     case 3:
-      odriveArduino.SetPosition(odAZM, pos_four);
-      odriveArduino.SetPosition(odALT, pos_five);
+      odriveArduino.setPosition(odAZM, pos_four);
+      odriveArduino.setPosition(odALT, pos_five);
       demo_pos = 0;
       break;
     default:
-      odriveArduino.SetPosition(odAZM, pos_one);
-      odriveArduino.SetPosition(odALT, pos_one);
+      odriveArduino.setPosition(odAZM, pos_one);
+      odriveArduino.setPosition(odALT, pos_one);
       demo_pos = 0;
       break;
   }
 }
 
 void ODrive::demoModeOff() {
-  odriveArduino.SetPosition(odAZM, 0);
-  odriveArduino.SetPosition(odALT, 0);
+  odriveArduino.setPosition(odAZM, 0);
+  odriveArduino.setPosition(odALT, 0);
   // !!!!! still need to enable the updateMotors task here
 }
 
