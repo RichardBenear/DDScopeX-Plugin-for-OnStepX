@@ -8,8 +8,8 @@
 #include "../../../tasks/OnTask.h"
 
 ODriveMotor *odriveMotorInstance[2];
-IRAM_ATTR void moveServoMotorAxis1() { odriveMotorInstance[0]->move(); }
-IRAM_ATTR void moveServoMotorAxis2() { odriveMotorInstance[1]->move(); }
+IRAM_ATTR void moveODriveMotorAxis1() { odriveMotorInstance[0]->move(); }
+IRAM_ATTR void moveODriveMotorAxis2() { odriveMotorInstance[1]->move(); }
 
 // ODrive servo motor driver
 ODriveArduino *_oDriveDriver;
@@ -18,19 +18,25 @@ ODriveArduino *_oDriveDriver;
 ODriveMotor::ODriveMotor(uint8_t axisNumber, const ODriveDriverSettings *Settings, bool useFastHardwareTimers) {
   if (axisNumber < 1 || axisNumber > 2) return;
 
+  #if ODRIVE_SWAP_AXES == ON
+    this->axisNumber = 3 - axisNumber;
+  #else
+    this->axisNumber = axisNumber;
+  #endif
+
   strcpy(axisPrefix, "MSG: ODrive_, ");
-  axisPrefix[11] = '0' + axisNumber;
-  this->axisNumber = axisNumber;
+  axisPrefix[11] = '0' + this->axisNumber;
+
   this->useFastHardwareTimers = useFastHardwareTimers;
   driverType = ODRIVER;
 
   _oDriveDriver = new ODriveArduino(ODRIVE_SERIAL);
 
   // attach the function pointers to the callbacks
-  odriveMotorInstance[axisNumber - 1] = this;
-  switch (axisNumber) {
-    case 1: callback = moveServoMotorAxis1; break;
-    case 2: callback = moveServoMotorAxis2; break;
+  odriveMotorInstance[this->axisNumber - 1] = this;
+  switch (this->axisNumber) {
+    case 1: callback = moveODriveMotorAxis1; break;
+    case 2: callback = moveODriveMotorAxis2; break;
   }
 }
 
@@ -41,7 +47,7 @@ bool ODriveMotor::init() {
     pinModeEx(ODRIVE_RST_PIN, OUTPUT);
     digitalWriteEx(ODRIVE_RST_PIN, HIGH); // bring ODrive out of Reset
     delay(1000);                          // allow time for ODrive to boot
-    ODRIVE_SERIAL.begin(19200);
+    ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
     VLF("MSG: ODrive channel Init");
   }
 
@@ -71,7 +77,10 @@ bool ODriveMotor::init() {
 
 // set driver reverse state
 void ODriveMotor::setReverse(int8_t state) {
-  UNUSED(state);  // not sure how one would do this, not required strictly speaking though
+  if (state == true) {
+    VF("WRN: ODrive"); V(axisNumber); VF(", ");
+    VLF("axis reversal must be accomplished with hardware or ODrive setup!");
+  }
 }
 
 // set driver parameters
@@ -124,7 +133,7 @@ void ODriveMotor::setInstrumentCoordinateSteps(long value) {
   Motor::setInstrumentCoordinateSteps(value);
 }
 
-// get the associated stepper drivers status
+// get the associated driver status
 DriverStatus ODriveMotor::getDriverStatus() {
   return status;
 }
@@ -189,8 +198,7 @@ void ODriveMotor::setFrequencySteps(float frequency) {
 }
 
 float ODriveMotor::getFrequencySteps() {
-  if (lastPeriod == 0)
-    return 0;
+  if (lastPeriod == 0) return 0;
   return (16000000.0F / lastPeriod) * absStep;
 }
 
