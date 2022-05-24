@@ -42,7 +42,6 @@
 
 #define MOTOR_CURRENT_WARNING  2.0  // Warning when over 2 amps....coil heating occuring
 
-
 // ============================================
 // ======= Draw Base content of HOME PAGE =====
 // ============================================
@@ -156,8 +155,6 @@ void HomeScreen::updateStatusCol1() {
   char xchReply[10]="";
   int y_offset = 0; 
 
-  //display.updateCommonStatus();
-
   // Show Local Time
   display.getLocalCmdTrim(":GL#", xchReply); 
   if (strcmp(curTime, xchReply) !=0 || display.firstDraw) {
@@ -214,15 +211,15 @@ void HomeScreen::updateStatusCol1() {
     display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
     strcpy(curDewpoint, xchReply);
   }  
-    /*
+    
   // Show Altitude
   y_offset +=COL1_LABEL_SPACING;
-  //display.getLocalCmdTrim(":GX9D#", xchReply); 
+  //display.getLocalCmdTrim(":GX9D#", xchReply); // Note: this command is not supported anymore???
   if (strcmp(curAlti, xchReply)!=0 || display.firstDraw) {
     display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
     strcpy(curAlti, xchReply);
-  }*/
-/*
+  }
+
   // Update Battery Voltage
   y_offset +=COL1_LABEL_SPACING;
   currentBatVoltage = display.getBatteryVoltage();
@@ -234,7 +231,7 @@ void HomeScreen::updateStatusCol1() {
     }
     lastBatVoltage = currentBatVoltage;
   }
-  */
+  
 }
 
 // =================================================

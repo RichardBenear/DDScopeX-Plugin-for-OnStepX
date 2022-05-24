@@ -24,9 +24,9 @@
 #define MaxSTM3                     11     // update to the MaxPCB3 using an Blackpill F411CE instead of the Teensy3.5/3.6
 #define MaxSTM3I                    12     // as above but using an onboard STM32F411CE with M24C64 EEPROM as default
 
-#define STM32Blue                   15     // Khalid and Dave's PCB for STM32 Blue pill (STM32F103CB and STM32F303CC)
-#define DDT                         16
-#define PINMAP_LAST                 17
+#define STM32Blue                   13     // Khalid and Dave's PCB for STM32 Blue pill (STM32F103CB and STM32F303CC)
+#define DDT                         14
+#define PINMAP_LAST                 14
 
 // WEATHER sensors (temperature, pressure, and humidity)
 #define WEATHER_FIRST               1
