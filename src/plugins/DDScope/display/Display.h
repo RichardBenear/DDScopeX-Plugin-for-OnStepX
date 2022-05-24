@@ -1,10 +1,8 @@
 // -------------------------------------------------------------------------------------------------
 // Display.h
+
 #ifndef DISPLAY_H
 #define DISPLAY_H
-
-#define BUTTON_ON    true
-#define BUTTON_OFF   false
 
 #include <SD.h>
 #include <Adafruit_GFX.h>
@@ -33,7 +31,7 @@
 
 // DDScope specific
 #include "../../../pinmaps/Pins.DDT.h"
-#include "../odrive/ODrive.h"
+#include "../odriveExt/ODriveExt.h"
 #include "../catalog/Catalog.h"
 #include "../screens/AlignScreen.h"
 #include "../screens/CatalogScreen.h"
@@ -48,6 +46,13 @@
 
 #define C_WIDTH  80
 #define C_HEIGHT 14
+
+#define BUTTON_ON    true
+#define BUTTON_OFF   false
+
+// ODrive hardwired motor numbers
+#define AZM_MOTOR 1
+#define ALT_MOTOR 0 
 
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
 #define BATTERY_LOW_VOLTAGE    21  

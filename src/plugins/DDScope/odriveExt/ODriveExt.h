@@ -1,8 +1,8 @@
 // =====================================================
-// ODrive.h
+// ODriveExt.h
 
-#ifndef ODRIVE_H
-#define ODRIVE_H
+#ifndef ODRIVEEXT_H
+#define ODRIVEEXT_H
 
 enum Component
 {
@@ -12,6 +12,10 @@ enum Component
     AXIS
 };
     
+// Printing with stream operator helper functions
+template<class T> inline Print& operator <<(Print& obj, T arg) { obj.print(arg);    return obj; }
+template<>        inline Print& operator <<(Print& obj, float arg) { obj.print(arg, 4); return obj; }
+
 class ODriveExt
 {
   public:
@@ -35,17 +39,19 @@ class ODriveExt
     void updateOdriveMotorPositions();
     void clearOdriveErrors(int axis, int comp);
     
-    static void demoModeOn();
-    static void demoModeOff();
+    static void demoMode(bool onState);
   
     // not currently used
     void clearAllOdriveErrors();
     int dumpOdriveErrors(int axis, int comp);
     int getOdriveRequestedState();
 
+    bool odriveAZOff = true;
+    bool odriveALTOff = true;
+    
   private:
 };
 
-extern ODrive oDrive;
+extern ODriveExt oDriveExt;
 
 #endif

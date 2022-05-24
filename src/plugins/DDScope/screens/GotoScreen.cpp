@@ -5,7 +5,7 @@
 
 #include "GotoScreen.h"
 #include "../display/Display.h"
-#include "../odrive/ODrive.h"
+#include "../odriveExt/ODriveExt.h"
 
 #define NUM_BUTTON_X         2
 #define NUM_BUTTON_Y         252
@@ -336,8 +336,6 @@ void GotoScreen::touchPoll() {
   if (p.y > GOTO_BUTTON_Y && p.y < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && p.x > GOTO_BUTTON_X && p.x < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
     ddTone.click();
     goToPgBut = true;
-    odrive.axis1Enabled = true;
-    odrive.axis2Enabled = true;
     display.setLocalCmd(":MS#"); // move to
   }
 
@@ -346,7 +344,10 @@ void GotoScreen::touchPoll() {
     ddTone.click();
     abortPgBut = true;
     display.setLocalCmd(":Q#"); // stops move
-    odrive.stopMotors(); // do this for safety reasons...mount may be colliding with something
+    ODriveMotor ODmotor1(1, 0, false);
+    oDriveMotor.power(false); // do this for safety reasons...mount may be colliding with something
+    ODriveMotor ODmotor2(2, 0, false);
+    oDriveMotor.power(false);
   }
 }
 

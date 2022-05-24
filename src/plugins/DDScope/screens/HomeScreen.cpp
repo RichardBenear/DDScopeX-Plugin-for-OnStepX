@@ -7,7 +7,7 @@
 #include "../display/Display.h"
 #include "../../../lib/tls/GPS.h"
 #include "../../../telescope/mount/Mount.h"
-#include "../odrive/Odrive.h"
+#include "../odriveExt/OdriveExt.h"
 
 // Column 1 Home Screen
 #define COL1_LABELS_X            3
@@ -245,7 +245,7 @@ void HomeScreen::updateStatusCol1() {
 void HomeScreen::updateStatusCol2() {
   int y_offset =0;
   int bitmap_width_sub = 30;
-  currentAZEncPos = odrive.getEncoderPositionDeg(AZ);
+  currentAZEncPos = oDriveExt.getEncoderPositionDeg(AZM_MOTOR);
   if ((currentAZEncPos != lastAZEncPos) || display.firstDraw) {
     display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZEncPos);
     lastAZEncPos = currentAZEncPos;
@@ -253,7 +253,7 @@ void HomeScreen::updateStatusCol2() {
   
   // ALT encoder
   y_offset +=COL1_LABEL_SPACING;
-  currentALTEncPos = odrive.getEncoderPositionDeg(ALT);
+  currentALTEncPos = oDriveExt.getEncoderPositionDeg(ALT_MOTOR);
   if ((currentALTEncPos != lastALTEncPos) || display.firstDraw) {
     display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTEncPos);
     lastALTEncPos = currentALTEncPos;
@@ -262,7 +262,7 @@ void HomeScreen::updateStatusCol2() {
   // Show ODrive motor currents
   // AZ current
   y_offset +=COL1_LABEL_SPACING;
-  currentAZMotorCur = odrive.getMotorCurrent(AZ);
+  currentAZMotorCur = oDriveExt.getMotorCurrent(AZM_MOTOR);
   if ((currentAZMotorCur != lastAZMotorCur) || display.firstDraw) {
     if (lastAZMotorCur > MOTOR_CURRENT_WARNING) {
       display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur);
@@ -274,7 +274,7 @@ void HomeScreen::updateStatusCol2() {
   
   // ALT current
   y_offset +=COL1_LABEL_SPACING;
-  currentALTMotorCur = odrive.getMotorCurrent(ALT);
+  currentALTMotorCur = oDriveExt.getMotorCurrent(ALT_MOTOR);
   if ((currentALTMotorCur != lastALTMotorCur) || display.firstDraw) {
     if (lastALTMotorCur > MOTOR_CURRENT_WARNING) {
       display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur);
@@ -286,7 +286,7 @@ void HomeScreen::updateStatusCol2() {
  
   // ALT Motor Temperature
   y_offset +=COL1_LABEL_SPACING;
-  currentALTMotorTemp = odrive.getMotorTemp(ALT);
+  currentALTMotorTemp = oDriveExt.getMotorTemp(ALT_MOTOR);
   if ((currentALTMotorTemp != lastALTMotorTemp) || display.firstDraw) {
     if (currentALTMotorTemp >= 120) { // make box red
       display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
@@ -298,7 +298,7 @@ void HomeScreen::updateStatusCol2() {
 
   // AZ Motor Temperature
   y_offset +=COL1_LABEL_SPACING;
-  currentAZMotorTemp = odrive.getMotorTemp(AZ);
+  currentAZMotorTemp = oDriveExt.getMotorTemp(AZM_MOTOR);
   if ((currentAZMotorTemp != lastAZMotorTemp) || display.firstDraw) {
     if (currentAZMotorTemp >= 120) { // make box red
     display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
@@ -354,14 +354,14 @@ void HomeScreen::updateHomeButtons() {
     
     // ============== Column 1 ===============
     // Enable / Disable Azimuth Motor
-    if (odrive.odriveAZOff) {
+    if (oDriveExt.odriveAZOff) {
       display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN AZ   ");
     } else { //motor on
       display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "AZ Enabled");
     }
     // Enable / Disable Altitude Motor
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-    if (odrive.odriveALTOff) {
+    if (oDriveExt.odriveALTOff) {
       display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN ALT   ");
     } else { //motor on
       display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,   "ALT Enabled");
@@ -441,14 +441,14 @@ void HomeScreen::touchPoll() {
   // Enable Azimuth motor
   if (p.x > ACTION_COL_1_X + x_offset && p.x < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_1_Y + y_offset && p.y <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     ddTone.click();
-    if (odrive.odriveAZOff) { // toggle ON
-      odrive.odriveAZOff = false; // false = NOT off
+    if (oDriveExt.odriveAZOff) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-      odrive.turnOnOdriveMotor(AZ);
+      oDriveExt.odriveAZOff = false; // false = NOT off
+      oDriveMotor.power(true);
     } else { // since already ON, toggle OFF
-      odrive.odriveAZOff = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-      odriveMotor.power(AZ);
+      oDriveExt.odriveAZOff = true;
+      oDriveMotor.power(false);
     }
   }
             
@@ -456,14 +456,14 @@ void HomeScreen::touchPoll() {
   // Enable Altitude motor
   if (p.x > ACTION_COL_1_X + x_offset && p.x < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_1_Y + y_offset && p.y <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     ddTone.click();
-    if (odrive.odriveALTOff) { // toggle ON
-      odrive.odriveALTOff = false; // false = NOT off
+    if (oDriveExt.odriveALTOff) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-      odrive.turnOnOdriveMotor(ALT);
+      oDriveExt.odriveALTOff = false; // false = NOT off
+      oDriveMotor.power(true);
     } else { // toggle OFF
-      odriveMotor.power(ALT); // Idle the Odrive channel
-      odrive.odriveALTOff = true;
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
+      oDriveExt.odriveALTOff = true;
+      oDriveMotor.power(false); // Idle the Odrive motor
     }
   }
 
@@ -473,7 +473,12 @@ void HomeScreen::touchPoll() {
     if (!stopButton) {
       ddTone.click();
       stopButton = true;
-      odrive.stopMotors();
+      digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
+      oDriveExt.odriveALTOff = false; // false = NOT off
+      oDriveMotor.power(false);
+      digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
+      oDriveExt.odriveALTOff = true;
+      oDriveMotor.power(false); // Idle the Odrive motor
     }
   }
   // ======= COLUMN 2 of Buttons - Middle =========

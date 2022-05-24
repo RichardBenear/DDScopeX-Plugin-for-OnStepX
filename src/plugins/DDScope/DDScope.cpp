@@ -22,11 +22,11 @@
 //
 
 #include <Arduino.h>
-#include "../../Common.h"
 #include "DDScope.h"
 #include "display/Display.h"
-#include "../../lib/axis/motor/oDrive/ODrive.h"
 #include "screens/HomeScreen.h"
+#include "../../Common.h"
+#include "../../lib/axis/motor/oDrive/ODrive.h"
 #include "../../telescope/mount/site/Site.h"
 
 void updateWrapper() { dDScope.update(); }
@@ -35,6 +35,8 @@ void touchWrapper() { display.touchScreenPoll(); }
 void DDScope::init() {
 
   VLF("MSG: Plugins, starting: DDScope");
+
+  // note: put these pins in an init somewhere
   pinMode(ALT_THERMISTOR_PIN, INPUT); // Analog input
   pinMode(AZ_THERMISTOR_PIN, INPUT); // Analog input
   
@@ -72,7 +74,7 @@ void DDScope::init() {
   display.sdInit();
 
   VLF("MSG: Initializing ODrive");
-  odriveMotor.init();
+  oDriveMotor.init();
 
   // task parameters are:
   // handle  = tasks.add(period_ms, duration_ms, repeat_true_or_false, priority_0to7, callback_function);

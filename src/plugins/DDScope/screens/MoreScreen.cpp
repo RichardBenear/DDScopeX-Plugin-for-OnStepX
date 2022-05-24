@@ -13,7 +13,7 @@
 #include "MoreScreen.h"
 #include "CatalogScreen.h"
 #include "PlanetsScreen.h"
-#include "../odrive/Odrive.h"
+#include "../odriveExt/Odrive.h"
 #include "../display/Display.h"
 
 // Catalog Selection buttons
@@ -405,8 +405,6 @@ void MoreScreen::touchPoll() {
   if (p.y > GOTO_BUT_Y && p.y < (GOTO_BUT_Y + GOTO_M_BOXSIZE_Y) && p.x > GOTO_BUT_X && p.x < (GOTO_BUT_X + GOTO_M_BOXSIZE_X)) {
     ddTone.click();
     goToButton = true;
-    odrive.axis1Enabled = true;
-    odrive.axis2Enabled = true;
     display.setLocalCmd(":MS#"); // move to
     return;
   }

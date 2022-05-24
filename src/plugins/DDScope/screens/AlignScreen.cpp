@@ -3,8 +3,10 @@
 
 #include "AlignScreen.h"
 #include "CatalogScreen.h"
-#include "../odrive/ODrive.h"
+#include "../odriveExt/ODriveExt.h"
 #include "../display/Display.h"
+#include "../../../telescope/mount/Mount.h"
+#include "../../../lib/axis/motor/oDrive/ODrive.h"
 
 #define BIG_BOX_W           80
 #define BIG_BOX_H           40
@@ -217,101 +219,105 @@ void AlignScreen::showCorrections() {
 // *********** Update Align Page Status **************
 // ***************************************************
 void AlignScreen::updateStatus() {
-    // **************************************************
-    // Update Buttons - only if the screen is touched
-    //          or first time here, or single refresh flash
-    // **************************************************
-    if (display.screenTouched || display.firstDraw || display.refreshScreen || aborted) { 
-        display.refreshScreen = false;
-        if (display.screenTouched) display.refreshScreen = true;
+  // **************************************************
+  // Update Buttons - only if the screen is touched
+  //          or first time here, or single refresh flash
+  // **************************************************
+  if (display.screenTouched || display.firstDraw || display.refreshScreen || aborted) { 
+      display.refreshScreen = false;
+      if (display.screenTouched) display.refreshScreen = true;
 
-        getAlignStatus();
+      getAlignStatus();
 
-        // Go to Home Position
-        if (homeBut) {
-            if (!mountStatus.isHome() || mountStatus.isSlewing()) {
-                display.drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, false, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");  
-            }
-        } else {
-            display.drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, true, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");           
-        }
-          
-        // Number of Stars for Alignment Buttons
-        // Alignment become active here
-        int x_offset = 0;
-        if (numAlignStars == 1) {  
-            display.drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, false, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 1 "); 
-        } else {
-            display.drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, true, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 1 ");
-        } 
-        x_offset += NUM_S_SPACING_X;
-        if (numAlignStars == 2) {  
-            display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, false, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 2 "); 
-        } else {
-            display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, true, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 2 ");
-        } 
-        x_offset += NUM_S_SPACING_X;
-        if (numAlignStars == 3) {  
-            display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, false, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 3 "); 
-        } else {
-            display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, true, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 3 ");
-        } 
-
-        // go to the Star Catalog
-        if (catalogBut) {
-            display.drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, false, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");   
-        } else {
-            display.drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, true, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");            
-        }
-
-        // Go To Coordinates Button
-        if (gotoBut || mountStatus.isSlewing()) {
-            display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, false, GOTO_T_OFF_X-2, GOTO_T_OFF_Y, "Going");
-        } else {
-            display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, true, GOTO_T_OFF_X, GOTO_T_OFF_Y, "GOTO"); 
-        }
+      // Go to Home Position
+      if (homeBut) {
+          if (!mountStatus.isHome() || mountStatus.isSlewing()) {
+              display.drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, false, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");  
+          }
+      } else {
+          display.drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, true, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");           
+      }
         
-        // Abort Alignment Button
-        if (abortBut) {
-            display.drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, false, GOTO_T_OFF_X-5, GOTO_T_OFF_Y, "Abort'g");
-            display.setLocalCmd(":Q#"); // stops move
-            odrive.stopMotors(); // do this for safety reasons...mount may be colliding with something
-            numAlignStars = 0;
-            alignCurStar = 0;
-            abortBut = false;
-            startAlignBut = false;
-            numAlignStars=0;
-            aborted = true;
-            gotoBut = false;
-            catalogBut = false;
-            homeBut = false;
-            alignBut = false;
-            Next_State = Idle_State;
-        } else {
-            display.drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, true, GOTO_T_OFF_X-9, GOTO_T_OFF_Y, " ABORT "); 
-            aborted = false;
-        }
+      // Number of Stars for Alignment Buttons
+      // Alignment become active here
+      int x_offset = 0;
+      if (numAlignStars == 1) {  
+          display.drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, false, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 1 "); 
+      } else {
+          display.drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, true, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 1 ");
+      } 
+      x_offset += NUM_S_SPACING_X;
+      if (numAlignStars == 2) {  
+          display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, false, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 2 "); 
+      } else {
+          display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, true, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 2 ");
+      } 
+      x_offset += NUM_S_SPACING_X;
+      if (numAlignStars == 3) {  
+          display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, false, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 3 "); 
+      } else {
+          display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, true, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 3 ");
+      } 
 
-        // ALIGN button; calculate alignment parameters
-        if (alignBut) {
-            display.drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, false, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");    
-        } else {
-            display.drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, true, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");            
-        }
+      // go to the Star Catalog
+      if (catalogBut) {
+          display.drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, false, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");   
+      } else {
+          display.drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, true, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");            
+      }
 
-        // save the alignment calculations to EEPROM
-        if (saveAlignBut) {
-            display.drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, false, SA_T_OFF_X, SA_T_OFF_Y, "SAVEed");
-        } else {
-            display.drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, true, SA_T_OFF_X, SA_T_OFF_Y, "SAVE");
-        }
+      // Go To Coordinates Button
+      if (gotoBut || mountStatus.isSlewing()) {
+          display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, false, GOTO_T_OFF_X-2, GOTO_T_OFF_Y, "Going");
+      } else {
+          display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, true, GOTO_T_OFF_X, GOTO_T_OFF_Y, "GOTO"); 
+      }
+      
+      // Abort Alignment Button
+      if (abortBut) {
+          display.drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, false, GOTO_T_OFF_X-5, GOTO_T_OFF_Y, "Abort'g");
+          display.setLocalCmd(":Q#"); // stops move
+          // How do you select which axis to power down???
+          ODriveMotor ODmotor1(1, 0, false);
+          oDriveMotor.power(false); // do this for safety reasons...mount may be colliding with something
+          ODriveMotor ODmotor2(2, 0, false);
+          oDriveMotor.power(false);
+          numAlignStars = 0;
+          alignCurStar = 0;
+          abortBut = false;
+          startAlignBut = false;
+          numAlignStars=0;
+          aborted = true;
+          gotoBut = false;
+          catalogBut = false;
+          homeBut = false;
+          alignBut = false;
+          Next_State = Idle_State;
+      } else {
+          display.drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, true, GOTO_T_OFF_X-9, GOTO_T_OFF_Y, " ABORT "); 
+          aborted = false;
+      }
 
-        // start alingnment
-        if (startAlignBut) {
-            display.drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, false, ST_T_OFF_X-10, ST_T_OFF_Y, "STARTed");
-        } else {
-            display.drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, true, ST_T_OFF_X, ST_T_OFF_Y, "START");
-        }
+      // ALIGN button; calculate alignment parameters
+      if (alignBut) {
+          display.drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, false, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");    
+      } else {
+          display.drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, true, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");            
+      }
+
+      // save the alignment calculations to EEPROM
+      if (saveAlignBut) {
+          display.drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, false, SA_T_OFF_X, SA_T_OFF_Y, "SAVEed");
+      } else {
+          display.drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, true, SA_T_OFF_X, SA_T_OFF_Y, "SAVE");
+      }
+
+      // start alingnment
+      if (startAlignBut) {
+          display.drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, false, ST_T_OFF_X-10, ST_T_OFF_Y, "STARTed");
+      } else {
+          display.drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, true, ST_T_OFF_X, ST_T_OFF_Y, "START");
+      }
     }
 /*
     // Display Alignment Status
@@ -333,16 +339,16 @@ void AlignScreen::updateStatus() {
     // ==== Align State Machine .. updates at the update-timer-thread rate ===
     // =======================================================================
     switch(Current_State) {
-        case 0:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_For_Start"); break;
-        case 1:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Home"); break;
-        case 2:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Num_Stars"); break;
-        case 3:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Select_Catalog"); break;
-        case 4:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_Catalog"); break;
-        case 5:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = GoTo"); break;
-        case 6:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_For_Slewing"); break;
-        case 7:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Align"); break;
-        case 8:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Write"); break;
-        default: display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_Start"); break;
+      case 0:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_For_Start"); break;
+      case 1:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Home"); break;
+      case 2:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Num_Stars"); break;
+      case 3:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Select_Catalog"); break;
+      case 4:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_Catalog"); break;
+      case 5:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = GoTo"); break;
+      case 6:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_For_Slewing"); break;
+      case 7:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Align"); break;
+      case 8:  display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Write"); break;
+      default: display.canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_Start"); break;
     }
     firstLabel=true;    // creates a one-time text update in a state to reduce screen flicker
                         // this is necessary in states that looping in their state and are also printing something
@@ -375,8 +381,6 @@ void AlignScreen::updateStatus() {
         case Home_State: {
             if (homeBut) {
                 homeBut = false;
-                odrive.axis1Enabled = true;
-                odrive.axis2Enabled = true;
                 /*
                 CommandError e = goTo.validate();
                 if (e != CE_NONE) {
@@ -532,95 +536,94 @@ void AlignScreen::updateStatus() {
 // === Manage Touching of Align Buttons ===
 // ========================================
 void AlignScreen::touchPoll() {
-    // Go to Home Telescope Requested
-    if (p.x > HOME_X && p.x < HOME_X + HOME_BOXSIZE_W && p.y > HOME_Y  && p.y < HOME_Y + HOME_BOXSIZE_H) {
-        if (Current_State==Home_State) {
-            ddTone.click();
-            homeBut = true;
-        }
+  // Go to Home Telescope Requested
+  if (p.x > HOME_X && p.x < HOME_X + HOME_BOXSIZE_W && p.y > HOME_Y  && p.y < HOME_Y + HOME_BOXSIZE_H) {
+    if (Current_State==Home_State) {
+      ddTone.click();
+      homeBut = true;
     }
+  }
+  
+  // Number of Stars for alignment
+  int x_offset = 0;
+  if (Current_State==Num_Stars_State) {
+    if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
+      ddTone.click();
+      numAlignStars = 1;
+    }
+    x_offset += NUM_S_SPACING_X;
+    if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
+      ddTone.click();
+      numAlignStars = 2;
+    }
+    x_offset += NUM_S_SPACING_X;
+    if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
+      ddTone.click();
+      numAlignStars = 3;
+    }
+  }
+
+  // Call up the Catalog Button
+  if (p.y > ACAT_Y && p.y < (ACAT_Y + CAT_BOXSIZE_H) && p.x > ACAT_X && p.x < (ACAT_X + CAT_BOXSIZE_W)) {
+    if (Current_State==Select_Catalog_State ) {
+      ddTone.click();
+      catalogBut = true;
+    }
+  }
+
+  // Go To Target Coordinates
+  if (p.y > GOTO_Y && p.y < (GOTO_Y + GOTO_BOXSIZE_H) && p.x > GOTO_X && p.x < (GOTO_X + GOTO_BOXSIZE_W)) {
+    if (Current_State==Goto_State) { 
+      ddTone.click();
+      gotoBut = true;
+    }
+  }
+
+  // ==== ABORT GOTO ====
+  if (p.y > ABORT_Y && p.y < (ABORT_Y + GOTO_BOXSIZE_H) && p.x > ABORT_X && p.x < (ABORT_X + GOTO_BOXSIZE_W)) {
+    ddTone.click();
+    abortBut = true;
+  }
+
+  // ALIGN / calculate alignment corrections Button
+  if (p.y > ALIGN_Y && p.y < (ALIGN_Y + ALIGN_BOXSIZE_H) && p.x > ALIGN_X && p.x < (ALIGN_X + ALIGN_BOXSIZE_W)) { 
+    if (Current_State==Align_State) {
+      ddTone.click();
+      alignBut = true;
+    }
+  }
+
+  // Write Alignment Button
+  if (p.y > WRITE_ALIGN_Y && p.y < (WRITE_ALIGN_Y + SA_BOXSIZE_H) && p.x > WRITE_ALIGN_X && p.x < (WRITE_ALIGN_X + SA_BOXSIZE_W)) { 
+    if (Current_State==Write_State) {
+      ddTone.click();
+      saveAlignBut = true;
+    }
+  }  
+
+  // START Alignment Button - clear the corrections, reset the state machine
+  if (p.y > START_ALIGN_Y && p.y < (START_ALIGN_Y + ST_BOXSIZE_H) && p.x > START_ALIGN_X && p.x < (START_ALIGN_X + ST_BOXSIZE_W)) { 
+    ddTone.click();
+    startAlignBut = true;
+    display.setLocalCmd(":SX02#");
+    display.setLocalCmd(":SX03#");
+    display.setLocalCmd(":SX04#");
+    display.setLocalCmd(":SX05#");
+    display.setLocalCmd(":SX06#");
+    display.setLocalCmd(":SX07#");
+    display.setLocalCmd(":SX08#");
+    alignCurStar = 0;
+    numAlignStars = 0; // number of selected align stars from buttons
+    Current_State = Idle_State;
+    Next_State = Idle_State;
+
+    // Enable the Motors
+    digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
+    oDriveMotor.power(true); // AZ motor on
     
-    // Number of Stars for alignment
-    int x_offset = 0;
-    if (Current_State==Num_Stars_State) {
-        if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
-            ddTone.click();
-            numAlignStars = 1;
-        }
-        x_offset += NUM_S_SPACING_X;
-        if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
-            ddTone.click();
-            numAlignStars = 2;
-        }
-        x_offset += NUM_S_SPACING_X;
-        if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
-            ddTone.click();
-            numAlignStars = 3;
-        }
-    }
-
-    // Call up the Catalog Button
-    if (p.y > ACAT_Y && p.y < (ACAT_Y + CAT_BOXSIZE_H) && p.x > ACAT_X && p.x < (ACAT_X + CAT_BOXSIZE_W)) {
-        if (Current_State==Select_Catalog_State ) {
-            ddTone.click();
-            catalogBut = true;
-        }
-    }
-
-    // Go To Target Coordinates
-    if (p.y > GOTO_Y && p.y < (GOTO_Y + GOTO_BOXSIZE_H) && p.x > GOTO_X && p.x < (GOTO_X + GOTO_BOXSIZE_W)) {
-        if (Current_State==Goto_State) { 
-            ddTone.click();
-            gotoBut = true;
-        }
-    }
-
-    // ==== ABORT GOTO ====
-    if (p.y > ABORT_Y && p.y < (ABORT_Y + GOTO_BOXSIZE_H) && p.x > ABORT_X && p.x < (ABORT_X + GOTO_BOXSIZE_W)) {
-        ddTone.click();
-        abortBut = true;
-    }
-
-    // ALIGN / calculate alignment corrections Button
-    if (p.y > ALIGN_Y && p.y < (ALIGN_Y + ALIGN_BOXSIZE_H) && p.x > ALIGN_X && p.x < (ALIGN_X + ALIGN_BOXSIZE_W)) { 
-        if (Current_State==Align_State) {
-            ddTone.click();
-            alignBut = true;
-        }
-    }
-
-    // Write Alignment Button
-    if (p.y > WRITE_ALIGN_Y && p.y < (WRITE_ALIGN_Y + SA_BOXSIZE_H) && p.x > WRITE_ALIGN_X && p.x < (WRITE_ALIGN_X + SA_BOXSIZE_W)) { 
-        if (Current_State==Write_State) {
-            ddTone.click();
-            saveAlignBut = true;
-        }
-    }  
-
-    // START Alignment Button - clear the corrections, reset the state machine
-    if (p.y > START_ALIGN_Y && p.y < (START_ALIGN_Y + ST_BOXSIZE_H) && p.x > START_ALIGN_X && p.x < (START_ALIGN_X + ST_BOXSIZE_W)) { 
-        ddTone.click();
-        startAlignBut = true;
-        display.setLocalCmd(":SX02#");
-        display.setLocalCmd(":SX03#");
-        display.setLocalCmd(":SX04#");
-        display.setLocalCmd(":SX05#");
-        display.setLocalCmd(":SX06#");
-        display.setLocalCmd(":SX07#");
-        display.setLocalCmd(":SX08#");
-        alignCurStar = 0;
-        numAlignStars = 0; // number of selected align stars from buttons
-        Current_State = Idle_State;
-        Next_State = Idle_State;
-
-        // Enable the Motors
-        odrive.odriveAZOff = false; // false = NOT off
-        digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-        odrive.turnOnOdriveMotor(odAZM);
-        odrive.odriveALTOff = false; // false = NOT off
-        digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-        odrive.turnOnOdriveMotor(odALT);
-    }  
+    digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
+    oDriveMotor.power(true); // ALT motor on
+  }  
 }
 
 AlignScreen alignScreen;

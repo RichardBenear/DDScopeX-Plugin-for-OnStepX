@@ -3,11 +3,11 @@
 
 // Author: Richard Benear 2021
 
+#include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino
+#include <ODriveEnums.h>
 #include "ODriveScreen.h"
 #include "../display/Display.h"
-#include "../odrive/Odrive.h"
-#include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino
-#include "../odrive/ODriveEnums.h"
+#include "../odriveExt/OdriveExt.h"
 
 #define OD_ERR_OFFSET_X           4 
 #define OD_ERR_OFFSET_Y         190 
@@ -28,7 +28,7 @@
 #define OD_ACT_TEXT_X_OFFSET     10
 #define OD_ACT_TEXT_Y_OFFSET     20
 
-void demoWrapper() { odrive.demoModeOn(); }
+void demoWrapper() { oDriveExt.demoMode(true); }
 extern HardwareSerial& odrive_serial;
 extern ODriveArduino odriveArduino;
 
@@ -42,6 +42,7 @@ void ODriveScreen::draw() {
   display.drawTitle(105, 30, "ODrive");
   display.drawCommonStatusLabels();
   display.updateOnStepCmdStatus();
+
   odrive_serial << "r hw_version_major\n"; 
   uint8_t hwMajor = odriveArduino.readInt();
   odrive_serial << "r hw_version_minor\n"; 
@@ -54,10 +55,12 @@ void ODriveScreen::draw() {
   uint8_t fwMinor = odriveArduino.readInt();
   odrive_serial << "r fw_version_revision\n"; 
   uint8_t fwRev = odriveArduino.readInt();
+
   tft.setCursor(12, 165);
   tft.print("*HW Version:"); tft.print(hwMajor); tft.print("."); tft.print(hwMinor); tft.print("."); tft.print(hwVar);
   tft.setCursor(12, 177);
   tft.print("*FW Version:"); tft.print(fwMajor); tft.print("."); tft.print(fwMinor); tft.print("."); tft.print(fwRev);
+
   demoActive = false;
 }
 
@@ -163,25 +166,25 @@ void ODriveScreen::updateStatus() {
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT<<".error\n";
+  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".error\n";
   errorCode = odriveArduino.readInt();
   if ((lastALTErr != errorCode) || display.firstDraw) { decodeAxisError(ALT, errorCode); lastALTErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT<<".controller.error\n";
+  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".controller.error\n";
   errorCode = odriveArduino.readInt();
   if ((lastALTCtrlErr != errorCode) || display.firstDraw) { decodeControllerError(ALT, errorCode); lastALTCtrlErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT<<".motor.error\n";
+  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".motor.error\n";
   errorCode = odriveArduino.readInt();
   if ((lastALTMotorErr != errorCode) || display.firstDraw) { decodeMotorError(ALT, errorCode); lastALTMotorErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT<<".encoder.error\n";
+  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".encoder.error\n";
   errorCode = odriveArduino.readInt();
   if ((lastALTEncErr != errorCode) || display.firstDraw) { decodeEncoderError(ALT, errorCode); lastALTEncErr = errorCode; }
 
@@ -192,27 +195,27 @@ void ODriveScreen::updateStatus() {
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<AZ<<".error\n";
+  odrive_serial << "r odrive.axis"<<AZM_MOTOR<<".error\n";
   errorCode = odriveArduino.readInt();
   if ((lastAZErr != errorCode) || display.firstDraw) { decodeAxisError(ALT, errorCode); lastALTErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<AZ<<".controller.error\n";
+  odrive_serial << "r odrive.axis"<<AZM_MOTOR<<".controller.error\n";
   errorCode = odriveArduino.readInt();
   if ((lastAZCtrlErr != errorCode) || display.firstDraw) { decodeControllerError(ALT, errorCode); lastALTCtrlErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<AZ<<".motor.error\n";
+  odrive_serial << "r odrive.axis"<<AZM_MOTOR<<".motor.error\n";
   errorCode = odriveArduino.readInt();
-  if ((lastAZMotorErr != errorCode) || display.firstDraw) { decodeMotorError(AZ, errorCode); lastALTMotorErr = errorCode; }
+  if ((lastAZMotorErr != errorCode) || display.firstDraw) { decodeMotorError(0, errorCode); lastALTMotorErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT<<".encoder.error\n";
+  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".encoder.error\n";
   errorCode = odriveArduino.readInt();
-  if ((lastAZEncErr != errorCode) || display.firstDraw) { decodeEncoderError(AZ, errorCode); lastALTEncErr = errorCode; }
+  if ((lastAZEncErr != errorCode) || display.firstDraw) { decodeEncoderError(0, errorCode); lastALTEncErr = errorCode; }
 
 
   // ***** Button label updates *****
@@ -225,14 +228,14 @@ void ODriveScreen::updateStatus() {
     y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
 
     // =========== Column 1 ===========
-    if (odrive.odriveAZOff) {
+    if (oDriveExt.odriveAZOff) {
       display.drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, false, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET, "  EN AZ   ");
     } else { //motor on
       display.drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, true, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,   "AZ Enabled");
     }
 
     y_offset += OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-    if (odrive.odriveALTOff) {
+    if (oDriveExt.odriveALTOff) {
       display.drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, false, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET, "  EN ALT   ");
     } else { //motor on
       display.drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, true, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,   "ALT Enabled");
@@ -294,25 +297,25 @@ void ODriveScreen::updateStatus() {
     // ====== Show the Gains ======
     // Show AZM Velocity Gain - AZ is motor 1
     tft.setFont();
-    float temp = odrive.getOdriveVelGain(AZ);
+    float temp = oDriveExt.getOdriveVelGain(AZM_MOTOR);
     tft.setCursor(210,280); tft.print("AZM Vel  Gain:");
     tft.fillRect(295,280, 39, 10, display.pgBackground); 
     tft.setCursor(295,280); tft.print(temp);
     
     // Show AZM Velocity Integrator Gain
-    temp = odrive.getOdriveVelIntGain(AZ);
+    temp = oDriveExt.getOdriveVelIntGain(AZM_MOTOR);
     tft.setCursor(210,290); tft.print("AZM VelI Gain:");
     tft.fillRect(295,290, 39, 10, display.pgBackground); 
     tft.setCursor(295,290); tft.print(temp);
 
     // Show ALT Velocity Gain - ALT is motor 0
-    temp = odrive.getOdriveVelGain(ALT);
+    temp = oDriveExt.getOdriveVelGain(ALT_MOTOR);
     tft.setCursor(210,300); tft.print("ALT Vel  Gain:");
     tft.fillRect(295,300, 39, 10, display.pgBackground); 
     tft.setCursor(295,300); tft.print(temp);
 
     // Show ALT Velocity Integrator Gain
-    temp = odrive.getOdriveVelIntGain(ALT);
+    temp = oDriveExt.getOdriveVelIntGain(ALT_MOTOR);
     tft.setCursor(210,310); tft.print("ALT VelI Gain:");
     tft.fillRect(295,310, 39, 10, display.pgBackground); 
     tft.setCursor(295,310); tft.print(temp);
@@ -357,14 +360,16 @@ void ODriveScreen::touchPoll() {
   // Enable Azimuth motor
   if (p.x > OD_ACT_COL_1_X + x_offset && p.x < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_1_Y + y_offset && p.y <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     ddTone.click();
-    if (odrive.odriveAZOff) { // toggle ON
-      odrive.odriveAZOff = false;
+    if (oDriveExt.odriveAZOff) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-      odrive.turnOnOdriveMotor(AZ);
+      ODriveMotor ODmotor1(1, 0, false);
+      oDriveExt.odriveAZOff = false; // false = NOT off
+      oDriveMotor.power(true);
     } else { // since already ON, toggle OFF
-      odrive.odriveAZOff = true;
+      ODriveMotor ODmotor2(2, 0, false);
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-      odriveMotor.power(AZ);
+      oDriveExt.odriveAZOff = true;
+      oDriveMotor.power(false);
     }
   }
             
@@ -372,14 +377,16 @@ void ODriveScreen::touchPoll() {
   // Enable Altitude motor
   if (p.x > OD_ACT_COL_1_X + x_offset && p.x < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_1_Y + y_offset && p.y <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     ddTone.click();
-    if (odrive.odriveALTOff) { // toggle ON
-      odrive.odriveALTOff = false;
+    if (oDriveExt.odriveALTOff) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-      odrive.turnOnOdriveMotor(ALT);
+      oDriveExt.odriveALTOff = false; // false = NOT off
+      ODriveMotor ODmotor1(1, 0, false);
+      oDriveMotor.power(true);
     } else { // toggle OFF
-      odriveMotor.power(ALT); // Idle the Odrive channel
-      odrive.odriveALTOff = true;
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
+      oDriveExt.odriveALTOff = true;
+      ODriveMotor ODmotor2(2, 0, false);
+      oDriveMotor.power(false); // Idle the Odrive motor
     }
   }
 
@@ -391,11 +398,11 @@ void ODriveScreen::touchPoll() {
     if (!OdStopButton) {
       ddTone.click();
       display.setLocalCmd(":Q#"); // stops move
-      odriveMotor.power(AZ); // turn off the motors
-      odriveMotor.power(ALT);
+      oDriveMotor.power(false); // turn off the motors
+      oDriveMotor.power(false);
       OdStopButton = true;
-      odrive.odriveAZOff = true;
-      odrive.odriveALTOff = true;
+      oDriveExt.odriveAZOff = true;
+      oDriveExt.odriveALTOff = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
     }
@@ -405,12 +412,12 @@ void ODriveScreen::touchPoll() {
   // Clear ODrive Errors
   if (p.x > OD_ACT_COL_2_X + x_offset && p.x < OD_ACT_COL_2_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_2_Y + y_offset && p.y <  OD_ACT_COL_2_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     VLF("MSG: Clearing ODrive Errors");
-    odrive.clearOdriveErrors(AZ, ENCODER);
-    odrive.clearOdriveErrors(AZ, CONTROLLER);
-    odrive.clearOdriveErrors(AZ, MOTOR);
-    odrive.clearOdriveErrors(ALT, ENCODER);
-    odrive.clearOdriveErrors(ALT, CONTROLLER);
-    odrive.clearOdriveErrors(ALT, MOTOR);
+    oDriveExt.clearOdriveErrors(AZM_MOTOR, ENCODER);
+    oDriveExt.clearOdriveErrors(AZM_MOTOR, CONTROLLER);
+    oDriveExt.clearOdriveErrors(AZM_MOTOR, MOTOR);
+    oDriveExt.clearOdriveErrors(ALT_MOTOR, ENCODER);
+    oDriveExt.clearOdriveErrors(ALT_MOTOR, CONTROLLER);
+    oDriveExt.clearOdriveErrors(ALT_MOTOR, MOTOR);
     ddTone.click();
     clearOdriveErr = true;
   }
@@ -422,7 +429,7 @@ void ODriveScreen::touchPoll() {
     ddTone.click();
     AZgainHigh = true;
     AZgainDefault = false;
-    odrive.setOdriveVelGain(AZ, 1.8); // Set Velocity Gain
+    oDriveExt.setOdriveVelGain(AZM_MOTOR, 1.8); // Set Velocity Gain
     delay(10);
     //setOdriveVelIntGain(AZ, 2.3); // Set Velocity Integrator Gain
   }
@@ -433,7 +440,7 @@ void ODriveScreen::touchPoll() {
     ddTone.click();
     AZgainHigh = false;
     AZgainDefault = true;
-    odrive.setOdriveVelGain(AZ, 1.5);
+    oDriveExt.setOdriveVelGain(AZM_MOTOR, 1.5);
     delay(10);
     //setOdriveVelIntGain(AZ, 2.0);
   }
@@ -444,7 +451,7 @@ void ODriveScreen::touchPoll() {
     ddTone.click();
     ALTgainHigh = true;
     ALTgainDefault = false;
-    odrive.setOdriveVelGain(ALT, 0.5); // Set Velocity Gain
+    oDriveExt.setOdriveVelGain(ALT_MOTOR, 0.5); // Set Velocity Gain
     delay(10);
     //setOdriveVelIntGain(ALT, 0.7); // Set Velocity Integrator Gain
   }
@@ -455,7 +462,7 @@ void ODriveScreen::touchPoll() {
     ddTone.click();
     ALTgainHigh = false;
     ALTgainDefault = true;
-    odrive.setOdriveVelGain(ALT, 0.3);
+    oDriveExt.setOdriveVelGain(ALT, 0.3);
     delay(10);
     //setOdriveVelIntGain(ALT, 0.4);
   }
@@ -469,13 +476,14 @@ void ODriveScreen::touchPoll() {
       VLF("MSG: Demo ODrive");
       ddTone.click();
       demoActive = true;
-      //demoHandle = tasks.add(10000, 0, true, 2, odrive.demoModeOn, "Demo On");
+      demoHandle = tasks.add(10000, 0, true, 7, oDriveExt.demoMode(true), "Demo On");
     } else {
       demoActive = false;
       VLF("MSG: Demo OFF ODrive");
       //tasks.remove(demoHandle);
-      odrive.demoModeOff();
+      oDriveExt.demoMode(false);
       ddTone.click();
+      tasks.setDurationComplete(tasks.getHandleByName("Demo On"));
     }
   }
 
@@ -521,17 +529,17 @@ void ODriveScreen::updateOdriveErrors() {
     tft.print("AZ Ctrl err:");
     tft.setCursor(label_x, y);
     tft.print("ALT Ctrl err:");
-    current_AZ_ODerr = odrive.dumpOdriveErrors(odAZM, CONTROLLER);
-    current_ALT_ODerr = odrive.dumpOdriveErrors(odALT, CONTROLLER);
+    current_AZ_ODerr = oDriveExt.dumpOdriveErrors(AZM_MOTOR, CONTROLLER);
+    current_ALT_ODerr = oDriveExt.dumpOdriveErrors(ALT_MOTOR, CONTROLLER);
     display.canvPrint(        data_x, y, 0, C_WIDTH-40, C_HEIGHT, current_AZ_ODerr);
     display.canvPrint(label_x+data_x, y, 0, C_WIDTH-40, C_HEIGHT, current_ALT_ODerr);
   }
-  int AZ_ODerr = odrive.dumpOdriveErrors(odAZM, CONTROLLER);
+  int AZ_ODerr = oDriveExt.dumpOdriveErrors(AZM_MOTOR, CONTROLLER);
   if (current_AZ_ODerr != AZ_ODerr) {
       display.canvPrint(        data_x, y, 0, C_WIDTH-40, C_HEIGHT, AZ_ODerr);
       current_AZ_ODerr = AZ_ODerr;
   }
-  int ALT_ODerr = odrive.dumpOdriveErrors(odAZM, CONTROLLER);
+  int ALT_ODerr = oDriveExt.dumpOdriveErrors(AZM_MOTOR, CONTROLLER);
   if (current_ALT_ODerr != ALT_ODerr) {
       display.canvPrint(label_x+data_x, y, 0, C_WIDTH-40, C_HEIGHT, ALT_ODerr);
       current_ALT_ODerr = ALT_ODerr;
