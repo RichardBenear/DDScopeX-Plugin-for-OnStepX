@@ -3,9 +3,7 @@
 #pragma once
 #include "../../../../Common.h"
 
-// SERVO DRIVER (usually for DC motors equipped with encoders)
-#define ODRIVE_MODEL_COUNT 1
-
+// ODRIVE DRIVER MODEL
 #ifndef ODRIVE_DRIVER_FIRST
   #define ODRIVE_DRIVER_FIRST       200
   #define ODRIVE                    200
@@ -20,6 +18,9 @@
 // for now, they fit your hardware as best as I can tell...
 #ifndef ODRIVE_SERIAL
   #define ODRIVE_SERIAL Serial3
+#endif
+#ifndef ODRIVE_SERIAL_BAUD
+  #define ODRIVE_SERIAL_BAUD 19200
 #endif
 #ifndef ODRIVE_RST_PIN
   #define ODRIVE_RST_PIN 3
@@ -37,7 +38,7 @@
 
 // odrive sync limit (for absolute encoders) OFF or specify the sync limit in arc-seconds
 // this should, I hope, allow you to limit just how far from the encoders you can sync. (+/-) to fine-tune the origin
-// with absolute encoders this protects you from
+// with absolute encoders this protects you from exceeding the software min/max limits by > the amount specified
 #ifndef ODRIVE_SYNC_LIMIT
   #define ODRIVE_SYNC_LIMIT OFF
 #endif
@@ -124,6 +125,6 @@ class ODriveMotor : public Motor {
     float stepsPerMeasure = 0.0F;
 };
 
-extern ODriveMotor odriveMotor;
+extern ODriveMotor oDriveMotor
 
 #endif
