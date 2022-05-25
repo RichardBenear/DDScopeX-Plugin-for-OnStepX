@@ -1,6 +1,8 @@
 // =====================================================
 // ODriveExt.h
 
+#include <ODriveArduino.h>
+
 #ifndef ODRIVEEXT_H
 #define ODRIVEEXT_H
 
@@ -48,10 +50,13 @@ class ODriveExt
 
     bool odriveAZOff = true;
     bool odriveALTOff = true;
-    
+
   private:
 };
 
 extern ODriveExt oDriveExt;
+
+// Odrive Arduino functions
+extern ODriveArduino oDriveArduino;
 
 #endif

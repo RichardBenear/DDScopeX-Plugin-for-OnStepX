@@ -1,8 +1,8 @@
 // =====================================================
-// ODrive.cpp
-// ============== Odrive Support ==============
+// ODriveExt.cpp
+// ======== Odrive Extended Support ===========
 // ============================================
-// Author: Richard Benear 2020
+// Author: Richard Benear 2022
 // ODrive Extended Functions
 // ODrive communication via Teensy 4.0
 // Uses GitHub ODrive Arduino library by 
@@ -12,11 +12,6 @@
 #include <ODriveArduino.h>
 #include "../../../lib/axis/motor/oDrive/ODrive.h"
 
-// ODrive Extended commands
-ODriveArduino *_oDriveExt;
-
-
-
 //==============================================
 //======= ODrive Controller Error Status =======
 //==============================================
@@ -24,7 +19,7 @@ ODriveArduino *_oDriveExt;
 // Read bus voltage
 float ODriveExt::getOdriveBusVoltage() {
   ODRIVE_SERIAL << "r vbus_voltage\n";
-  float bat_volt = (float)(_oDriveExt->readFloat());
+  float bat_volt = (float)(oDriveArduino.readFloat());
 return (float)bat_volt;  
 }
 
@@ -32,39 +27,39 @@ return (float)bat_volt;
 float ODriveExt::getEncoderPositionDeg(int axis) {
   float turns;
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  turns = _oDriveExt->readFloat();
+  turns = oDriveArduino.readFloat();
   return turns*360;
 }  
 
 // get motor positions in turns
 float ODriveExt::getMotorPositionTurns(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-return _oDriveExt->readFloat();
+  return oDriveArduino.readFloat();
 }  
 
 // get motor position in counts
 int ODriveExt::getMotorPositionCounts(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate_counts\n";
-return _oDriveExt->readInt();
+  return oDriveArduino.readInt();
 } 
 
 // get Motor Current
 float ODriveExt::getMotorCurrent(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n";  
-return _oDriveExt->readFloat();
+  return oDriveArduino.readFloat();
 }  
 
 // read current requested state
 int ODriveExt::getOdriveRequestedState() {
   ODRIVE_SERIAL << "r axis0.requested_state\n";
-  return _oDriveExt->readInt();
+  return oDriveArduino.readInt();
 }
 
 float ODriveExt::getMotorPositionDelta(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
-  float reqPos = _oDriveExt->readFloat();   
+  float reqPos = oDriveArduino.readFloat();   
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n";
-  float posEst = _oDriveExt->readFloat();   
+  float posEst = oDriveArduino.readFloat();   
   float deltaPos = abs(reqPos - posEst);
   return deltaPos;
 }
@@ -76,24 +71,24 @@ void ODriveExt::clearAllOdriveErrors() {
 
 // Odrive clear subcategory errors
 void ODriveExt::clearOdriveErrors(int axis, int comp) {
-    switch (comp) {
-      case ENCODER:
-        ODRIVE_SERIAL << "w axis"<<axis<<".encoder.error 0\n";
-        VLF("MSG: Clearing Odrive errors");
-        break;
-      case MOTOR:
-        ODRIVE_SERIAL << "w axis"<<axis<<".motor.error 0\n";
-        VLF("MSG: Clearing Odrive errors");
-        break;
-      case CONTROLLER:
-        ODRIVE_SERIAL << "w axis"<<axis<<".controller.error 0\n";
-        VLF("MSG: Clearing Odrive errors");
-        break;
-      case AXIS:
-        ODRIVE_SERIAL << "w axis"<<axis<<".error 0\n";
-        VLF("MSG: Clearing Odrive errors");
-        break;
-    }
+  switch (comp) {
+    case ENCODER:
+      ODRIVE_SERIAL << "w axis"<<axis<<".encoder.error 0\n";
+      VLF("MSG: Clearing Odrive errors");
+      break;
+    case MOTOR:
+      ODRIVE_SERIAL << "w axis"<<axis<<".motor.error 0\n";
+      VLF("MSG: Clearing Odrive errors");
+      break;
+    case CONTROLLER:
+      ODRIVE_SERIAL << "w axis"<<axis<<".controller.error 0\n";
+      VLF("MSG: Clearing Odrive errors");
+      break;
+    case AXIS:
+      ODRIVE_SERIAL << "w axis"<<axis<<".error 0\n";
+      VLF("MSG: Clearing Odrive errors");
+      break;
+  }
 }
 
 // Dump Error for specific module
@@ -101,26 +96,26 @@ int ODriveExt::dumpOdriveErrors(int axis, int comp) {
   switch (comp) { 
     case ENCODER:
       ODRIVE_SERIAL << "r axis"<<axis<<".encoder.error\n";
-      return _oDriveExt->readInt();
+      return oDriveArduino.readInt();
       VLF("MSG: dump Odrive encoder errors");
       break;
     case MOTOR:
     ODRIVE_SERIAL << "r axis"<<axis<<".motor.error\n";
-    return _oDriveExt->readInt();
+    return oDriveArduino.readInt();
       VLF("MSG: dump Odrive motor errors");
       break;
     case CONTROLLER:
       ODRIVE_SERIAL << "r axis"<<axis<<".controller.error\n";
-      return _oDriveExt->readInt();
+      return oDriveArduino.readInt();
       VLF("MSG: dump Odrive controller errors");
       break;
     case AXIS:
       ODRIVE_SERIAL << "r axis"<<axis<<".error\n";
-      return _oDriveExt->readInt();
+      return oDriveArduino.readInt();
       VLF("MSG: dump Odrive axis errors");
       break;
   }
-  return _oDriveExt->readInt();
+  return oDriveArduino.readInt();
 }
 
 void ODriveExt::setOdriveVelGain(int axis, float level) {
@@ -137,17 +132,17 @@ void ODriveExt::setOdrivePosGain(int axis, float level) {
 
 float ODriveExt::getOdriveVelGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n";
-  return _oDriveExt->readFloat();
+  return oDriveArduino.readFloat();
 }
 
 float ODriveExt::getOdriveVelIntGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n";
-  return _oDriveExt->readFloat();
+  return oDriveArduino.readFloat();
 }
 
 float ODriveExt::getOdrivePosGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n";
-  return _oDriveExt->readFloat();
+  return oDriveArduino.readFloat();
 }
 
 // =========== Motor Thermistor Support =============
@@ -186,41 +181,41 @@ void ODriveExt::demoMode(bool onState) {
   float pos_four = -0.4;
   float pos_five = 0.4;
   int demo_pos = 0;
-  display.setLocalCmd(":Q#"); // does this turn off motor power ???
+  display.setLocalCmd(":Q#"); // does not turn off Motor power
   
   if (onState) {
     switch(demo_pos) {
       case 0:
-        _oDriveExt->SetPosition(0, pos_one);
-        _oDriveExt->SetPosition(1, pos_one);
+        oDriveArduino.SetPosition(ALT_MOTOR, pos_one);
+        oDriveArduino.SetPosition(AZM_MOTOR, pos_one);
         ++demo_pos;
         break;
       case 1:
-        _oDriveExt->SetPosition(0, pos_two);
-        _oDriveExt->SetPosition(1, pos_two);
+        oDriveArduino.SetPosition(ALT_MOTOR, pos_two);
+        oDriveArduino.SetPosition(AZM_MOTOR, pos_two);
         ++demo_pos;
         break;
       case 2:
-        _oDriveExt->SetPosition(0, pos_three);
-        _oDriveExt->SetPosition(1, pos_one);
+        oDriveArduino.SetPosition(ALT_MOTOR, pos_three);
+        oDriveArduino.SetPosition(AZM_MOTOR, pos_one);
         ++demo_pos;
         break;
       case 3:
-        _oDriveExt->SetPosition(0, pos_four);
-        _oDriveExt->SetPosition(1, pos_five);
+        oDriveArduino.SetPosition(ALT_MOTOR, pos_four);
+        oDriveArduino.SetPosition(AZM_MOTOR, pos_five);
         demo_pos = 0;
         break;
       default:
-        _oDriveExt->SetPosition(0, pos_one);
-        _oDriveExt->SetPosition(1, pos_one);
+        oDriveArduino.SetPosition(ALT_MOTOR, pos_one);
+        oDriveArduino.SetPosition(AZM_MOTOR, pos_one);
         demo_pos = 0;
         break;
     }
   } else {
-    _oDriveExt->SetPosition(0, 0);
-    _oDriveExt->SetPosition(1, 0);
+    oDriveArduino.SetPosition(ALT_MOTOR, 0);
+    oDriveArduino.SetPosition(AZM_MOTOR, 0);
   }
 }
 
- ODriveExt oDriveExt;
- 
+ODriveExt oDriveExt;
+ODriveArduino oDriveArduino(ODRIVE_SERIAL);

@@ -344,10 +344,8 @@ void GotoScreen::touchPoll() {
     ddTone.click();
     abortPgBut = true;
     display.setLocalCmd(":Q#"); // stops move
-    ODriveMotor ODmotor1(1, 0, false);
-    oDriveMotor.power(false); // do this for safety reasons...mount may be colliding with something
-    ODriveMotor ODmotor2(2, 0, false);
-    oDriveMotor.power(false);
+    motor1.power(false); // do this for safety reasons...mount may be colliding with something
+    motor2.power(false);
   }
 }
 

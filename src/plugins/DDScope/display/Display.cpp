@@ -201,7 +201,7 @@ void Display::updateColors() {
   }
 }
 
-CommandError commandError = CE_NONE;; 
+//CommandError commandError = CE_NONE;; 
 
 // ============ OnStep Command Errors ===============
 void Display::updateOnStepCmdStatus() {
@@ -478,7 +478,7 @@ void Display::updateCommonStatus() {
   char azmDMS[10] = "";
   char altDMS[11] = "";
   
-  // === Show ALT and AZM ===
+  // === Show both Target and Current ALT and AZM ===
 
   // Calculate Target AZM / ALT from Column 1 (:Gr#, :Gd#, target RA/DEC)
   // first, convert them to Double

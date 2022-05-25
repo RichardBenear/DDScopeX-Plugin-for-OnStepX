@@ -13,7 +13,7 @@
 #include "MoreScreen.h"
 #include "CatalogScreen.h"
 #include "PlanetsScreen.h"
-#include "../odriveExt/Odrive.h"
+#include "../odriveExt/OdriveExt.h"
 #include "../display/Display.h"
 
 // Catalog Selection buttons
@@ -414,7 +414,8 @@ void MoreScreen::touchPoll() {
     display.soundFreq(1500);
     abortPgBut = true;
     display.setLocalCmd(":Q#"); // stops move
-    odrive.stopMotors(); // allow this for safety reasons...mount may be colliding with something
+    motor1.power(false); // do this for safety reasons...mount may be colliding with something
+    motor2.power(false);
     return;
   }
 

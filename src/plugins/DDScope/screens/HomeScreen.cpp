@@ -441,11 +441,11 @@ void HomeScreen::touchPoll() {
     if (oDriveExt.odriveAZOff) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
       oDriveExt.odriveAZOff = false; // false = NOT off
-      oDriveMotor.power(true);
+      motor1.power(true);
     } else { // since already ON, toggle OFF
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
       oDriveExt.odriveAZOff = true;
-      oDriveMotor.power(false);
+      motor1.power(false);
     }
   }
             
@@ -456,11 +456,11 @@ void HomeScreen::touchPoll() {
     if (oDriveExt.odriveALTOff) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
-      oDriveMotor.power(true);
+      motor2.power(true);
     } else { // toggle OFF
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
       oDriveExt.odriveALTOff = true;
-      oDriveMotor.power(false); // Idle the Odrive motor
+      motor2.power(false); // Idle the Odrive motor
     }
   }
 
@@ -472,10 +472,10 @@ void HomeScreen::touchPoll() {
       stopButton = true;
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
-      oDriveMotor.power(false);
+      motor1.power(false);
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
       oDriveExt.odriveALTOff = true;
-      oDriveMotor.power(false); // Idle the Odrive motor
+      motor2.power(false); // Idle the Odrive motor
     }
   }
   // ======= COLUMN 2 of Buttons - Middle =========

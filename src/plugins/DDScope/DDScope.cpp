@@ -22,12 +22,10 @@
 //
 
 #include <Arduino.h>
+#include "../../Common.h"
 #include "DDScope.h"
 #include "display/Display.h"
 #include "screens/HomeScreen.h"
-#include "../../Common.h"
-#include "../../lib/axis/motor/oDrive/ODrive.h"
-#include "../../telescope/mount/site/Site.h"
 
 void updateWrapper() { dDScope.update(); }
 void touchWrapper() { display.touchScreenPoll(); }
@@ -73,8 +71,8 @@ void DDScope::init() {
   VLF("MSG: Initializing SD Card");
   display.sdInit();
 
-  VLF("MSG: Initializing ODrive");
-  oDriveMotor.init();
+  VLF("MSG: Initializing ODrive mount");
+  mount.init();
 
   // task parameters are:
   // handle  = tasks.add(period_ms, duration_ms, repeat_true_or_false, priority_0to7, callback_function);

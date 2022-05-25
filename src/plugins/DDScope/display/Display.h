@@ -115,8 +115,6 @@ enum SelectedCatalog
   CUSTOM,
 };
 
-extern bool ODpositionUpdateEnabled;
-
 // other Display related objects
 static Sound ddTone;
 static Adafruit_ILI9486_Teensy tft;

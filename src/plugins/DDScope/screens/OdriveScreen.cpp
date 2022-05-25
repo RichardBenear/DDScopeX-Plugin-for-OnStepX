@@ -1,7 +1,6 @@
 // =====================================================
 // OdriveScreen.cpp
-
-// Author: Richard Benear 2021
+// Author: Richard Benear 2022
 
 #include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino
 #include <ODriveEnums.h>
@@ -29,8 +28,6 @@
 #define OD_ACT_TEXT_Y_OFFSET     20
 
 void demoWrapper() { oDriveExt.demoMode(true); }
-extern HardwareSerial& odrive_serial;
-extern ODriveArduino odriveArduino;
 
 //****** Draw Odrive Page ******
 void ODriveScreen::draw() {
@@ -43,18 +40,18 @@ void ODriveScreen::draw() {
   display.drawCommonStatusLabels();
   display.updateOnStepCmdStatus();
 
-  odrive_serial << "r hw_version_major\n"; 
-  uint8_t hwMajor = odriveArduino.readInt();
-  odrive_serial << "r hw_version_minor\n"; 
-  uint8_t hwMinor = odriveArduino.readInt();
-  odrive_serial << "r hw_version_variant\n"; 
-  uint8_t hwVar = odriveArduino.readInt();
-  odrive_serial << "r fw_version_major\n"; 
-  uint8_t fwMajor = odriveArduino.readInt();
-  odrive_serial << "r fw_version_minor\n"; 
-  uint8_t fwMinor = odriveArduino.readInt();
-  odrive_serial << "r fw_version_revision\n"; 
-  uint8_t fwRev = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r hw_version_major\n"; 
+  uint8_t hwMajor = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r hw_version_minor\n"; 
+  uint8_t hwMinor = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r hw_version_variant\n"; 
+  uint8_t hwVar = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r fw_version_major\n"; 
+  uint8_t fwMajor = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r fw_version_minor\n"; 
+  uint8_t fwMinor = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r fw_version_revision\n"; 
+  uint8_t fwRev = oDriveArduino.readInt();
 
   tft.setCursor(12, 165);
   tft.print("*HW Version:"); tft.print(hwMajor); tft.print("."); tft.print(hwMinor); tft.print("."); tft.print(hwVar);
@@ -155,8 +152,8 @@ void ODriveScreen::updateStatus() {
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y); 
 
    // Odrive Errors Status
-  odrive_serial << "r odrive.error\n";
-  errorCode = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r odrive.error\n";
+  errorCode = oDriveArduino.readInt();
   if ((lastOdriveErr != errorCode) || display.firstDraw) { decodeOdriveError(errorCode); lastOdriveErr = errorCode; }
 
   // ALT Error
@@ -166,26 +163,26 @@ void ODriveScreen::updateStatus() {
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".error\n";
-  errorCode = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r odrive.axis"<<ALT_MOTOR<<".error\n";
+  errorCode = oDriveArduino.readInt();
   if ((lastALTErr != errorCode) || display.firstDraw) { decodeAxisError(ALT, errorCode); lastALTErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".controller.error\n";
-  errorCode = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r odrive.axis"<<ALT_MOTOR<<".controller.error\n";
+  errorCode = oDriveArduino.readInt();
   if ((lastALTCtrlErr != errorCode) || display.firstDraw) { decodeControllerError(ALT, errorCode); lastALTCtrlErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".motor.error\n";
-  errorCode = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r odrive.axis"<<ALT_MOTOR<<".motor.error\n";
+  errorCode = oDriveArduino.readInt();
   if ((lastALTMotorErr != errorCode) || display.firstDraw) { decodeMotorError(ALT, errorCode); lastALTMotorErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".encoder.error\n";
-  errorCode = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r odrive.axis"<<ALT_MOTOR<<".encoder.error\n";
+  errorCode = oDriveArduino.readInt();
   if ((lastALTEncErr != errorCode) || display.firstDraw) { decodeEncoderError(ALT, errorCode); lastALTEncErr = errorCode; }
 
   // AZ Errors
@@ -195,26 +192,26 @@ void ODriveScreen::updateStatus() {
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<AZM_MOTOR<<".error\n";
-  errorCode = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r odrive.axis"<<AZM_MOTOR<<".error\n";
+  errorCode = oDriveArduino.readInt();
   if ((lastAZErr != errorCode) || display.firstDraw) { decodeAxisError(ALT, errorCode); lastALTErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<AZM_MOTOR<<".controller.error\n";
-  errorCode = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r odrive.axis"<<AZM_MOTOR<<".controller.error\n";
+  errorCode = oDriveArduino.readInt();
   if ((lastAZCtrlErr != errorCode) || display.firstDraw) { decodeControllerError(ALT, errorCode); lastALTCtrlErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<AZM_MOTOR<<".motor.error\n";
-  errorCode = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r odrive.axis"<<AZM_MOTOR<<".motor.error\n";
+  errorCode = oDriveArduino.readInt();
   if ((lastAZMotorErr != errorCode) || display.firstDraw) { decodeMotorError(0, errorCode); lastALTMotorErr = errorCode; }
 
   y_offset +=OD_ERR_SPACING;
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  odrive_serial << "r odrive.axis"<<ALT_MOTOR<<".encoder.error\n";
-  errorCode = odriveArduino.readInt();
+  ODRIVE_SERIAL << "r odrive.axis"<<ALT_MOTOR<<".encoder.error\n";
+  errorCode = oDriveArduino.readInt();
   if ((lastAZEncErr != errorCode) || display.firstDraw) { decodeEncoderError(0, errorCode); lastALTEncErr = errorCode; }
 
 
@@ -362,14 +359,12 @@ void ODriveScreen::touchPoll() {
     ddTone.click();
     if (oDriveExt.odriveAZOff) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-      ODriveMotor ODmotor1(1, 0, false);
       oDriveExt.odriveAZOff = false; // false = NOT off
-      oDriveMotor.power(true);
+      motor1.power(true);
     } else { // since already ON, toggle OFF
-      ODriveMotor ODmotor2(2, 0, false);
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
       oDriveExt.odriveAZOff = true;
-      oDriveMotor.power(false);
+      motor1.power(false);
     }
   }
             
@@ -380,13 +375,11 @@ void ODriveScreen::touchPoll() {
     if (oDriveExt.odriveALTOff) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
-      ODriveMotor ODmotor1(1, 0, false);
-      oDriveMotor.power(true);
+      motor2.power(true);
     } else { // toggle OFF
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
       oDriveExt.odriveALTOff = true;
-      ODriveMotor ODmotor2(2, 0, false);
-      oDriveMotor.power(false); // Idle the Odrive motor
+      motor2.power(false); // Idle the Odrive motor
     }
   }
 
@@ -398,8 +391,8 @@ void ODriveScreen::touchPoll() {
     if (!OdStopButton) {
       ddTone.click();
       display.setLocalCmd(":Q#"); // stops move
-      oDriveMotor.power(false); // turn off the motors
-      oDriveMotor.power(false);
+      motor1.power(false); // turn off the motors
+      motor2.power(false);
       OdStopButton = true;
       oDriveExt.odriveAZOff = true;
       oDriveExt.odriveALTOff = true;
@@ -476,14 +469,14 @@ void ODriveScreen::touchPoll() {
       VLF("MSG: Demo ODrive");
       ddTone.click();
       demoActive = true;
-      demoHandle = tasks.add(10000, 0, true, 7, oDriveExt.demoMode(true), "Demo On");
+      //demoHandle = tasks.add(10000, 0, true, 7, oDriveExt.demoMode(true), "Demo On");
     } else {
       demoActive = false;
       VLF("MSG: Demo OFF ODrive");
       //tasks.remove(demoHandle);
       oDriveExt.demoMode(false);
       ddTone.click();
-      tasks.setDurationComplete(tasks.getHandleByName("Demo On"));
+      //tasks.setDurationComplete(tasks.getHandleByName("Demo On"));
     }
   }
 

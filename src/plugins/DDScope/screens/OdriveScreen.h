@@ -29,6 +29,7 @@ class ODriveScreen {
     bool ALTgainDefault;
     bool OdStopButton;
     bool demoActive;
+    bool ODpositionUpdateEnabled;
     unsigned int lastOdriveErr;
     unsigned int lastALTErr;
     unsigned int lastALTCtrlErr;

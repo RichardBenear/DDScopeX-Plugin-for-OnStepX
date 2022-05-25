@@ -49,7 +49,7 @@
 #define porportionalGoto param5
 #define derivativeGoto param6
 
-//#pragma pack(1) // Note: compile says not allowed here
+#pragma pack(1)
 typedef struct AxisLimits {
   float min;
   float max;

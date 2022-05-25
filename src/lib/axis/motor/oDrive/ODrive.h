@@ -144,6 +144,4 @@ class ODriveMotor : public Motor {
     float stepsPerMeasure = 0.0F;
 };
 
-extern ODriveMotor oDriveMotor
-
 #endif
