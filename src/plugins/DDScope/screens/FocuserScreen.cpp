@@ -2,6 +2,7 @@
 // FocuserScreen.cpp  (DC motor focuser only)
 
 // Author: Richard Benear
+// The following comments are only true for OnStep, not OnStepX..TBD what to do in OnStepX
 // 12/20/21
 // Initially, this Focuser Page tried to use the FocuserDC.h
 // and StepperDC.h implementations done by Howard Dutton to 
@@ -18,6 +19,8 @@
 
 #include "FocuserScreen.h"
 #include "../display/Display.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
+#include "../fonts/UbuntuMono_Bold16pt7b.h"
 
 // For IN and OUT Buttons
 #define FOC_INOUT_X             206 
@@ -315,7 +318,7 @@ void FocuserScreen::touchPoll()
     {
         focMoveSpeed += FOC_SPEED_INC; // microseconds
         if (focMoveSpeed > 900) focMoveSpeed = 900;
-        ddTone.click();
+        status.sound.click();
         incSpeed = true;
     }
 
@@ -325,7 +328,7 @@ void FocuserScreen::touchPoll()
     {
         focMoveSpeed -= FOC_SPEED_INC; // microseconds
         if (focMoveSpeed < 100) focMoveSpeed = 100;
-        ddTone.click();
+        status.sound.click();
         decSpeed = false;
     }
 
@@ -336,7 +339,7 @@ void FocuserScreen::touchPoll()
     {
         setPointTarget = focPosition;
         setPoint = true;
-        ddTone.click();
+        status.sound.click();
     }
 
     // GoTo Setpoint
@@ -345,7 +348,7 @@ void FocuserScreen::touchPoll()
     {
         focTarget = setPointTarget;
         gotoSetpoint = true; 
-        ddTone.click();
+        status.sound.click();
         focGoToActive = true;
     }
 
@@ -355,7 +358,7 @@ void FocuserScreen::touchPoll()
     {
         focTarget = (focMaxPosition - focMinPosition) / 2;
         focGoToHalf = true;
-        ddTone.click();
+        status.sound.click();
         focGoToActive = true;
     }
     
@@ -367,7 +370,7 @@ void FocuserScreen::touchPoll()
     // 4th button press stops outward move and sets as Maximum position
     if (p.y > CALIB_FOC_Y && p.y < (CALIB_FOC_Y + CALIB_FOC_BOXSIZE_Y) && p.x > CALIB_FOC_X && p.x < (CALIB_FOC_X + CALIB_FOC_BOXSIZE_X))
     {  
-        ddTone.click();
+        status.sound.click();
         if (inwardCalState) {
             if (!focGoToActive) { // then we are starting calibration
                 if (!focMovingIn) focChangeDirection(); // go inward
@@ -404,7 +407,7 @@ void FocuserScreen::touchPoll()
     {
         focMoveDistance += MTR_PWR_INC_SIZE;
         if (focMoveDistance >= 100) focMoveDistance = 100;
-        ddTone.click();
+        status.sound.click();
         incMoveCt = true;
         decMoveCt = false;
     }
@@ -415,7 +418,7 @@ void FocuserScreen::touchPoll()
     {
         focMoveDistance -= MTR_PWR_INC_SIZE;
         if (focMoveDistance <= 0) focMoveDistance = 5;
-        ddTone.click();
+        status.sound.click();
         incMoveCt = false;
         decMoveCt = true;
     }
@@ -426,7 +429,7 @@ void FocuserScreen::touchPoll()
     {
         focMinPosition = 0;
         focPosition = 0;
-        ddTone.click();
+        status.sound.click();
         setZero = true;
     }
 
@@ -435,7 +438,7 @@ void FocuserScreen::touchPoll()
     if (p.y > MID_Y + y_offset && p.y < (MID_Y + y_offset + MID_BOXSIZE_Y) && p.x > MID_X && p.x < (MID_X + MID_BOXSIZE_X))
     {
         focMaxPosition = focPosition;
-        ddTone.click();
+        status.sound.click();
         setMax = true;
     }
 
@@ -443,7 +446,7 @@ void FocuserScreen::touchPoll()
     y_offset +=SPEED_BOXSIZE_Y + 2;
     if (p.y > MID_Y + y_offset && p.y < (MID_Y + y_offset + MID_BOXSIZE_Y) && p.x > MID_X && p.x < (MID_X + MID_BOXSIZE_X))
     {
-        ddTone.click();
+        status.sound.click();
         digitalWrite(FOCUSER_SLEEP_PIN,LOW); 
         delay(2);
         digitalWrite(FOCUSER_SLEEP_PIN,HIGH); 

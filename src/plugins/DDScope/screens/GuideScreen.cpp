@@ -7,6 +7,10 @@
 
 #include "GuideScreen.h"
 #include "../display/Display.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
+#include "../fonts/UbuntuMono_Bold11pt7b.h"
+#include "../fonts/UbuntuMono_Bold14pt7b.h"
+#include "../../../telescope/mount/Mount.h"
 
 // Guide buttons
 #define GUIDE_BOXSIZE_X          85
@@ -173,7 +177,7 @@ void GuideScreen::touchPoll() {
     // SYNC Button 
     if (p.y > SYNC_OFFSET_Y && p.y < (SYNC_OFFSET_Y + GUIDE_BOXSIZE_Y) && p.x > SYNC_OFFSET_X && p.x < (SYNC_OFFSET_X + GUIDE_BOXSIZE_X)) {            
         display.setLocalCmd(":CS#"); // doesn't have reply
-        ddTone.click();
+        status.sound.click();
         syncOn = true;  
     }
                     
@@ -186,7 +190,7 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qw#");
             guidingEast = false;
         }
-        ddTone.click();
+        status.sound.click();
     }
                     
     // WEST / LEFT button
@@ -198,7 +202,7 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qe#");
             guidingWest = false;
         }
-        ddTone.click();
+        status.sound.click();
     }
                     
     // NORTH / UP button
@@ -210,7 +214,7 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qn#");
             guidingNorth = false;
         }
-        ddTone.click();
+        status.sound.click();
     }
                     
     // SOUTH / DOWN button
@@ -222,7 +226,7 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qs#");
             guidingSouth = false;
         }
-        ddTone.click();
+        status.sound.click();
     }
 
     // Select Guide Rates
@@ -234,7 +238,7 @@ void GuideScreen::touchPoll() {
     // 1x Guide Rate 
     if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RG#");
-        ddTone.click();
+        status.sound.click();
         oneXisOn = true;
         eightXisOn = false;
         twentyXisOn = false;
@@ -245,7 +249,7 @@ void GuideScreen::touchPoll() {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RC#");
-        ddTone.click();
+        status.sound.click();
         oneXisOn = false;
         eightXisOn = true;
         twentyXisOn = false;
@@ -256,7 +260,7 @@ void GuideScreen::touchPoll() {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RM#");
-        ddTone.click();
+        status.sound.click();
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = true;
@@ -267,7 +271,7 @@ void GuideScreen::touchPoll() {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RS#");
-        ddTone.click();
+        status.sound.click();
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = false;
@@ -278,11 +282,11 @@ void GuideScreen::touchPoll() {
     if (p.y > SPIRAL_Y && p.y < (SPIRAL_Y + SPIRAL_BOXSIZE_Y) && p.x > SPIRAL_X && p.x < (SPIRAL_X + SPIRAL_BOXSIZE_X)) {
         if (!spiralOn) {
             display.setLocalCmd(":Mp#");
-            ddTone.click();
+            status.sound.click();
             spiralOn = true;
         } else {
             display.setLocalCmd(":Q#"); // stop moves
-            ddTone.click();
+            status.sound.click();
             spiralOn = false;
         }
     }
@@ -290,7 +294,7 @@ void GuideScreen::touchPoll() {
     // STOP moving
     if (p.y > STOP_Y && p.y < (STOP_Y + STOP_BOXSIZE_Y) && p.x > STOP_X && p.x < (STOP_X + STOP_BOXSIZE_X)) {
         display.setLocalCmd(":Q#");
-        ddTone.click();
+        status.sound.click();
         stopPressed = true;
         spiralOn = false;
         guidingEast = false;

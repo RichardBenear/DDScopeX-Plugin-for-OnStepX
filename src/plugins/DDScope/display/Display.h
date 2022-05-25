@@ -10,25 +10,6 @@
 #include <XPT2046_Touchscreen.h>
 #include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
 
-// OnStepX includes
-#include "../../../Common.h"
-#include "../../../lib/serial/Serial_Local.h"
-#include "../../../lib/tasks/OnTask.h"
-#include "../../../lib/sound/Sound.h"
-#include "../../../libApp/commands/ProcessCmds.h"
-#include "../../../telescope/mount/Mount.h"
-#include "../../../telescope/mount/goto/GoTo.h"
-#include "../../../lib/tls/GPS.h"
-#include "../../../lib/serial/Serial_Local.h"
-
-// Fonts
-#include "../fonts/Inconsolata_Bold8pt7b.h"
-#include "../fonts/UbuntuMono_Bold8pt7b.h"
-#include "../fonts/UbuntuMono_Bold11pt7b.h"
-#include "../fonts/UbuntuMono_Bold14pt7b.h"
-#include "../fonts/UbuntuMono_Bold16pt7b.h"
-#include "../fonts/ARCENA18pt7b.h"
-
 // DDScope specific
 #include "../../../pinmaps/Pins.DDT.h"
 #include "../odriveExt/ODriveExt.h"
@@ -43,6 +24,9 @@
 #include "../screens/OdriveScreen.h"
 #include "../screens/PlanetsScreen.h"
 #include "../screens/SettingsScreen.h"
+
+// OnStepX includes
+#include "../../../telescope/mount/status/Status.h"
 
 #define C_WIDTH  80
 #define C_HEIGHT 14
@@ -115,11 +99,11 @@ enum SelectedCatalog
   CUSTOM,
 };
 
-// other Display related objects
-static Sound ddTone;
+// Display related objects
 static Adafruit_ILI9486_Teensy tft;
 static XPT2046_Touchscreen ts(TS_CS, TS_IRQ); // Use Interrupts for touchscreen
 static TS_Point p;
+
 
 // =========================================
 class Display {

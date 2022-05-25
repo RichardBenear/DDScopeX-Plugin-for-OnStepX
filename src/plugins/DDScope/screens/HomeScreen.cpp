@@ -5,9 +5,9 @@
 
 #include "HomeScreen.h"
 #include "../display/Display.h"
-#include "../../../lib/tls/GPS.h"
-#include "../../../telescope/mount/Mount.h"
 #include "../odriveExt/OdriveExt.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
+#include "../../../telescope/mount/Mount.h"
 
 // Column 1 Home Screen
 #define COL1_LABELS_X            3
@@ -139,11 +139,11 @@ void HomeScreen::draw() {
 // update multiple status items
 void HomeScreen::updateStatusAll() {
   homeScreen.updateStatusCol1();
-  tasks.yield(100);
+  //tasks.yield(100);
   homeScreen.updateStatusCol2();
-  tasks.yield(100);
+  //tasks.yield(100);
   homeScreen.updateMountStatus();
-  tasks.yield(100);
+  //tasks.yield(100);
   homeScreen.updateHomeButtons();
 }
 
@@ -344,7 +344,6 @@ void HomeScreen::updateHomeButtons() {
   if (display.screenTouched || display.firstDraw || display.refreshScreen) {
     display.refreshScreen = false;
     if (display.screenTouched) display.refreshScreen = true;
-    char xchReply[10]="";
     int x_offset = 0;
     int y_offset = 0;
     tft.setTextColor(display.textColor);
@@ -432,12 +431,11 @@ void HomeScreen::updateHomeButtons() {
 void HomeScreen::touchPoll() {
   int x_offset = 0;
   int y_offset = 0;
-  char xchReply[12]="";
   
   // ======= Column 1 - Leftmost =======
   // Enable Azimuth motor
   if (p.x > ACTION_COL_1_X + x_offset && p.x < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_1_Y + y_offset && p.y <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (oDriveExt.odriveAZOff) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
       oDriveExt.odriveAZOff = false; // false = NOT off
@@ -452,7 +450,7 @@ void HomeScreen::touchPoll() {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   // Enable Altitude motor
   if (p.x > ACTION_COL_1_X + x_offset && p.x < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_1_Y + y_offset && p.y <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (oDriveExt.odriveALTOff) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
@@ -468,7 +466,7 @@ void HomeScreen::touchPoll() {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_1_X + x_offset && p.x < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_1_Y + y_offset && p.y <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     if (!stopButton) {
-      ddTone.click();
+      status.sound.click();
       stopButton = true;
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
@@ -482,7 +480,7 @@ void HomeScreen::touchPoll() {
   // Start/Stop Tracking
   y_offset = 0;
   if (p.x > ACTION_COL_2_X + x_offset && p.x < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_2_Y + y_offset && p.y <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (!mountStatus.isTracking()) {
       display.setLocalCmd(":Te#"); // Enable Tracking
     } else {
@@ -493,7 +491,7 @@ void HomeScreen::touchPoll() {
   // Set Night or Day Mode
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_2_X + x_offset && p.x < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_2_Y + y_offset && p.y <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (!display.nightMode) {
     display.nightMode = true; // toggle on
     } else {
@@ -507,7 +505,7 @@ void HomeScreen::touchPoll() {
   // Go to Home Telescope 
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_2_X + x_offset && p.x < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_2_Y + y_offset && p.y <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     display.setLocalCmd(":hC#"); // go HOME
     gotoHome = true;
   }
@@ -516,7 +514,7 @@ void HomeScreen::touchPoll() {
   // Park and UnPark Telescope
   y_offset = 0;
   if (p.x > ACTION_COL_3_X + x_offset && p.x < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_3_Y + y_offset && p.y <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (!mountStatus.isParked()) { 
       display.setLocalCmd(":hP#"); // go Park
     } else { // already parked
@@ -527,7 +525,7 @@ void HomeScreen::touchPoll() {
   // Set Park Position to Current
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_3_X + x_offset && p.x < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_3_Y + y_offset && p.y <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     display.setLocalCmd(":hQ#"); // Set Park Position
     parkWasSet = true;
   }
@@ -535,7 +533,7 @@ void HomeScreen::touchPoll() {
   // Fan Control Action Button
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_3_X + x_offset && p.x < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_3_Y + y_offset && p.y <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (!fanOn) {
     digitalWrite(FAN_ON_PIN, HIGH);
     fanOn = true;

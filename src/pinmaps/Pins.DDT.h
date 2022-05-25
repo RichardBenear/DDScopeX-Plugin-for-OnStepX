@@ -1,8 +1,8 @@
 // -------------------------------------------------------------------------------------------------
 // Pin map for DDScopeX Direct Drive Telescope (Teensy4.1)
-//#pragma once
+#pragma once
 
-//#if defined(ARDUINO_TEENSY41)
+#if defined(ARDUINO_TEENSY41)
 
 // DDScopeX Specific pins
 #define AZ_ENABLED_LED_PIN     20     // AZM Motor ON/OFF LED output active low
@@ -39,9 +39,9 @@
 #define STATUS_MOUNT_LED_PIN    7     // Output, active low
 
 // The PPS pin is a 3.3V logic input, OnStep measures time between rising edges and adjusts the internal sidereal clock frequency
-//#define PPS_SENSE_PIN           2     // Input Pin is connected but Not currently used ...PPS time source, GPS for example
+//#define PPS_SENSE_PIN           2     // Input Pin is connected to Teensy but GPS module does not support
 
-//#else
-//#error "Wrong processor for this configuration!"
+#else
+#error "Wrong processor for this configuration!"
 
-//#endif
+#endif

@@ -4,7 +4,6 @@
 #ifndef PLANETS_S_H
 #define PLANETS_S_H
 
-//#include <stdint.h>
 #include <Arduino.h>
 #include <Ephemeris.h>
 

@@ -10,6 +10,12 @@
 #include <Arduino.h>
 #include <SD.h>
 #include "Display.h"
+#include "../../../telescope/mount/Mount.h"
+#include "../../../lib/sound/Sound.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
+#include "../fonts/UbuntuMono_Bold8pt7b.h"
+#include "../fonts/UbuntuMono_Bold11pt7b.h"
+#include "../fonts/ARCENA18pt7b.h"
 
 #define TITLE_BOXSIZE_X         313
 #define TITLE_BOXSIZE_Y          40 
@@ -107,13 +113,13 @@ void Display::setLocalCmd(const char *command) {
 
 void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
-  delay(100);//tasks.yield(100);
+  //tasks.yield(100);
   strcpy(reply, SERIAL_LOCAL.receive()); 
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command); 
-  tasks.yield(160);
+  //tasks.yield(100);
   strcpy(reply, SERIAL_LOCAL.receive()); 
    //VF(command); VF("="); VL(serialLocal.receive());
    //tft.print(serialLocal.receive());
@@ -537,7 +543,7 @@ void Display::touchScreenPoll() {
     p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
     //VF("x="); V(p.x); VF(", y="); V(p.y); VF(", z="); VL(p.z); //for calibration
 
-    ddTone.click();
+    status.sound.click();
 
     // check for touchscreen action on selected Page
     switch (display.currentScreen) {
@@ -572,7 +578,7 @@ void Display::touchScreenPoll() {
         (display.currentScreen == CUST_CAT_SCREEN)) return; //skip checking these page menus since they don't have this menu setup
     
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X                   ) && p.x < (MENU_X                    + MENU_BOXSIZE_X)) {
-      ddTone.click();
+      status.sound.click();
       switch(display.currentScreen) {
           case HOME_SCREEN:    guideScreen.draw(); break;
           case GUIDE_SCREEN:    homeScreen.draw(); break;
@@ -587,7 +593,7 @@ void Display::touchScreenPoll() {
     }
     // == Center Left Menu - Column 2 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X +   MENU_X_SPACING) && p.x < (MENU_X +   MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      ddTone.click();
+      status.sound.click();
       switch(display.currentScreen) {
           case HOME_SCREEN:     focuserScreen.draw(); break;
           case GUIDE_SCREEN:    focuserScreen.draw(); break;
@@ -602,7 +608,7 @@ void Display::touchScreenPoll() {
     }
     // == Center Right Menu - Column 3 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 2*MENU_X_SPACING) && p.x < (MENU_X + 2*MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      ddTone.click();
+      status.sound.click();
       switch(display.currentScreen) {
           case HOME_SCREEN:      gotoScreen.draw(); break;
           case GUIDE_SCREEN:    alignScreen.draw(); break;
@@ -617,7 +623,7 @@ void Display::touchScreenPoll() {
     }
     // == Right Menu - Column 4 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 3*MENU_X_SPACING) && p.x < (MENU_X + 3*MENU_X_SPACING + MENU_BOXSIZE_X)) { 
-      ddTone.click();     
+      status.sound.click();     
       switch(display.currentScreen) {
           case HOME_SCREEN:       moreScreen.draw(); break;
           case GUIDE_SCREEN:      moreScreen.draw(); break;
@@ -733,7 +739,7 @@ float Display::getBatteryVoltage() {
     if (batLED) {
       digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // already on, then flash it off
       batLED = false;
-      ddTone.alert();
+      status.sound.alert();
     } else {
       digitalWrite(BATTERY_LOW_LED_PIN,LOW); // already off, then flash it on
       batLED = true;

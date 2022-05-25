@@ -7,6 +7,8 @@
 #include "ODriveScreen.h"
 #include "../display/Display.h"
 #include "../odriveExt/OdriveExt.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
+#include "../../../telescope/mount/Mount.h"
 
 #define OD_ERR_OFFSET_X           4 
 #define OD_ERR_OFFSET_Y         190 
@@ -356,7 +358,7 @@ void ODriveScreen::touchPoll() {
   // ===== Column 1 - Leftmost ======
   // Enable Azimuth motor
   if (p.x > OD_ACT_COL_1_X + x_offset && p.x < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_1_Y + y_offset && p.y <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (oDriveExt.odriveAZOff) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
       oDriveExt.odriveAZOff = false; // false = NOT off
@@ -371,7 +373,7 @@ void ODriveScreen::touchPoll() {
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   // Enable Altitude motor
   if (p.x > OD_ACT_COL_1_X + x_offset && p.x < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_1_Y + y_offset && p.y <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (oDriveExt.odriveALTOff) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
@@ -389,7 +391,7 @@ void ODriveScreen::touchPoll() {
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_2_X + x_offset && p.x < OD_ACT_COL_2_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_2_Y + y_offset && p.y <  OD_ACT_COL_2_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     if (!OdStopButton) {
-      ddTone.click();
+      status.sound.click();
       display.setLocalCmd(":Q#"); // stops move
       motor1.power(false); // turn off the motors
       motor2.power(false);
@@ -411,7 +413,7 @@ void ODriveScreen::touchPoll() {
     oDriveExt.clearOdriveErrors(ALT_MOTOR, ENCODER);
     oDriveExt.clearOdriveErrors(ALT_MOTOR, CONTROLLER);
     oDriveExt.clearOdriveErrors(ALT_MOTOR, MOTOR);
-    ddTone.click();
+    status.sound.click();
     clearOdriveErr = true;
   }
 
@@ -419,7 +421,7 @@ void ODriveScreen::touchPoll() {
   y_offset = -165;
   // AZ Gain HIGH
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y-box_height_adj) {
-    ddTone.click();
+    status.sound.click();
     AZgainHigh = true;
     AZgainDefault = false;
     oDriveExt.setOdriveVelGain(AZM_MOTOR, 1.8); // Set Velocity Gain
@@ -430,7 +432,7 @@ void ODriveScreen::touchPoll() {
     // AZ Gain DEFault
   y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y-box_height_adj) {
-    ddTone.click();
+    status.sound.click();
     AZgainHigh = false;
     AZgainDefault = true;
     oDriveExt.setOdriveVelGain(AZM_MOTOR, 1.5);
@@ -441,7 +443,7 @@ void ODriveScreen::touchPoll() {
     // ALT Gain HIGH
   y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y-box_height_adj) {
-    ddTone.click();
+    status.sound.click();
     ALTgainHigh = true;
     ALTgainDefault = false;
     oDriveExt.setOdriveVelGain(ALT_MOTOR, 0.5); // Set Velocity Gain
@@ -452,7 +454,7 @@ void ODriveScreen::touchPoll() {
     // ALT Gain DEFault
   y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y-box_height_adj) {
-    ddTone.click();
+    status.sound.click();
     ALTgainHigh = false;
     ALTgainDefault = true;
     oDriveExt.setOdriveVelGain(ALT, 0.3);
@@ -467,7 +469,7 @@ void ODriveScreen::touchPoll() {
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     if (!demoActive) {
       VLF("MSG: Demo ODrive");
-      ddTone.click();
+      status.sound.click();
       demoActive = true;
       //demoHandle = tasks.add(10000, 0, true, 7, oDriveExt.demoMode(true), "Demo On");
     } else {
@@ -475,7 +477,7 @@ void ODriveScreen::touchPoll() {
       VLF("MSG: Demo OFF ODrive");
       //tasks.remove(demoHandle);
       oDriveExt.demoMode(false);
-      ddTone.click();
+      status.sound.click();
       //tasks.setDurationComplete(tasks.getHandleByName("Demo On"));
     }
   }
@@ -487,7 +489,7 @@ void ODriveScreen::touchPoll() {
     digitalWrite(ODRIVE_RST, LOW);
     delay(1);
     digitalWrite(ODRIVE_RST, HIGH);
-    ddTone.click();
+    status.sound.click();
     resetOdriveFlag = true;
     AZgainHigh = false;
     AZgainDefault = true;
@@ -500,7 +502,7 @@ void ODriveScreen::touchPoll() {
   // motor positions while tuning ODrive with ODrive USB channel
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (ODpositionUpdateEnabled) {
       ODpositionUpdateEnabled = false;
     } else {

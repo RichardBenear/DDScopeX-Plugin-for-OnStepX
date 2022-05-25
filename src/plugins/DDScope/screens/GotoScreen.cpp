@@ -6,6 +6,9 @@
 #include "GotoScreen.h"
 #include "../display/Display.h"
 #include "../odriveExt/ODriveExt.h"
+#include "../fonts/UbuntuMono_Bold11pt7b.h"
+#include "../fonts/UbuntuMono_Bold8pt7b.h"
+#include "../../../telescope/mount/Mount.h"
 
 #define NUM_BUTTON_X         2
 #define NUM_BUTTON_Y         252
@@ -268,7 +271,7 @@ void GotoScreen::touchPoll() {
        && p.y <  (NUM_BUTTON_Y+row*(NUM_BUTTON_H+NUM_BUTTON_SPACING_Y)) + NUM_BUTTON_H 
        && p.x >   NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) 
        && p.x <  (NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) + NUM_BUTTON_W)) {
-        ddTone.click();
+        status.sound.click();
         buttonPosition=row*3+col;
         //VF("buttonPosition="); VL(buttonPosition);
         numDetected = true;
@@ -278,14 +281,14 @@ void GotoScreen::touchPoll() {
 
   // Select RA field
   if (p.y > RA_SELECT_Y && p.y < (RA_SELECT_Y + CO_BOXSIZE_Y) && p.x > RA_SELECT_X && p.x < (RA_SELECT_X + CO_BOXSIZE_X)) {
-    ddTone.click();
+    status.sound.click();
     RAselect = true; 
     DECselect = false; 
   }
 
   // Clear RA field
   if (p.y > RA_CLEAR_Y && p.y < (RA_CLEAR_Y + CO_BOXSIZE_Y) && p.x > RA_CLEAR_X && p.x < (RA_CLEAR_X + CO_BOXSIZE_X)) {
-    ddTone.click();
+    status.sound.click();
     RAclear = true; 
     RAtextIndex = 0;
     buttonPosition = 12; 
@@ -293,14 +296,14 @@ void GotoScreen::touchPoll() {
 
   // Select DEC field
   if (p.y > DEC_SELECT_Y && p.y < (DEC_SELECT_Y + CO_BOXSIZE_Y) && p.x > DEC_SELECT_X && p.x < (DEC_SELECT_X + CO_BOXSIZE_X)) {
-    ddTone.click();
+    status.sound.click();
     DECselect = true;
     RAselect = false;
   }
 
   // Clear DEC field
   if (p.y > DEC_CLEAR_Y && p.y < (DEC_CLEAR_Y + CO_BOXSIZE_Y) && p.x > DEC_CLEAR_X && p.x < (DEC_CLEAR_X + CO_BOXSIZE_X)) {
-    ddTone.click();
+    status.sound.click();
     DECclear = true; 
     DECtextIndex = 0;
     buttonPosition = 12; 
@@ -308,7 +311,7 @@ void GotoScreen::touchPoll() {
 
   // SEND Coordinates
   if (p.y > SEND_BUTTON_Y && p.y < (SEND_BUTTON_Y + SEND_BOXSIZE_Y) && p.x > SEND_BUTTON_X && p.x < (SEND_BUTTON_X + SEND_BOXSIZE_X)) {
-    ddTone.click();
+    status.sound.click();
     sendOn = true; 
     RAtextIndex = 0;
     DECtextIndex = 0;
@@ -327,21 +330,21 @@ void GotoScreen::touchPoll() {
 
   // Quick set Polaris Target
   if (p.y > POL_BUTTON_Y && p.y < (POL_BUTTON_Y + POL_BOXSIZE_Y) && p.x > POL_BUTTON_X && p.x < (POL_BUTTON_X + POL_BOXSIZE_X)) {
-    ddTone.click();
+    status.sound.click();
     setPolOn = true;
     gotoScreen.setTargPolaris(); 
   }
 
   // ==== Go To Target Coordinates ====
   if (p.y > GOTO_BUTTON_Y && p.y < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && p.x > GOTO_BUTTON_X && p.x < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
-    ddTone.click();
+    status.sound.click();
     goToPgBut = true;
     display.setLocalCmd(":MS#"); // move to
   }
 
   // ==== ABORT GOTO ====
   if (p.y > ABORT_BUTTON_Y && p.y < (ABORT_BUTTON_Y + GOTO_BOXSIZE_Y) && p.x > ABORT_BUTTON_X && p.x < (ABORT_BUTTON_X + GOTO_BOXSIZE_X)) {
-    ddTone.click();
+    status.sound.click();
     abortPgBut = true;
     display.setLocalCmd(":Q#"); // stops move
     motor1.power(false); // do this for safety reasons...mount may be colliding with something

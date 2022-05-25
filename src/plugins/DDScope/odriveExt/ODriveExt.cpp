@@ -7,10 +7,10 @@
 // ODrive communication via Teensy 4.0
 // Uses GitHub ODrive Arduino library by 
 
-#include "../display/Display.h"
-#include "ODriveExt.h"
 #include <ODriveArduino.h>
-#include "../../../lib/axis/motor/oDrive/ODrive.h"
+#include "ODriveExt.h"
+#include "../display/Display.h"
+#include "../../../telescope/mount/Mount.h"
 
 //==============================================
 //======= ODrive Controller Error Status =======

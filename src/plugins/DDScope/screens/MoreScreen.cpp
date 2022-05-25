@@ -13,8 +13,11 @@
 #include "MoreScreen.h"
 #include "CatalogScreen.h"
 #include "PlanetsScreen.h"
-#include "../odriveExt/OdriveExt.h"
 #include "../display/Display.h"
+#include "../odriveExt/OdriveExt.h"
+#include "../fonts/UbuntuMono_Bold8pt7b.h"
+#include "../fonts/UbuntuMono_Bold11pt7b.h"
+#include "../../../telescope/mount/Mount.h"
 
 // Catalog Selection buttons
 #define CAT_SEL_X               5
@@ -282,7 +285,7 @@ void MoreScreen::touchPoll() {
 
   // Home Page ICON Button
   if (p.x > 10 && p.x < 50 && p.y > 5 && p.y < 37) {
-    ddTone.click();
+    status.sound.click();
     homeScreen.draw();
     return;
   }
@@ -294,7 +297,7 @@ void MoreScreen::touchPoll() {
   // Sidereal Rate 
   if (p.y > TRACK_R_Y+y_offset && p.y < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && p.x > TRACK_R_X && p.x < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
       display.setLocalCmd(":TQ#");
-      ddTone.click();
+      status.sound.click();
       sideRate = true;
       lunarRate = false;
       kingRate = false;
@@ -304,7 +307,7 @@ void MoreScreen::touchPoll() {
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
   if (p.y > TRACK_R_Y+y_offset && p.y < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && p.x > TRACK_R_X && p.x < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
       display.setLocalCmd(":TL#");
-      ddTone.click();
+      status.sound.click();
       sideRate = false;
       lunarRate = true;
       kingRate = false;
@@ -314,7 +317,7 @@ void MoreScreen::touchPoll() {
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
   if (p.y > TRACK_R_Y+y_offset && p.y < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && p.x > TRACK_R_X && p.x < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
       display.setLocalCmd(":TK#");
-      ddTone.click();
+      status.sound.click();
       sideRate = false;
       lunarRate = false;
       kingRate = true;
@@ -324,7 +327,7 @@ void MoreScreen::touchPoll() {
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_GROUP_SPACER ;
   if (p.y > TRACK_R_Y+y_offset && p.y < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && p.x > TRACK_R_X && p.x < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
       display.setLocalCmd(":T+#");
-      ddTone.click();
+      status.sound.click();
       incTrackRate = true;
       decTrackRate = false;
       return;
@@ -333,7 +336,7 @@ void MoreScreen::touchPoll() {
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
   if (p.y > TRACK_R_Y+y_offset && p.y < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && p.x > TRACK_R_X && p.x < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
       display.setLocalCmd(":T-#");
-      ddTone.click();
+      status.sound.click();
       incTrackRate = false;
       decTrackRate = true;
       return;
@@ -342,7 +345,7 @@ void MoreScreen::touchPoll() {
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_GROUP_SPACER ;
   if (p.y > TRACK_R_Y+y_offset && p.y < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && p.x > TRACK_R_X && p.x < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
       display.setLocalCmd(":TR#");
-      ddTone.click();
+      status.sound.click();
       rstTrackRate = true;
       return;
   }
@@ -350,7 +353,7 @@ void MoreScreen::touchPoll() {
   y_offset = 0;
   // Filter Select Button
   if (p.x > FM_X + x_offset && p.x < FM_X + x_offset + FM_BOXSIZE_X && p.y > FM_Y + y_offset && p.y <  FM_Y + y_offset + FM_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     filterBut = true;
     // circular selection
     if (activeFilter == FM_NONE) {
@@ -371,28 +374,28 @@ void MoreScreen::touchPoll() {
   y_offset += FM_BOXSIZE_Y + FM_SPACER_Y;
   if (!yesCancelActive && p.x > MISC_X + x_offset && p.x < MISC_X + x_offset + MISC_BOXSIZE_X && p.y > MISC_Y + y_offset && p.y <  MISC_Y + y_offset + MISC_BOXSIZE_Y) {
     clrCustom = true;
-    ddTone.click();
+    status.sound.click();
     return;
   }
   // Clearing Custom Catalog "Yes"
   if (p.x > MISC_X && p.x < MISC_X + 30 && p.y > MISC_Y + y_offset && p.y <  MISC_Y + y_offset + MISC_BOXSIZE_Y) {
     yesBut = true;
     clrCustom = true;
-    ddTone.click();
+    status.sound.click();
     return;
   }
   // Clearing Custom catalog "Cancel"
   if (p.x > MISC_X + 40 && p.x < MISC_X + 120 && p.y > MISC_Y + y_offset && p.y <  MISC_Y + y_offset + MISC_BOXSIZE_Y) {
     cancelBut = true;
     clrCustom = true;
-    ddTone.click();
+    status.sound.click();
     return;
   }
 
   // Buzzer Button
   y_offset += MISC_BOXSIZE_Y + MISC_SPACER_Y;
   if (p.x > MISC_X + x_offset && p.x < MISC_X + x_offset + MISC_BOXSIZE_X && p.y > MISC_Y + y_offset && p.y <  MISC_Y + y_offset + MISC_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     if (!soundEnabled) {
       soundEnabled = true; // turn on
     } else {
@@ -403,7 +406,7 @@ void MoreScreen::touchPoll() {
 
   // **** Go To Target Coordinates ****
   if (p.y > GOTO_BUT_Y && p.y < (GOTO_BUT_Y + GOTO_M_BOXSIZE_Y) && p.x > GOTO_BUT_X && p.x < (GOTO_BUT_X + GOTO_M_BOXSIZE_X)) {
-    ddTone.click();
+    status.sound.click();
     goToButton = true;
     display.setLocalCmd(":MS#"); // move to
     return;
@@ -423,7 +426,7 @@ void MoreScreen::touchPoll() {
   y_offset = 0;
   for (uint16_t i=1; i<=cat_mgr.numCatalogs(); i++) {
     if (p.x > CAT_SEL_X && p.x < CAT_SEL_X + CAT_SEL_BOXSIZE_X && p.y > CAT_SEL_Y+y_offset  && p.y < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-      ddTone.click();
+      status.sound.click();
       
       // disable ALL_SKY filter if any DSO catalog...it's for STARS only
       if (i != 1 && activeFilter == FM_ALIGN_ALL_SKY) { // 1 is STARS
@@ -439,7 +442,7 @@ void MoreScreen::touchPoll() {
 
   // Planet Catalog Select Button
   if (p.x > CAT_SEL_X && p.x < CAT_SEL_X + CAT_SEL_BOXSIZE_X && p.y > CAT_SEL_Y+y_offset  && p.y < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     planetsScreen.draw();
     return;
   }
@@ -447,7 +450,7 @@ void MoreScreen::touchPoll() {
   // Treasure catalog select Button
   y_offset += CAT_SEL_SPACER;
   if (p.x > CAT_SEL_X && p.x < CAT_SEL_X + CAT_SEL_BOXSIZE_X && p.y > CAT_SEL_Y+y_offset  && p.y < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     catalogScreen.draw(cat_mgr.numCatalogs()+1);
     return;
   }
@@ -455,7 +458,7 @@ void MoreScreen::touchPoll() {
     // User custom catalog select Button
   y_offset += CAT_SEL_SPACER;
   if (p.x > CAT_SEL_X && p.x < CAT_SEL_X + CAT_SEL_BOXSIZE_X && p.y > CAT_SEL_Y+y_offset  && p.y < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-    ddTone.click();
+    status.sound.click();
     catalogScreen.draw(cat_mgr.numCatalogs()+2);
     return;
   }

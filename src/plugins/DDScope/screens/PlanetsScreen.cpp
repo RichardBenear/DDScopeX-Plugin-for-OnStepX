@@ -14,7 +14,6 @@
 #include "PlanetsScreen.h"
 #include "CatalogScreen.h"
 #include "../display/Display.h"
-#include <Ephemeris.h>
 #include "../../../telescope/mount/site/Site.h"
 
 // Catalog Selection buttons
@@ -342,7 +341,7 @@ void PlanetsScreen::touchPoll() {
     for (int row=0; row<PLANET_ROWS; row++) {
         if (p.y > PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING)) && p.y < (PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING))) + PLANET_H 
                 && p.x > PLANET_X && p.x < (PLANET_X+PLANET_W)) {
-            ddTone.click();
+            status.sound.click();
             planetButSelPos = row;
             planetsScreen.mapPlanetIndex(row);
             planetButDetected = true;
@@ -352,7 +351,7 @@ void PlanetsScreen::touchPoll() {
 
     // RETURN page button - reuse BACK button box size
     if (p.y > P_RETURN_Y && p.y < (P_RETURN_Y + BACK_H) && p.x > P_RETURN_X && p.x < (P_RETURN_X + P_RETURN_W)) {
-        ddTone.click();
+        status.sound.click();
         display.screenTouched = false;
         moreScreen.draw();
         return;

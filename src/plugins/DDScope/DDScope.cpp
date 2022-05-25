@@ -22,10 +22,12 @@
 //
 
 #include <Arduino.h>
-#include "../../Common.h"
 #include "DDScope.h"
+#include "../../pinmaps/Pins.DDT.h" // this must precede Display.h
 #include "display/Display.h"
-#include "screens/HomeScreen.h"
+#include "../../lib/tasks/OnTask.h"
+#include "../../lib/serial/Serial_Local.h"
+#include "../../telescope/mount/Mount.h"
 
 void updateWrapper() { dDScope.update(); }
 void touchWrapper() { display.touchScreenPoll(); }
@@ -99,8 +101,7 @@ void DDScope::update() {
     case PLANETS_SCREEN:  planetsScreen.updateStatus();
     case CUST_CAT_SCREEN: catalogScreen.updateStatus();
   }
-
-  tasks.yield(100);
+  tasks.yield();
 }
 
 DDScope dDScope;
