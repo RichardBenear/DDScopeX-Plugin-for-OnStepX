@@ -13,34 +13,40 @@
 #ifdef ODRIVE_MOTOR_PRESENT
 
 #include "../Motor.h"
+#include "../../../convert/Convert.h"
 
 // the following would be in the pinmap normally and should trigger #error on compile here when not present
 // for now, they fit your hardware as best as I can tell...
 #ifndef ODRIVE_SERIAL
-  #define ODRIVE_SERIAL Serial3
+  #define ODRIVE_SERIAL      Serial3
 #endif
 #ifndef ODRIVE_SERIAL_BAUD
   #define ODRIVE_SERIAL_BAUD 19200
 #endif
 #ifndef ODRIVE_RST_PIN
-  #define ODRIVE_RST_PIN 3
+  #define ODRIVE_RST_PIN     3
 #endif
 
 // odrive update rate default 10Hz
 #ifndef ODRIVE_UPDATE_MS
-  #define ODRIVE_UPDATE_MS 100
+  #define ODRIVE_UPDATE_MS   100
 #endif
 
 // odrive direct slewing ON or OFF (ODrive handles acceleration)
 #ifndef ODRIVE_SLEW_DIRECT
-  #define ODRIVE_SLEW_DIRECT OFF
+  #define ODRIVE_SLEW_DIRECT ON
+#endif
+
+// odrive direct slewing ON or OFF (ODrive handles acceleration)
+#ifndef ODRIVE_ABSOLUTE
+  #define ODRIVE_ABSOLUTE    ON
 #endif
 
 // odrive sync limit (for absolute encoders) OFF or specify the sync limit in arc-seconds
 // this should, I hope, allow you to limit just how far from the encoders you can sync. (+/-) to fine-tune the origin
 // with absolute encoders this protects you from exceeding the software min/max limits by > the amount specified
 #ifndef ODRIVE_SYNC_LIMIT
-  #define ODRIVE_SYNC_LIMIT OFF
+  #define ODRIVE_SYNC_LIMIT  OFF
 #endif
 
 #include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino 
@@ -101,6 +107,19 @@ class ODriveMotor : public Motor {
     void move();
 
   private:
+//  float o_position0 = 0;
+//  float o_position1 = 0;
+
+    // special command to send high resolution position to odrive
+    void setPosition(int motor_number, float position) {
+//    if (motor_number == 0) o_position0 = position;
+//    if (motor_number == 1) o_position1 = position;
+      char command[32];
+      sprintF(command, "p n %1.8f 0.0 0.0", position);
+      command[2] = '0' + motor_number;
+      ODRIVE_SERIAL.println(command);
+    }
+
     unsigned long lastSetPositionTime = 0;
     uint8_t oDriveMonitorHandle = 0;
     uint8_t taskHandle = 0;

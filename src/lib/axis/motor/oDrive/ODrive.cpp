@@ -115,7 +115,7 @@ void ODriveMotor::power(bool state) {
   }
   if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
     VF("WRN: ODrive"); V(axisNumber); VF(", ");
-    VLF("closed loop - command timeout!");
+    VLF("closed loop control - command timeout!");
     return;
   }
   V(axisPrefix); VLF("closed loop control - ");
@@ -123,7 +123,7 @@ void ODriveMotor::power(bool state) {
 }
 
 void ODriveMotor::setInstrumentCoordinateSteps(long value) {
-  #if ODRIVE_SYNC_LIMIT != OFF
+  #if ODRIVE_ABSOLUTE == ON && ODRIVE_SYNC_LIMIT != OFF
     noInterrupts();
     long index = value - motorSteps;
     interrupts();
@@ -140,16 +140,28 @@ DriverStatus ODriveMotor::getDriverStatus() {
 
 // resets motor and target angular position in steps, also zeros backlash and index
 void ODriveMotor::resetPositionSteps(long value) {
-  UNUSED(value);
-
   // this is where the initial odrive position in "steps" is brought into agreement with the motor position in steps
   // not sure on this... but code below ignores (value,) gets the odrive position convert to steps and resets the motor
   // there (as the odrive encoders are absolute.)
 
-  long oPosition = _oDriveDriver->GetPosition(axisNumber - 1)*TWO_PI*stepsPerMeasure; // axis1/2 are in steps per radian
-  Motor::resetPositionSteps(oPosition);
+  long oPosition;
+  // if (axisNumber - 1 == 0) oPosition = o_position0;
+  // if (axisNumber - 1 == 1) oPosition = o_position1;
+  oPosition = _oDriveDriver->GetPosition(axisNumber - 1)*TWO_PI*stepsPerMeasure; // axis1/2 are in steps per radian
 
-  // but what if the odrive encoders are incremental?  how to tell the odrive what its angular position is?
+  noInterrupts();
+  motorSteps    = oPosition;
+  targetSteps   = motorSteps;
+  #if ODRIVE_ABSOLUTE == OFF
+    // but what if the odrive encoders are incremental?  how to tell the odrive what its angular position is?
+    // here thinking we'll ignore it... sync OnStepX there and let the offset handle it
+    indexSteps  = value - motorSteps;
+  #else
+    UNUSED(value);
+    indexSteps = 0;
+  #endif
+  backlashSteps = 0;
+  interrupts();
 }
 
 // set frequency (+/-) in steps per second negative frequencies move reverse in direction (0 stops motion)
@@ -220,7 +232,7 @@ void ODriveMotor::poll() {
   #endif
   interrupts();
 
-  _oDriveDriver->SetPosition(axisNumber - 1, target/(TWO_PI*stepsPerMeasure));
+  setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
 }
 
 // sets dir as required and moves coord toward target at setFrequencySteps() rate
