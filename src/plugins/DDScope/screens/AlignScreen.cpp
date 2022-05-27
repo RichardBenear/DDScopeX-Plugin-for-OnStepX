@@ -231,7 +231,7 @@ void AlignScreen::updateStatus() {
 
     // Go to Home Position
     if (homeBut) {
-        if (!mountStatus.isHome() || mountStatus.isSlewing()) {
+        if (!lCmountStatus.isHome() || lCmountStatus.isSlewing()) {
             display.drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, false, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");  
         }
     } else {
@@ -267,7 +267,7 @@ void AlignScreen::updateStatus() {
     }
 
     // Go To Coordinates Button
-    if (gotoBut || mountStatus.isSlewing()) {
+    if (gotoBut || lCmountStatus.isSlewing()) {
         display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, false, GOTO_T_OFF_X-2, GOTO_T_OFF_Y, "Going");
     } else {
         display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, true, GOTO_T_OFF_X, GOTO_T_OFF_Y, "GOTO"); 
@@ -356,24 +356,15 @@ void AlignScreen::updateStatus() {
     Current_State = Next_State;
     switch(Current_State) {
       case Idle_State: {
-        if(!dateWasSet || !timeWasSet) {  // check if date and time have been set
-          if (firstLabel) {
-            display.canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "                    ");
-            display.canvPrint(ERROR_LABEL_X, ERROR_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H,   "Date or Time not set");
-            firstLabel=false;
-          }
-          Next_State = Idle_State;
-        } else if (startAlignBut) {
-            display.canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Home Scope to Start");
-            display.canvPrint(ERROR_LABEL_X, ERROR_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H,   "No Errors");
-            Next_State = Home_State;
+        if (startAlignBut) {
+          display.canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Home Scope to Start");
+          display.canvPrint(ERROR_LABEL_X, ERROR_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H,   "No Errors");
+          Next_State = Home_State;
         } else {
-          if (firstLabel) {
             display.canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Press Start to Align");
             firstLabel = false;  
-          }
-          Next_State = Idle_State;
         }
+        Next_State = Idle_State;
         break;
       } 
 
@@ -385,7 +376,7 @@ void AlignScreen::updateStatus() {
           if (e != CE_NONE) {
             display.canvPrint(ERROR_LABEL_X, ERROR_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Home Error");
             Next_State = Idle_State;
-          } else if (!mountStatus.isHome()) {
+          } else if (!lCmountStatus.isHome()) {
             display.setLocalCmd(":hC#"); // go HOME
             //sprintf(stateError, "Error %s", commandErrorStr[commandError]);
             display.canvPrint(ERROR_LABEL_X, ERROR_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, stateError);
@@ -397,7 +388,7 @@ void AlignScreen::updateStatus() {
             Next_State = Home_State;
           }*/
         }
-        if (mountStatus.isHome()) {
+        if (lCmountStatus.isHome()) {
           Next_State = Num_Stars_State;
         }
         break;
@@ -457,8 +448,6 @@ void AlignScreen::updateStatus() {
         if (gotoBut) {
           display.setLocalCmd(":MS#");
           gotoBut = false;
-          //sprintf(stateError, "Error %s", commandErrorStr[commandError]);
-          display.canvPrint(ERROR_LABEL_X, ERROR_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, stateError);
           Next_State = Wait_For_Slewing_State;
         } else { // wait for GoTo button press
           Next_State = Goto_State;
@@ -467,7 +456,7 @@ void AlignScreen::updateStatus() {
       }
 
       case Wait_For_Slewing_State: {
-        if (mountStatus.isSlewing()) { //|| trackingSyncInProgress()) {
+        if (lCmountStatus.isSlewing()) { //|| trackingSyncInProgress()) {
           if (firstLabel) {
             display.canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Slewing");
             firstLabel=false;
@@ -490,8 +479,6 @@ void AlignScreen::updateStatus() {
         } else {  // align this star
           display.setLocalCmd(":A+#"); // add star to alignment
           alignBut = false;
-          //sprintf(stateError, "Error %s", commandErrorStr[commandError]);
-          display.canvPrint(ERROR_LABEL_X, ERROR_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, stateError);
         
           if (alignCurStar <= numAlignStars) { // more stars to align? (alignCurStar was incremented by cmd A+)
             Next_State = Select_Catalog_State;
@@ -506,8 +493,6 @@ void AlignScreen::updateStatus() {
         if (saveAlignBut) {
           display.canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Writing Align Data");
           display.setLocalCmd(":AW#");
-          //sprintf(stateError, "Error %s", commandErrorStr[commandError]);
-          display.canvPrint(ERROR_LABEL_X, ERROR_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, stateError);
   
           saveAlignBut = false;
           Next_State = Idle_State;

@@ -129,6 +129,7 @@ class Display {
 
     // Status and updates
     Screen currentScreen = HOME_SCREEN;
+    Screen lastScreen = GUIDE_SCREEN; // must be different than current to force initial draw of HOME screen
     void updateScreenStatus();
     void touchScreenPoll();    
     void updateOnStepCmdStatus();
@@ -201,7 +202,7 @@ class SHC {
 extern SHC shc;
 
 // Local command channel mount status
-class MountStatus {
+class LCmountStatus {
   public:
     bool isSlewing();
     bool isParked();
@@ -212,6 +213,6 @@ class MountStatus {
     char xchReply[10];
 };
 
-extern MountStatus mountStatus;
+extern LCmountStatus lCmountStatus;
 
 #endif

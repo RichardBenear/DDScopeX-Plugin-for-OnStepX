@@ -16,6 +16,7 @@
 #include "../fonts/UbuntuMono_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "../fonts/ARCENA18pt7b.h"
+#include "../../../lib/tasks/OnTask.h"
 
 #define TITLE_BOXSIZE_X         313
 #define TITLE_BOXSIZE_Y          40 
@@ -46,18 +47,20 @@
 // ========= Initialize Display ============
 // =========================================
 void Display::init() {
-  SPI.begin(); delay(1);
-  tft.begin(); delay(1);
+  //SPI.begin(); delay(1); //started in XPT2046_Touchscreen.cpp
 
-  VLF("MSG: Display started");
+  // Start TouchScreen
   if (!ts.begin()) {
-    VLF("MSG: Unable to start touchscreen");
+    VLF("MSG: TouchScreen, unable to start");
   } else {
     pinMode(TS_IRQ, INPUT_PULLUP); // XPT2046 library doesn't turn on pullup
     ts.setRotation(3); // touchscreen rotation
-    VLF("MSG: Touchscreen started");
+    VLF("MSG: TouchScreen, started");
   }
-  
+
+  // Start Display - Note: should follow the touchscreen begin since SPI.begin is done in Touchscreen
+  VLF("MSG: Display, started"); 
+  tft.begin(); delay(1);
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
   tft.fillScreen(BLACK); 
 }
@@ -65,9 +68,9 @@ void Display::init() {
 // initialize the SD card and boot screen
 void Display::sdInit() {
   if (!SD.begin(BUILTIN_SDCARD)) {
-    VLF("MSG: SD card initialize failed");
+    VLF("MSG: SD Card, initialize failed");
   } else {
-    VLF("MSG: SD card initialized");
+    VLF("MSG: SD Card, initialized");
   }
 
   // draw bootup screen
@@ -113,13 +116,13 @@ void Display::setLocalCmd(const char *command) {
 
 void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
-  //tasks.yield(100);
+  tasks.yield(100);
   strcpy(reply, SERIAL_LOCAL.receive()); 
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command); 
-  //tasks.yield(100);
+  tasks.yield(100);
   strcpy(reply, SERIAL_LOCAL.receive()); 
    //VF(command); VF("="); VL(serialLocal.receive());
    //tft.print(serialLocal.receive());
@@ -440,16 +443,15 @@ void Display::updateCommonStatus() {
 
   // One Time update the SHC LST and Latitude if GPS locked
   if (tls.isReady() && firstGPS) {
-    //cat_mgr.setLstT0(shc.getLstT0()); 
-   // cat_mgr.setLat(shc.getLat());
-    //VL(shc.getLat()); VL(shc.getLstT0());
+    cat_mgr.setLstT0(shc.getLstT0()); 
+    cat_mgr.setLat(shc.getLat());
     firstGPS = false;
   }
 
   int y_offset = 0;
   // Column 1
   // Current RA, Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-  //display.getLocalCmdTrim(":GR#", ra_hms);
+  display.getLocalCmdTrim(":GR#", ra_hms);
   if ((strcmp(currentRA, ra_hms)) || firstDraw) {
     display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
     strcpy(currentRA, ra_hms);
@@ -457,7 +459,7 @@ void Display::updateCommonStatus() {
 
 // Target RA, Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
   y_offset +=COM_LABEL_Y_SPACE; 
-  //display.getLocalCmdTrim(":Gr#", tra_hms);
+  display.getLocalCmdTrim(":Gr#", tra_hms);
   if ((strcmp(currentTargRA, tra_hms)) || firstDraw) {
     display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tra_hms);
     strcpy(currentTargRA, tra_hms);
@@ -465,7 +467,7 @@ void Display::updateCommonStatus() {
 
 // Current DEC
    y_offset +=COM_LABEL_Y_SPACE; 
-  //display.getLocalCmdTrim(":GD#", dec_dms);
+  display.getLocalCmdTrim(":GD#", dec_dms);
   if ((strcmp(currentDEC, dec_dms)) || firstDraw) {
     display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, dec_dms);
     strcpy(currentDEC, dec_dms);
@@ -473,7 +475,7 @@ void Display::updateCommonStatus() {
 
   // Target DEC
   y_offset +=COM_LABEL_Y_SPACE;  
-  //display.getLocalCmdTrim(":Gd#", tdec_dms); 
+  display.getLocalCmdTrim(":Gd#", tdec_dms); 
   if ((strcmp(currentTargDEC, tdec_dms)) || firstDraw) {
     display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tdec_dms);
     strcpy(currentTargDEC, tdec_dms);
@@ -490,16 +492,16 @@ void Display::updateCommonStatus() {
   // first, convert them to Double
   shc.hmsToDouble(&currentTargRA_d, currentTargRA);
   shc.dmsToDouble(&currentTargDEC_d, currentTargDEC, true, true);
- /*
+ 
   // convert to Horizon
   currentTargRA_d *= 15;
   cat_mgr.EquToHor(currentTargRA_d, currentTargDEC_d, &talt_d, &tazm_d);
-*/
+
   // Get Current ALT and AZ and display them as Double
-  //display.getLocalCmdTrim(":GZ#", azmDMS); // DDD*MM'SS# 
+  display.getLocalCmdTrim(":GZ#", azmDMS); // DDD*MM'SS# 
   shc.dmsToDouble(&azm_d, azmDMS, false, true);
 
-  //display.getLocalCmdTrim(":GA#", altDMS);	// sDD*MM'SS#
+  display.getLocalCmdTrim(":GA#", altDMS);	// sDD*MM'SS#
   shc.dmsToDouble(&alt_d, altDMS, true, true);
 
   //--Current-- AZM float
@@ -545,21 +547,6 @@ void Display::touchScreenPoll() {
 
     status.sound.click();
 
-    // check for touchscreen action on selected Page
-    switch (display.currentScreen) {
-        case HOME_SCREEN:     homeScreen.touchPoll(); break;
-  //      case GUIDE_SCREEN:    guideScreen.touchPoll(); break;
-  //      case FOCUSER_SCREEN:  focuserScreen.touchPoll(); break;
-  //      case GOTO_SCREEN:     gotoScreen.touchPoll(); break;
-  //      case MORE_SCREEN:     moreScreen.touchPoll(); break;
-  //      case ODRIVE_SCREEN:   odriveScreen.touchPoll(); break;
-  //      case SETTINGS_SCREEN: settingsScreen.touchPoll(); break;
-  //      case ALIGN_SCREEN:    alignScreen.touchPoll(); break;
-  //      case CATALOG_SCREEN:  catalogScreen.touchPoll(); break;
-  //      case PLANETS_SCREEN:  planetsScreen.touchPoll(); break;
-        default:              homeScreen.touchPoll(); break;
-    }
-
     // =============== MENU MAP ================
     // Current Page   |Cur |Col1|Col2|Col3|Col4|
     // Home-----------| Ho | Gu | Fo | GT | Mo |
@@ -570,7 +557,7 @@ void Display::touchScreenPoll() {
     // ODrive---------| Od | Ho | Se | Al | Xs |
     // Settings-------| Se | Ho | Fo | Al | Od |
     // Alignment------| Al | Ho | Fo | Gu | Od |
-    /*
+    
     // Detect which Menu page requested
     // == LeftMost Menu Button ==
     if ((display.currentScreen == CATALOG_SCREEN) || 
@@ -635,7 +622,22 @@ void Display::touchScreenPoll() {
           case ALIGN_SCREEN:    odriveScreen.draw(); break;
           default:                homeScreen.draw(); break;
       }
-    }*/
+    }
+
+      // Now check for touchscreen action on selected Page
+    switch (display.currentScreen) {
+        case HOME_SCREEN:     homeScreen.touchPoll(); break;
+        case GUIDE_SCREEN:    guideScreen.touchPoll(); break;
+        case FOCUSER_SCREEN:  focuserScreen.touchPoll(); break;
+        case GOTO_SCREEN:     gotoScreen.touchPoll(); break;
+        case MORE_SCREEN:     moreScreen.touchPoll(); break;
+        case ODRIVE_SCREEN:   odriveScreen.touchPoll(); break;
+        case SETTINGS_SCREEN: settingsScreen.touchPoll(); break;
+        case ALIGN_SCREEN:    alignScreen.touchPoll(); break;
+        case CATALOG_SCREEN:  catalogScreen.touchPoll(); break;
+        case PLANETS_SCREEN:  planetsScreen.touchPoll(); break;
+        default:              homeScreen.touchPoll(); break;
+    }
     display.screenTouched = true;
   } 
 }
@@ -730,8 +732,8 @@ void Display::drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint1
 
 float Display::getBatteryVoltage() {
 // ** Low Battery LED **
- float battery_voltage = 22;//odrive.getOdriveBusVoltage();
-//VF("MSG: Battery Voltage="); VL(battery_voltage);
+  float battery_voltage = 0;
+  oDriveExt.getOdriveBusVoltage();
   if (battery_voltage > BATTERY_LOW_VOLTAGE) { // battery ok
     digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // turn off low battery low LED
     batLED = false;
@@ -752,9 +754,7 @@ float Display::getBatteryVoltage() {
 }
 
 void Display::soundFreq(int freq) {
-    #if STATUS_BUZZER >= 0
-      tone(STATUS_BUZZER_PIN, STATUS_BUZZER, freq);
-    #endif
+  tone(STATUS_BUZZER_PIN, STATUS_BUZZER, freq);
 }
 
 //================ SHC routines ====================
@@ -870,25 +870,25 @@ double SHC::getLat() {
 
 // =============== Mount Status ===============
 // Use local command channel to get mount status
-bool MountStatus::isHome() {
+bool LCmountStatus::isHome() {
   char reply[20];
   display.getLocalCmdTrim(":GU#", reply); // Get telescope status with reply and # trimmed
   if (strstr(reply,"H")) return true; else return false;
 }
 
-bool MountStatus::isSlewing() {
+bool LCmountStatus::isSlewing() {
   char reply[20];
   display.getLocalCmdTrim(":GU#", reply); // Get telescope status with reply and # trimmed
   if (strstr(reply,"N")) return false; else return true;
 }
 
-bool MountStatus::isParked() {
+bool LCmountStatus::isParked() {
   char reply[20];
   display.getLocalCmdTrim(":GU#", reply); // Get telescope status with reply and # trimmed
   if (strstr(reply,"P")) return true; else return false;
 }
 
-bool MountStatus::isTracking() {
+bool LCmountStatus::isTracking() {
   char reply[20];
   display.getLocalCmdTrim(":GU#", reply); // Get telescope status with reply and # trimmed
   if (strstr(reply,"n")) return false; else return true;
@@ -896,4 +896,4 @@ bool MountStatus::isTracking() {
 
 Display display;
 SHC shc;
-MountStatus mountStatus;
+LCmountStatus lCmountStatus;

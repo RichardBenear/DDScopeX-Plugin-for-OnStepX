@@ -242,7 +242,7 @@ void GotoScreen::updateStatus() {
       display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, true, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
       goToPgBut = false;
     } else {
-      if (!mountStatus.isSlewing()) { 
+      if (!lCmountStatus.isSlewing()) { 
         display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, false, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
       } else {
         display.refreshScreen = true;

@@ -8,6 +8,7 @@
 #include "../odriveExt/OdriveExt.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../../../telescope/mount/Mount.h"
+#include "../../../lib/tasks/OnTask.h"
 
 // Column 1 Home Screen
 #define COL1_LABELS_X            3
@@ -47,8 +48,8 @@
 // ============================================
 void HomeScreen::draw() {
   display.currentScreen = HOME_SCREEN;
-  tft.setTextSize(1);
   display.updateColors();
+  tft.setTextSize(1);
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
   display.drawMenuButtons();
@@ -56,7 +57,6 @@ void HomeScreen::draw() {
   tft.drawFastVLine(165, 155, 165,display.textColor);
   tft.setFont(&Inconsolata_Bold8pt7b); 
   display.drawCommonStatusLabels();
-  display.updateOnStepCmdStatus();
   
   //========== Status Text ===========
   // Draw Status Labels for Real Time data only here, no data displayed
@@ -139,12 +139,17 @@ void HomeScreen::draw() {
 // update multiple status items
 void HomeScreen::updateStatusAll() {
   homeScreen.updateStatusCol1();
-  //tasks.yield(100);
+  tasks.yield(100);
   homeScreen.updateStatusCol2();
-  //tasks.yield(100);
+  tasks.yield(100);
   homeScreen.updateMountStatus();
-  //tasks.yield(100);
+  tasks.yield(100);
   homeScreen.updateHomeButtons();
+  tasks.yield(100);
+  display.updateCommonStatus();
+  tasks.yield(100);
+  display.updateOnStepCmdStatus();
+  tasks.yield(100);
 }
 
 // =================================================
@@ -231,7 +236,6 @@ void HomeScreen::updateStatusCol1() {
     }
     lastBatVoltage = currentBatVoltage;
   }
-  
 }
 
 // =================================================
@@ -314,7 +318,7 @@ void HomeScreen::updateMountStatus() {
   int y_offset = COL1_LABEL_SPACING*6+1;
 
   // Parking Status
-  if (mountStatus.isParked()) {
+  if (lCmountStatus.isParked()) {
     display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Parked    ");
   } else { 
     display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Not Parked");
@@ -322,7 +326,7 @@ void HomeScreen::updateMountStatus() {
   
   // Slewing
   y_offset +=COL1_LABEL_SPACING;
-  if (mountStatus.isSlewing()) {
+  if (lCmountStatus.isSlewing()) {
     display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, "  Slewing   ");
   } else {
     display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Not Slewing");
@@ -330,7 +334,7 @@ void HomeScreen::updateMountStatus() {
 
   // Homing Status
   y_offset +=COL1_LABEL_SPACING;
-  if (mountStatus.isHome()) {
+  if (lCmountStatus.isHome()) {
     display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Homed  ");   
   } else { 
     display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, "Not Home");
@@ -344,6 +348,7 @@ void HomeScreen::updateHomeButtons() {
   if (display.screenTouched || display.firstDraw || display.refreshScreen) {
     display.refreshScreen = false;
     if (display.screenTouched) display.refreshScreen = true;
+
     int x_offset = 0;
     int y_offset = 0;
     tft.setTextColor(display.textColor);
@@ -374,7 +379,7 @@ void HomeScreen::updateHomeButtons() {
     // ============== Column 2 ===============
     y_offset = 0;
     // Start / Stop Tracking
-    if (!mountStatus.isTracking()) { 
+    if (!lCmountStatus.isTracking()) { 
       display.drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "Start Track");
     } else { 
       display.drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,     " Tracking  ");
@@ -399,7 +404,7 @@ void HomeScreen::updateHomeButtons() {
     // ============== Column 3 ===============
     // Park / unPark Telescope
     y_offset = 0;
-    if (mountStatus.isParked()) { 
+    if (lCmountStatus.isParked()) { 
       display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, " Parked ");
     } else { 
       display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "  Un Park ");
@@ -422,7 +427,6 @@ void HomeScreen::updateHomeButtons() {
     }
     display.screenTouched = false;
   }
-  display.firstDraw = false;
 }
 
 // =================================================
@@ -481,7 +485,7 @@ void HomeScreen::touchPoll() {
   y_offset = 0;
   if (p.x > ACTION_COL_2_X + x_offset && p.x < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_2_Y + y_offset && p.y <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     status.sound.click();
-    if (!mountStatus.isTracking()) {
+    if (!lCmountStatus.isTracking()) {
       display.setLocalCmd(":Te#"); // Enable Tracking
     } else {
       display.setLocalCmd(":Td#"); // Disable Tracking
@@ -515,7 +519,7 @@ void HomeScreen::touchPoll() {
   y_offset = 0;
   if (p.x > ACTION_COL_3_X + x_offset && p.x < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_3_Y + y_offset && p.y <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     status.sound.click();
-    if (!mountStatus.isParked()) { 
+    if (!lCmountStatus.isParked()) { 
       display.setLocalCmd(":hP#"); // go Park
     } else { // already parked
       display.setLocalCmd(":hR#"); // Un park position

@@ -66,41 +66,44 @@ void DDScope::init() {
   SerialLocal serialLocal;
 
   // Initialize TFT Display and Touchscreen
-  VLF("MSG: Initializing Display");
+  VLF("MSG: Display, Initializing");
   display.init();
+  homeScreen.draw();
 
   // Initialize the SD card and startup screen
-  VLF("MSG: Initializing SD Card");
   display.sdInit();
-
-  VLF("MSG: Initializing ODrive mount");
-  mount.init();
 
   // task parameters are:
   // handle  = tasks.add(period_ms, duration_ms, repeat_true_or_false, priority_0to7, callback_function);
   // success = tasks.requestHardwareTimer(handle, hardware_timer_number_1to4, hardware_timer_priority_0to255);
   VF("MSG: Setup, start screen update status polling task (rate 2000 ms priority 7)... ");
-  if (tasks.add(2000, 0, true, 7, updateWrapper, "UpdateStatus"))  { VLF("success"); } else { VLF("FAILED!"); }
+  if (tasks.add(5000, 0, true, 7, updateWrapper, "UpdateScreen"))  { VLF("success"); } else { VLF("FAILED!"); }
 
-  VF("MSG: Setup, start input touch screen polling task (rate 300 ms priority 6)... ");
-  if (tasks.add(300, 0, true, 6, touchWrapper, "TouchScreen"))  { VLF("success"); } else { VLF("FAILED!"); }
+  VF("MSG: Setup, start input touch screen polling task (rate 300 ms priority 4)... ");
+  if (tasks.add(300, 0, true, 4, touchWrapper, "TouchScreen"))  { VLF("success"); } else { VLF("FAILED!"); }
 }
 
 void DDScope::update() {
-
-  switch (display.currentScreen) {
-    case HOME_SCREEN:     homeScreen.updateStatusAll();
-    case GUIDE_SCREEN:    guideScreen.updateStatus();
-    case FOCUSER_SCREEN:  focuserScreen.updateStatus();
-    case GOTO_SCREEN:     gotoScreen.updateStatus();
-    case MORE_SCREEN:     moreScreen.updateStatus();
-    case ODRIVE_SCREEN:   odriveScreen.updateStatus();
-    case SETTINGS_SCREEN: settingsScreen.updateStatus();
-    case ALIGN_SCREEN:    alignScreen.updateStatus();
-    case CATALOG_SCREEN:  catalogScreen.updateStatus();
-    case PLANETS_SCREEN:  planetsScreen.updateStatus();
-    case CUST_CAT_SCREEN: catalogScreen.updateStatus();
+  if (display.lastScreen != display.currentScreen) {
+    display.firstDraw = true;
+    display.lastScreen = display.currentScreen;
   }
+  
+  switch (display.currentScreen) {
+    case HOME_SCREEN:     homeScreen.updateStatusAll();  break;
+    case GUIDE_SCREEN:    guideScreen.updateStatus();    break;
+    case FOCUSER_SCREEN:  focuserScreen.updateStatus();  break;
+    case GOTO_SCREEN:     gotoScreen.updateStatus();     break;
+    case MORE_SCREEN:     moreScreen.updateStatus();     break;
+    case ODRIVE_SCREEN:   odriveScreen.updateStatus();   break;
+    case SETTINGS_SCREEN: settingsScreen.updateStatus(); break;
+    case ALIGN_SCREEN:    alignScreen.updateStatus();    break;
+    case CATALOG_SCREEN:  catalogScreen.updateStatus();  break;
+    case PLANETS_SCREEN:  planetsScreen.updateStatus();  break;
+    case CUST_CAT_SCREEN: catalogScreen.updateStatus();  break;
+  }
+  display.firstDraw = false;
+  
   tasks.yield();
 }
 

@@ -237,7 +237,7 @@ void MoreScreen::updateStatus() {
       display.drawButton( GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, true, GOTO_TXT_OFF_X-2, GOTO_TXT_OFF_Y, "Going");
       goToButton = false;
     } else {
-      if (!mountStatus.isSlewing()) { 
+      if (!lCmountStatus.isSlewing()) { 
         display.drawButton( GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, false, GOTO_TXT_OFF_X+5, GOTO_TXT_OFF_Y, "GoTo"); 
       } else {
         display.refreshScreen = true;
