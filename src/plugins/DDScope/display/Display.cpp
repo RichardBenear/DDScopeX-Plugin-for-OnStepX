@@ -47,7 +47,32 @@
 // ========= Initialize Display ============
 // =========================================
 void Display::init() {
-  //SPI.begin(); delay(1); //started in XPT2046_Touchscreen.cpp
+  
+  pinMode(ALT_THERMISTOR_PIN, INPUT); // Analog input
+  pinMode(AZ_THERMISTOR_PIN, INPUT); // Analog input
+  
+  pinMode(ODRIVE_RST, OUTPUT);
+  digitalWrite(ODRIVE_RST, LOW); // start ODrive in Reset
+
+  pinMode(AZ_ENABLED_LED_PIN, OUTPUT);
+  digitalWrite(AZ_ENABLED_LED_PIN,HIGH); // LED OFF, active low 
+  pinMode(ALT_ENABLED_LED_PIN, OUTPUT);
+  digitalWrite(ALT_ENABLED_LED_PIN,HIGH); // LED OFF, active low
+
+  pinMode(BATTERY_LOW_LED_PIN, OUTPUT); 
+  digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // LED OFF, active low
+
+  pinMode(FAN_ON_PIN, OUTPUT); 
+  digitalWrite(FAN_ON_PIN,LOW); // Fan is on active high
+
+  pinMode(FOCUSER_EN_PIN, OUTPUT); 
+  digitalWrite(FOCUSER_EN_PIN,HIGH); // Focuser enable is active low
+  pinMode(FOCUSER_STEP_PIN, OUTPUT); 
+  digitalWrite(FOCUSER_STEP_PIN,LOW); // Focuser Step is active high
+  pinMode(FOCUSER_DIR_PIN, OUTPUT); 
+  digitalWrite(FOCUSER_DIR_PIN,LOW); // Focuser Direction
+  pinMode(FOCUSER_SLEEP_PIN, OUTPUT); 
+  digitalWrite(FOCUSER_SLEEP_PIN,HIGH); // Focuser motor driver not sleeping
 
   // Start TouchScreen
   if (!ts.begin()) {
@@ -62,7 +87,8 @@ void Display::init() {
   VLF("MSG: Display, started"); 
   tft.begin(); delay(1);
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
-  tft.fillScreen(BLACK); 
+  display.sdInit(); delay(2000);
+  homeScreen.draw();
 }
 
 // initialize the SD card and boot screen
@@ -80,6 +106,7 @@ void Display::sdInit() {
     return;
   } 
 
+  tft.fillScreen(BLACK); 
   tft.setTextColor(YELLOW);
   display.drawPic(&StarMaps, 1, 0, 320, 480);  
   display.drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
@@ -95,15 +122,15 @@ void Display::sdInit() {
 }
 
 // Initialize some Mount parameters
-//Display::mountInit() {
-  //display.setLocalCmd(":SG+07:00#"); // Set Default Time Zone
-  //display.setLocalCmd(":Sh-03#"); //Set horizon limit -3 deg
-  //display.setLocalCmd(":So89#"); // Set overhead limit 89 deg
-  //display.setLocalCmd(":SMMy Home#"); // Set Site 0 name "Home"
+void Display::DDmountInit() {
+  display.setLocalCmd(":SG+07:00#"); // Set Default Time Zone
+  display.setLocalCmd(":Sh-03#"); //Set horizon limit -3 deg
+  display.setLocalCmd(":So89#"); // Set overhead limit 89 deg
+  display.setLocalCmd(":SMMy Home#"); // Set Site 0 name "Home"
   //display.setLocalCmd(":SX93,1#"); // 2x slew speed
   //display.setLocalCmd(":SX93,2#"); // 1.5x slew speed
-  //display.setLocalCmd(":SX93,3#"); // 1.0x slew speed
-//}
+  display.setLocalCmd(":SX93,3#"); // 1.0x slew speed
+}
 
 // ======= Use Local Command Channel ========
 void Display::setLocalCmd(char *command) {
@@ -210,19 +237,53 @@ void Display::setDayNight() {
   }
 }
 
-//CommandError commandError = CE_NONE;; 
+// --------------------------------------------------------------------------
+// copied this from ProcessCmds.cpp since the following is declared private:
+#define L_CE_NONE                    "No Errors"
+#define L_CE_0                       "reply 0"
+#define L_CE_CMD_UNKNOWN             "command unknown"
+#define L_CE_REPLY_UNKNOWN           "invalid reply"
+#define L_CE_PARAM_RANGE             "parameter out of range"
+#define L_CE_PARAM_FORM              "bad parameter format"
+#define L_CE_ALIGN_FAIL              "align failed"
+#define L_CE_ALIGN_NOT_ACTIVE        "align not active"
+#define L_CE_NOT_PARKED_OR_AT_HOME   "not parked or at home"
+#define L_CE_PARKED                  "already parked"
+#define L_CE_PARK_FAILED             "park failed"
+#define L_CE_NOT_PARKED              "not parked"
+#define L_CE_NO_PARK_POSITION_SET    "no park position set"
+#define L_CE_GOTO_FAIL               "goto failed"
+#define L_CE_LIBRARY_FULL            "library full"
+#define L_CE_GOTO_ERR_BELOW_HORIZON  "goto below horizon"
+#define L_CE_GOTO_ERR_ABOVE_OVERHEAD "goto above overhead"
+#define L_CE_SLEW_ERR_IN_STANDBY     "slew in standby"
+#define L_CE_SLEW_ERR_IN_PARK        "slew in park"
+#define L_CE_GOTO_ERR_GOTO           "already in goto"
+#define L_CE_SLEW_ERR_OUTSIDE_LIMITS "outside limits"
+#define L_CE_SLEW_ERR_HARDWARE_FAULT "hardware fault"
+#define L_CE_MOUNT_IN_MOTION         "mount in motion"
+#define L_CE_GOTO_ERR_UNSPECIFIED    "other"
+#define L_CE_UNK                     "unknown"
+
+static const char cmdErrStr[30][25] = {
+  L_CE_NONE, L_CE_0, L_CE_CMD_UNKNOWN, L_CE_REPLY_UNKNOWN, L_CE_PARAM_RANGE,
+  L_CE_PARAM_FORM, L_CE_ALIGN_FAIL, L_CE_ALIGN_NOT_ACTIVE, L_CE_NOT_PARKED_OR_AT_HOME,
+  L_CE_PARKED, L_CE_PARK_FAILED, L_CE_NOT_PARKED, L_CE_NO_PARK_POSITION_SET, L_CE_GOTO_FAIL,
+  L_CE_LIBRARY_FULL, L_CE_GOTO_ERR_BELOW_HORIZON, L_CE_GOTO_ERR_ABOVE_OVERHEAD,
+  L_CE_SLEW_ERR_IN_STANDBY, L_CE_SLEW_ERR_IN_PARK, L_CE_GOTO_ERR_GOTO, L_CE_SLEW_ERR_OUTSIDE_LIMITS,
+  L_CE_SLEW_ERR_HARDWARE_FAULT, L_CE_MOUNT_IN_MOTION, L_CE_GOTO_ERR_UNSPECIFIED, L_CE_UNK};
+// ----------------------------------------------------------------------
+CommandError commandError = CE_NONE;; 
 
 // ============ OnStep Command Errors ===============
 void Display::updateOnStepCmdStatus() {
- // char cmd[40];
-  //sprintf(cmd, "OnStep Err: %s", commandErrorStr[commandError]);
- // if (!tls.isReady()) {
+  char cmd[40];
+  sprintf(cmd, "OnStep Err: %s", cmdErrStr[commandError]);
+  if (!tls.isReady()) {
     display.canvPrint(2, 454, 0, 319, C_HEIGHT, " Time and/or Date Not Set");
-//  } else if (commandError > CE_0) {
-//    display.canvPrint(2, 454, 0, 319, C_HEIGHT, cmd);
-//  } else {
-//    display.canvPrint(2, 454, 0, 319, C_HEIGHT, cmd);
-//  }
+  } else {
+    display.canvPrint(2, 454, 0, 319, C_HEIGHT, cmd);
+  }
 }
 
 // Draw the Menu buttons
@@ -440,6 +501,9 @@ void Display::drawCommonStatusLabels() {
 // Common Status - Real time data update for the particular labels printed above
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
+  if (display.currentScreen == CATALOG_SCREEN || 
+      display.currentScreen == PLANETS_SCREEN ||
+      display.currentScreen == CUST_CAT_SCREEN) return;
 
   // One Time update the SHC LST and Latitude if GPS locked
   if (tls.isReady() && firstGPS) {
@@ -535,9 +599,8 @@ void Display::updateCommonStatus() {
 // Poll the TouchScreen
 void Display::touchScreenPoll() {
   if (ts.touched()) {
-    if (display.screenTouched) return; // still processing last button press
-   
-    noInterrupts();
+    if (display.screenTouched) return; // debounce, should be false if valid
+
     p = ts.getPoint();      
 
     // Scale from ~0->4000 to tft.width using the calibration #'s
@@ -546,7 +609,7 @@ void Display::touchScreenPoll() {
     p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
     //VF("x="); V(p.x); VF(", y="); V(p.y); VF(", z="); VL(p.z); //for calibration
 
-    status.sound.beep();
+    display.soundFreq(1000, 100);
 
     // =============== MENU MAP ================
     // Current Page   |Cur |Col1|Col2|Col3|Col4|
@@ -559,14 +622,18 @@ void Display::touchScreenPoll() {
     // Settings-------| Se | Ho | Fo | Al | Od |
     // Alignment------| Al | Ho | Fo | Gu | Od |
     
-    // Detect which Menu page requested
-    // == LeftMost Menu Button ==
+    // Detect which Menu Screen is requested
+    //skip checking these page menus since they don't have this menu setup
     if ((display.currentScreen == CATALOG_SCREEN) || 
         (display.currentScreen == PLANETS_SCREEN) ||  
-        (display.currentScreen == CUST_CAT_SCREEN)) return; //skip checking these page menus since they don't have this menu setup
+        (display.currentScreen == CUST_CAT_SCREEN)) return; 
     
+    // tell other screens to process button states...they will clear this flag when done
+    display.screenTouched = true;
+
+    // Check for any Menu buttons pressed
+    // == LeftMost Menu Button ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X                   ) && p.x < (MENU_X                    + MENU_BOXSIZE_X)) {
-      status.sound.beep();
       switch(display.currentScreen) {
           case HOME_SCREEN:    guideScreen.draw(); break;
           case GUIDE_SCREEN:    homeScreen.draw(); break;
@@ -581,7 +648,6 @@ void Display::touchScreenPoll() {
     }
     // == Center Left Menu - Column 2 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X +   MENU_X_SPACING) && p.x < (MENU_X +   MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      status.sound.beep();
       switch(display.currentScreen) {
           case HOME_SCREEN:     focuserScreen.draw(); break;
           case GUIDE_SCREEN:    focuserScreen.draw(); break;
@@ -596,7 +662,6 @@ void Display::touchScreenPoll() {
     }
     // == Center Right Menu - Column 3 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 2*MENU_X_SPACING) && p.x < (MENU_X + 2*MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      status.sound.beep();
       switch(display.currentScreen) {
           case HOME_SCREEN:      gotoScreen.draw(); break;
           case GUIDE_SCREEN:    alignScreen.draw(); break;
@@ -610,8 +675,7 @@ void Display::touchScreenPoll() {
       }
     }
     // == Right Menu - Column 4 ==
-    if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 3*MENU_X_SPACING) && p.x < (MENU_X + 3*MENU_X_SPACING + MENU_BOXSIZE_X)) { 
-      status.sound.beep();     
+    if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 3*MENU_X_SPACING) && p.x < (MENU_X + 3*MENU_X_SPACING + MENU_BOXSIZE_X)) {   
       switch(display.currentScreen) {
           case HOME_SCREEN:       moreScreen.draw(); break;
           case GUIDE_SCREEN:      moreScreen.draw(); break;
@@ -639,8 +703,6 @@ void Display::touchScreenPoll() {
         case PLANETS_SCREEN:  planetsScreen.touchPoll(); break;
         default:              homeScreen.touchPoll(); break;
     }
-    display.screenTouched = true;
-    interrupts();
   } 
 }
 

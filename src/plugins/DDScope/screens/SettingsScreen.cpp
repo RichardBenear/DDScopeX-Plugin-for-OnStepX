@@ -89,10 +89,11 @@
 
 // Draw the SETTINGS Page
 void SettingsScreen::draw() {
+  display.currentScreen = SETTINGS_SCREEN;
   display.setDayNight();
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
-  display.currentScreen = SETTINGS_SCREEN;
+  
   display.drawTitle(100, 30, "Settings");
   display.drawMenuButtons();
   display.drawCommonStatusLabels(); // status common to many pages
@@ -232,14 +233,7 @@ void SettingsScreen::setProcessNumPadButton() {
   //VF("TztextIndex="); VL(TztextIndex); VLF("");
 }
 
-// combine all updates for this Screen
-void SettingsScreen::updateStatusAll() {
-  settingsScreen.updateStatus();
-  display.updateCommonStatus();
-  display.updateOnStepCmdStatus();
-}
-
-void SettingsScreen::updateStatus() {
+void SettingsScreen::updateThisStatus() {
     
     // process number pad buttons
     if (display.screenTouched || display.firstDraw || display.refreshScreen) {
@@ -413,7 +407,6 @@ void SettingsScreen::touchPoll() {
        && p.y <  (PAD_BUTTON_Y+row*(PAD_BUTTON_H+PAD_BUTTON_SPACING_Y)) + PAD_BUTTON_H 
        && p.x >   PAD_BUTTON_X+col*(PAD_BUTTON_W+PAD_BUTTON_SPACING_X) 
        && p.x <  (PAD_BUTTON_X+col*(PAD_BUTTON_W+PAD_BUTTON_SPACING_X) + PAD_BUTTON_W)) {
-        status.sound.beep();
         sButtonPosition=row*3+col;
         //VF("sButtonPosition="); VL(sButtonPosition);
         sNumDetected = true;
@@ -423,7 +416,6 @@ void SettingsScreen::touchPoll() {
 
   // Select Time field
   if (p.y > T_SELECT_Y && p.y < (T_SELECT_Y + CO_BOXSIZE_Y) && p.x > T_SELECT_X && p.x < (T_SELECT_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     Tselect = true;
     Dselect = false;
     Tzselect = false;
@@ -433,7 +425,6 @@ void SettingsScreen::touchPoll() {
 
   // Clear Time field
   if (p.y > T_CLEAR_Y && p.y < (T_CLEAR_Y + CO_BOXSIZE_Y) && p.x > T_CLEAR_X && p.x < (T_CLEAR_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     Tclear = true; 
     TtextIndex = 0;
     sButtonPosition = 12; 
@@ -441,7 +432,6 @@ void SettingsScreen::touchPoll() {
 
   // Select Date field
   if (p.y > D_SELECT_Y && p.y < (D_SELECT_Y + CO_BOXSIZE_Y) && p.x > D_SELECT_X && p.x < (D_SELECT_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     Tselect = false;
     Dselect = true;
     Tzselect = false;
@@ -451,7 +441,6 @@ void SettingsScreen::touchPoll() {
 
   // Clear DEC field
   if (p.y > D_CLEAR_Y && p.y < (D_CLEAR_Y + CO_BOXSIZE_Y) && p.x > D_CLEAR_X && p.x < (D_CLEAR_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     Dclear = true; 
     DtextIndex = 0;
     sButtonPosition = 12; 
@@ -459,7 +448,6 @@ void SettingsScreen::touchPoll() {
 
   // Select TZ field
   if (p.y > U_SELECT_Y && p.y < (U_SELECT_Y + CO_BOXSIZE_Y) && p.x > U_SELECT_X && p.x < (U_SELECT_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     Tselect = false;
     Dselect = false;
     Tzselect = true;
@@ -469,7 +457,6 @@ void SettingsScreen::touchPoll() {
 
   // Clear TZ field
   if (p.y > U_CLEAR_Y && p.y < (U_CLEAR_Y + CO_BOXSIZE_Y) && p.x > U_CLEAR_X && p.x < (U_CLEAR_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     Tzclear = true; 
     TztextIndex = 0;
     sButtonPosition = 12; 
@@ -477,7 +464,6 @@ void SettingsScreen::touchPoll() {
 
   // Select Latitude field
   if (p.y > LA_SELECT_Y && p.y < (LA_SELECT_Y + CO_BOXSIZE_Y) && p.x > LA_SELECT_X && p.x < (LA_SELECT_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     Tselect = false;
     Dselect = false;
     Tzselect = false;
@@ -487,7 +473,6 @@ void SettingsScreen::touchPoll() {
 
   // Clear Latitude field
   if (p.y > LA_CLEAR_Y && p.y < (LA_CLEAR_Y + CO_BOXSIZE_Y) && p.x > LA_CLEAR_X && p.x < (LA_CLEAR_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     LaClear = true; 
     LaTextIndex = 0;
     sButtonPosition = 12; 
@@ -495,7 +480,6 @@ void SettingsScreen::touchPoll() {
 
 // Select Longitude field
   if (p.y > LO_SELECT_Y && p.y < (LO_SELECT_Y + CO_BOXSIZE_Y) && p.x > LO_SELECT_X && p.x < (LO_SELECT_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     Tselect = false;
     Dselect = false;
     Tzselect = false;
@@ -505,7 +489,6 @@ void SettingsScreen::touchPoll() {
 
   // Clear Longitude field
   if (p.y > LO_CLEAR_Y && p.y < (LO_CLEAR_Y + CO_BOXSIZE_Y) && p.x > LO_CLEAR_X && p.x < (LO_CLEAR_X + CO_BOXSIZE_X)) {
-    status.sound.beep();
     LoClear = true; 
     LoTextIndex = 0;
     sButtonPosition = 12; 
@@ -513,7 +496,6 @@ void SettingsScreen::touchPoll() {
 
   // SEND Data
   if (p.y > S_SEND_BUTTON_Y && p.y < (S_SEND_BUTTON_Y + S_SEND_BOXSIZE_Y) && p.x > S_SEND_BUTTON_X && p.x < (S_SEND_BUTTON_X + S_SEND_BOXSIZE_X)) {
-    status.sound.beep();
     sSendOn = true; 
     TtextIndex  = 0;
     DtextIndex  = 0;

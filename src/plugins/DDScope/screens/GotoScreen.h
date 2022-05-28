@@ -10,8 +10,7 @@ class GotoScreen {
   public:
     void draw();
     void touchPoll();
-    void updateStatus();
-    void updateStatusAll();
+    void updateThisStatus();
     
   private:
     void processNumPadButton();

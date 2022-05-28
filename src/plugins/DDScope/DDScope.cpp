@@ -23,89 +23,71 @@
 
 #include <Arduino.h>
 #include "DDScope.h"
-//#include "../../pinmaps/Pins.DDtPCB.h" // this must precede Display.h
 #include "display/Display.h"
 #include "../../lib/tasks/OnTask.h"
 #include "../../lib/serial/Serial_Local.h"
-#include "../../telescope/mount/Mount.h"
 
-void updateWrapper() { dDScope.update(); }
-void touchWrapper() { display.touchScreenPoll(); }
+void updateScreenWrapper() { dDScope.specificScreenUpdate(); }
+void updateCommonWrapper() { display.updateCommonStatus(); }
+void updateOnStepCmdWrapper() { display.updateOnStepCmdStatus(); }
+void touchWrapper()  { display.touchScreenPoll(); }
 
 void DDScope::init() {
 
   VLF("MSG: Plugins, starting: DDScope");
-
-  // note: put these pins in an init somewhere
-  pinMode(ALT_THERMISTOR_PIN, INPUT); // Analog input
-  pinMode(AZ_THERMISTOR_PIN, INPUT); // Analog input
-  
-  pinMode(ODRIVE_RST, OUTPUT);
-  digitalWrite(ODRIVE_RST, LOW); // start ODrive in Reset
-
-  pinMode(AZ_ENABLED_LED_PIN, OUTPUT);
-  digitalWrite(AZ_ENABLED_LED_PIN,HIGH); // LED OFF, active low 
-  pinMode(ALT_ENABLED_LED_PIN, OUTPUT);
-  digitalWrite(ALT_ENABLED_LED_PIN,HIGH); // LED OFF, active low
-
-  pinMode(BATTERY_LOW_LED_PIN, OUTPUT); 
-  digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // LED OFF, active low
-
-  pinMode(FAN_ON_PIN, OUTPUT); 
-  digitalWrite(FAN_ON_PIN,LOW); // Fan is on active high
-
-  pinMode(FOCUSER_EN_PIN, OUTPUT); 
-  digitalWrite(FOCUSER_EN_PIN,HIGH); // Focuser enable is active low
-  pinMode(FOCUSER_STEP_PIN, OUTPUT); 
-  digitalWrite(FOCUSER_STEP_PIN,LOW); // Focuser Step is active high
-  pinMode(FOCUSER_DIR_PIN, OUTPUT); 
-  digitalWrite(FOCUSER_DIR_PIN,LOW); // Focuser Direction
-  pinMode(FOCUSER_SLEEP_PIN, OUTPUT); 
-  digitalWrite(FOCUSER_SLEEP_PIN,HIGH); // Focuser motor driver not sleeping
 
   SerialLocal serialLocal;
 
   // Initialize TFT Display and Touchscreen
   VLF("MSG: Display, Initializing");
   display.init();
-  homeScreen.draw();
-
-  // Initialize the SD card and startup screen
-  display.sdInit();
-
-  // task parameters are:
-  // handle  = tasks.add(period_ms, duration_ms, repeat_true_or_false, priority_0to7, callback_function);
-  // success = tasks.requestHardwareTimer(handle, hardware_timer_number_1to4, hardware_timer_priority_0to255);
-  VF("MSG: Setup, start screen update status polling task (rate 2000 ms priority 7)... ");
-  if (tasks.add(5000, 0, true, 7, updateWrapper, "UpdateScreen"))  { VLF("success"); } else { VLF("FAILED!"); }
-
+  
+  // touchscreen task
   VF("MSG: Setup, start input touch screen polling task (rate 300 ms priority 2)... ");
   if (tasks.add(300, 0, true, 2, touchWrapper, "TouchScreen"))  { VLF("success"); } else { VLF("FAILED!"); }
+
+  // update this common-among-screens status
+  VF("MSG: Setup, start screen update Common status polling task (rate 900 ms priority 7)... ");
+  uint8_t CShandle = tasks.add(900, 0, true, 7, updateCommonWrapper, "UpdateCommonScreen");
+  if (CShandle)  { VLF("success"); } else { VLF("FAILED!"); }
+  tasks.setTimingMode(CShandle, TM_MINIMUM);
+
+  // update the OnStep Cmd Error status display
+  VF("MSG: Setup, start screen update OnStep CMD status polling task (rate 1100 ms priority 7)... ");
+  uint8_t CDhandle = tasks.add(1000, 0, true, 7, updateOnStepCmdWrapper, "UpdateOnStepCmdScreen");
+  if (CDhandle) { VLF("success"); } else { VLF("FAILED!"); }
+  tasks.setTimingMode(CDhandle, TM_MINIMUM);
+
+  // update this specific screen status
+  VF("MSG: Setup, start screen update This screen status polling task (rate 3000 ms priority 7)... ");
+  uint8_t SShandle = tasks.add(3000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
+  if (SShandle)  { VLF("success"); } else { VLF("FAILED!"); }
+  tasks.setTimingMode(SShandle, TM_MINIMUM);
 }
 
-void DDScope::update() {
-  //VF("currentScreen="); VL(display.currentScreen);
+// select which screen to update
+void DDScope::specificScreenUpdate() {
   if (display.lastScreen != display.currentScreen) {
     display.firstDraw = true;
     display.lastScreen = display.currentScreen;
   }
   
   switch (display.currentScreen) {
-    case HOME_SCREEN:     homeScreen.updateStatusAll();     break;
-    case GUIDE_SCREEN:    guideScreen.updateStatusAll();    break;
-    case FOCUSER_SCREEN:  focuserScreen.updateStatusAll();  break;
-    case GOTO_SCREEN:     gotoScreen.updateStatusAll();     break;
-    case MORE_SCREEN:     moreScreen.updateStatusAll();     break;
-    case ODRIVE_SCREEN:   oDriveScreen.updateStatusAll();   break;
-    case SETTINGS_SCREEN: settingsScreen.updateStatusAll(); break;
-    case ALIGN_SCREEN:    alignScreen.updateStatusAll();    break;
-    case CATALOG_SCREEN:  catalogScreen.updateStatus();     break;
-    case PLANETS_SCREEN:  planetsScreen.updateStatus();     break;
-    case CUST_CAT_SCREEN: catalogScreen.updateStatus();     break;
+    case HOME_SCREEN:     homeScreen.updateThisStatus();     break;
+    case GUIDE_SCREEN:    guideScreen.updateThisStatus();    break;
+    case FOCUSER_SCREEN:  focuserScreen.updateThisStatus();  break;
+    case GOTO_SCREEN:     gotoScreen.updateThisStatus();     break;
+    case MORE_SCREEN:     moreScreen.updateThisStatus();     break;
+    case ODRIVE_SCREEN:   oDriveScreen.updateThisStatus();   break;
+    case SETTINGS_SCREEN: settingsScreen.updateThisStatus(); break;
+    case ALIGN_SCREEN:    alignScreen.updateThisStatus();    break;
+    case CATALOG_SCREEN:  catalogScreen.updateThisStatus();  break;
+    case PLANETS_SCREEN:  planetsScreen.updateThisStatus();  break;
+    case CUST_CAT_SCREEN: catalogScreen.updateThisStatus();  break;
   }
   display.firstDraw = false;
 
-  //tasks.yield(200);
+  tasks.yield();
 }
 
 DDScope dDScope;

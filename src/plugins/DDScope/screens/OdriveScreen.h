@@ -10,9 +10,8 @@ class ODriveScreen {
   public:
     void draw();
     void touchPoll();
-    void updateStatus();
     void updateOdriveErrors();
-    void updateStatusAll();
+    void updateThisStatus();
     
   private:
     void decodeOdriveError(uint32_t errorCode);

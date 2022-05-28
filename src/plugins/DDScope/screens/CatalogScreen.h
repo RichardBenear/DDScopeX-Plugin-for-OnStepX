@@ -67,7 +67,7 @@ class CatalogScreen {
   public:
     void draw(int catSel);
     void touchPoll();
-    void updateStatus();
+    void updateThisStatus();
 
     char catSelectionStr1[26];
     char catSelectionStr2[11];

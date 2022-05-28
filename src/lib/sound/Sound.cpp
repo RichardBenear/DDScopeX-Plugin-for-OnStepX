@@ -49,7 +49,7 @@ void Sound::beep() {
 }
 
 void Sound::click() {
- // if (enabled) {
+  if (enabled) {
     #if STATUS_BUZZER == ON
       digitalWriteEx(STATUS_BUZZER_PIN, STATUS_BUZZER_ON_STATE);
       if (_buzzerHandle) tasks.remove(_buzzerHandle);
@@ -58,7 +58,7 @@ void Sound::click() {
     #if STATUS_BUZZER >= 0
       tone(STATUS_BUZZER_PIN, STATUS_BUZZER, 50);
     #endif
-  //}
+  }
 }
 
 #endif

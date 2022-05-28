@@ -20,8 +20,7 @@ class AlignScreen {
   public:
     void draw();
     void touchPoll();
-    void updateStatus();
-    void updateStatusAll();
+    void updateThisStatus();
    
   private:
     void getAlignStatus();

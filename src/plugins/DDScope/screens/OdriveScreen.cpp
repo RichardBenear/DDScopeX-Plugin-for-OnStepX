@@ -33,10 +33,11 @@ void demoWrapper() { oDriveExt.demoMode(true); }
 
 //****** Draw Odrive Page ******
 void ODriveScreen::draw() {
+  display.currentScreen = ODRIVE_SCREEN;
   display.setDayNight();
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
-  display.currentScreen = ODRIVE_SCREEN;
+  
   display.drawMenuButtons();
   display.drawTitle(105, 30, "ODrive");
   display.drawCommonStatusLabels();
@@ -144,15 +145,8 @@ void ODriveScreen::decodeEncoderError(int axis, uint32_t errorCode) {
   else if (errorCode == ENCODER_ERROR_HALL_NOT_CALIBRATED_YET)      tft.println("ENCODER_ERROR_HALL_NOT_CALIBRATED_YET"); 
 }
 
-// combine all updates for this Screen
-void ODriveScreen::updateStatusAll() {
-  oDriveScreen.updateStatus();
-  display.updateCommonStatus();
-  display.updateOnStepCmdStatus();
-}
-
 // ========  Update Odrive Page Status ========
-void ODriveScreen::updateStatus() {
+void ODriveScreen::updateThisStatus() {
   unsigned int errorCode = 0;
   int y_offset = 0;
   
@@ -363,7 +357,6 @@ void ODriveScreen::touchPoll() {
   // ===== Column 1 - Leftmost ======
   // Enable Azimuth motor
   if (p.x > OD_ACT_COL_1_X + x_offset && p.x < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_1_Y + y_offset && p.y <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
-    status.sound.beep();
     if (oDriveExt.odriveAZOff) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
       oDriveExt.odriveAZOff = false; // false = NOT off
@@ -378,7 +371,6 @@ void ODriveScreen::touchPoll() {
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   // Enable Altitude motor
   if (p.x > OD_ACT_COL_1_X + x_offset && p.x < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_1_Y + y_offset && p.y <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
-    status.sound.beep();
     if (oDriveExt.odriveALTOff) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
@@ -396,7 +388,6 @@ void ODriveScreen::touchPoll() {
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_2_X + x_offset && p.x < OD_ACT_COL_2_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_2_Y + y_offset && p.y <  OD_ACT_COL_2_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     if (!OdStopButton) {
-      status.sound.beep();
       display.setLocalCmd(":Q#"); // stops move
       motor1.power(false); // turn off the motors
       motor2.power(false);
@@ -418,7 +409,6 @@ void ODriveScreen::touchPoll() {
     oDriveExt.clearOdriveErrors(ALT_MOTOR, ENCODER);
     oDriveExt.clearOdriveErrors(ALT_MOTOR, CONTROLLER);
     oDriveExt.clearOdriveErrors(ALT_MOTOR, MOTOR);
-    status.sound.beep();
     clearOdriveErr = true;
   }
 
@@ -426,7 +416,6 @@ void ODriveScreen::touchPoll() {
   y_offset = -165;
   // AZ Gain HIGH
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y-box_height_adj) {
-    status.sound.beep();
     AZgainHigh = true;
     AZgainDefault = false;
     oDriveExt.setOdriveVelGain(AZM_MOTOR, 1.8); // Set Velocity Gain
@@ -437,7 +426,6 @@ void ODriveScreen::touchPoll() {
     // AZ Gain DEFault
   y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y-box_height_adj) {
-    status.sound.beep();
     AZgainHigh = false;
     AZgainDefault = true;
     oDriveExt.setOdriveVelGain(AZM_MOTOR, 1.5);
@@ -448,7 +436,6 @@ void ODriveScreen::touchPoll() {
     // ALT Gain HIGH
   y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y-box_height_adj) {
-    status.sound.beep();
     ALTgainHigh = true;
     ALTgainDefault = false;
     oDriveExt.setOdriveVelGain(ALT_MOTOR, 0.5); // Set Velocity Gain
@@ -459,7 +446,6 @@ void ODriveScreen::touchPoll() {
     // ALT Gain DEFault
   y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y-box_height_adj) {
-    status.sound.beep();
     ALTgainHigh = false;
     ALTgainDefault = true;
     oDriveExt.setOdriveVelGain(ALT, 0.3);
@@ -474,7 +460,6 @@ void ODriveScreen::touchPoll() {
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     if (!demoActive) {
       VLF("MSG: Demo ODrive");
-      status.sound.beep();
       demoActive = true;
       //demoHandle = tasks.add(10000, 0, true, 7, oDriveExt.demoMode(true), "Demo On");
     } else {
@@ -482,7 +467,6 @@ void ODriveScreen::touchPoll() {
       VLF("MSG: Demo OFF ODrive");
       //tasks.remove(demoHandle);
       oDriveExt.demoMode(false);
-      status.sound.beep();
       //tasks.setDurationComplete(tasks.getHandleByName("Demo On"));
     }
   }
@@ -494,7 +478,6 @@ void ODriveScreen::touchPoll() {
     digitalWrite(ODRIVE_RST, LOW);
     delay(1);
     digitalWrite(ODRIVE_RST, HIGH);
-    status.sound.beep();
     resetOdriveFlag = true;
     AZgainHigh = false;
     AZgainDefault = true;
@@ -507,7 +490,6 @@ void ODriveScreen::touchPoll() {
   // motor positions while tuning ODrive with ODrive USB channel
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   if (p.x > OD_ACT_COL_3_X + x_offset && p.x < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && p.y > OD_ACT_COL_3_Y + y_offset && p.y <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
-    status.sound.beep();
     if (ODpositionUpdateEnabled) {
       ODpositionUpdateEnabled = false;
     } else {

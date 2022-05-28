@@ -8,8 +8,7 @@ class GuideScreen {
   public:
     void draw();
     void touchPoll();
-    void updateStatus();
-    void updateStatusAll();
+    void updateThisStatus();
   
   private:
     bool guidingEast;

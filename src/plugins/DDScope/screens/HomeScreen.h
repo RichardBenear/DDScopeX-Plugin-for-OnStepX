@@ -7,7 +7,7 @@
 class HomeScreen {
   public:
     void draw();
-    void updateStatusAll();
+    void updateThisStatus();
     void updateStatusCol1();
     void updateStatusCol2();
     void updateHomeButtons();

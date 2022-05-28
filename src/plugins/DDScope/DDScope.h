@@ -6,7 +6,7 @@
 class DDScope {
   public:
     void init();
-    void update();
+    void specificScreenUpdate();
 
   private:
     

@@ -11,7 +11,7 @@ class PlanetsScreen {
   public:
     void draw();
     void touchPoll();
-    void updateStatus();
+    void updateThisStatus();
 
   private:
     uint8_t mapPlanetIndex(uint8_t planetIndex);

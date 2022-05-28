@@ -111,6 +111,7 @@ class Display {
     void init();
     void sdInit();
     void update();
+    void DDmountInit();
 
   // Local Command Channel support
     void setLocalCmd(char *command);
@@ -130,11 +131,10 @@ class Display {
     // Status and updates
     Screen currentScreen = HOME_SCREEN;
     Screen lastScreen = GUIDE_SCREEN; // must be different than current to force initial draw of HOME screen
-    void updateScreenStatus();
+    void updateCommonStatus();
     void touchScreenPoll();    
     void updateOnStepCmdStatus();
     void drawCommonStatusLabels();
-    void updateCommonStatus();
     void setDayNight();
     float getBatteryVoltage();
 
