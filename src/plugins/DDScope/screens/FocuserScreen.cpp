@@ -70,14 +70,13 @@
 
 // Draw the initial content for Focuser Page
 void FocuserScreen::draw() {
-    display.updateColors();
+    display.setDayNight();
     tft.setTextColor(display.textColor);
     tft.fillScreen(display.pgBackground);
     display.currentScreen = FOCUSER_SCREEN;
     display.drawMenuButtons();
     display.drawTitle(110, 30, "Focuser");
     display.drawCommonStatusLabels();
-    display.updateOnStepCmdStatus();
     
     int y_offset = 0;
 
@@ -111,11 +110,15 @@ void FocuserScreen::draw() {
     tft.print(" Target Delta:");
 }
 
-// Update the following on timer tick
-void FocuserScreen::updateStatus()
-{
+// combine updates for this screen
+void FocuserScreen::updateStatusAll() {
+  focuserScreen.updateStatus();
   display.updateCommonStatus();
-  
+  display.updateOnStepCmdStatus();
+}
+
+// Update the following on timer tick
+void FocuserScreen::updateStatus() {
   int y_offset = 0;
   if (current_focMaxPos != focMaxPosition) {
       display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMaxPosition);
@@ -290,7 +293,7 @@ void FocuserScreen::touchPoll()
     // IN button
     if (p.y > FOC_INOUT_Y && p.y < (FOC_INOUT_Y + FOC_INOUT_BOXSIZE_Y) && p.x > FOC_INOUT_X && p.x < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
     {
-        display.soundFreq(2000);
+        display.soundFreq(2000, 400);
         if (!focMovingIn) { //was moving out, change direction
             focChangeDirection();
         }   
@@ -302,7 +305,7 @@ void FocuserScreen::touchPoll()
     // OUT button
     if (p.y > FOC_INOUT_Y + y_offset && p.y < (FOC_INOUT_Y + y_offset + FOC_INOUT_BOXSIZE_Y) && p.x > FOC_INOUT_X && p.x < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
     {
-        display.soundFreq(2100);
+        display.soundFreq(2100, 400);
         if (focMovingIn) { //was moving in, change direction
             focChangeDirection();
         }
@@ -318,7 +321,7 @@ void FocuserScreen::touchPoll()
     {
         focMoveSpeed += FOC_SPEED_INC; // microseconds
         if (focMoveSpeed > 900) focMoveSpeed = 900;
-        status.sound.click();
+        status.sound.beep();
         incSpeed = true;
     }
 
@@ -328,7 +331,7 @@ void FocuserScreen::touchPoll()
     {
         focMoveSpeed -= FOC_SPEED_INC; // microseconds
         if (focMoveSpeed < 100) focMoveSpeed = 100;
-        status.sound.click();
+        status.sound.beep();
         decSpeed = false;
     }
 
@@ -339,7 +342,7 @@ void FocuserScreen::touchPoll()
     {
         setPointTarget = focPosition;
         setPoint = true;
-        status.sound.click();
+        status.sound.beep();
     }
 
     // GoTo Setpoint
@@ -348,7 +351,7 @@ void FocuserScreen::touchPoll()
     {
         focTarget = setPointTarget;
         gotoSetpoint = true; 
-        status.sound.click();
+        status.sound.beep();
         focGoToActive = true;
     }
 
@@ -358,7 +361,7 @@ void FocuserScreen::touchPoll()
     {
         focTarget = (focMaxPosition - focMinPosition) / 2;
         focGoToHalf = true;
-        status.sound.click();
+        status.sound.beep();
         focGoToActive = true;
     }
     
@@ -370,7 +373,7 @@ void FocuserScreen::touchPoll()
     // 4th button press stops outward move and sets as Maximum position
     if (p.y > CALIB_FOC_Y && p.y < (CALIB_FOC_Y + CALIB_FOC_BOXSIZE_Y) && p.x > CALIB_FOC_X && p.x < (CALIB_FOC_X + CALIB_FOC_BOXSIZE_X))
     {  
-        status.sound.click();
+        status.sound.beep();
         if (inwardCalState) {
             if (!focGoToActive) { // then we are starting calibration
                 if (!focMovingIn) focChangeDirection(); // go inward
@@ -407,7 +410,7 @@ void FocuserScreen::touchPoll()
     {
         focMoveDistance += MTR_PWR_INC_SIZE;
         if (focMoveDistance >= 100) focMoveDistance = 100;
-        status.sound.click();
+        status.sound.beep();
         incMoveCt = true;
         decMoveCt = false;
     }
@@ -418,7 +421,7 @@ void FocuserScreen::touchPoll()
     {
         focMoveDistance -= MTR_PWR_INC_SIZE;
         if (focMoveDistance <= 0) focMoveDistance = 5;
-        status.sound.click();
+        status.sound.beep();
         incMoveCt = false;
         decMoveCt = true;
     }
@@ -429,7 +432,7 @@ void FocuserScreen::touchPoll()
     {
         focMinPosition = 0;
         focPosition = 0;
-        status.sound.click();
+        status.sound.beep();
         setZero = true;
     }
 
@@ -438,7 +441,7 @@ void FocuserScreen::touchPoll()
     if (p.y > MID_Y + y_offset && p.y < (MID_Y + y_offset + MID_BOXSIZE_Y) && p.x > MID_X && p.x < (MID_X + MID_BOXSIZE_X))
     {
         focMaxPosition = focPosition;
-        status.sound.click();
+        status.sound.beep();
         setMax = true;
     }
 
@@ -446,7 +449,7 @@ void FocuserScreen::touchPoll()
     y_offset +=SPEED_BOXSIZE_Y + 2;
     if (p.y > MID_Y + y_offset && p.y < (MID_Y + y_offset + MID_BOXSIZE_Y) && p.x > MID_X && p.x < (MID_X + MID_BOXSIZE_X))
     {
-        status.sound.click();
+        status.sound.beep();
         digitalWrite(FOCUSER_SLEEP_PIN,LOW); 
         delay(2);
         digitalWrite(FOCUSER_SLEEP_PIN,HIGH); 

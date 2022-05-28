@@ -81,14 +81,13 @@ char numLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", 
 
 // Draw the Go To Page
 void GotoScreen::draw() {
-  display.updateColors();
+  display.setDayNight();
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
   display.currentScreen = GOTO_SCREEN;
   display.drawTitle(115, 30, "Go To");
   display.drawMenuButtons();
   display.drawCommonStatusLabels(); // status common to many pages
-  display.updateOnStepCmdStatus();
 
   RAtextIndex = 0; 
   DECtextIndex = 0; 
@@ -153,9 +152,16 @@ void GotoScreen::processNumPadButton() {
   }
 }
 
+// combine updates for this screen
+void GotoScreen::updateStatusAll() {
+  gotoScreen.updateStatus();
+  display.updateCommonStatus(); // status common to many pages
+  display.updateOnStepCmdStatus();
+}
+
 // ==== Update any changing Status for GO TO Page ====
 void GotoScreen::updateStatus() {
-  display.updateCommonStatus(); // status common to many pages
+  
   
   if (display.screenTouched || display.firstDraw || display.refreshScreen) { 
         display.refreshScreen = false;
@@ -271,7 +277,7 @@ void GotoScreen::touchPoll() {
        && p.y <  (NUM_BUTTON_Y+row*(NUM_BUTTON_H+NUM_BUTTON_SPACING_Y)) + NUM_BUTTON_H 
        && p.x >   NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) 
        && p.x <  (NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) + NUM_BUTTON_W)) {
-        status.sound.click();
+        status.sound.beep();
         buttonPosition=row*3+col;
         //VF("buttonPosition="); VL(buttonPosition);
         numDetected = true;
@@ -281,14 +287,14 @@ void GotoScreen::touchPoll() {
 
   // Select RA field
   if (p.y > RA_SELECT_Y && p.y < (RA_SELECT_Y + CO_BOXSIZE_Y) && p.x > RA_SELECT_X && p.x < (RA_SELECT_X + CO_BOXSIZE_X)) {
-    status.sound.click();
+    status.sound.beep();
     RAselect = true; 
     DECselect = false; 
   }
 
   // Clear RA field
   if (p.y > RA_CLEAR_Y && p.y < (RA_CLEAR_Y + CO_BOXSIZE_Y) && p.x > RA_CLEAR_X && p.x < (RA_CLEAR_X + CO_BOXSIZE_X)) {
-    status.sound.click();
+    status.sound.beep();
     RAclear = true; 
     RAtextIndex = 0;
     buttonPosition = 12; 
@@ -296,14 +302,14 @@ void GotoScreen::touchPoll() {
 
   // Select DEC field
   if (p.y > DEC_SELECT_Y && p.y < (DEC_SELECT_Y + CO_BOXSIZE_Y) && p.x > DEC_SELECT_X && p.x < (DEC_SELECT_X + CO_BOXSIZE_X)) {
-    status.sound.click();
+    status.sound.beep();
     DECselect = true;
     RAselect = false;
   }
 
   // Clear DEC field
   if (p.y > DEC_CLEAR_Y && p.y < (DEC_CLEAR_Y + CO_BOXSIZE_Y) && p.x > DEC_CLEAR_X && p.x < (DEC_CLEAR_X + CO_BOXSIZE_X)) {
-    status.sound.click();
+    status.sound.beep();
     DECclear = true; 
     DECtextIndex = 0;
     buttonPosition = 12; 
@@ -311,7 +317,7 @@ void GotoScreen::touchPoll() {
 
   // SEND Coordinates
   if (p.y > SEND_BUTTON_Y && p.y < (SEND_BUTTON_Y + SEND_BOXSIZE_Y) && p.x > SEND_BUTTON_X && p.x < (SEND_BUTTON_X + SEND_BOXSIZE_X)) {
-    status.sound.click();
+    status.sound.beep();
     sendOn = true; 
     RAtextIndex = 0;
     DECtextIndex = 0;
@@ -330,21 +336,21 @@ void GotoScreen::touchPoll() {
 
   // Quick set Polaris Target
   if (p.y > POL_BUTTON_Y && p.y < (POL_BUTTON_Y + POL_BOXSIZE_Y) && p.x > POL_BUTTON_X && p.x < (POL_BUTTON_X + POL_BOXSIZE_X)) {
-    status.sound.click();
+    status.sound.beep();
     setPolOn = true;
     gotoScreen.setTargPolaris(); 
   }
 
   // ==== Go To Target Coordinates ====
   if (p.y > GOTO_BUTTON_Y && p.y < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && p.x > GOTO_BUTTON_X && p.x < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
-    status.sound.click();
+    status.sound.beep();
     goToPgBut = true;
     display.setLocalCmd(":MS#"); // move to
   }
 
   // ==== ABORT GOTO ====
   if (p.y > ABORT_BUTTON_Y && p.y < (ABORT_BUTTON_Y + GOTO_BOXSIZE_Y) && p.x > ABORT_BUTTON_X && p.x < (ABORT_BUTTON_X + GOTO_BOXSIZE_X)) {
-    status.sound.click();
+    status.sound.beep();
     abortPgBut = true;
     display.setLocalCmd(":Q#"); // stops move
     motor1.power(false); // do this for safety reasons...mount may be colliding with something

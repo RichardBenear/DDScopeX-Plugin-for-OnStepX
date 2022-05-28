@@ -2,6 +2,10 @@
 // Loads pinmap model for current configuration
 #pragma once
 
+#if PINMAP == DDtPCB
+  #define PINMAP_STR "DDtPCB v1"
+  #include "Pins.DDtPCB.h"
+#endif
 #if PINMAP == MiniPCB
   #define PINMAP_STR "MiniPCB v1"
   #include "Pins.MiniPCB.h"

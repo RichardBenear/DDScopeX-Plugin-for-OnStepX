@@ -107,14 +107,13 @@ void AlignScreen::draw() {
   firstLabel = false;
   dateWasSet = false;
   
-  display.updateColors();
+  display.setDayNight();
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
   
   display.drawMenuButtons();
   display.drawTitle(100, 30, "Alignment");
   display.drawCommonStatusLabels();
-  display.updateOnStepCmdStatus();
   getAlignStatus();
   showCorrections();
   moreScreen.catSelected = 0; // star catalog
@@ -215,9 +214,14 @@ void AlignScreen::showCorrections() {
 12) The [ABORT] button resets back to the Start 0) and shuts off motors
 ********************************************************/
 
-// ***************************************************
+// combine all updates for this Screen
+void AlignScreen::updateStatusAll() {
+  alignScreen.updateStatus();
+  if (display.currentScreen != CATALOG_SCREEN) display.updateCommonStatus(); // prevents writing over the Catalog Page due to race condition in timing
+  display.updateOnStepCmdStatus();
+}
+
 // *********** Update Align Page Status **************
-// ***************************************************
 void AlignScreen::updateStatus() {
   // **************************************************
   // Update Buttons - only if the screen is touched
@@ -512,7 +516,7 @@ void AlignScreen::updateStatus() {
       default: Next_State = Idle_State; 
     }
     if (Current_State != Next_State) display.refreshScreen=true; else display.refreshScreen=false;
-    if (display.currentScreen != CATALOG_SCREEN) display.updateCommonStatus(); // prevents writing over the Catalog Page due to race condition in timing
+    
     display.screenTouched = false;
 }
 
@@ -523,7 +527,7 @@ void AlignScreen::touchPoll() {
   // Go to Home Telescope Requested
   if (p.x > HOME_X && p.x < HOME_X + HOME_BOXSIZE_W && p.y > HOME_Y  && p.y < HOME_Y + HOME_BOXSIZE_H) {
     if (Current_State==Home_State) {
-      status.sound.click();
+      status.sound.beep();
       homeBut = true;
     }
   }
@@ -532,17 +536,17 @@ void AlignScreen::touchPoll() {
   int x_offset = 0;
   if (Current_State==Num_Stars_State) {
     if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
-      status.sound.click();
+      status.sound.beep();
       numAlignStars = 1;
     }
     x_offset += NUM_S_SPACING_X;
     if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
-      status.sound.click();
+      status.sound.beep();
       numAlignStars = 2;
     }
     x_offset += NUM_S_SPACING_X;
     if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
-      status.sound.click();
+      status.sound.beep();
       numAlignStars = 3;
     }
   }
@@ -550,7 +554,7 @@ void AlignScreen::touchPoll() {
   // Call up the Catalog Button
   if (p.y > ACAT_Y && p.y < (ACAT_Y + CAT_BOXSIZE_H) && p.x > ACAT_X && p.x < (ACAT_X + CAT_BOXSIZE_W)) {
     if (Current_State==Select_Catalog_State ) {
-      status.sound.click();
+      status.sound.beep();
       catalogBut = true;
     }
   }
@@ -558,21 +562,21 @@ void AlignScreen::touchPoll() {
   // Go To Target Coordinates
   if (p.y > GOTO_Y && p.y < (GOTO_Y + GOTO_BOXSIZE_H) && p.x > GOTO_X && p.x < (GOTO_X + GOTO_BOXSIZE_W)) {
     if (Current_State==Goto_State) { 
-      status.sound.click();
+      status.sound.beep();
       gotoBut = true;
     }
   }
 
   // ==== ABORT GOTO ====
   if (p.y > ABORT_Y && p.y < (ABORT_Y + GOTO_BOXSIZE_H) && p.x > ABORT_X && p.x < (ABORT_X + GOTO_BOXSIZE_W)) {
-    status.sound.click();
+    status.sound.beep();
     abortBut = true;
   }
 
   // ALIGN / calculate alignment corrections Button
   if (p.y > ALIGN_Y && p.y < (ALIGN_Y + ALIGN_BOXSIZE_H) && p.x > ALIGN_X && p.x < (ALIGN_X + ALIGN_BOXSIZE_W)) { 
     if (Current_State==Align_State) {
-      status.sound.click();
+      status.sound.beep();
       alignBut = true;
     }
   }
@@ -580,14 +584,14 @@ void AlignScreen::touchPoll() {
   // Write Alignment Button
   if (p.y > WRITE_ALIGN_Y && p.y < (WRITE_ALIGN_Y + SA_BOXSIZE_H) && p.x > WRITE_ALIGN_X && p.x < (WRITE_ALIGN_X + SA_BOXSIZE_W)) { 
     if (Current_State==Write_State) {
-      status.sound.click();
+      status.sound.beep();
       saveAlignBut = true;
     }
   }  
 
   // START Alignment Button - clear the corrections, reset the state machine
   if (p.y > START_ALIGN_Y && p.y < (START_ALIGN_Y + ST_BOXSIZE_H) && p.x > START_ALIGN_X && p.x < (START_ALIGN_X + ST_BOXSIZE_W)) { 
-    status.sound.click();
+    status.sound.beep();
     startAlignBut = true;
     display.setLocalCmd(":SX02#");
     display.setLocalCmd(":SX03#");

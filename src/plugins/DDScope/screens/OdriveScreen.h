@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------------------
-// OdriveScreen.h
+// ODriveScreen.h
 
 #ifndef ODRIVE_S_H
 #define ODRIVE_S_H
@@ -12,6 +12,7 @@ class ODriveScreen {
     void touchPoll();
     void updateStatus();
     void updateOdriveErrors();
+    void updateStatusAll();
     
   private:
     void decodeOdriveError(uint32_t errorCode);
@@ -44,6 +45,6 @@ class ODriveScreen {
     int demoHandle;
 };
 
-extern ODriveScreen odriveScreen;
+extern ODriveScreen oDriveScreen;
 
 #endif

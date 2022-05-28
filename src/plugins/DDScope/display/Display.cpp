@@ -116,13 +116,13 @@ void Display::setLocalCmd(const char *command) {
 
 void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
-  tasks.yield(100);
+  tasks.yield(80);
   strcpy(reply, SERIAL_LOCAL.receive()); 
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command); 
-  tasks.yield(100);
+  tasks.yield(80);
   strcpy(reply, SERIAL_LOCAL.receive()); 
    //VF(command); VF("="); VL(serialLocal.receive());
    //tft.print(serialLocal.receive());
@@ -192,7 +192,7 @@ void Display::canvPrint(int x, int y, int y_off, int width, int height, int labe
 }
 
 // Color Themes (Day and Night)
-void Display::updateColors() {
+void Display::setDayNight() {
   if (!nightMode) {
     // Day Color Theme
     pgBackground = DEEP_MAROON; 
@@ -537,6 +537,7 @@ void Display::touchScreenPoll() {
   if (ts.touched()) {
     if (display.screenTouched) return; // still processing last button press
    
+    noInterrupts();
     p = ts.getPoint();      
 
     // Scale from ~0->4000 to tft.width using the calibration #'s
@@ -545,7 +546,7 @@ void Display::touchScreenPoll() {
     p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
     //VF("x="); V(p.x); VF(", y="); V(p.y); VF(", z="); VL(p.z); //for calibration
 
-    status.sound.click();
+    status.sound.beep();
 
     // =============== MENU MAP ================
     // Current Page   |Cur |Col1|Col2|Col3|Col4|
@@ -565,7 +566,7 @@ void Display::touchScreenPoll() {
         (display.currentScreen == CUST_CAT_SCREEN)) return; //skip checking these page menus since they don't have this menu setup
     
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X                   ) && p.x < (MENU_X                    + MENU_BOXSIZE_X)) {
-      status.sound.click();
+      status.sound.beep();
       switch(display.currentScreen) {
           case HOME_SCREEN:    guideScreen.draw(); break;
           case GUIDE_SCREEN:    homeScreen.draw(); break;
@@ -580,7 +581,7 @@ void Display::touchScreenPoll() {
     }
     // == Center Left Menu - Column 2 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X +   MENU_X_SPACING) && p.x < (MENU_X +   MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      status.sound.click();
+      status.sound.beep();
       switch(display.currentScreen) {
           case HOME_SCREEN:     focuserScreen.draw(); break;
           case GUIDE_SCREEN:    focuserScreen.draw(); break;
@@ -595,13 +596,13 @@ void Display::touchScreenPoll() {
     }
     // == Center Right Menu - Column 3 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 2*MENU_X_SPACING) && p.x < (MENU_X + 2*MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      status.sound.click();
+      status.sound.beep();
       switch(display.currentScreen) {
           case HOME_SCREEN:      gotoScreen.draw(); break;
           case GUIDE_SCREEN:    alignScreen.draw(); break;
           case FOCUSER_SCREEN:   gotoScreen.draw(); break;
           case GOTO_SCREEN:     guideScreen.draw(); break;
-          case MORE_SCREEN:    odriveScreen.draw(); break;
+          case MORE_SCREEN:    oDriveScreen.draw(); break;
           case ODRIVE_SCREEN:   alignScreen.draw(); break;
           case SETTINGS_SCREEN: alignScreen.draw(); break;
           case ALIGN_SCREEN:    guideScreen.draw(); break;
@@ -610,7 +611,7 @@ void Display::touchScreenPoll() {
     }
     // == Right Menu - Column 4 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 3*MENU_X_SPACING) && p.x < (MENU_X + 3*MENU_X_SPACING + MENU_BOXSIZE_X)) { 
-      status.sound.click();     
+      status.sound.beep();     
       switch(display.currentScreen) {
           case HOME_SCREEN:       moreScreen.draw(); break;
           case GUIDE_SCREEN:      moreScreen.draw(); break;
@@ -618,8 +619,8 @@ void Display::touchScreenPoll() {
           case GOTO_SCREEN:       moreScreen.draw(); break;
           case MORE_SCREEN:      alignScreen.draw(); break;
           case ODRIVE_SCREEN:     moreScreen.draw(); break;
-          case SETTINGS_SCREEN: odriveScreen.draw(); break;
-          case ALIGN_SCREEN:    odriveScreen.draw(); break;
+          case SETTINGS_SCREEN: oDriveScreen.draw(); break;
+          case ALIGN_SCREEN:    oDriveScreen.draw(); break;
           default:                homeScreen.draw(); break;
       }
     }
@@ -631,7 +632,7 @@ void Display::touchScreenPoll() {
         case FOCUSER_SCREEN:  focuserScreen.touchPoll(); break;
         case GOTO_SCREEN:     gotoScreen.touchPoll(); break;
         case MORE_SCREEN:     moreScreen.touchPoll(); break;
-        case ODRIVE_SCREEN:   odriveScreen.touchPoll(); break;
+        case ODRIVE_SCREEN:   oDriveScreen.touchPoll(); break;
         case SETTINGS_SCREEN: settingsScreen.touchPoll(); break;
         case ALIGN_SCREEN:    alignScreen.touchPoll(); break;
         case CATALOG_SCREEN:  catalogScreen.touchPoll(); break;
@@ -639,6 +640,7 @@ void Display::touchScreenPoll() {
         default:              homeScreen.touchPoll(); break;
     }
     display.screenTouched = true;
+    interrupts();
   } 
 }
 
@@ -753,8 +755,8 @@ float Display::getBatteryVoltage() {
   return battery_voltage;
 }
 
-void Display::soundFreq(int freq) {
-  tone(STATUS_BUZZER_PIN, STATUS_BUZZER, freq);
+void Display::soundFreq(int freq, int duration) {
+  tone(STATUS_BUZZER_PIN, freq, duration);
 }
 
 //================ SHC routines ====================

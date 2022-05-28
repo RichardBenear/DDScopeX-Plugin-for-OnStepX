@@ -39,7 +39,7 @@ const char PlanetNames[8][8] = {"Mercury", "Venus", "Mars", "Jupiter", "Saturn",
 // Initialize the PLANETS page
 void PlanetsScreen::draw() {
     display.currentScreen = PLANETS_SCREEN;
-    display.updateColors();
+    display.setDayNight();
     tft.setTextColor(display.textColor);
     tft.fillScreen(display.pgBackground);
     display.drawTitle(110, 30, "Planets");
@@ -341,7 +341,7 @@ void PlanetsScreen::touchPoll() {
     for (int row=0; row<PLANET_ROWS; row++) {
         if (p.y > PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING)) && p.y < (PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING))) + PLANET_H 
                 && p.x > PLANET_X && p.x < (PLANET_X+PLANET_W)) {
-            status.sound.click();
+            status.sound.beep();
             planetButSelPos = row;
             planetsScreen.mapPlanetIndex(row);
             planetButDetected = true;
@@ -351,7 +351,7 @@ void PlanetsScreen::touchPoll() {
 
     // RETURN page button - reuse BACK button box size
     if (p.y > P_RETURN_Y && p.y < (P_RETURN_Y + BACK_H) && p.x > P_RETURN_X && p.x < (P_RETURN_X + P_RETURN_W)) {
-        status.sound.click();
+        status.sound.beep();
         display.screenTouched = false;
         moreScreen.draw();
         return;

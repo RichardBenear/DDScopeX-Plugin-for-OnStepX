@@ -79,7 +79,7 @@ void CatalogScreen::draw(int catSel) {
     cEndOfList = false;
     shcEndOfList = false;
     
-    display.updateColors();
+    display.setDayNight();
     tft.setTextColor(display.textColor);
     tft.fillScreen(display.pgBackground);
 
@@ -564,6 +564,7 @@ void CatalogScreen::drawACatPage() {
     }
 }
 
+
 //======================================================
 // =====  Update Screen for buttons and text ===========
 //======================================================
@@ -817,7 +818,7 @@ void CatalogScreen::touchPoll() {
                     && p.x > CAT_X && p.x < (CAT_X+CAT_W)) {
                 if (treasureCatalog && tAbsRow == MAX_TREASURE_ROWS+1) return; 
                 if (shcCatalog && shcLastPage && i >= shcRow)  return; 
-                status.sound.click();
+                status.sound.beep();
                 catButSelPos = i;
                 catButDetected = true;
                 return;
@@ -831,7 +832,7 @@ void CatalogScreen::touchPoll() {
             if (p.y > CUS_Y+(i*(CUS_H+CUS_Y_SPACING)) && p.y < (CUS_Y+(i*(CUS_H+CUS_Y_SPACING))) + CUS_H 
                     && p.x > CUS_X && p.x < (CUS_X+CUS_W)) {
                 if (customCatalog && cLastPage==0 && i >= cRow) return; // take care of only one entry on the page
-                status.sound.click();
+                status.sound.beep();
                 catButSelPos = i;
                 catButDetected = true;
                 return;
@@ -841,7 +842,7 @@ void CatalogScreen::touchPoll() {
 
     // BACK button
     if (p.y > BACK_Y && p.y < (BACK_Y + BACK_H) && p.x > BACK_X && p.x < (BACK_X + BACK_W)) {
-        status.sound.click();
+        status.sound.beep();
         if (treasureCatalog && tCurrentPage > 0) {
             tPrevPage = tCurrentPage;
             tEndOfList = false;
@@ -863,7 +864,7 @@ void CatalogScreen::touchPoll() {
 
     // NEXT page button - reuse BACK button box size
     if (p.y > NEXT_Y && p.y < (NEXT_Y + BACK_H) && p.x > NEXT_X && p.x < (NEXT_X + BACK_W)) {
-        status.sound.click();
+        status.sound.beep();
         if (treasureCatalog && !tEndOfList) {
             tPrevPage = tCurrentPage;
             tCurrentPage++;
@@ -882,7 +883,7 @@ void CatalogScreen::touchPoll() {
 
     // RETURN page button - reuse BACK button box size
     if (p.y > RETURN_Y && p.y < (RETURN_Y + BACK_H) && p.x > RETURN_X && p.x < (RETURN_X + RETURN_W)) {
-        status.sound.click();
+        status.sound.beep();
         display.screenTouched = false;
         moreScreen.objectSelected = objSel; 
         if (returnToPage == ALIGN_SCREEN) {
@@ -896,13 +897,13 @@ void CatalogScreen::touchPoll() {
 
     // SAVE page to custom library button
     if (p.y > SAVE_LIB_Y && p.y < (SAVE_LIB_Y + SAVE_LIB_H) && p.x > SAVE_LIB_X && p.x < (SAVE_LIB_X + SAVE_LIB_W)) {
-        status.sound.click();
+        status.sound.beep();
         saveTouched = true;
     }   
 
     // Delete custom library item that is selected 
     if (p.y > 3 && p.y < 42 && p.x > 282 && p.x < 317) {
-        status.sound.click();
+        status.sound.beep();
         delSelected = true;
     }   
 }

@@ -11,6 +11,7 @@ class SettingsScreen {
     void draw();
     void touchPoll();
     void updateStatus();
+    void updateStatusAll();
     
   private:
     void setProcessNumPadButton();

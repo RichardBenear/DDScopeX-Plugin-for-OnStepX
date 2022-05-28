@@ -23,7 +23,7 @@
 
 #include <Arduino.h>
 #include "DDScope.h"
-#include "../../pinmaps/Pins.DDT.h" // this must precede Display.h
+//#include "../../pinmaps/Pins.DDtPCB.h" // this must precede Display.h
 #include "display/Display.h"
 #include "../../lib/tasks/OnTask.h"
 #include "../../lib/serial/Serial_Local.h"
@@ -79,32 +79,33 @@ void DDScope::init() {
   VF("MSG: Setup, start screen update status polling task (rate 2000 ms priority 7)... ");
   if (tasks.add(5000, 0, true, 7, updateWrapper, "UpdateScreen"))  { VLF("success"); } else { VLF("FAILED!"); }
 
-  VF("MSG: Setup, start input touch screen polling task (rate 300 ms priority 4)... ");
-  if (tasks.add(300, 0, true, 4, touchWrapper, "TouchScreen"))  { VLF("success"); } else { VLF("FAILED!"); }
+  VF("MSG: Setup, start input touch screen polling task (rate 300 ms priority 2)... ");
+  if (tasks.add(300, 0, true, 2, touchWrapper, "TouchScreen"))  { VLF("success"); } else { VLF("FAILED!"); }
 }
 
 void DDScope::update() {
+  //VF("currentScreen="); VL(display.currentScreen);
   if (display.lastScreen != display.currentScreen) {
     display.firstDraw = true;
     display.lastScreen = display.currentScreen;
   }
   
   switch (display.currentScreen) {
-    case HOME_SCREEN:     homeScreen.updateStatusAll();  break;
-    case GUIDE_SCREEN:    guideScreen.updateStatus();    break;
-    case FOCUSER_SCREEN:  focuserScreen.updateStatus();  break;
-    case GOTO_SCREEN:     gotoScreen.updateStatus();     break;
-    case MORE_SCREEN:     moreScreen.updateStatus();     break;
-    case ODRIVE_SCREEN:   odriveScreen.updateStatus();   break;
-    case SETTINGS_SCREEN: settingsScreen.updateStatus(); break;
-    case ALIGN_SCREEN:    alignScreen.updateStatus();    break;
-    case CATALOG_SCREEN:  catalogScreen.updateStatus();  break;
-    case PLANETS_SCREEN:  planetsScreen.updateStatus();  break;
-    case CUST_CAT_SCREEN: catalogScreen.updateStatus();  break;
+    case HOME_SCREEN:     homeScreen.updateStatusAll();     break;
+    case GUIDE_SCREEN:    guideScreen.updateStatusAll();    break;
+    case FOCUSER_SCREEN:  focuserScreen.updateStatusAll();  break;
+    case GOTO_SCREEN:     gotoScreen.updateStatusAll();     break;
+    case MORE_SCREEN:     moreScreen.updateStatusAll();     break;
+    case ODRIVE_SCREEN:   oDriveScreen.updateStatusAll();   break;
+    case SETTINGS_SCREEN: settingsScreen.updateStatusAll(); break;
+    case ALIGN_SCREEN:    alignScreen.updateStatusAll();    break;
+    case CATALOG_SCREEN:  catalogScreen.updateStatus();     break;
+    case PLANETS_SCREEN:  planetsScreen.updateStatus();     break;
+    case CUST_CAT_SCREEN: catalogScreen.updateStatus();     break;
   }
   display.firstDraw = false;
-  
-  tasks.yield();
+
+  //tasks.yield(200);
 }
 
 DDScope dDScope;

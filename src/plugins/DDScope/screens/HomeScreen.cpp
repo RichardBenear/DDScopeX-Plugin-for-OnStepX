@@ -48,7 +48,7 @@
 // ============================================
 void HomeScreen::draw() {
   display.currentScreen = HOME_SCREEN;
-  display.updateColors();
+  display.setDayNight();
   tft.setTextSize(1);
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
@@ -139,17 +139,11 @@ void HomeScreen::draw() {
 // update multiple status items
 void HomeScreen::updateStatusAll() {
   homeScreen.updateStatusCol1();
-  tasks.yield(100);
   homeScreen.updateStatusCol2();
-  tasks.yield(100);
   homeScreen.updateMountStatus();
-  tasks.yield(100);
   homeScreen.updateHomeButtons();
-  tasks.yield(100);
   display.updateCommonStatus();
-  tasks.yield(100);
   display.updateOnStepCmdStatus();
-  tasks.yield(100);
 }
 
 // =================================================
@@ -439,7 +433,7 @@ void HomeScreen::touchPoll() {
   // ======= Column 1 - Leftmost =======
   // Enable Azimuth motor
   if (p.x > ACTION_COL_1_X + x_offset && p.x < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_1_Y + y_offset && p.y <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    status.sound.click();
+    status.sound.beep();
     if (oDriveExt.odriveAZOff) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
       oDriveExt.odriveAZOff = false; // false = NOT off
@@ -454,7 +448,7 @@ void HomeScreen::touchPoll() {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   // Enable Altitude motor
   if (p.x > ACTION_COL_1_X + x_offset && p.x < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_1_Y + y_offset && p.y <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    status.sound.click();
+    status.sound.beep();
     if (oDriveExt.odriveALTOff) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
@@ -470,7 +464,7 @@ void HomeScreen::touchPoll() {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_1_X + x_offset && p.x < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_1_Y + y_offset && p.y <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     if (!stopButton) {
-      status.sound.click();
+      status.sound.beep();
       stopButton = true;
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
@@ -484,7 +478,7 @@ void HomeScreen::touchPoll() {
   // Start/Stop Tracking
   y_offset = 0;
   if (p.x > ACTION_COL_2_X + x_offset && p.x < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_2_Y + y_offset && p.y <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    status.sound.click();
+    status.sound.beep();
     if (!lCmountStatus.isTracking()) {
       display.setLocalCmd(":Te#"); // Enable Tracking
     } else {
@@ -495,13 +489,13 @@ void HomeScreen::touchPoll() {
   // Set Night or Day Mode
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_2_X + x_offset && p.x < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_2_Y + y_offset && p.y <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    status.sound.click();
+    status.sound.beep();
     if (!display.nightMode) {
     display.nightMode = true; // toggle on
     } else {
     display.nightMode = false; // toggle off
     }
-    display.updateColors();
+    display.setDayNight();
     display.firstDraw = true;
     homeScreen.draw(); return;
   }
@@ -509,7 +503,7 @@ void HomeScreen::touchPoll() {
   // Go to Home Telescope 
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_2_X + x_offset && p.x < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_2_Y + y_offset && p.y <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    status.sound.click();
+    status.sound.beep();
     display.setLocalCmd(":hC#"); // go HOME
     gotoHome = true;
   }
@@ -518,7 +512,7 @@ void HomeScreen::touchPoll() {
   // Park and UnPark Telescope
   y_offset = 0;
   if (p.x > ACTION_COL_3_X + x_offset && p.x < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_3_Y + y_offset && p.y <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
-    status.sound.click();
+    status.sound.beep();
     if (!lCmountStatus.isParked()) { 
       display.setLocalCmd(":hP#"); // go Park
     } else { // already parked
@@ -529,7 +523,7 @@ void HomeScreen::touchPoll() {
   // Set Park Position to Current
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_3_X + x_offset && p.x < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_3_Y + y_offset && p.y <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
-    status.sound.click();
+    status.sound.beep();
     display.setLocalCmd(":hQ#"); // Set Park Position
     parkWasSet = true;
   }
@@ -537,7 +531,7 @@ void HomeScreen::touchPoll() {
   // Fan Control Action Button
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (p.x > ACTION_COL_3_X + x_offset && p.x < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && p.y > ACTION_COL_3_Y + y_offset && p.y <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
-    status.sound.click();
+    status.sound.beep();
     if (!fanOn) {
     digitalWrite(FAN_ON_PIN, HIGH);
     fanOn = true;

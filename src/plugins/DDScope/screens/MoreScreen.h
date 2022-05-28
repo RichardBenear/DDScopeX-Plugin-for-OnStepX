@@ -11,6 +11,7 @@ class MoreScreen {
     void draw();
     void touchPoll();
     void updateStatus();
+    void updateStatusAll();
 
     bool objectSelected;
     uint8_t catSelected;

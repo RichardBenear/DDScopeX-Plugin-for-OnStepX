@@ -55,19 +55,25 @@
 
 // Draw the GUIDE Page
 void GuideScreen::draw() { 
-    display.updateColors();
-    tft.setTextColor(display.textColor);
-    tft.fillScreen(display.pgBackground);
-    display.currentScreen = GUIDE_SCREEN;
-    display.drawMenuButtons();
-    display.drawTitle(110, 30, "Guiding");
-    display.drawCommonStatusLabels();
-    display.updateOnStepCmdStatus();
+  display.setDayNight();
+  tft.setTextColor(display.textColor);
+  tft.fillScreen(display.pgBackground);
+  display.currentScreen = GUIDE_SCREEN;
+  display.drawMenuButtons();
+  display.drawTitle(110, 30, "Guiding");
+  display.drawCommonStatusLabels();
+}
+
+// combine all the status updates for this screen
+void GuideScreen::updateStatusAll() {
+  guideScreen.updateStatus();
+  display.updateCommonStatus();
+  display.updateOnStepCmdStatus();
 }
 
 // ========== Update Guide Page Status ==========
 void GuideScreen::updateStatus() {
-    
+  
     // Update for buttons only if the screen is touched
     if (display.screenTouched || display.firstDraw || display.refreshScreen) {
         display.refreshScreen = false;
@@ -166,7 +172,6 @@ void GuideScreen::updateStatus() {
         } else {
             display.drawButton(STOP_X, STOP_Y, STOP_BOXSIZE_X, STOP_BOXSIZE_Y, false, STOP_TEXT_X_OFFSET+4, STOP_TEXT_Y_OFFSET, "  STOP  ");
         } 
-    display.updateCommonStatus();
     display.screenTouched = false;
     }  
 }
@@ -177,7 +182,7 @@ void GuideScreen::touchPoll() {
     // SYNC Button 
     if (p.y > SYNC_OFFSET_Y && p.y < (SYNC_OFFSET_Y + GUIDE_BOXSIZE_Y) && p.x > SYNC_OFFSET_X && p.x < (SYNC_OFFSET_X + GUIDE_BOXSIZE_X)) {            
         display.setLocalCmd(":CS#"); // doesn't have reply
-        status.sound.click();
+        status.sound.beep();
         syncOn = true;  
     }
                     
@@ -190,7 +195,7 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qw#");
             guidingEast = false;
         }
-        status.sound.click();
+        status.sound.beep();
     }
                     
     // WEST / LEFT button
@@ -202,7 +207,7 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qe#");
             guidingWest = false;
         }
-        status.sound.click();
+        status.sound.beep();
     }
                     
     // NORTH / UP button
@@ -214,7 +219,7 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qn#");
             guidingNorth = false;
         }
-        status.sound.click();
+        status.sound.beep();
     }
                     
     // SOUTH / DOWN button
@@ -226,7 +231,7 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qs#");
             guidingSouth = false;
         }
-        status.sound.click();
+        status.sound.beep();
     }
 
     // Select Guide Rates
@@ -238,7 +243,7 @@ void GuideScreen::touchPoll() {
     // 1x Guide Rate 
     if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RG#");
-        status.sound.click();
+        status.sound.beep();
         oneXisOn = true;
         eightXisOn = false;
         twentyXisOn = false;
@@ -249,7 +254,7 @@ void GuideScreen::touchPoll() {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RC#");
-        status.sound.click();
+        status.sound.beep();
         oneXisOn = false;
         eightXisOn = true;
         twentyXisOn = false;
@@ -260,7 +265,7 @@ void GuideScreen::touchPoll() {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RM#");
-        status.sound.click();
+        status.sound.beep();
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = true;
@@ -271,7 +276,7 @@ void GuideScreen::touchPoll() {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RS#");
-        status.sound.click();
+        status.sound.beep();
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = false;
@@ -282,11 +287,11 @@ void GuideScreen::touchPoll() {
     if (p.y > SPIRAL_Y && p.y < (SPIRAL_Y + SPIRAL_BOXSIZE_Y) && p.x > SPIRAL_X && p.x < (SPIRAL_X + SPIRAL_BOXSIZE_X)) {
         if (!spiralOn) {
             display.setLocalCmd(":Mp#");
-            status.sound.click();
+            status.sound.beep();
             spiralOn = true;
         } else {
             display.setLocalCmd(":Q#"); // stop moves
-            status.sound.click();
+            status.sound.beep();
             spiralOn = false;
         }
     }
@@ -294,7 +299,7 @@ void GuideScreen::touchPoll() {
     // STOP moving
     if (p.y > STOP_Y && p.y < (STOP_Y + STOP_BOXSIZE_Y) && p.x > STOP_X && p.x < (STOP_X + STOP_BOXSIZE_X)) {
         display.setLocalCmd(":Q#");
-        status.sound.click();
+        status.sound.beep();
         stopPressed = true;
         spiralOn = false;
         guidingEast = false;

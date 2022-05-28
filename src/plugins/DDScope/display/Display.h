@@ -11,7 +11,7 @@
 #include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
 
 // DDScope specific
-#include "../../../pinmaps/Pins.DDT.h"
+//#include "../../../pinmaps/Pins.DDtPCB.h"
 #include "../odriveExt/ODriveExt.h"
 #include "../catalog/Catalog.h"
 #include "../screens/AlignScreen.h"
@@ -21,7 +21,7 @@
 #include "../screens/GuideScreen.h"
 #include "../screens/HomeScreen.h"
 #include "../screens/MoreScreen.h"
-#include "../screens/OdriveScreen.h"
+#include "../screens/ODriveScreen.h"
 #include "../screens/PlanetsScreen.h"
 #include "../screens/SettingsScreen.h"
 
@@ -135,11 +135,11 @@ class Display {
     void updateOnStepCmdStatus();
     void drawCommonStatusLabels();
     void updateCommonStatus();
-    void updateColors();
+    void setDayNight();
     float getBatteryVoltage();
 
     // frequency based tone add here since not supported in OnStepX
-    void soundFreq(int freq); 
+    void soundFreq(int freq, int duration); 
 
     // Color Theme
     uint16_t pgBackground = DEEP_MAROON; 

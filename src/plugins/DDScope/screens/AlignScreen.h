@@ -21,6 +21,7 @@ class AlignScreen {
     void draw();
     void touchPoll();
     void updateStatus();
+    void updateStatusAll();
    
   private:
     void getAlignStatus();
