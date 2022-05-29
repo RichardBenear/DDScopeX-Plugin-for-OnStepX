@@ -4,10 +4,12 @@
 #ifndef GUIDE_S_H
 #define GUIDE_S_H
 
+#include <Arduino.h>
+
 class GuideScreen {
   public:
     void draw();
-    void touchPoll();
+    void touchPoll(uint16_t px, uint16_t py);
     void updateThisStatus();
   
   private:

@@ -111,7 +111,9 @@ void ODriveMotor::power(bool state) {
   int timeout = 0.01;
   if (state) {
     requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
-    timeout = 0.5;
+    //timeout = 0.5; 
+    //Note: too long for debugging with ODrive subsystem HW off
+    // timeout value is multiplied by 10 in the run_state routine and is number of retries for a readInt of Current State
   }
   if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
     VF("WRN: ODrive"); V(axisNumber); VF(", ");

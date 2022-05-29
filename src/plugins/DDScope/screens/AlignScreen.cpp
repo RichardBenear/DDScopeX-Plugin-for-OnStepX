@@ -5,8 +5,10 @@
 #include "../../../telescope/mount/Mount.h"
 #include "../../../lib/axis/motor/oDrive/ODrive.h"
 #include "../odriveExt/ODriveExt.h"
+#include "MoreScreen.h"
 #include "AlignScreen.h"
 #include "CatalogScreen.h"
+#include "../catalog/Catalog.h"
 
 #define BIG_BOX_W           80
 #define BIG_BOX_H           40
@@ -516,9 +518,9 @@ void AlignScreen::updateThisStatus() {
 // ========================================
 // === Manage Touching of Align Buttons ===
 // ========================================
-void AlignScreen::touchPoll() {
+void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
   // Go to Home Telescope Requested
-  if (p.x > HOME_X && p.x < HOME_X + HOME_BOXSIZE_W && p.y > HOME_Y  && p.y < HOME_Y + HOME_BOXSIZE_H) {
+  if (px > HOME_X && px < HOME_X + HOME_BOXSIZE_W && py > HOME_Y  && py < HOME_Y + HOME_BOXSIZE_H) {
     if (Current_State==Home_State) {
       homeBut = true;
     }
@@ -527,54 +529,54 @@ void AlignScreen::touchPoll() {
   // Number of Stars for alignment
   int x_offset = 0;
   if (Current_State==Num_Stars_State) {
-    if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
+    if (py > NUM_S_Y && py < (NUM_S_Y + NUM_S_BOXSIZE_H) && px > NUM_S_X+x_offset && px < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
       numAlignStars = 1;
     }
     x_offset += NUM_S_SPACING_X;
-    if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
+    if (py > NUM_S_Y && py < (NUM_S_Y + NUM_S_BOXSIZE_H) && px > NUM_S_X+x_offset && px < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
       numAlignStars = 2;
     }
     x_offset += NUM_S_SPACING_X;
-    if (p.y > NUM_S_Y && p.y < (NUM_S_Y + NUM_S_BOXSIZE_H) && p.x > NUM_S_X+x_offset && p.x < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
+    if (py > NUM_S_Y && py < (NUM_S_Y + NUM_S_BOXSIZE_H) && px > NUM_S_X+x_offset && px < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
       numAlignStars = 3;
     }
   }
 
   // Call up the Catalog Button
-  if (p.y > ACAT_Y && p.y < (ACAT_Y + CAT_BOXSIZE_H) && p.x > ACAT_X && p.x < (ACAT_X + CAT_BOXSIZE_W)) {
+  if (py > ACAT_Y && py < (ACAT_Y + CAT_BOXSIZE_H) && px > ACAT_X && px < (ACAT_X + CAT_BOXSIZE_W)) {
     if (Current_State==Select_Catalog_State ) {
       catalogBut = true;
     }
   }
 
   // Go To Target Coordinates
-  if (p.y > GOTO_Y && p.y < (GOTO_Y + GOTO_BOXSIZE_H) && p.x > GOTO_X && p.x < (GOTO_X + GOTO_BOXSIZE_W)) {
+  if (py > GOTO_Y && py < (GOTO_Y + GOTO_BOXSIZE_H) && px > GOTO_X && px < (GOTO_X + GOTO_BOXSIZE_W)) {
     if (Current_State==Goto_State) { 
       gotoBut = true;
     }
   }
 
   // ==== ABORT GOTO ====
-  if (p.y > ABORT_Y && p.y < (ABORT_Y + GOTO_BOXSIZE_H) && p.x > ABORT_X && p.x < (ABORT_X + GOTO_BOXSIZE_W)) {
+  if (py > ABORT_Y && py < (ABORT_Y + GOTO_BOXSIZE_H) && px > ABORT_X && px < (ABORT_X + GOTO_BOXSIZE_W)) {
     abortBut = true;
   }
 
   // ALIGN / calculate alignment corrections Button
-  if (p.y > ALIGN_Y && p.y < (ALIGN_Y + ALIGN_BOXSIZE_H) && p.x > ALIGN_X && p.x < (ALIGN_X + ALIGN_BOXSIZE_W)) { 
+  if (py > ALIGN_Y && py < (ALIGN_Y + ALIGN_BOXSIZE_H) && px > ALIGN_X && px < (ALIGN_X + ALIGN_BOXSIZE_W)) { 
     if (Current_State==Align_State) {
       alignBut = true;
     }
   }
 
   // Write Alignment Button
-  if (p.y > WRITE_ALIGN_Y && p.y < (WRITE_ALIGN_Y + SA_BOXSIZE_H) && p.x > WRITE_ALIGN_X && p.x < (WRITE_ALIGN_X + SA_BOXSIZE_W)) { 
+  if (py > WRITE_ALIGN_Y && py < (WRITE_ALIGN_Y + SA_BOXSIZE_H) && px > WRITE_ALIGN_X && px < (WRITE_ALIGN_X + SA_BOXSIZE_W)) { 
     if (Current_State==Write_State) {
       saveAlignBut = true;
     }
   }  
 
   // START Alignment Button - clear the corrections, reset the state machine
-  if (p.y > START_ALIGN_Y && p.y < (START_ALIGN_Y + ST_BOXSIZE_H) && p.x > START_ALIGN_X && p.x < (START_ALIGN_X + ST_BOXSIZE_W)) { 
+  if (py > START_ALIGN_Y && py < (START_ALIGN_Y + ST_BOXSIZE_H) && px > START_ALIGN_X && px < (START_ALIGN_X + ST_BOXSIZE_W)) { 
     startAlignBut = true;
     display.setLocalCmd(":SX02#");
     display.setLocalCmd(":SX03#");

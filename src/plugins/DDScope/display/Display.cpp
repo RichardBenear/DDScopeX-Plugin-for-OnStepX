@@ -8,15 +8,34 @@
 // **************************************************
 
 #include <Arduino.h>
-#include <SD.h>
-#include "Display.h"
+
+#include <Adafruit_GFX.h>
+#include <gfxfont.h>
+#include <Adafruit_SPITFT.h>
+
 #include "../../../telescope/mount/Mount.h"
-#include "../../../lib/sound/Sound.h"
+//#include "../../../lib/sound/Sound.h"
+//#include "../../../lib/serial/Serial_Local.h"
+#include "../../../lib/tasks/OnTask.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "../fonts/ARCENA18pt7b.h"
-#include "../../../lib/tasks/OnTask.h"
+
+// DDScope specific
+#include "Display.h"
+#include "../odriveExt/ODriveExt.h"
+#include "../catalog/Catalog.h"
+#include "../screens/AlignScreen.h"
+#include "../screens/CatalogScreen.h"
+#include "../screens/FocuserScreen.h"
+#include "../screens/GotoScreen.h"
+#include "../screens/GuideScreen.h"
+#include "../screens/HomeScreen.h"
+#include "../screens/MoreScreen.h"
+#include "../screens/ODriveScreen.h"
+#include "../screens/PlanetsScreen.h"
+#include "../screens/SettingsScreen.h"
 
 #define TITLE_BOXSIZE_X         313
 #define TITLE_BOXSIZE_Y          40 
@@ -25,7 +44,6 @@
 
 // Shared common Status 
 #define COM_LABEL_Y_SPACE       16
-
 #define COM_COL1_LABELS_X        8
 #define COM_COL1_LABELS_Y       98
 #define COM_COL1_DATA_X         72
@@ -33,21 +51,17 @@
 #define COM_COL2_LABELS_X       179
 #define COM_COL2_DATA_X         245
 
-// Screen Selection buttons
-#define MENU_X                    3
-#define MENU_Y                   42
-#define MENU_Y_SPACING            0
-#define MENU_X_SPACING           80
-#define MENU_BOXSIZE_X           72
-#define MENU_BOXSIZE_Y           45
-#define MENU_TEXT_X_OFFSET        8
-#define MENU_TEXT_Y_OFFSET       28
+void updateScreenWrapper() { display.specificScreenUpdate(); }
+void updateCommonWrapper() { display.updateCommonStatus(); }
+void updateOnStepCmdWrapper() { display.updateOnStepCmdStatus(); }
 
 // =========================================
 // ========= Initialize Display ============
 // =========================================
 void Display::init() {
   
+  SerialLocal serialLocal; 
+
   pinMode(ALT_THERMISTOR_PIN, INPUT); // Analog input
   pinMode(AZ_THERMISTOR_PIN, INPUT); // Analog input
   
@@ -74,21 +88,35 @@ void Display::init() {
   pinMode(FOCUSER_SLEEP_PIN, OUTPUT); 
   digitalWrite(FOCUSER_SLEEP_PIN,HIGH); // Focuser motor driver not sleeping
 
-  // Start TouchScreen
-  if (!ts.begin()) {
-    VLF("MSG: TouchScreen, unable to start");
-  } else {
-    pinMode(TS_IRQ, INPUT_PULLUP); // XPT2046 library doesn't turn on pullup
-    ts.setRotation(3); // touchscreen rotation
-    VLF("MSG: TouchScreen, started");
-  }
-
-  // Start Display - Note: should follow the touchscreen begin since SPI.begin is done in Touchscreen
   VLF("MSG: Display, started"); 
   tft.begin(); delay(1);
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
-  display.sdInit(); delay(2000);
+  display.sdInit(); 
+  delay(2000);
+
+  // draw Home screen
   homeScreen.draw();
+
+  // update this common-among-screens status
+  VF("MSG: Setup, start screen update Common status polling task (rate 900 ms priority 7)... ");
+  uint8_t CShandle = tasks.add(900, 0, true, 7, updateCommonWrapper, "UpdateCommonScreen");
+  if (CShandle)  { VLF("success"); } else { VLF("FAILED!"); }
+  //tasks.setTimingMode(CShandle, TM_MINIMUM);
+  tasks.yield(100);
+
+  // update the OnStep Cmd Error status display
+  VF("MSG: Setup, start screen update OnStep CMD status polling task (rate 1100 ms priority 7)... ");
+  uint8_t CDhandle = tasks.add(1000, 0, true, 7, updateOnStepCmdWrapper, "UpdateOnStepCmdScreen");
+  if (CDhandle) { VLF("success"); } else { VLF("FAILED!"); }
+  //tasks.setTimingMode(CDhandle, TM_MINIMUM);
+  tasks.yield(100);
+
+  // update this specific screen status
+  VF("MSG: Setup, start screen update This screen status polling task (rate 3000 ms priority 7)... ");
+  uint8_t SShandle = tasks.add(3000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
+  if (SShandle)  { VLF("success"); } else { VLF("FAILED!"); }
+  //tasks.setTimingMode(SShandle, TM_MINIMUM);
+  tasks.yield(100);
 }
 
 // initialize the SD card and boot screen
@@ -116,9 +144,31 @@ void Display::sdInit() {
   tft.setTextSize(1);
   tft.setCursor(120, 120);
   tft.printf("NGC 1566");
+}
 
-  // draw Home screen
-  homeScreen.draw();
+// select which screen to update
+void Display::specificScreenUpdate() {
+  if (display.lastScreen != display.currentScreen) {
+    display.firstDraw = true;
+    display.lastScreen = display.currentScreen;
+  }
+  
+  switch (display.currentScreen) {
+    case HOME_SCREEN:     homeScreen.updateThisStatus();     break;
+    case GUIDE_SCREEN:    guideScreen.updateThisStatus();    break;
+    case FOCUSER_SCREEN:  focuserScreen.updateThisStatus();  break;
+    case GOTO_SCREEN:     gotoScreen.updateThisStatus();     break;
+    case MORE_SCREEN:     moreScreen.updateThisStatus();     break;
+    case ODRIVE_SCREEN:   oDriveScreen.updateThisStatus();   break;
+    case SETTINGS_SCREEN: settingsScreen.updateThisStatus(); break;
+    case ALIGN_SCREEN:    alignScreen.updateThisStatus();    break;
+    case CATALOG_SCREEN:  catalogScreen.updateThisStatus();  break;
+    case PLANETS_SCREEN:  planetsScreen.updateThisStatus();  break;
+    case CUST_CAT_SCREEN: catalogScreen.updateThisStatus();  break;
+  }
+  display.firstDraw = false;
+
+  tasks.yield(100);
 }
 
 // Initialize some Mount parameters
@@ -143,13 +193,13 @@ void Display::setLocalCmd(const char *command) {
 
 void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
-  tasks.yield(80);
+  tasks.yield(40);
   strcpy(reply, SERIAL_LOCAL.receive()); 
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command); 
-  tasks.yield(80);
+  tasks.yield(40);
   strcpy(reply, SERIAL_LOCAL.receive()); 
    //VF(command); VF("="); VL(serialLocal.receive());
    //tft.print(serialLocal.receive());
@@ -596,116 +646,6 @@ void Display::updateCommonStatus() {
   }
 }
 
-// Poll the TouchScreen
-void Display::touchScreenPoll() {
-  if (ts.touched()) {
-    if (display.screenTouched) return; // debounce, should be false if valid
-
-    p = ts.getPoint();      
-
-    // Scale from ~0->4000 to tft.width using the calibration #'s
-    //VF("x="); V(p.x); VF(", y="); V(p.y); VF(", z="); VL(p.z); // for calibration
-    p.x = map(p.x, TS_MINX, TS_MAXX, 0, tft.width());
-    p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
-    //VF("x="); V(p.x); VF(", y="); V(p.y); VF(", z="); VL(p.z); //for calibration
-
-    display.soundFreq(1000, 100);
-
-    // =============== MENU MAP ================
-    // Current Page   |Cur |Col1|Col2|Col3|Col4|
-    // Home-----------| Ho | Gu | Fo | GT | Mo |
-    // Guide----------| Gu | Ho | Fo | Al | Mo |
-    // Focuser--------| Fo | Ho | Gu | GT | Mo |
-    // GoTo-----------| GT | Ho | Fo | Gu | Mo |
-    // More-CATs------| Mo | GT | Se | Od | Al |
-    // ODrive---------| Od | Ho | Se | Al | Xs |
-    // Settings-------| Se | Ho | Fo | Al | Od |
-    // Alignment------| Al | Ho | Fo | Gu | Od |
-    
-    // Detect which Menu Screen is requested
-    //skip checking these page menus since they don't have this menu setup
-    if ((display.currentScreen == CATALOG_SCREEN) || 
-        (display.currentScreen == PLANETS_SCREEN) ||  
-        (display.currentScreen == CUST_CAT_SCREEN)) return; 
-    
-    // tell other screens to process button states...they will clear this flag when done
-    display.screenTouched = true;
-
-    // Check for any Menu buttons pressed
-    // == LeftMost Menu Button ==
-    if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X                   ) && p.x < (MENU_X                    + MENU_BOXSIZE_X)) {
-      switch(display.currentScreen) {
-          case HOME_SCREEN:    guideScreen.draw(); break;
-          case GUIDE_SCREEN:    homeScreen.draw(); break;
-          case FOCUSER_SCREEN:  homeScreen.draw(); break;
-          case GOTO_SCREEN:     homeScreen.draw(); break;
-          case MORE_SCREEN:     gotoScreen.draw(); break;
-          case ODRIVE_SCREEN:   homeScreen.draw(); break;
-          case SETTINGS_SCREEN: homeScreen.draw(); break;
-          case ALIGN_SCREEN:    homeScreen.draw(); break;
-          default:              homeScreen.draw(); break;
-      }
-    }
-    // == Center Left Menu - Column 2 ==
-    if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X +   MENU_X_SPACING) && p.x < (MENU_X +   MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      switch(display.currentScreen) {
-          case HOME_SCREEN:     focuserScreen.draw(); break;
-          case GUIDE_SCREEN:    focuserScreen.draw(); break;
-          case FOCUSER_SCREEN:    guideScreen.draw(); break;
-          case GOTO_SCREEN:     focuserScreen.draw(); break;
-          case MORE_SCREEN:    settingsScreen.draw(); break;
-          case ODRIVE_SCREEN:  settingsScreen.draw(); break;
-          case SETTINGS_SCREEN: focuserScreen.draw(); break;
-          case ALIGN_SCREEN:    focuserScreen.draw(); break;
-          default:                 homeScreen.draw(); break;
-      }
-    }
-    // == Center Right Menu - Column 3 ==
-    if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 2*MENU_X_SPACING) && p.x < (MENU_X + 2*MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      switch(display.currentScreen) {
-          case HOME_SCREEN:      gotoScreen.draw(); break;
-          case GUIDE_SCREEN:    alignScreen.draw(); break;
-          case FOCUSER_SCREEN:   gotoScreen.draw(); break;
-          case GOTO_SCREEN:     guideScreen.draw(); break;
-          case MORE_SCREEN:    oDriveScreen.draw(); break;
-          case ODRIVE_SCREEN:   alignScreen.draw(); break;
-          case SETTINGS_SCREEN: alignScreen.draw(); break;
-          case ALIGN_SCREEN:    guideScreen.draw(); break;
-          default:               homeScreen.draw(); break;
-      }
-    }
-    // == Right Menu - Column 4 ==
-    if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 3*MENU_X_SPACING) && p.x < (MENU_X + 3*MENU_X_SPACING + MENU_BOXSIZE_X)) {   
-      switch(display.currentScreen) {
-          case HOME_SCREEN:       moreScreen.draw(); break;
-          case GUIDE_SCREEN:      moreScreen.draw(); break;
-          case FOCUSER_SCREEN:    moreScreen.draw(); break;
-          case GOTO_SCREEN:       moreScreen.draw(); break;
-          case MORE_SCREEN:      alignScreen.draw(); break;
-          case ODRIVE_SCREEN:     moreScreen.draw(); break;
-          case SETTINGS_SCREEN: oDriveScreen.draw(); break;
-          case ALIGN_SCREEN:    oDriveScreen.draw(); break;
-          default:                homeScreen.draw(); break;
-      }
-    }
-
-      // Now check for touchscreen action on selected Page
-    switch (display.currentScreen) {
-        case HOME_SCREEN:     homeScreen.touchPoll(); break;
-        case GUIDE_SCREEN:    guideScreen.touchPoll(); break;
-        case FOCUSER_SCREEN:  focuserScreen.touchPoll(); break;
-        case GOTO_SCREEN:     gotoScreen.touchPoll(); break;
-        case MORE_SCREEN:     moreScreen.touchPoll(); break;
-        case ODRIVE_SCREEN:   oDriveScreen.touchPoll(); break;
-        case SETTINGS_SCREEN: settingsScreen.touchPoll(); break;
-        case ALIGN_SCREEN:    alignScreen.touchPoll(); break;
-        case CATALOG_SCREEN:  catalogScreen.touchPoll(); break;
-        case PLANETS_SCREEN:  planetsScreen.touchPoll(); break;
-        default:              homeScreen.touchPoll(); break;
-    }
-  } 
-}
-
 // draw a picture -This function is a copy from rDUINOScope but with 
 //    pushColors() changed to drawPixel() with a loop
 // rDUINOScope - Arduino based telescope control system (GOTO).
@@ -805,7 +745,7 @@ float Display::getBatteryVoltage() {
     if (batLED) {
       digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // already on, then flash it off
       batLED = false;
-      status.sound.alert();
+      //status.sound.alert();
     } else {
       digitalWrite(BATTERY_LOW_LED_PIN,LOW); // already off, then flash it on
       batLED = true;

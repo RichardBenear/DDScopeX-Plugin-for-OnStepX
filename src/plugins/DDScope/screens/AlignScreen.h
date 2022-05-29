@@ -3,6 +3,8 @@
 #ifndef ALIGN_S_H
 #define ALIGN_S_H
 
+#include <Arduino.h>
+
 //States of the Align State machine
 typedef enum {
     Idle_State,
@@ -19,7 +21,7 @@ typedef enum {
 class AlignScreen {
   public:
     void draw();
-    void touchPoll();
+    void touchPoll(uint16_t px, uint16_t py);
     void updateThisStatus();
    
   private:

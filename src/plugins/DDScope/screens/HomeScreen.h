@@ -4,6 +4,8 @@
 #ifndef HOME_S_H
 #define HOME_S_H
 
+#include "Arduino.h"
+
 class HomeScreen {
   public:
     void draw();
@@ -12,7 +14,7 @@ class HomeScreen {
     void updateStatusCol2();
     void updateHomeButtons();
     void updateMountStatus();
-    void touchPoll();
+    void touchPoll(int16_t px, int16_t py);
 
   private:
     float currentBatVoltage;

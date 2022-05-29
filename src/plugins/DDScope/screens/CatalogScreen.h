@@ -66,7 +66,7 @@ typedef struct {
 class CatalogScreen {
   public:
     void draw(int catSel);
-    void touchPoll();
+    void touchPoll(uint16_t px, uint16_t py);
     void updateThisStatus();
 
     char catSelectionStr1[26];

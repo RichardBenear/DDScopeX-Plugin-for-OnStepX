@@ -4,10 +4,12 @@
 #ifndef FOCUSER_S_H
 #define FOCUSER_S_H
 
+#include <Arduino.h>
+
 class FocuserScreen {
   public:
     void draw();
-    void touchPoll();
+    void touchPoll(uint16_t px, uint16_t py);
     void updateThisStatus();
     
   private:

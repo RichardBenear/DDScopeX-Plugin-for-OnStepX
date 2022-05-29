@@ -5,28 +5,8 @@
 #define DISPLAY_H
 
 #include <SD.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SPITFT.h>
-#include <XPT2046_Touchscreen.h>
+#include "src/Common.h"
 #include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
-
-// DDScope specific
-//#include "../../../pinmaps/Pins.DDtPCB.h"
-#include "../odriveExt/ODriveExt.h"
-#include "../catalog/Catalog.h"
-#include "../screens/AlignScreen.h"
-#include "../screens/CatalogScreen.h"
-#include "../screens/FocuserScreen.h"
-#include "../screens/GotoScreen.h"
-#include "../screens/GuideScreen.h"
-#include "../screens/HomeScreen.h"
-#include "../screens/MoreScreen.h"
-#include "../screens/ODriveScreen.h"
-#include "../screens/PlanetsScreen.h"
-#include "../screens/SettingsScreen.h"
-
-// OnStepX includes
-#include "../../../telescope/mount/status/Status.h"
 
 #define C_WIDTH  80
 #define C_HEIGHT 14
@@ -38,8 +18,18 @@
 #define AZM_MOTOR 1
 #define ALT_MOTOR 0 
 
+// Screen Selection buttons
+#define MENU_X                 3
+#define MENU_Y                42
+#define MENU_Y_SPACING         0
+#define MENU_X_SPACING        80
+#define MENU_BOXSIZE_X        72
+#define MENU_BOXSIZE_Y        45
+#define MENU_TEXT_X_OFFSET     8
+#define MENU_TEXT_Y_OFFSET    28
+
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
-#define BATTERY_LOW_VOLTAGE    21  
+#define BATTERY_LOW_VOLTAGE   21  
 
 // This is calibration data for the raw touch data to the screen coordinates
 #define TS_MINX        250 
@@ -101,16 +91,13 @@ enum SelectedCatalog
 
 // Display related objects
 static Adafruit_ILI9486_Teensy tft;
-static XPT2046_Touchscreen ts(TS_CS, TS_IRQ); // Use Interrupts for touchscreen
-static TS_Point p;
-
 
 // =========================================
 class Display {
   public:
     void init();
     void sdInit();
-    void update();
+    void specificScreenUpdate();
     void DDmountInit();
 
   // Local Command Channel support
@@ -126,15 +113,14 @@ class Display {
     void canvPrint(int x, int y, int y_off, int width, int height, double label);
     void canvPrint(int x, int y, int y_off, int width, int height, int label);
     void drawMenuButtons();
+    void drawCommonStatusLabels();
     void drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint16_t HH);
 
     // Status and updates
     Screen currentScreen = HOME_SCREEN;
     Screen lastScreen = GUIDE_SCREEN; // must be different than current to force initial draw of HOME screen
-    void updateCommonStatus();
-    void touchScreenPoll();    
+    void updateCommonStatus();  
     void updateOnStepCmdStatus();
-    void drawCommonStatusLabels();
     void setDayNight();
     float getBatteryVoltage();
 
@@ -148,36 +134,32 @@ class Display {
     uint16_t textColor = YELLOW; 
     uint16_t butOutline = YELLOW; 
 
-    bool firstDraw = false;
-    bool refreshScreen;
-    bool screenTouched;
-    bool nightMode;
+    bool firstDraw = true;
+    bool refreshScreen = false;
+    bool screenTouched = false;
+    bool nightMode = false;
 
   private:
-    int touchHandle;
-    int updateScreenHandle;
-    int focuserDcHandle;
-  
     char ra_hms[10], dec_dms[11];
     char tra_hms[10], tdec_dms[11];
-    char currentRA[10];
-    char currentDEC[11]; 
-    char currentTargRA[10];
-    char currentTargDEC[11];
-    double currentTargRA_d;
-    double currentTargDEC_d;
-    double azm_d;
-    double alt_d;
-    double tazm_d;
-    double talt_d;
-    double current_azm;
-    double current_alt;
-    double tra_d;
-    double tra_dha;
-    double tdec_d;
-    double current_tazm;
-    double current_talt;
-    double altitudeFt;
+    char currentRA[10] = "1.1";
+    char currentDEC[11] = "1.1"; 
+    char currentTargRA[10] = "1.1";
+    char currentTargDEC[11] = "1.1";
+    double currentTargRA_d = 1.1;
+    double currentTargDEC_d = 1.1;
+    double azm_d = 0.0;
+    double alt_d = 0.0;
+    double tazm_d = 0.0;
+    double talt_d = 0.0;
+    double current_azm = 1.1;
+    double current_alt = 1.1;
+    double tra_d = 0.0;
+    double tra_dha = 0.0;
+    double tdec_d = 0.0;
+    double current_tazm = 1.1;
+    double current_talt = 1.1;
+    double altitudeFt = 0.0;
 
     bool batLED = false;
     bool firstGPS = true;
@@ -185,6 +167,7 @@ class Display {
 
 extern Display display;
 
+// ============= Smart Hand Controller Class ======================
 // Leveraged the following from SHC with some modifications
 class SHC {
   public:
@@ -201,6 +184,7 @@ class SHC {
 
 extern SHC shc;
 
+// ================ Local Serial Mount status =====================
 // Local command channel mount status
 class LCmountStatus {
   public:

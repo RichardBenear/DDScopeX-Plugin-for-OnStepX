@@ -5,12 +5,16 @@
 // Author: Richard Benear
 // 8/22/21 -- refactor 5/1/22
 
+//#include <Arduino.h>
 #include "GuideScreen.h"
 #include "../display/Display.h"
+//#include <Adafruit_GFX.h>
+//#include <gfxfont.h>
+//#include <Adafruit_SPITFT.h>
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "../fonts/UbuntuMono_Bold14pt7b.h"
-#include "../../../telescope/mount/Mount.h"
+//#include "../../../telescope/mount/Mount.h"
 
 // Guide buttons
 #define GUIDE_BOXSIZE_X          85
@@ -61,7 +65,9 @@ void GuideScreen::draw() {
   tft.fillScreen(display.pgBackground);
   display.drawMenuButtons();
   display.drawTitle(110, 30, "Guiding");
+  tft.setFont(&Inconsolata_Bold8pt7b);
   display.drawCommonStatusLabels();
+  tft.setFont();
 }
 
 // ========== Update Guide Page Status ==========
@@ -73,7 +79,8 @@ void GuideScreen::updateThisStatus() {
         if (display.screenTouched) display.refreshScreen = true;
         
         // update current status of guide buttons
-        tft.setFont(&UbuntuMono_Bold14pt7b);
+        tft.setFont(&UbuntuMono_Bold14pt7b); delay(5);
+
         if (!guidingEast) { //&& !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
             display.drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " EAST");
         } else {
@@ -170,16 +177,17 @@ void GuideScreen::updateThisStatus() {
 }
 
 // Manage Touching of Guiding Buttons
-void GuideScreen::touchPoll() {
+void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     tft.setFont(&UbuntuMono_Bold11pt7b);
     // SYNC Button 
-    if (p.y > SYNC_OFFSET_Y && p.y < (SYNC_OFFSET_Y + GUIDE_BOXSIZE_Y) && p.x > SYNC_OFFSET_X && p.x < (SYNC_OFFSET_X + GUIDE_BOXSIZE_X)) {            
+    if (py > SYNC_OFFSET_Y && py < (SYNC_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > SYNC_OFFSET_X && px < (SYNC_OFFSET_X + GUIDE_BOXSIZE_X)) {            
         display.setLocalCmd(":CS#"); // doesn't have reply
-        syncOn = true;  
+        syncOn = true;
+        return;  
     }
                     
     // EAST / RIGHT button
-    if (p.y > RIGHT_OFFSET_Y && p.y < (RIGHT_OFFSET_Y + GUIDE_BOXSIZE_Y) && p.x > RIGHT_OFFSET_X && p.x < (RIGHT_OFFSET_X + GUIDE_BOXSIZE_X)) {
+    if (py > RIGHT_OFFSET_Y && py < (RIGHT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > RIGHT_OFFSET_X && px < (RIGHT_OFFSET_X + GUIDE_BOXSIZE_X)) {
         if (!guidingEast) {
             display.setLocalCmd(":Mw#"); // east west is swapped for DDScope
             guidingEast = true;
@@ -187,10 +195,11 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qw#");
             guidingEast = false;
         }
+        return;
     }
                     
     // WEST / LEFT button
-    if (p.y > LEFT_OFFSET_Y && p.y < (LEFT_OFFSET_Y + GUIDE_BOXSIZE_Y) && p.x > LEFT_OFFSET_X && p.x < (LEFT_OFFSET_X + GUIDE_BOXSIZE_X)) {
+    if (py > LEFT_OFFSET_Y && py < (LEFT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > LEFT_OFFSET_X && px < (LEFT_OFFSET_X + GUIDE_BOXSIZE_X)) {
         if (!guidingWest) {
             display.setLocalCmd(":Me#"); // east west is swapped for DDScope
             guidingWest = true;
@@ -198,10 +207,11 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qe#");
             guidingWest = false;
         }
+        return;
     }
                     
     // NORTH / UP button
-    if (p.y > UP_OFFSET_Y && p.y < (UP_OFFSET_Y + GUIDE_BOXSIZE_Y) && p.x > UP_OFFSET_X && p.x < (UP_OFFSET_X + GUIDE_BOXSIZE_X)) {
+    if (py > UP_OFFSET_Y && py < (UP_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > UP_OFFSET_X && px < (UP_OFFSET_X + GUIDE_BOXSIZE_X)) {
         if (!guidingNorth) {
             display.setLocalCmd(":Mn#");
             guidingNorth = true;
@@ -209,10 +219,11 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qn#");
             guidingNorth = false;
         }
+        return;
     }
                     
     // SOUTH / DOWN button
-    if (p.y > DOWN_OFFSET_Y && p.y < (DOWN_OFFSET_Y + GUIDE_BOXSIZE_Y) && p.x > DOWN_OFFSET_X && p.x < (DOWN_OFFSET_X + GUIDE_BOXSIZE_X)) {
+    if (py > DOWN_OFFSET_Y && py < (DOWN_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > DOWN_OFFSET_X && px < (DOWN_OFFSET_X + GUIDE_BOXSIZE_X)) {
         if (!guidingSouth) {
             display.setLocalCmd(":Ms#");
             guidingSouth = true;
@@ -220,6 +231,7 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Qs#");
             guidingSouth = false;
         }
+        return;
     }
 
     // Select Guide Rates
@@ -229,46 +241,50 @@ void GuideScreen::touchPoll() {
     tft.setFont(&Inconsolata_Bold8pt7b);
     
     // 1x Guide Rate 
-    if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
+    if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RG#");
         oneXisOn = true;
         eightXisOn = false;
         twentyXisOn = false;
         HalfMaxisOn = false;
+        return;
     }
 
     // 8x Rate for Centering
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
+    if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RC#");
         oneXisOn = false;
         eightXisOn = true;
         twentyXisOn = false;
         HalfMaxisOn = false;
+        return;
     }
 
     // 24x Rate for Moving
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
+    if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RM#");
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = true;
         HalfMaxisOn = false;
+        return;
     }
 
     // Half Max Rate for Slewing
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    if (p.y > GUIDE_R_Y+y_offset && p.y < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && p.x > GUIDE_R_X+x_offset && p.x < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
+    if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
         display.setLocalCmd(":RS#");
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = false;
         HalfMaxisOn = true;
+        return;
     }
 
     // Spiral Search
-    if (p.y > SPIRAL_Y && p.y < (SPIRAL_Y + SPIRAL_BOXSIZE_Y) && p.x > SPIRAL_X && p.x < (SPIRAL_X + SPIRAL_BOXSIZE_X)) {
+    if (py > SPIRAL_Y && py < (SPIRAL_Y + SPIRAL_BOXSIZE_Y) && px > SPIRAL_X && px < (SPIRAL_X + SPIRAL_BOXSIZE_X)) {
         if (!spiralOn) {
             display.setLocalCmd(":Mp#");
             spiralOn = true;
@@ -276,10 +292,11 @@ void GuideScreen::touchPoll() {
             display.setLocalCmd(":Q#"); // stop moves
             spiralOn = false;
         }
+        return;
     }
     
     // STOP moving
-    if (p.y > STOP_Y && p.y < (STOP_Y + STOP_BOXSIZE_Y) && p.x > STOP_X && p.x < (STOP_X + STOP_BOXSIZE_X)) {
+    if (py > STOP_Y && py < (STOP_Y + STOP_BOXSIZE_Y) && px > STOP_X && px < (STOP_X + STOP_BOXSIZE_X)) {
         display.setLocalCmd(":Q#");
         stopPressed = true;
         spiralOn = false;
@@ -287,6 +304,7 @@ void GuideScreen::touchPoll() {
         guidingWest = false;
         guidingNorth = false;
         guidingSouth = false;
+        return;
     }
 }
 

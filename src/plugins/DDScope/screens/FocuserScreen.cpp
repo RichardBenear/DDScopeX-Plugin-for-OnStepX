@@ -282,10 +282,10 @@ void FocuserScreen::updateThisStatus() {
 }
 
 // Update buttons when touched
-void FocuserScreen::touchPoll()
+void FocuserScreen::touchPoll(uint16_t px, uint16_t py)
 {   
     // IN button
-    if (p.y > FOC_INOUT_Y && p.y < (FOC_INOUT_Y + FOC_INOUT_BOXSIZE_Y) && p.x > FOC_INOUT_X && p.x < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
+    if (py > FOC_INOUT_Y && py < (FOC_INOUT_Y + FOC_INOUT_BOXSIZE_Y) && px > FOC_INOUT_X && px < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
     {
         display.soundFreq(2000, 400);
         if (!focMovingIn) { //was moving out, change direction
@@ -297,7 +297,7 @@ void FocuserScreen::touchPoll()
 
     int y_offset = FOC_INOUT_Y_SPACING;
     // OUT button
-    if (p.y > FOC_INOUT_Y + y_offset && p.y < (FOC_INOUT_Y + y_offset + FOC_INOUT_BOXSIZE_Y) && p.x > FOC_INOUT_X && p.x < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
+    if (py > FOC_INOUT_Y + y_offset && py < (FOC_INOUT_Y + y_offset + FOC_INOUT_BOXSIZE_Y) && px > FOC_INOUT_X && px < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
     {
         display.soundFreq(2100, 400);
         if (focMovingIn) { //was moving in, change direction
@@ -311,7 +311,7 @@ void FocuserScreen::touchPoll()
     // Select Focuser Speed 
     y_offset = 0;
     // Increment Speed
-    if (p.y > SPEED_Y + y_offset && p.y < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && p.x > SPEED_X && p.x < (SPEED_X + SPEED_BOXSIZE_X))
+    if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
     {
         focMoveSpeed += FOC_SPEED_INC; // microseconds
         if (focMoveSpeed > 900) focMoveSpeed = 900;
@@ -320,7 +320,7 @@ void FocuserScreen::touchPoll()
 
     // Decrement Speed
     y_offset +=SPEED_BOXSIZE_Y + 2;
-    if (p.y > SPEED_Y + y_offset && p.y < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && p.x > SPEED_X && p.x < (SPEED_X + SPEED_BOXSIZE_X))
+    if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
     {
         focMoveSpeed -= FOC_SPEED_INC; // microseconds
         if (focMoveSpeed < 100) focMoveSpeed = 100;
@@ -330,7 +330,7 @@ void FocuserScreen::touchPoll()
     // ======== Set GoTo points ========
     // Set GoTo point
     y_offset +=SPEED_BOXSIZE_Y + 2;
-    if (p.y > SPEED_Y + y_offset && p.y < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && p.x > SPEED_X && p.x < (SPEED_X + SPEED_BOXSIZE_X))
+    if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
     {
         setPointTarget = focPosition;
         setPoint = true;
@@ -338,7 +338,7 @@ void FocuserScreen::touchPoll()
 
     // GoTo Setpoint
     y_offset +=SPEED_BOXSIZE_Y + 2;
-    if (p.y > SPEED_Y + y_offset && p.y < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && p.x > SPEED_X && p.x < (SPEED_X + SPEED_BOXSIZE_X))
+    if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
     {
         focTarget = setPointTarget;
         gotoSetpoint = true; 
@@ -347,7 +347,7 @@ void FocuserScreen::touchPoll()
 
     // GoTo Halfway 
     y_offset +=SPEED_BOXSIZE_Y + 2;
-    if (p.y > SPEED_Y + y_offset && p.y < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && p.x > SPEED_X && p.x < (SPEED_X + SPEED_BOXSIZE_X))
+    if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
     {
         focTarget = (focMaxPosition - focMinPosition) / 2;
         focGoToHalf = true;
@@ -360,7 +360,7 @@ void FocuserScreen::touchPoll()
     // 2nd button press stops inward move and sets as Minimum position
     // 3rd button press moves focuser outward
     // 4th button press stops outward move and sets as Maximum position
-    if (p.y > CALIB_FOC_Y && p.y < (CALIB_FOC_Y + CALIB_FOC_BOXSIZE_Y) && p.x > CALIB_FOC_X && p.x < (CALIB_FOC_X + CALIB_FOC_BOXSIZE_X))
+    if (py > CALIB_FOC_Y && py < (CALIB_FOC_Y + CALIB_FOC_BOXSIZE_Y) && px > CALIB_FOC_X && px < (CALIB_FOC_X + CALIB_FOC_BOXSIZE_X))
     {  
         if (inwardCalState) {
             if (!focGoToActive) { // then we are starting calibration
@@ -394,7 +394,7 @@ void FocuserScreen::touchPoll()
     // ****** Center Column Buttons ******
     y_offset = 0;
     // move distance increment
-    if (p.y > MID_Y + y_offset && p.y < (MID_Y + y_offset + MID_BOXSIZE_Y) && p.x > MID_X && p.x < (MID_X + MID_BOXSIZE_X))
+    if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
     {
         focMoveDistance += MTR_PWR_INC_SIZE;
         if (focMoveDistance >= 100) focMoveDistance = 100;
@@ -404,7 +404,7 @@ void FocuserScreen::touchPoll()
 
     // move distance decrement
     y_offset +=SPEED_BOXSIZE_Y + 2;
-    if (p.y > MID_Y + y_offset && p.y < (MID_Y + y_offset + MID_BOXSIZE_Y) && p.x > MID_X && p.x < (MID_X + MID_BOXSIZE_X))
+    if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
     {
         focMoveDistance -= MTR_PWR_INC_SIZE;
         if (focMoveDistance <= 0) focMoveDistance = 5;
@@ -414,7 +414,7 @@ void FocuserScreen::touchPoll()
 
     // Set Zero point of Focuser
     y_offset +=SPEED_BOXSIZE_Y + 2;
-    if (p.y > MID_Y + y_offset && p.y < (MID_Y + y_offset + MID_BOXSIZE_Y) && p.x > MID_X && p.x < (MID_X + MID_BOXSIZE_X))
+    if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
     {
         focMinPosition = 0;
         focPosition = 0;
@@ -423,7 +423,7 @@ void FocuserScreen::touchPoll()
 
     // Set Max Position of focuser
     y_offset +=SPEED_BOXSIZE_Y + 2;
-    if (p.y > MID_Y + y_offset && p.y < (MID_Y + y_offset + MID_BOXSIZE_Y) && p.x > MID_X && p.x < (MID_X + MID_BOXSIZE_X))
+    if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
     {
         focMaxPosition = focPosition;
         setMax = true;
@@ -431,7 +431,7 @@ void FocuserScreen::touchPoll()
 
     // Reset focuser
     y_offset +=SPEED_BOXSIZE_Y + 2;
-    if (p.y > MID_Y + y_offset && p.y < (MID_Y + y_offset + MID_BOXSIZE_Y) && p.x > MID_X && p.x < (MID_X + MID_BOXSIZE_X))
+    if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
     {
         digitalWrite(FOCUSER_SLEEP_PIN,LOW); 
         delay(2);

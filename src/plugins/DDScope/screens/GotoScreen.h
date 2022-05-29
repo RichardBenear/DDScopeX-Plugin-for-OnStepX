@@ -9,7 +9,7 @@
 class GotoScreen {
   public:
     void draw();
-    void touchPoll();
+    void touchPoll(uint16_t px, uint16_t py);
     void updateThisStatus();
     
   private:

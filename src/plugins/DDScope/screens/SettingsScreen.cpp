@@ -5,6 +5,7 @@
 
 #include "SettingsScreen.h"
 #include "../display/Display.h"
+#include "../catalog/Catalog.h"
 
 #define PAD_BUTTON_X         2
 #define PAD_BUTTON_Y         280
@@ -397,16 +398,16 @@ void SettingsScreen::updateThisStatus() {
 }
 
 // **** TouchScreen was touched, determine which button *****
-void SettingsScreen::touchPoll() {
+void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
   
   //were number Pad buttons pressed?
   for(int i=0; i<4; i++) { 
     for(int j=0; j<3; j++) {
       int row=i; int col=j; 
-      if (p.y >   PAD_BUTTON_Y+row*(PAD_BUTTON_H+PAD_BUTTON_SPACING_Y) 
-       && p.y <  (PAD_BUTTON_Y+row*(PAD_BUTTON_H+PAD_BUTTON_SPACING_Y)) + PAD_BUTTON_H 
-       && p.x >   PAD_BUTTON_X+col*(PAD_BUTTON_W+PAD_BUTTON_SPACING_X) 
-       && p.x <  (PAD_BUTTON_X+col*(PAD_BUTTON_W+PAD_BUTTON_SPACING_X) + PAD_BUTTON_W)) {
+      if (py >   PAD_BUTTON_Y+row*(PAD_BUTTON_H+PAD_BUTTON_SPACING_Y) 
+       && py <  (PAD_BUTTON_Y+row*(PAD_BUTTON_H+PAD_BUTTON_SPACING_Y)) + PAD_BUTTON_H 
+       && px >   PAD_BUTTON_X+col*(PAD_BUTTON_W+PAD_BUTTON_SPACING_X) 
+       && px <  (PAD_BUTTON_X+col*(PAD_BUTTON_W+PAD_BUTTON_SPACING_X) + PAD_BUTTON_W)) {
         sButtonPosition=row*3+col;
         //VF("sButtonPosition="); VL(sButtonPosition);
         sNumDetected = true;
@@ -415,7 +416,7 @@ void SettingsScreen::touchPoll() {
   }
 
   // Select Time field
-  if (p.y > T_SELECT_Y && p.y < (T_SELECT_Y + CO_BOXSIZE_Y) && p.x > T_SELECT_X && p.x < (T_SELECT_X + CO_BOXSIZE_X)) {
+  if (py > T_SELECT_Y && py < (T_SELECT_Y + CO_BOXSIZE_Y) && px > T_SELECT_X && px < (T_SELECT_X + CO_BOXSIZE_X)) {
     Tselect = true;
     Dselect = false;
     Tzselect = false;
@@ -424,14 +425,14 @@ void SettingsScreen::touchPoll() {
   }
 
   // Clear Time field
-  if (p.y > T_CLEAR_Y && p.y < (T_CLEAR_Y + CO_BOXSIZE_Y) && p.x > T_CLEAR_X && p.x < (T_CLEAR_X + CO_BOXSIZE_X)) {
+  if (py > T_CLEAR_Y && py < (T_CLEAR_Y + CO_BOXSIZE_Y) && px > T_CLEAR_X && px < (T_CLEAR_X + CO_BOXSIZE_X)) {
     Tclear = true; 
     TtextIndex = 0;
     sButtonPosition = 12; 
   }
 
   // Select Date field
-  if (p.y > D_SELECT_Y && p.y < (D_SELECT_Y + CO_BOXSIZE_Y) && p.x > D_SELECT_X && p.x < (D_SELECT_X + CO_BOXSIZE_X)) {
+  if (py > D_SELECT_Y && py < (D_SELECT_Y + CO_BOXSIZE_Y) && px > D_SELECT_X && px < (D_SELECT_X + CO_BOXSIZE_X)) {
     Tselect = false;
     Dselect = true;
     Tzselect = false;
@@ -440,14 +441,14 @@ void SettingsScreen::touchPoll() {
   }
 
   // Clear DEC field
-  if (p.y > D_CLEAR_Y && p.y < (D_CLEAR_Y + CO_BOXSIZE_Y) && p.x > D_CLEAR_X && p.x < (D_CLEAR_X + CO_BOXSIZE_X)) {
+  if (py > D_CLEAR_Y && py < (D_CLEAR_Y + CO_BOXSIZE_Y) && px > D_CLEAR_X && px < (D_CLEAR_X + CO_BOXSIZE_X)) {
     Dclear = true; 
     DtextIndex = 0;
     sButtonPosition = 12; 
   }
 
   // Select TZ field
-  if (p.y > U_SELECT_Y && p.y < (U_SELECT_Y + CO_BOXSIZE_Y) && p.x > U_SELECT_X && p.x < (U_SELECT_X + CO_BOXSIZE_X)) {
+  if (py > U_SELECT_Y && py < (U_SELECT_Y + CO_BOXSIZE_Y) && px > U_SELECT_X && px < (U_SELECT_X + CO_BOXSIZE_X)) {
     Tselect = false;
     Dselect = false;
     Tzselect = true;
@@ -456,14 +457,14 @@ void SettingsScreen::touchPoll() {
   }
 
   // Clear TZ field
-  if (p.y > U_CLEAR_Y && p.y < (U_CLEAR_Y + CO_BOXSIZE_Y) && p.x > U_CLEAR_X && p.x < (U_CLEAR_X + CO_BOXSIZE_X)) {
+  if (py > U_CLEAR_Y && py < (U_CLEAR_Y + CO_BOXSIZE_Y) && px > U_CLEAR_X && px < (U_CLEAR_X + CO_BOXSIZE_X)) {
     Tzclear = true; 
     TztextIndex = 0;
     sButtonPosition = 12; 
   }
 
   // Select Latitude field
-  if (p.y > LA_SELECT_Y && p.y < (LA_SELECT_Y + CO_BOXSIZE_Y) && p.x > LA_SELECT_X && p.x < (LA_SELECT_X + CO_BOXSIZE_X)) {
+  if (py > LA_SELECT_Y && py < (LA_SELECT_Y + CO_BOXSIZE_Y) && px > LA_SELECT_X && px < (LA_SELECT_X + CO_BOXSIZE_X)) {
     Tselect = false;
     Dselect = false;
     Tzselect = false;
@@ -472,14 +473,14 @@ void SettingsScreen::touchPoll() {
   }
 
   // Clear Latitude field
-  if (p.y > LA_CLEAR_Y && p.y < (LA_CLEAR_Y + CO_BOXSIZE_Y) && p.x > LA_CLEAR_X && p.x < (LA_CLEAR_X + CO_BOXSIZE_X)) {
+  if (py > LA_CLEAR_Y && py < (LA_CLEAR_Y + CO_BOXSIZE_Y) && px > LA_CLEAR_X && px < (LA_CLEAR_X + CO_BOXSIZE_X)) {
     LaClear = true; 
     LaTextIndex = 0;
     sButtonPosition = 12; 
   }
 
 // Select Longitude field
-  if (p.y > LO_SELECT_Y && p.y < (LO_SELECT_Y + CO_BOXSIZE_Y) && p.x > LO_SELECT_X && p.x < (LO_SELECT_X + CO_BOXSIZE_X)) {
+  if (py > LO_SELECT_Y && py < (LO_SELECT_Y + CO_BOXSIZE_Y) && px > LO_SELECT_X && px < (LO_SELECT_X + CO_BOXSIZE_X)) {
     Tselect = false;
     Dselect = false;
     Tzselect = false;
@@ -488,14 +489,14 @@ void SettingsScreen::touchPoll() {
   }
 
   // Clear Longitude field
-  if (p.y > LO_CLEAR_Y && p.y < (LO_CLEAR_Y + CO_BOXSIZE_Y) && p.x > LO_CLEAR_X && p.x < (LO_CLEAR_X + CO_BOXSIZE_X)) {
+  if (py > LO_CLEAR_Y && py < (LO_CLEAR_Y + CO_BOXSIZE_Y) && px > LO_CLEAR_X && px < (LO_CLEAR_X + CO_BOXSIZE_X)) {
     LoClear = true; 
     LoTextIndex = 0;
     sButtonPosition = 12; 
   }
 
   // SEND Data
-  if (p.y > S_SEND_BUTTON_Y && p.y < (S_SEND_BUTTON_Y + S_SEND_BOXSIZE_Y) && p.x > S_SEND_BUTTON_X && p.x < (S_SEND_BUTTON_X + S_SEND_BOXSIZE_X)) {
+  if (py > S_SEND_BUTTON_Y && py < (S_SEND_BUTTON_Y + S_SEND_BOXSIZE_Y) && px > S_SEND_BUTTON_X && px < (S_SEND_BUTTON_X + S_SEND_BOXSIZE_X)) {
     sSendOn = true; 
     TtextIndex  = 0;
     DtextIndex  = 0;

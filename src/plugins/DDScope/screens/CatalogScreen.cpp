@@ -3,7 +3,10 @@
 // Used much of the Catalog Manager from the Smart Hand Controller Code by xx
 
 #include "CatalogScreen.h"
+#include "MoreScreen.h"
+#include "AlignScreen.h"
 #include "../display/Display.h"
+#include "../catalog/Catalog.h"
 #include "../catalog/CatalogTypes.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 
@@ -808,13 +811,13 @@ void CatalogScreen::updateThisStatus() {
 //=====================================================
 // **** Handle any buttons that have been selected ****
 //=====================================================
-void CatalogScreen::touchPoll() {
+void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
     // check the Catalog Buttons
     uint16_t i=0;
     if (shcCatalog || treasureCatalog) {
         for (i=0; i<(NUM_CAT_ROWS_PER_SCREEN); i++) {
-            if (p.y > CAT_Y+(i*(CAT_H+CAT_Y_SPACING)) && p.y < (CAT_Y+(i*(CAT_H+CAT_Y_SPACING))) + CAT_H 
-                    && p.x > CAT_X && p.x < (CAT_X+CAT_W)) {
+            if (py > CAT_Y+(i*(CAT_H+CAT_Y_SPACING)) && py < (CAT_Y+(i*(CAT_H+CAT_Y_SPACING))) + CAT_H 
+                    && px > CAT_X && px < (CAT_X+CAT_W)) {
                 if (treasureCatalog && tAbsRow == MAX_TREASURE_ROWS+1) return; 
                 if (shcCatalog && shcLastPage && i >= shcRow)  return; 
                 catButSelPos = i;
@@ -827,8 +830,8 @@ void CatalogScreen::touchPoll() {
     if (customCatalog) { 
         for (i=0; i<=cusRowEntries || i<NUM_CUS_ROWS_PER_SCREEN; i++) {
             if (cAbsRow == cusRowEntries+2) return;
-            if (p.y > CUS_Y+(i*(CUS_H+CUS_Y_SPACING)) && p.y < (CUS_Y+(i*(CUS_H+CUS_Y_SPACING))) + CUS_H 
-                    && p.x > CUS_X && p.x < (CUS_X+CUS_W)) {
+            if (py > CUS_Y+(i*(CUS_H+CUS_Y_SPACING)) && py < (CUS_Y+(i*(CUS_H+CUS_Y_SPACING))) + CUS_H 
+                    && px > CUS_X && px < (CUS_X+CUS_W)) {
                 if (customCatalog && cLastPage==0 && i >= cRow) return; // take care of only one entry on the page
                 catButSelPos = i;
                 catButDetected = true;
@@ -838,7 +841,7 @@ void CatalogScreen::touchPoll() {
     }
 
     // BACK button
-    if (p.y > BACK_Y && p.y < (BACK_Y + BACK_H) && p.x > BACK_X && p.x < (BACK_X + BACK_W)) {
+    if (py > BACK_Y && py < (BACK_Y + BACK_H) && px > BACK_X && px < (BACK_X + BACK_W)) {
         
         if (treasureCatalog && tCurrentPage > 0) {
             tPrevPage = tCurrentPage;
@@ -860,7 +863,7 @@ void CatalogScreen::touchPoll() {
     }
 
     // NEXT page button - reuse BACK button box size
-    if (p.y > NEXT_Y && p.y < (NEXT_Y + BACK_H) && p.x > NEXT_X && p.x < (NEXT_X + BACK_W)) {
+    if (py > NEXT_Y && py < (NEXT_Y + BACK_H) && px > NEXT_X && px < (NEXT_X + BACK_W)) {
         
         if (treasureCatalog && !tEndOfList) {
             tPrevPage = tCurrentPage;
@@ -879,7 +882,7 @@ void CatalogScreen::touchPoll() {
     }
 
     // RETURN page button - reuse BACK button box size
-    if (p.y > RETURN_Y && p.y < (RETURN_Y + BACK_H) && p.x > RETURN_X && p.x < (RETURN_X + RETURN_W)) {
+    if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
         
         display.screenTouched = false;
         moreScreen.objectSelected = objSel; 
@@ -893,12 +896,12 @@ void CatalogScreen::touchPoll() {
     }
 
     // SAVE page to custom library button
-    if (p.y > SAVE_LIB_Y && p.y < (SAVE_LIB_Y + SAVE_LIB_H) && p.x > SAVE_LIB_X && p.x < (SAVE_LIB_X + SAVE_LIB_W)) {
+    if (py > SAVE_LIB_Y && py < (SAVE_LIB_Y + SAVE_LIB_H) && px > SAVE_LIB_X && px < (SAVE_LIB_X + SAVE_LIB_W)) {
         saveTouched = true;
     }   
 
     // Delete custom library item that is selected 
-    if (p.y > 3 && p.y < 42 && p.x > 282 && p.x < 317) {
+    if (py > 3 && py < 42 && px > 282 && px < 317) {
         delSelected = true;
     }   
 }

@@ -260,15 +260,15 @@ void GotoScreen::updateThisStatus() {
 }
 
 // ==== TouchScreen was touched, determine which button ====
-void GotoScreen::touchPoll() {
+void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
   //were number Pad buttons pressed?
   for(int i=0; i<4; i++) { 
     for(int j=0; j<3; j++) {
       int row=i; int col=j; 
-      if (p.y >   NUM_BUTTON_Y+row*(NUM_BUTTON_H+NUM_BUTTON_SPACING_Y) 
-       && p.y <  (NUM_BUTTON_Y+row*(NUM_BUTTON_H+NUM_BUTTON_SPACING_Y)) + NUM_BUTTON_H 
-       && p.x >   NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) 
-       && p.x <  (NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) + NUM_BUTTON_W)) {
+      if (py >   NUM_BUTTON_Y+row*(NUM_BUTTON_H+NUM_BUTTON_SPACING_Y) 
+       && py <  (NUM_BUTTON_Y+row*(NUM_BUTTON_H+NUM_BUTTON_SPACING_Y)) + NUM_BUTTON_H 
+       && px >   NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) 
+       && px <  (NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) + NUM_BUTTON_W)) {
         buttonPosition=row*3+col;
         //VF("buttonPosition="); VL(buttonPosition);
         numDetected = true;
@@ -277,33 +277,33 @@ void GotoScreen::touchPoll() {
   }
 
   // Select RA field
-  if (p.y > RA_SELECT_Y && p.y < (RA_SELECT_Y + CO_BOXSIZE_Y) && p.x > RA_SELECT_X && p.x < (RA_SELECT_X + CO_BOXSIZE_X)) {
+  if (py > RA_SELECT_Y && py < (RA_SELECT_Y + CO_BOXSIZE_Y) && px > RA_SELECT_X && px < (RA_SELECT_X + CO_BOXSIZE_X)) {
     RAselect = true; 
     DECselect = false; 
   }
 
   // Clear RA field
-  if (p.y > RA_CLEAR_Y && p.y < (RA_CLEAR_Y + CO_BOXSIZE_Y) && p.x > RA_CLEAR_X && p.x < (RA_CLEAR_X + CO_BOXSIZE_X)) {
+  if (py > RA_CLEAR_Y && py < (RA_CLEAR_Y + CO_BOXSIZE_Y) && px > RA_CLEAR_X && px < (RA_CLEAR_X + CO_BOXSIZE_X)) {
     RAclear = true; 
     RAtextIndex = 0;
     buttonPosition = 12; 
   }
 
   // Select DEC field
-  if (p.y > DEC_SELECT_Y && p.y < (DEC_SELECT_Y + CO_BOXSIZE_Y) && p.x > DEC_SELECT_X && p.x < (DEC_SELECT_X + CO_BOXSIZE_X)) {
+  if (py > DEC_SELECT_Y && py < (DEC_SELECT_Y + CO_BOXSIZE_Y) && px > DEC_SELECT_X && px < (DEC_SELECT_X + CO_BOXSIZE_X)) {
     DECselect = true;
     RAselect = false;
   }
 
   // Clear DEC field
-  if (p.y > DEC_CLEAR_Y && p.y < (DEC_CLEAR_Y + CO_BOXSIZE_Y) && p.x > DEC_CLEAR_X && p.x < (DEC_CLEAR_X + CO_BOXSIZE_X)) {
+  if (py > DEC_CLEAR_Y && py < (DEC_CLEAR_Y + CO_BOXSIZE_Y) && px > DEC_CLEAR_X && px < (DEC_CLEAR_X + CO_BOXSIZE_X)) {
     DECclear = true; 
     DECtextIndex = 0;
     buttonPosition = 12; 
   }
 
   // SEND Coordinates
-  if (p.y > SEND_BUTTON_Y && p.y < (SEND_BUTTON_Y + SEND_BOXSIZE_Y) && p.x > SEND_BUTTON_X && p.x < (SEND_BUTTON_X + SEND_BOXSIZE_X)) {
+  if (py > SEND_BUTTON_Y && py < (SEND_BUTTON_Y + SEND_BOXSIZE_Y) && px > SEND_BUTTON_X && px < (SEND_BUTTON_X + SEND_BOXSIZE_X)) {
     sendOn = true; 
     RAtextIndex = 0;
     DECtextIndex = 0;
@@ -321,19 +321,19 @@ void GotoScreen::touchPoll() {
   }
 
   // Quick set Polaris Target
-  if (p.y > POL_BUTTON_Y && p.y < (POL_BUTTON_Y + POL_BOXSIZE_Y) && p.x > POL_BUTTON_X && p.x < (POL_BUTTON_X + POL_BOXSIZE_X)) {
+  if (py > POL_BUTTON_Y && py < (POL_BUTTON_Y + POL_BOXSIZE_Y) && px > POL_BUTTON_X && px < (POL_BUTTON_X + POL_BOXSIZE_X)) {
     setPolOn = true;
     gotoScreen.setTargPolaris(); 
   }
 
   // ==== Go To Target Coordinates ====
-  if (p.y > GOTO_BUTTON_Y && p.y < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && p.x > GOTO_BUTTON_X && p.x < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
+  if (py > GOTO_BUTTON_Y && py < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && px > GOTO_BUTTON_X && px < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
     goToPgBut = true;
     display.setLocalCmd(":MS#"); // move to
   }
 
   // ==== ABORT GOTO ====
-  if (p.y > ABORT_BUTTON_Y && p.y < (ABORT_BUTTON_Y + GOTO_BOXSIZE_Y) && p.x > ABORT_BUTTON_X && p.x < (ABORT_BUTTON_X + GOTO_BOXSIZE_X)) {
+  if (py > ABORT_BUTTON_Y && py < (ABORT_BUTTON_Y + GOTO_BOXSIZE_Y) && px > ABORT_BUTTON_X && px < (ABORT_BUTTON_X + GOTO_BOXSIZE_X)) {
     abortPgBut = true;
     display.setLocalCmd(":Q#"); // stops move
     motor1.power(false); // do this for safety reasons...mount may be colliding with something
