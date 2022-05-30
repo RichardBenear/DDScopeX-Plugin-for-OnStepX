@@ -17,7 +17,7 @@
 #include "../catalog/Catalog.h"
 #include "../display/Display.h"
 #include "../odriveExt/OdriveExt.h"
-#include "../fonts/UbuntuMono_Bold8pt7b.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "../../../telescope/mount/Mount.h"
 
@@ -76,7 +76,6 @@ void MoreScreen::draw() {
   display.setDayNight();
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
-  tft.setFont(&UbuntuMono_Bold8pt7b); 
 
   tft.setCursor(TRACK_R_X+2, TRACK_R_Y-16);
   tft.print("Tracking");
@@ -94,7 +93,7 @@ void MoreScreen::draw() {
   tft.drawBitmap(10, 5, black_house_icon, 39, 31,  display.butBackground, ORANGE);
 
   display.drawCommonStatusLabels();
- 
+  tft.setFont(&Inconsolata_Bold8pt7b);
 }
 
 //================== Update the Buttons ======================
@@ -107,12 +106,12 @@ void MoreScreen::updateThisStatus() {
     // Show any target object data selected from Catalog
     uint16_t y = 356; uint16_t x = 120;
     if (objectSelected) tft.fillRect(x, y, 199, 5*16, display.pgBackground);
-    CatalogScreen csMore;
-    tft.setCursor(x,y+16  ); tft.print(csMore.catSelectionStr1);
-    tft.setCursor(x,y+16*2); tft.print(csMore.catSelectionStr2);
-    tft.setCursor(x,y+16*3); tft.print(csMore.catSelectionStr3);
-    tft.setCursor(x,y+16*4); tft.print(csMore.catSelectionStr4); 
-    tft.setCursor(x,y+16*5); tft.print(csMore.catSelectionStr5); 
+    
+    tft.setCursor(x,y+16  ); tft.print(catalogScreen.catSelectionStr1);
+    tft.setCursor(x,y+16*2); tft.print(catalogScreen.catSelectionStr2);
+    tft.setCursor(x,y+16*3); tft.print(catalogScreen.catSelectionStr3);
+    tft.setCursor(x,y+16*4); tft.print(catalogScreen.catSelectionStr4); 
+    tft.setCursor(x,y+16*5); tft.print(catalogScreen.catSelectionStr5); 
 
     int y_offset = 0;
     int x_offset = 0;
@@ -253,7 +252,7 @@ void MoreScreen::updateThisStatus() {
       display.drawButton(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, false, GOTO_TXT_OFF_X, GOTO_TXT_OFF_Y, "Abort"); 
     }
 
-    tft.setFont(&UbuntuMono_Bold8pt7b); // Text back to default
+    tft.setFont(&Inconsolata_Bold8pt7b); // Text back to default
 
     // Draw the Catalog Buttons
     char title[16]="";

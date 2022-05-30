@@ -9,6 +9,7 @@
 #include "AlignScreen.h"
 #include "CatalogScreen.h"
 #include "../catalog/Catalog.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
 
 #define BIG_BOX_W           80
 #define BIG_BOX_H           40
@@ -119,6 +120,7 @@ void AlignScreen::draw() {
   getAlignStatus();
   showCorrections();
   moreScreen.catSelected = 0; // star catalog
+  tft.setFont(&Inconsolata_Bold8pt7b);
 }
 
 void AlignScreen::getAlignStatus() {

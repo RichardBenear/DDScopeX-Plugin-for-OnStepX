@@ -20,7 +20,7 @@
 #include "FocuserScreen.h"
 #include "../display/Display.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
-#include "../fonts/UbuntuMono_Bold16pt7b.h"
+#include "../fonts/UbuntuMono_Bold11pt7b.h"
 
 // For IN and OUT Buttons
 #define FOC_INOUT_X             206 
@@ -78,6 +78,7 @@ void FocuserScreen::draw() {
   display.drawMenuButtons();
   display.drawTitle(110, 30, "Focuser");
   display.drawCommonStatusLabels();
+  tft.setFont(&Inconsolata_Bold8pt7b);
   
   int y_offset = 0;
 
@@ -159,7 +160,7 @@ void FocuserScreen::updateThisStatus() {
       if (display.screenTouched) display.refreshScreen = true;
         
       // Update IN and OUT focuser status
-      tft.setFont(&UbuntuMono_Bold16pt7b);
+      tft.setFont(&UbuntuMono_Bold11pt7b);
       if (focMovingIn) {
           display.drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, true, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
       } else {

@@ -7,7 +7,7 @@
 #include "../display/Display.h"
 #include "../odriveExt/ODriveExt.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
-#include "../fonts/UbuntuMono_Bold8pt7b.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../../../telescope/mount/Mount.h"
 
 #define NUM_BUTTON_X         2
@@ -88,6 +88,7 @@ void GotoScreen::draw() {
   display.drawTitle(115, 30, "Go To");
   display.drawMenuButtons();
   display.drawCommonStatusLabels(); // status common to many pages
+  tft.setFont(&Inconsolata_Bold8pt7b);
 
   RAtextIndex = 0; 
   DECtextIndex = 0; 
@@ -254,7 +255,7 @@ void GotoScreen::updateThisStatus() {
     } else {
       display.drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, false, GTA_T_OFF_X, GTA_T_OFF_Y, "Abort"); 
     }
-    tft.setFont(&UbuntuMono_Bold8pt7b); 
+    tft.setFont(&Inconsolata_Bold8pt7b); 
     display.screenTouched = false;
   }
 }

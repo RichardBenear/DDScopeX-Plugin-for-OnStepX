@@ -5,16 +5,16 @@
 // Author: Richard Benear
 // 8/22/21 -- refactor 5/1/22
 
-//#include <Arduino.h>
+#include <Arduino.h>
 #include "GuideScreen.h"
 #include "../display/Display.h"
-//#include <Adafruit_GFX.h>
-//#include <gfxfont.h>
-//#include <Adafruit_SPITFT.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SPITFT.h>
+#include <gfxfont.h>
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "../fonts/UbuntuMono_Bold14pt7b.h"
-//#include "../../../telescope/mount/Mount.h"
+#include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
 
 // Guide buttons
 #define GUIDE_BOXSIZE_X          85
@@ -65,9 +65,8 @@ void GuideScreen::draw() {
   tft.fillScreen(display.pgBackground);
   display.drawMenuButtons();
   display.drawTitle(110, 30, "Guiding");
-  tft.setFont(&Inconsolata_Bold8pt7b);
   display.drawCommonStatusLabels();
-  tft.setFont();
+  tft.setFont(&Inconsolata_Bold8pt7b);
 }
 
 // ========== Update Guide Page Status ==========
@@ -79,7 +78,8 @@ void GuideScreen::updateThisStatus() {
         if (display.screenTouched) display.refreshScreen = true;
         
         // update current status of guide buttons
-        tft.setFont(&UbuntuMono_Bold14pt7b); delay(5);
+        tft.setFont(&UbuntuMono_Bold11pt7b);
+        tft.setTextSize(2);
 
         if (!guidingEast) { //&& !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
             display.drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " EAST");
@@ -112,6 +112,7 @@ void GuideScreen::updateThisStatus() {
             syncOn = false;
         }
         tft.setFont(&Inconsolata_Bold8pt7b); 
+         tft.setTextSize(1);
 
         // Draw Guide Rates Buttons
         int y_offset = 0;
@@ -178,7 +179,6 @@ void GuideScreen::updateThisStatus() {
 
 // Manage Touching of Guiding Buttons
 void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
-    tft.setFont(&UbuntuMono_Bold11pt7b);
     // SYNC Button 
     if (py > SYNC_OFFSET_Y && py < (SYNC_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > SYNC_OFFSET_X && px < (SYNC_OFFSET_X + GUIDE_BOXSIZE_X)) {            
         display.setLocalCmd(":CS#"); // doesn't have reply
@@ -238,7 +238,6 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     int y_offset = 0;
     int x_offset = 0;  
     int spacer = GUIDE_R_SPACER;
-    tft.setFont(&Inconsolata_Bold8pt7b);
     
     // 1x Guide Rate 
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {

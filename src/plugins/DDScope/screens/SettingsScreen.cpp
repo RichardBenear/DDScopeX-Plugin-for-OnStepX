@@ -6,6 +6,7 @@
 #include "SettingsScreen.h"
 #include "../display/Display.h"
 #include "../catalog/Catalog.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
 
 #define PAD_BUTTON_X         2
 #define PAD_BUTTON_Y         280
@@ -98,6 +99,7 @@ void SettingsScreen::draw() {
   display.drawTitle(100, 30, "Settings");
   display.drawMenuButtons();
   display.drawCommonStatusLabels(); // status common to many pages
+  tft.setFont(&Inconsolata_Bold8pt7b);
 
   TtextIndex = 0; 
   DtextIndex = 0; 

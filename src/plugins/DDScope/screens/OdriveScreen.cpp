@@ -41,6 +41,7 @@ void ODriveScreen::draw() {
   display.drawMenuButtons();
   display.drawTitle(105, 30, "ODrive");
   display.drawCommonStatusLabels();
+  tft.setFont(&Inconsolata_Bold8pt7b);
 
   ODRIVE_SERIAL << "r hw_version_major\n"; 
   uint8_t hwMajor = oDriveArduino.readInt();
@@ -503,7 +504,6 @@ void ODriveScreen::updateOdriveErrors() {
   int y = 473;
   int label_x = 160;
   int data_x = 110;
-  tft.setFont(&Inconsolata_Bold8pt7b);
  
 // ODrive AZ and ALT CONTROLLER (only) Error Status
   if (display.firstDraw) {

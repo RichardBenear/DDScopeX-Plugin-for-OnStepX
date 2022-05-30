@@ -11,7 +11,7 @@
 
 #include <Adafruit_GFX.h>
 #include <SPI.h> 
-//#include <ILI9341_t3.h>
+#include <ILI9341_t3.h>
 
 #define SPISET SPISettings(36000000,MSBFIRST,SPI_MODE0)
 #define SPIBLOCKMAX 320 // one ROW is a good value to avoid really long SPI transfers

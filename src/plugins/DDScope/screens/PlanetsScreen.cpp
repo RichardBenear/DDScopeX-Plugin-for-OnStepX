@@ -16,6 +16,7 @@
 #include "MoreScreen.h"
 #include "../display/Display.h"
 #include "../../../telescope/mount/site/Site.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
 
 // Catalog Selection buttons
 #define PLANET_ROWS         8
@@ -44,6 +45,7 @@ void PlanetsScreen::draw() {
     tft.setTextColor(display.textColor);
     tft.fillScreen(display.pgBackground);
     display.drawTitle(110, 30, "Planets");
+    tft.setFont(&Inconsolata_Bold8pt7b);
     planetPrevSel = 0;
     planetButSelPos = 2; // Mars on page entry
 

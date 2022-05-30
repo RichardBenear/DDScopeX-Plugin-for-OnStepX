@@ -91,10 +91,12 @@ void Display::init() {
   VLF("MSG: Display, started"); 
   tft.begin(); delay(1);
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
+  
   display.sdInit(); 
   delay(2000);
 
   // draw Home screen
+  tft.setFont(&Inconsolata_Bold8pt7b);
   homeScreen.draw();
 
   // update this common-among-screens status
@@ -502,8 +504,8 @@ void Display::drawMenuButtons() {
 // ==============================================
 // These particular status labels are placed near the top of most Screens.
 void Display::drawCommonStatusLabels() {
-  tft.setFont(&Inconsolata_Bold8pt7b);
   int y_offset = 0;
+
   // Column 1
   // Display RA Current
   tft.setCursor(COM_COL1_LABELS_X, COM_COL1_LABELS_Y + y_offset);

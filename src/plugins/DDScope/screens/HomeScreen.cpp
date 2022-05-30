@@ -55,8 +55,8 @@ void HomeScreen::draw() {
   display.drawMenuButtons();
   display.drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
   tft.drawFastVLine(165, 155, 165,display.textColor);
-  tft.setFont(&Inconsolata_Bold8pt7b); 
   display.drawCommonStatusLabels();
+  tft.setFont(&Inconsolata_Bold8pt7b);
   
   //========== Status Text ===========
   // Draw Status Labels for Real Time data only here, no data displayed

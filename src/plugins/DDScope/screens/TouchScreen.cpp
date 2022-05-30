@@ -64,7 +64,7 @@ void TouchScreen::touchScreenPoll() {
         case PLANETS_SCREEN:  planetsScreen.touchPoll(p.x, p.y); break;
         default:              homeScreen.touchPoll(p.x, p.y); break;
     }
-    tasks.yield(10);
+    tasks.yield(15);
 
     // =============== MENU MAP ================
     // Current Page   |Cur |Col1|Col2|Col3|Col4|
@@ -140,6 +140,7 @@ void TouchScreen::touchScreenPoll() {
           default:                homeScreen.draw(); break;
       }
     }
+    tasks.yield(15);
   } 
 }
 
