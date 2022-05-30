@@ -18,7 +18,7 @@
 #include "../display/Display.h"
 #include "../odriveExt/OdriveExt.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
-#include "../fonts/UbuntuMono_Bold11pt7b.h"
+#include <Fonts/FreeSansBold9pt7b.h>
 #include "../../../telescope/mount/Mount.h"
 
 // Catalog Selection buttons
@@ -104,8 +104,8 @@ void MoreScreen::updateThisStatus() {
     if (display.screenTouched) display.refreshScreen = true;
 
     // Show any target object data selected from Catalog
-    uint16_t y = 356; uint16_t x = 120;
-    if (objectSelected) tft.fillRect(x, y, 199, 5*16, display.pgBackground);
+    uint16_t x = 120; uint16_t y = 358; 
+    tft.fillRect(x-2, y+3, 199, 5*16, display.butBackground);
     
     tft.setCursor(x,y+16  ); tft.print(catalogScreen.catSelectionStr1);
     tft.setCursor(x,y+16*2); tft.print(catalogScreen.catSelectionStr2);
@@ -116,7 +116,7 @@ void MoreScreen::updateThisStatus() {
     int y_offset = 0;
     int x_offset = 0;
     // Manage Tracking Rate buttons
-    if (sideRate) {
+    if (sidereal) {
         display.drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, true, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET,   "Sidereal");
         y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
         display.drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, false, TRACK_R_TEXT_X_OFFSET-2, TRACK_R_TEXT_Y_OFFSET, "  Lunar "); 
@@ -230,7 +230,7 @@ void MoreScreen::updateThisStatus() {
     }
 
     // Larger Button Text for GoTo and Abort
-    tft.setFont(&UbuntuMono_Bold11pt7b); 
+    tft.setFont(&FreeSansBold9pt7b); 
 
     // Go To Coordinates Button
     if (goToButton) {
@@ -249,7 +249,7 @@ void MoreScreen::updateThisStatus() {
       display.drawButton(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, true, GOTO_TXT_OFF_X-5, GOTO_TXT_OFF_Y, "Aborting"); 
       abortPgBut = false;
     } else {
-      display.drawButton(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, false, GOTO_TXT_OFF_X, GOTO_TXT_OFF_Y, "Abort"); 
+      display.drawButton(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, false, GOTO_TXT_OFF_X, GOTO_TXT_OFF_Y, " Abort"); 
     }
 
     tft.setFont(&Inconsolata_Bold8pt7b); // Text back to default
@@ -296,7 +296,7 @@ void MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Sidereal Rate 
   if (py > TRACK_R_Y+y_offset && py < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && px > TRACK_R_X && px < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
       display.setLocalCmd(":TQ#");
-      sideRate = true;
+      sidereal = true;
       lunarRate = false;
       kingRate = false;
       return;
@@ -305,7 +305,7 @@ void MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
   if (py > TRACK_R_Y+y_offset && py < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && px > TRACK_R_X && px < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
       display.setLocalCmd(":TL#");
-      sideRate = false;
+      sidereal = false;
       lunarRate = true;
       kingRate = false;
       return;
@@ -314,7 +314,7 @@ void MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
   if (py > TRACK_R_Y+y_offset && py < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && px > TRACK_R_X && px < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
       display.setLocalCmd(":TK#");
-      sideRate = false;
+      sidereal = false;
       lunarRate = false;
       kingRate = true;
       return;

@@ -6,8 +6,8 @@
 #include "GotoScreen.h"
 #include "../display/Display.h"
 #include "../odriveExt/ODriveExt.h"
-#include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
+#include <Fonts/FreeSansBold9pt7b.h>
 #include "../../../telescope/mount/Mount.h"
 
 #define NUM_BUTTON_X         2
@@ -113,19 +113,7 @@ void GotoScreen::draw() {
     }
   }
 
-  // Initialize RA and DEC Enter/Accept buttons
-  display.drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
-  display.drawButton(  RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr"); 
-  display.drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel");
-  display.drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
-  
-  // Send data button
-  display.drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, false, S_T_OFF_X, S_T_OFF_Y, "Send"); 
-
-  // Initialize GOTO and ABORT buttons
-  display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, false, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
-  display.drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, false, GTA_T_OFF_X, GTA_T_OFF_Y, "Abort"); 
-
+  // show number input fields
   tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9,  display.butBackground);
   tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+TEXT_SPACING_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9,  display.butBackground);
 } // end initialize
@@ -187,7 +175,7 @@ void GotoScreen::updateThisStatus() {
     // RA Clear button
     if (RAclear) {
       display.drawButton(  RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
-      tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, display.butOnBackground);
+      tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, display.butBackground);
       memset(RAtext,0,sizeof(RAtext)); // clear RA buffer
       //VF("RAtext="); VL(RAtext);
       tft.fillRect(RA_CMD_ERR_X, RA_CMD_ERR_Y+CUSTOM_FONT_OFFSET, CMD_ERR_W, CMD_ERR_H, display.pgBackground);
@@ -208,7 +196,7 @@ void GotoScreen::updateThisStatus() {
     // DEC Clear Button
     if (DECclear) {
       display.drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
-      tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET+TEXT_FIELD_HEIGHT, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, display.butOnBackground);
+      tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET+TEXT_FIELD_HEIGHT, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, display.butBackground);
       memset(DECtext,0,sizeof(DECtext)); // clear DEC buffer
       //VF("DECtext="); VL(DECtext);
       tft.fillRect(DEC_CMD_ERR_X, DEC_CMD_ERR_Y+CUSTOM_FONT_OFFSET, CMD_ERR_W, CMD_ERR_H, display.pgBackground);
@@ -235,7 +223,7 @@ void GotoScreen::updateThisStatus() {
       display.drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, false, P_T_OFF_X, P_T_OFF_Y, "Polaris"); 
     }
 
-    tft.setFont(&UbuntuMono_Bold11pt7b);    
+    tft.setFont(&FreeSansBold9pt7b);    
     // Go To Coordinates Button
     if (goToPgBut) {
       display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, true, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
@@ -250,7 +238,7 @@ void GotoScreen::updateThisStatus() {
     
     // Abort GoTo Button
     if (abortPgBut) {
-      display.drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, true, GTA_T_OFF_X-5, GTA_T_OFF_Y, "Aborting"); 
+      display.drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, true, GTA_T_OFF_X-8, GTA_T_OFF_Y, "Aborting"); 
       abortPgBut = false;
     } else {
       display.drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, false, GTA_T_OFF_X, GTA_T_OFF_Y, "Abort"); 

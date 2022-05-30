@@ -20,7 +20,7 @@
 #include "FocuserScreen.h"
 #include "../display/Display.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
-#include "../fonts/UbuntuMono_Bold11pt7b.h"
+#include <Fonts/FreeSansBold12pt7b.h>
 
 // For IN and OUT Buttons
 #define FOC_INOUT_X             206 
@@ -29,7 +29,7 @@
 #define FOC_INOUT_BOXSIZE_Y      75 
 #define FOC_INOUT_X_SPACING       0 
 #define FOC_INOUT_Y_SPACING      85 
-#define FOC_INOUT_TEXT_X_OFFSET  15 
+#define FOC_INOUT_TEXT_X_OFFSET  25 
 #define FOC_INOUT_TEXT_Y_OFFSET  45
 
 // For Focuser Status
@@ -115,44 +115,46 @@ void FocuserScreen::draw() {
 // Update the following on timer tick
 void FocuserScreen::updateThisStatus() {
   int y_offset = 0;
-  if (current_focMaxPos != focMaxPosition) {
+  if (current_focMaxPos != focMaxPosition || display.firstDraw) {
       display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMaxPosition);
       current_focMaxPos = focMaxPosition;
   }
 
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focMinPos != focMinPosition) {
+  if (current_focMinPos != focMinPosition || display.firstDraw) {
       display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMinPosition);
       current_focMinPos = focMinPosition;
   }
 
   // Focuser Speed
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focMoveSpeed != focMoveSpeed) {
+  if (current_focMoveSpeed != focMoveSpeed || display.firstDraw) {
       display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveSpeed);
       current_focMoveSpeed = focMoveSpeed;
   }
 
   // Focuser move distance
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focMoveDistance != focMoveDistance) {
+  if (current_focMoveDistance != focMoveDistance || display.firstDraw) {
       display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveDistance);
       current_focMoveDistance = focMoveDistance;
   }
   
   // Update Current Focuser Position
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focPos != focPosition) {
+  if (current_focPos != focPosition || display.firstDraw) {
       display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focPosition);
       current_focPos = focPosition;
   }
 
   // Update Delta Focuser Position
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focDeltaMove != focDeltaMove) {
+  if (current_focDeltaMove != focDeltaMove || display.firstDraw) {
       display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focDeltaMove);
       current_focDeltaMove = focDeltaMove;
   }
+
+  display.firstDraw = false;
 
   //***** Update Label Status' for Buttons ******
   if (display.screenTouched || display.refreshScreen) {
@@ -160,7 +162,7 @@ void FocuserScreen::updateThisStatus() {
       if (display.screenTouched) display.refreshScreen = true;
         
       // Update IN and OUT focuser status
-      tft.setFont(&UbuntuMono_Bold11pt7b);
+      tft.setFont(&FreeSansBold12pt7b);
       if (focMovingIn) {
           display.drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, true, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
       } else {

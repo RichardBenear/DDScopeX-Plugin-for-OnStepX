@@ -205,7 +205,7 @@
 
 // ALIGN ---------------------------------------------------------------------------------------------------------------------------
 #define ALIGN_AUTO_HOME               OFF //    OFF, ON uses home switches to find home first when starting an align.         Option
-#define ALIGN_MAX_STARS              AUTO //   AUTO, Uses HAL specified default (either 6 or 9 stars.)                        Infreq
+#define ALIGN_MAX_STARS                 3 //   AUTO, Uses HAL specified default (either 6 or 9 stars.)                        Infreq
                                           //         Or use n. Where n=1 (for Sync only) or 3 to 9 (for Goto Assist.)
 
 // =================================================================================================================================

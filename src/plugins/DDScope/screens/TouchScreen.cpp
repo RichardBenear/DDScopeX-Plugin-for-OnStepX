@@ -83,6 +83,8 @@ void TouchScreen::touchScreenPoll() {
         (display.currentScreen == PLANETS_SCREEN) ||  
         (display.currentScreen == CUST_CAT_SCREEN)) return; 
     
+    display.firstDraw = true;
+    
     // Check for any Menu buttons pressed
     // == LeftMost Menu Button ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X                   ) && p.x < (MENU_X                    + MENU_BOXSIZE_X)) {

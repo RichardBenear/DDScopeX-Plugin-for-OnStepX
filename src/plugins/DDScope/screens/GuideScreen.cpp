@@ -8,27 +8,22 @@
 #include <Arduino.h>
 #include "GuideScreen.h"
 #include "../display/Display.h"
-#include <Adafruit_GFX.h>
-#include <Adafruit_SPITFT.h>
-#include <gfxfont.h>
 #include "../fonts/Inconsolata_Bold8pt7b.h"
-#include "../fonts/UbuntuMono_Bold11pt7b.h"
-#include "../fonts/UbuntuMono_Bold14pt7b.h"
-#include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
+#include <Fonts/FreeSansBold9pt7b.h>
 
 // Guide buttons
 #define GUIDE_BOXSIZE_X          85
 #define GUIDE_BOXSIZE_Y          65 
-#define GUIDE_TEXT_X_OFFSET       3
-#define GUIDE_TEXT_Y_OFFSET      40 
+#define GUIDE_TEXT_X_OFFSET       8
+#define GUIDE_TEXT_Y_OFFSET      38 
 #define SYNC_OFFSET_X           113 
-#define SYNC_OFFSET_Y           290 
+#define SYNC_OFFSET_Y           280 
 #define LEFT_OFFSET_X             7 
 #define LEFT_OFFSET_Y           SYNC_OFFSET_Y
 #define RIGHT_OFFSET_X          219
 #define RIGHT_OFFSET_Y          SYNC_OFFSET_Y
 #define UP_OFFSET_X             SYNC_OFFSET_X
-#define UP_OFFSET_Y             220 
+#define UP_OFFSET_Y             200 
 #define DOWN_OFFSET_X           SYNC_OFFSET_X
 #define DOWN_OFFSET_Y           360 
 
@@ -71,32 +66,32 @@ void GuideScreen::draw() {
 
 // ========== Update Guide Page Status ==========
 void GuideScreen::updateThisStatus() {
-  
+
     // Update for buttons only if the screen is touched
     if (display.screenTouched || display.firstDraw || display.refreshScreen) {
         display.refreshScreen = false;
         if (display.screenTouched) display.refreshScreen = true;
         
         // update current status of guide buttons
-        tft.setFont(&UbuntuMono_Bold11pt7b);
-        tft.setTextSize(2);
+        //tft.setFont(&UbuntuMono_Bold11pt7b);
+        tft.setFont(&FreeSansBold9pt7b);
 
         if (!guidingEast) { //&& !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
-            display.drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " EAST");
+            display.drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " EAST");
         } else {
-            display.drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, true, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " EAST");
+            display.drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, true, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " EAST");
         }
 
         if (!guidingWest) { // && !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
-            display.drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " WEST");
+            display.drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " WEST");
         } else {
-            display.drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, true, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " WEST");
+            display.drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, true, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " WEST");
         }
 
         if (!guidingNorth) {// && !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
-            display.drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, "  UP ");
+            display.drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET+13, GUIDE_TEXT_Y_OFFSET, "  UP ");
         } else {
-            display.drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, true, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, "  UP ");
+            display.drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, true, GUIDE_TEXT_X_OFFSET+13, GUIDE_TEXT_Y_OFFSET, "  UP ");
         }
 
         if (!guidingSouth) {// && !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
@@ -106,13 +101,12 @@ void GuideScreen::updateThisStatus() {
         }
         
         if (!syncOn) {
-            display.drawButton(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " SYNC  ");
+            display.drawButton(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, false, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " SYNC  ");
         } else {
             display.drawButton(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, true, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, "SYNCng");
             syncOn = false;
         }
         tft.setFont(&Inconsolata_Bold8pt7b); 
-         tft.setTextSize(1);
 
         // Draw Guide Rates Buttons
         int y_offset = 0;

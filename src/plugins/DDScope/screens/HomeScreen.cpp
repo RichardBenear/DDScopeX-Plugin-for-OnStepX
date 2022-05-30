@@ -53,7 +53,7 @@ void HomeScreen::draw() {
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
   display.drawMenuButtons();
-  display.drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
+  display.drawTitle(25, 30, "DIRECT-DRIVE SCOPE");
   tft.drawFastVLine(165, 155, 165,display.textColor);
   display.drawCommonStatusLabels();
   tft.setFont(&Inconsolata_Bold8pt7b);

@@ -8,19 +8,17 @@
 // **************************************************
 
 #include <Arduino.h>
-
 #include <Adafruit_GFX.h>
-#include <gfxfont.h>
 #include <Adafruit_SPITFT.h>
+#include <gfxfont.h>
 
 #include "../../../telescope/mount/Mount.h"
 //#include "../../../lib/sound/Sound.h"
-//#include "../../../lib/serial/Serial_Local.h"
 #include "../../../lib/tasks/OnTask.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
-#include "../fonts/ARCENA18pt7b.h"
+#include <Fonts/FreeSansBold12pt7b.h>
 
 // DDScope specific
 #include "Display.h"
@@ -54,6 +52,8 @@
 void updateScreenWrapper() { display.specificScreenUpdate(); }
 void updateCommonWrapper() { display.updateCommonStatus(); }
 void updateOnStepCmdWrapper() { display.updateOnStepCmdStatus(); }
+
+Adafruit_ILI9486_Teensy tft;
 
 // =========================================
 // ========= Initialize Display ============
@@ -92,33 +92,31 @@ void Display::init() {
   tft.begin(); delay(1);
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
   
-  display.sdInit(); 
-  delay(2000);
+  sdInit(); // initialize the SD card and draw start screen
+  DDmountInit(); // initialize some mount parameters
+  delay(1500);
 
   // draw Home screen
   tft.setFont(&Inconsolata_Bold8pt7b);
   homeScreen.draw();
 
-  // update this common-among-screens status
+  // update this common-most-screens status
   VF("MSG: Setup, start screen update Common status polling task (rate 900 ms priority 7)... ");
-  uint8_t CShandle = tasks.add(900, 0, true, 7, updateCommonWrapper, "UpdateCommonScreen");
+  uint8_t CShandle = tasks.add(1000, 0, true, 7, updateCommonWrapper, "UpdateCommonScreen");
   if (CShandle)  { VLF("success"); } else { VLF("FAILED!"); }
-  //tasks.setTimingMode(CShandle, TM_MINIMUM);
-  tasks.yield(100);
+  tasks.setTimingMode(CShandle, TM_MINIMUM);
 
   // update the OnStep Cmd Error status display
   VF("MSG: Setup, start screen update OnStep CMD status polling task (rate 1100 ms priority 7)... ");
   uint8_t CDhandle = tasks.add(1000, 0, true, 7, updateOnStepCmdWrapper, "UpdateOnStepCmdScreen");
   if (CDhandle) { VLF("success"); } else { VLF("FAILED!"); }
   //tasks.setTimingMode(CDhandle, TM_MINIMUM);
-  tasks.yield(100);
 
   // update this specific screen status
   VF("MSG: Setup, start screen update This screen status polling task (rate 3000 ms priority 7)... ");
   uint8_t SShandle = tasks.add(3000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
   if (SShandle)  { VLF("success"); } else { VLF("FAILED!"); }
   //tasks.setTimingMode(SShandle, TM_MINIMUM);
-  tasks.yield(100);
 }
 
 // initialize the SD card and boot screen
@@ -170,7 +168,7 @@ void Display::specificScreenUpdate() {
   }
   display.firstDraw = false;
 
-  tasks.yield(100);
+  tasks.yield(50);
 }
 
 // Initialize some Mount parameters
@@ -203,8 +201,6 @@ void Display::getLocalCmdTrim(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command); 
   tasks.yield(40);
   strcpy(reply, SERIAL_LOCAL.receive()); 
-   //VF(command); VF("="); VL(serialLocal.receive());
-   //tft.print(serialLocal.receive());
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
 }
 
@@ -223,7 +219,7 @@ void Display::drawButton(int x_start, int y_start, int w, int h, bool butOn, int
 
 // Draw the Title block
 void Display::drawTitle(int text_x_offset, int text_y_offset, const char* label) {
-  tft.setFont(&ARCENA18pt7b);
+  tft.setFont(&FreeSansBold12pt7b);
   tft.fillRect(TITLE_BOX_X, TITLE_BOX_Y, TITLE_BOXSIZE_X, TITLE_BOXSIZE_Y, butBackground);
   tft.drawRect(TITLE_BOX_X, TITLE_BOX_Y, TITLE_BOXSIZE_X, TITLE_BOXSIZE_Y, butOutline);
   tft.setCursor(TITLE_BOX_X + text_x_offset, TITLE_BOX_Y + text_y_offset);
@@ -329,6 +325,9 @@ CommandError commandError = CE_NONE;;
 
 // ============ OnStep Command Errors ===============
 void Display::updateOnStepCmdStatus() {
+  if (display.currentScreen == CATALOG_SCREEN || 
+    display.currentScreen == PLANETS_SCREEN ||
+    display.currentScreen == CUST_CAT_SCREEN) return;
   char cmd[40];
   sprintf(cmd, "OnStep Err: %s", cmdErrStr[commandError]);
   if (!tls.isReady()) {
@@ -343,6 +342,7 @@ void Display::drawMenuButtons() {
   int y_offset = 0;
   int x_offset = 0;
   tft.setTextColor(display.textColor);
+  tft.setFont(&UbuntuMono_Bold11pt7b); 
   
   // *************** MENU MAP ****************
   // Current Screen   |Cur |Col1|Col2|Col3|Col4|
@@ -355,7 +355,7 @@ void Display::drawMenuButtons() {
   // Extended Status| Xs | Ho | Se | Al | Od |
   // Settings-------| Se | Ho | Fo | Al | Od |
   // Alignment------| Al | Ho | Fo | Gu | Od |
-  tft.setFont(&UbuntuMono_Bold11pt7b); 
+  
   switch(display.currentScreen) {
     case HOME_SCREEN: 
       x_offset = 0;
@@ -568,15 +568,15 @@ void Display::updateCommonStatus() {
   // Column 1
   // Current RA, Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
   display.getLocalCmdTrim(":GR#", ra_hms);
-  if ((strcmp(currentRA, ra_hms)) || firstDraw) {
-    display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
+  if ((strcmp(currentRA, ra_hms)) || display.firstDraw) {
+   display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
     strcpy(currentRA, ra_hms);
   }
 
 // Target RA, Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
   y_offset +=COM_LABEL_Y_SPACE; 
   display.getLocalCmdTrim(":Gr#", tra_hms);
-  if ((strcmp(currentTargRA, tra_hms)) || firstDraw) {
+  if ((strcmp(currentTargRA, tra_hms)) || display.firstDraw) {
     display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tra_hms);
     strcpy(currentTargRA, tra_hms);
   }
@@ -584,7 +584,7 @@ void Display::updateCommonStatus() {
 // Current DEC
    y_offset +=COM_LABEL_Y_SPACE; 
   display.getLocalCmdTrim(":GD#", dec_dms);
-  if ((strcmp(currentDEC, dec_dms)) || firstDraw) {
+  if ((strcmp(currentDEC, dec_dms)) || display.firstDraw) {
     display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, dec_dms);
     strcpy(currentDEC, dec_dms);
   }
@@ -592,7 +592,7 @@ void Display::updateCommonStatus() {
   // Target DEC
   y_offset +=COM_LABEL_Y_SPACE;  
   display.getLocalCmdTrim(":Gd#", tdec_dms); 
-  if ((strcmp(currentTargDEC, tdec_dms)) || firstDraw) {
+  if ((strcmp(currentTargDEC, tdec_dms)) || display.firstDraw) {
     display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tdec_dms);
     strcpy(currentTargDEC, tdec_dms);
   }
@@ -621,31 +621,32 @@ void Display::updateCommonStatus() {
   shc.dmsToDouble(&alt_d, altDMS, true, true);
 
   //--Current-- AZM float
-  if ((current_azm != azm_d) || firstDraw) { 
+  if ((current_azm != azm_d) || display.firstDraw) { 
     display.canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, azm_d);
     current_azm = azm_d;
   }
 
   // --Target-- AZM in degrees float
   y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_tazm != tazm_d) || firstDraw) {
+  if ((current_tazm != tazm_d) || display.firstDraw) {
     display.canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tazm_d);
     current_tazm = tazm_d;
   }
 
   // --Current-- ALT
   y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_alt != alt_d) || firstDraw) {
+  if ((current_alt != alt_d) || display.firstDraw) {
     display.canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, alt_d);
     current_alt = alt_d;
   }
   
   // --Target-- ALT in degrees
   y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_talt != talt_d) || firstDraw) {
+  if ((current_talt != talt_d) || display.firstDraw) {
     display.canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, talt_d);
     current_talt = talt_d;
   }
+  display.firstDraw = false;
 }
 
 // draw a picture -This function is a copy from rDUINOScope but with 
@@ -878,25 +879,25 @@ double SHC::getLat() {
 // Use local command channel to get mount status
 bool LCmountStatus::isHome() {
   char reply[20];
-  display.getLocalCmdTrim(":GU#", reply); // Get telescope status with reply and # trimmed
+  display.getLocalCmdTrim(":GU#", reply); 
   if (strstr(reply,"H")) return true; else return false;
 }
 
 bool LCmountStatus::isSlewing() {
   char reply[20];
-  display.getLocalCmdTrim(":GU#", reply); // Get telescope status with reply and # trimmed
+  display.getLocalCmdTrim(":GU#", reply); 
   if (strstr(reply,"N")) return false; else return true;
 }
 
 bool LCmountStatus::isParked() {
   char reply[20];
-  display.getLocalCmdTrim(":GU#", reply); // Get telescope status with reply and # trimmed
+  display.getLocalCmdTrim(":GU#", reply); 
   if (strstr(reply,"P")) return true; else return false;
 }
 
 bool LCmountStatus::isTracking() {
   char reply[20];
-  display.getLocalCmdTrim(":GU#", reply); // Get telescope status with reply and # trimmed
+  display.getLocalCmdTrim(":GU#", reply);
   if (strstr(reply,"n")) return false; else return true;
 }
 

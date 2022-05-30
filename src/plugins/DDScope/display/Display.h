@@ -89,8 +89,8 @@ enum SelectedCatalog
   CUSTOM,
 };
 
-// Display related objects
-static Adafruit_ILI9486_Teensy tft;
+// Display object
+extern Adafruit_ILI9486_Teensy tft;
 
 // =========================================
 class Display {

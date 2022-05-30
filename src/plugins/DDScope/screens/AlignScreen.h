@@ -23,11 +23,15 @@ class AlignScreen {
     void draw();
     void touchPoll(uint16_t px, uint16_t py);
     void updateThisStatus();
+    void stateMachine();
    
   private:
     void getAlignStatus();
     void showCorrections();
-    
+
+    uint8_t alignCurStar = 0; // current align star number
+    uint8_t numAlignStars = 0; // number of "selected" align stars from buttons 
+
     char numStarsCmd[3];
     char acorr[10];
     char stateError[20];
@@ -44,9 +48,7 @@ class AlignScreen {
     bool alignBut;
     bool saveAlignBut;
     bool startAlignBut;
-    bool firstLabel;
-    bool dateWasSet;
-    bool timeWasSet; 
+    bool firstLabel = false;
 };
 
 extern AlignScreen alignScreen;

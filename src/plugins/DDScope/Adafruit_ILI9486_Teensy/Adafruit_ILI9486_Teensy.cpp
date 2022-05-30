@@ -10,8 +10,8 @@ modified for Teensy 3.1 by Richard Palmer 2017
 DMA transfers have been crippled by RP 
 */
 #include "Adafruit_ILI9486_Teensy.h"
-//#include <Adafruit_GFX.h>
-//#include <gfxfont.h>
+#include <Adafruit_GFX.h>
+#include <gfxfont.h>
 //#include <dma.h>
 
 uint8_t useDMA;

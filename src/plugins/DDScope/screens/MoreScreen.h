@@ -17,18 +17,13 @@ class MoreScreen {
     uint16_t activeFilter;
     
   private:
-    bool soundEnabled;
-    bool goToButton;
-    bool abortPgBut;
-    bool catSelBut1;
-    bool catSelBut2;
-    bool catSelBut3;
-    bool catSelBut4;
-    bool catSelBut5;
+    bool soundEnabled = true;
+    bool goToButton = false;
+    bool abortPgBut = false;
     bool clrCustom;
-    bool sideRate;
-    bool lunarRate;
-    bool kingRate;
+    bool sidereal = true;
+    bool lunarRate = false;
+    bool kingRate = false;
     bool incTrackRate;
     bool decTrackRate;
     bool rstTrackRate;
@@ -36,7 +31,6 @@ class MoreScreen {
     bool yesBut; 
     bool cancelBut;
     bool yesCancelActive;
-    double catMgrLst;
 };
 
 extern MoreScreen moreScreen;
