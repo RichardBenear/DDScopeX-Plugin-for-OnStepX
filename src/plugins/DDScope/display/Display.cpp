@@ -22,8 +22,9 @@
 
 // DDScope specific
 #include "Display.h"
-#include "../odriveExt/ODriveExt.h"
 #include "../catalog/Catalog.h"
+#include "../odriveExt/ODriveExt.h"
+#include "../screens/ODriveScreen.h"
 #include "../screens/AlignScreen.h"
 #include "../screens/CatalogScreen.h"
 #include "../screens/FocuserScreen.h"
@@ -52,6 +53,7 @@
 void updateScreenWrapper() { display.specificScreenUpdate(); }
 void updateCommonWrapper() { display.updateCommonStatus(); }
 void updateOnStepCmdWrapper() { display.updateOnStepCmdStatus(); }
+void updateODriveErrWrapper() { oDriveScreen.updateODriveErrBar(); }
 
 Adafruit_ILI9486_Teensy tft;
 
@@ -94,29 +96,31 @@ void Display::init() {
   
   sdInit(); // initialize the SD card and draw start screen
   DDmountInit(); // initialize some mount parameters
-  delay(1500);
+  delay(1500); // let start screen show for 1.5 sec
 
   // draw Home screen
   tft.setFont(&Inconsolata_Bold8pt7b);
   homeScreen.draw();
 
-  // update this common-most-screens status
-  VF("MSG: Setup, start screen update Common status polling task (rate 900 ms priority 7)... ");
-  uint8_t CShandle = tasks.add(1000, 0, true, 7, updateCommonWrapper, "UpdateCommonScreen");
+  // start common-most-screens status
+  VF("MSG: Setup, start Common screen status polling task (rate 900 ms priority 7)... ");
+  uint8_t CShandle = tasks.add(900, 0, true, 7, updateCommonWrapper, "UpdateCommonScreen");
   if (CShandle)  { VLF("success"); } else { VLF("FAILED!"); }
-  tasks.setTimingMode(CShandle, TM_MINIMUM);
 
-  // update the OnStep Cmd Error status display
-  VF("MSG: Setup, start screen update OnStep CMD status polling task (rate 1100 ms priority 7)... ");
+  // update the OnStep Cmd Error status 
+  VF("MSG: Setup, start OnStep CMD status polling task (rate 1000 ms priority 7)... ");
   uint8_t CDhandle = tasks.add(1000, 0, true, 7, updateOnStepCmdWrapper, "UpdateOnStepCmdScreen");
   if (CDhandle) { VLF("success"); } else { VLF("FAILED!"); }
-  //tasks.setTimingMode(CDhandle, TM_MINIMUM);
+
+  // update the ODrive Error status 
+  VF("MSG: Setup, start OnStep CMD status polling task (rate 1000 ms priority 7)... ");
+  uint8_t ODhandle = tasks.add(1000, 0, true, 7, updateODriveErrWrapper, "UpdateODriveErrors");
+  if (ODhandle) { VLF("success"); } else { VLF("FAILED!"); }
 
   // update this specific screen status
-  VF("MSG: Setup, start screen update This screen status polling task (rate 3000 ms priority 7)... ");
-  uint8_t SShandle = tasks.add(3000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
+  VF("MSG: Setup, start Screen-specific status polling task (rate 2000 ms priority 7)... ");
+  uint8_t SShandle = tasks.add(2000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
   if (SShandle)  { VLF("success"); } else { VLF("FAILED!"); }
-  //tasks.setTimingMode(SShandle, TM_MINIMUM);
 }
 
 // initialize the SD card and boot screen
@@ -168,7 +172,7 @@ void Display::specificScreenUpdate() {
   }
   display.firstDraw = false;
 
-  tasks.yield(50);
+  tasks.yield(100);
 }
 
 // Initialize some Mount parameters
@@ -177,9 +181,9 @@ void Display::DDmountInit() {
   display.setLocalCmd(":Sh-03#"); //Set horizon limit -3 deg
   display.setLocalCmd(":So89#"); // Set overhead limit 89 deg
   display.setLocalCmd(":SMMy Home#"); // Set Site 0 name "Home"
-  //display.setLocalCmd(":SX93,1#"); // 2x slew speed
+  display.setLocalCmd(":SX93,1#"); // 2x slew speed
   //display.setLocalCmd(":SX93,2#"); // 1.5x slew speed
-  display.setLocalCmd(":SX93,3#"); // 1.0x slew speed
+  //display.setLocalCmd(":SX93,3#"); // 1.0x slew speed
 }
 
 // ======= Use Local Command Channel ========
@@ -740,21 +744,21 @@ void Display::drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint1
 float Display::getBatteryVoltage() {
 // ** Low Battery LED **
   float battery_voltage = 0;
-  oDriveExt.getOdriveBusVoltage();
+  oDriveExt.getODriveBusVoltage();
   if (battery_voltage > BATTERY_LOW_VOLTAGE) { // battery ok
-    digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // turn off low battery low LED
+    digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // turn off low battery low LED
     batLED = false;
   } else if (battery_voltage > 3) { // don't want beeping when developing code and battery off V=0
     if (batLED) {
-      digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // already on, then flash it off
+      digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // already on, then flash it off
       batLED = false;
       //status.sound.alert();
     } else {
-      digitalWrite(BATTERY_LOW_LED_PIN,LOW); // already off, then flash it on
+      digitalWrite(BATTERY_LOW_LED_PIN, LOW); // already off, then flash it on
       batLED = true;
     }
   } else { // battery must be off and in development mode
-    digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // turn it off
+    digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // turn it off
     batLED = false;
   }
   return battery_voltage;

@@ -167,14 +167,14 @@ void GotoScreen::updateThisStatus() {
 
     // RA Select Button
     if (RAselect) {
-      display.drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
+      display.drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
     } else {
-      display.drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
+      display.drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
     }
 
     // RA Clear button
     if (RAclear) {
-      display.drawButton(  RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
+      display.drawButton(  RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
       tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, display.butBackground);
       memset(RAtext,0,sizeof(RAtext)); // clear RA buffer
       //VF("RAtext="); VL(RAtext);
@@ -183,19 +183,19 @@ void GotoScreen::updateThisStatus() {
       buttonPosition = 12;
       RAclear = false;
     } else {
-      display.drawButton(RA_CLEAR_X, RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
+      display.drawButton(RA_CLEAR_X, RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
     }
     
     // DEC Select button
     if (DECselect) {
-      display.drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel");
+      display.drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel");
     } else {
-      display.drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel"); 
+      display.drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel"); 
     }
 
     // DEC Clear Button
     if (DECclear) {
-      display.drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
+      display.drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
       tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET+TEXT_FIELD_HEIGHT, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, display.butBackground);
       memset(DECtext,0,sizeof(DECtext)); // clear DEC buffer
       //VF("DECtext="); VL(DECtext);
@@ -204,33 +204,33 @@ void GotoScreen::updateThisStatus() {
       buttonPosition = 12;
       DECclear = false;
     } else {
-      display.drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
+      display.drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
     }
     
     // Send Coordinates Button
     if (sendOn) {
-      display.drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, true, S_T_OFF_X, S_T_OFF_Y, "Sent");
+      display.drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, BUTTON_ON, S_T_OFF_X, S_T_OFF_Y, "Sent");
       sendOn = false; 
     } else {
-      display.drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, false, S_T_OFF_X, S_T_OFF_Y, "Send"); 
+      display.drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, BUTTON_OFF, S_T_OFF_X, S_T_OFF_Y, "Send"); 
     }
 
     // Quick Set Polaris Target Button
     if (setPolOn) {
-      display.drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, true, P_T_OFF_X, P_T_OFF_Y, "Setting");
+      display.drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, BUTTON_ON, P_T_OFF_X, P_T_OFF_Y, "Setting");
       setPolOn = false; 
     } else {
-      display.drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, false, P_T_OFF_X, P_T_OFF_Y, "Polaris"); 
+      display.drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, BUTTON_OFF, P_T_OFF_X, P_T_OFF_Y, "Polaris"); 
     }
 
     tft.setFont(&FreeSansBold9pt7b);    
     // Go To Coordinates Button
     if (goToPgBut) {
-      display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, true, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
+      display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
       goToPgBut = false;
     } else {
       if (!lCmountStatus.isSlewing()) { 
-        display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, false, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
+        display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
       } else {
         display.refreshScreen = true;
       }
@@ -238,10 +238,10 @@ void GotoScreen::updateThisStatus() {
     
     // Abort GoTo Button
     if (abortPgBut) {
-      display.drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, true, GTA_T_OFF_X-8, GTA_T_OFF_Y, "Aborting"); 
+      display.drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X-8, GTA_T_OFF_Y, "Aborting"); 
       abortPgBut = false;
     } else {
-      display.drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, false, GTA_T_OFF_X, GTA_T_OFF_Y, "Abort"); 
+      display.drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X, GTA_T_OFF_Y, "Abort"); 
     }
     tft.setFont(&Inconsolata_Bold8pt7b); 
     display.screenTouched = false;

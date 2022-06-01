@@ -45,6 +45,8 @@ bool ODriveMotor::init() {
 
   if (axisNumber == 1) {
     pinModeEx(ODRIVE_RST_PIN, OUTPUT);
+    digitalWriteEx(ODRIVE_RST_PIN, LOW); // force low in case pin has pullup
+    delay(2); 
     digitalWriteEx(ODRIVE_RST_PIN, HIGH); // bring ODrive out of Reset
     delay(1000);                          // allow time for ODrive to boot
     ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
@@ -108,13 +110,14 @@ bool ODriveMotor::validateParameters(float param1, float param2, float param3, f
 // sets motor power on/off (if possible)
 void ODriveMotor::power(bool state) {
   int requestedState = AXIS_STATE_IDLE;
-  int timeout = 0.01;
+  float timeout = 0.5;
+  // timeout value is multiplied by 10 in the run_state routine 
+    // and is the number of retries for the read of Current_State to not be IDLE
+    // ONLY if the wait-for-idle flag is true
   if (state) {
     requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
-    //timeout = 0.5; 
-    //Note: too long for debugging with ODrive subsystem HW off
-    // timeout value is multiplied by 10 in the run_state routine and is number of retries for a readInt of Current State
   }
+
   if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
     VF("WRN: ODrive"); V(axisNumber); VF(", ");
     VLF("closed loop control - command timeout!");

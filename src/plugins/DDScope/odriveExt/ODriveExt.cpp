@@ -1,147 +1,139 @@
 // =====================================================
 // ODriveExt.cpp
-// ======== Odrive Extended Support ===========
+// ======== ODrive Extended Support ===========
 // ============================================
 // Author: Richard Benear 2022
-// ODrive Extended Functions
+// 
 // ODrive communication via Teensy 4.0
-// Uses GitHub ODrive Arduino library by 
+// Uses GitHub ODrive Arduino library
 
 #include <ODriveArduino.h>
 #include "ODriveExt.h"
 #include "../display/Display.h"
 #include "../../../telescope/mount/Mount.h"
+#include "../../../lib/tasks/OnTask.h"
 
-//==============================================
-//======= ODrive Controller Error Status =======
-//==============================================
+const char* ODriveComponentsStr[4] = {
+            "None",   
+            "Controller",
+            "Motor",
+            "Encoder"        
+};
 
+ODriveArduino oDriveArduino(ODRIVE_SERIAL);
+
+//=========================================================
 // Read bus voltage
-float ODriveExt::getOdriveBusVoltage() {
+float ODriveExt::getODriveBusVoltage() {
   ODRIVE_SERIAL << "r vbus_voltage\n";
+  delay(1);
   float bat_volt = (float)(oDriveArduino.readFloat());
 return (float)bat_volt;  
 }
 
 // get absolute Encoder positions in degrees
 float ODriveExt::getEncoderPositionDeg(int axis) {
-  float turns;
+  noInterrupts();
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  turns = oDriveArduino.readFloat();
+  float turns = oDriveArduino.readFloat();
+  interrupts();
   return turns*360;
 }  
 
 // get motor positions in turns
 float ODriveExt::getMotorPositionTurns(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
+  delay(1);
   return oDriveArduino.readFloat();
 }  
 
 // get motor position in counts
 int ODriveExt::getMotorPositionCounts(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate_counts\n";
+  delay(1);
   return oDriveArduino.readInt();
 } 
 
 // get Motor Current
 float ODriveExt::getMotorCurrent(int axis) {
-  ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n";  
+  ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n";
+  delay(1);  
   return oDriveArduino.readFloat();
 }  
 
 // read current requested state
-int ODriveExt::getOdriveRequestedState() {
+int ODriveExt::getODriveRequestedState() {
   ODRIVE_SERIAL << "r axis0.requested_state\n";
+  delay(1);
   return oDriveArduino.readInt();
 }
 
 float ODriveExt::getMotorPositionDelta(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
+  delay(1);
   float reqPos = oDriveArduino.readFloat();   
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n";
+  delay(1);
   float posEst = oDriveArduino.readFloat();   
   float deltaPos = abs(reqPos - posEst);
   return deltaPos;
 }
 
-// Odrive clear ALL errors
-void ODriveExt::clearAllOdriveErrors() {
+
+// ODrive clear ALL errors
+void ODriveExt::clearAllODriveErrors() {
   ODRIVE_SERIAL << "w sc\n"; 
 } 
 
-// Odrive clear subcategory errors
-void ODriveExt::clearOdriveErrors(int axis, int comp) {
+// ODrive clear subcategory errors
+void ODriveExt::clearODriveErrors(int axis, int comp) {
   switch (comp) {
     case ENCODER:
       ODRIVE_SERIAL << "w axis"<<axis<<".encoder.error 0\n";
-      VLF("MSG: Clearing Odrive errors");
+      VLF("MSG: Clearing Drive errors");
       break;
     case MOTOR:
       ODRIVE_SERIAL << "w axis"<<axis<<".motor.error 0\n";
-      VLF("MSG: Clearing Odrive errors");
+      VLF("MSG: Clearing ODrive errors");
       break;
     case CONTROLLER:
       ODRIVE_SERIAL << "w axis"<<axis<<".controller.error 0\n";
-      VLF("MSG: Clearing Odrive errors");
+      VLF("MSG: Clearing ODrive errors");
       break;
     case AXIS:
       ODRIVE_SERIAL << "w axis"<<axis<<".error 0\n";
-      VLF("MSG: Clearing Odrive errors");
+      VLF("MSG: Clearing ODrive errors");
       break;
   }
 }
 
-// Dump Error for specific module
-int ODriveExt::dumpOdriveErrors(int axis, int comp) {   
-  switch (comp) { 
-    case ENCODER:
-      ODRIVE_SERIAL << "r axis"<<axis<<".encoder.error\n";
-      return oDriveArduino.readInt();
-      VLF("MSG: dump Odrive encoder errors");
-      break;
-    case MOTOR:
-    ODRIVE_SERIAL << "r axis"<<axis<<".motor.error\n";
-    return oDriveArduino.readInt();
-      VLF("MSG: dump Odrive motor errors");
-      break;
-    case CONTROLLER:
-      ODRIVE_SERIAL << "r axis"<<axis<<".controller.error\n";
-      return oDriveArduino.readInt();
-      VLF("MSG: dump Odrive controller errors");
-      break;
-    case AXIS:
-      ODRIVE_SERIAL << "r axis"<<axis<<".error\n";
-      return oDriveArduino.readInt();
-      VLF("MSG: dump Odrive axis errors");
-      break;
-  }
-  return oDriveArduino.readInt();
-}
-
-void ODriveExt::setOdriveVelGain(int axis, float level) {
+void ODriveExt::setODriveVelGain(int axis, float level) {
   ODRIVE_SERIAL << "w axis"<<axis<<".controller.config.vel_gain "<<level<<'\n';
 }
 
-void ODriveExt::setOdriveVelIntGain(int axis, float level) {
+void ODriveExt::setODriveVelIntGain(int axis, float level) {
   ODRIVE_SERIAL << "w axis"<<axis<<".controller.config.vel_integrator_gain "<<level<<'\n';
 }
 
-void ODriveExt::setOdrivePosGain(int axis, float level) {
+void ODriveExt::setODrivePosGain(int axis, float level) {
   ODRIVE_SERIAL << "w axis"<<axis<<".controller.config.pos_gain "<<level<<'\n';
 }
 
-float ODriveExt::getOdriveVelGain(int axis) {
+float ODriveExt::getODriveVelGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n";
+  delay(1);
   return oDriveArduino.readFloat();
 }
 
-float ODriveExt::getOdriveVelIntGain(int axis) {
+float ODriveExt::getODriveVelIntGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n";
+  delay(1);
   return oDriveArduino.readFloat();
 }
 
-float ODriveExt::getOdrivePosGain(int axis) {
+float ODriveExt::getODrivePosGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n";
+  delay(1);
   return oDriveArduino.readFloat();
 }
 
@@ -170,11 +162,45 @@ float ODriveExt::getMotorTemp(int axis) {
   return Tf;
 }
 
+// ========  Get the ODRIVE errors ========
+uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
+  if (axis == -1) { // ODrive top level error
+    ODRIVE_SERIAL << "r odrive.error\n";
+    return oDriveArduino.readInt();
+  }
+
+  if (component == NONE) {
+    ODRIVE_SERIAL << "r odrive.axis"<<axis<<".error\n";
+    return oDriveArduino.readInt();
+  } else {
+    ODRIVE_SERIAL << "r odrive.axis"<<axis<<"."<<ODriveComponentsStr[component]<<".error\n";
+    return oDriveArduino.readInt();
+  }
+}
+
+void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
+  ODRIVE_SERIAL << "r hw_version_major\n"; 
+  oDversion.hwMajor = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r hw_version_minor\n"; 
+  oDversion.hwMinor = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r hw_version_variant\n"; 
+  oDversion.hwVar = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r fw_version_major\n"; 
+  oDversion.fwMajor = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r fw_version_minor\n"; 
+  oDversion.fwMinor = oDriveArduino.readInt();
+  ODRIVE_SERIAL << "r fw_version_revision\n"; 
+  oDversion.fwRev = oDriveArduino.readInt();
+}
+
 // =================== Demo Mode ====================
-// This requires that the OnStep update to the Axis is stopped but the Motor power is ON
+// Demo mode requires that the OnStep updates to the Axis be stopped but the Motor power is ON
 void ODriveExt::demoMode(bool onState) {
+  tasks.setDurationComplete(tasks.getHandleByName("Target_0")); // not sure about the name
   // choose some AZM and ALT positions in fractional "Turns"
-  // ALT position should never be negative in actual use but it "can" go negative in demo
+  // ALT position should never be negative in actual use because of the position of the focuser but it "can" go negative in demo
+  // ALT axis at Turn = 0.0 is telescope vertical
+  // AZ axis at Turn = 0.0 is telescope pointing North (when physically aligned north)
   float pos_one = 0.15;
   float pos_two = 0.3;
   float pos_three = -0.1;
@@ -211,11 +237,12 @@ void ODriveExt::demoMode(bool onState) {
         demo_pos = 0;
         break;
     }
-  } else {
+  } else { // off
     oDriveArduino.SetPosition(ALT_MOTOR, 0);
     oDriveArduino.SetPosition(AZM_MOTOR, 0);
+    axis1.init(&motor1); // start motor timers
+    axis2.init(&motor2);
   }
 }
 
 ODriveExt oDriveExt;
-ODriveArduino oDriveArduino(ODRIVE_SERIAL);

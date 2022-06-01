@@ -8,11 +8,23 @@
 
 enum Component
 {
-    ENCODER,
-    MOTOR,
-    CONTROLLER,
-    AXIS
+  COMP_FIRST,
+  NONE,
+  AXIS,
+  CONTROLLER,
+  MOTOR,
+  ENCODER,
+  COMP_LAST
 };
+
+typedef struct ODriveVersion {
+  uint8_t hwMajor;
+  uint8_t hwMinor;
+  uint8_t hwVar;
+  uint8_t fwMajor;
+  uint8_t fwMinor;
+  uint8_t fwRev;
+} ODriveVersion;
     
 // Printing with stream operator helper functions
 template<class T> inline Print& operator <<(Print& obj, T arg) { obj.print(arg);    return obj; }
@@ -22,41 +34,43 @@ class ODriveExt
 {
   public:
     // getters
-    float getOdriveBusVoltage();
     float getEncoderPositionDeg(int axis);
     float getMotorPositionTurns(int axis);
     int   getMotorPositionCounts(int axis);
     float getMotorPositionDelta(int axis);
     float getMotorCurrent(int axis);
     float getMotorTemp(int axis);
-    float getOdriveVelGain(int axis);
-    float getOdriveVelIntGain(int axis);
-    float getOdrivePosGain(int axis);
+    float getODriveVelGain(int axis);
+    float getODriveVelIntGain(int axis);
+    float getODrivePosGain(int axis);
+    void getODriveVersion(ODriveVersion oDversion);
+    float getODriveBusVoltage();
+    uint32_t getODriveErrors(int axis, Component component);
     
     // actions
-    void setOdriveVelGain(int axis, float level);
-    void setOdriveVelIntGain(int axis, float level);
-    void setOdrivePosGain(int axis, float level);
-
-    void updateOdriveMotorPositions();
-    void clearOdriveErrors(int axis, int comp);
+    void setODriveVelGain(int axis, float level);
+    void setODriveVelIntGain(int axis, float level);
+    void setODrivePosGain(int axis, float level);
+    void updateODriveMotorPositions();
+    void clearODriveErrors(int axis, int comp);
     
     static void demoMode(bool onState);
   
     // not currently used
-    void clearAllOdriveErrors();
-    int dumpOdriveErrors(int axis, int comp);
-    int getOdriveRequestedState();
+    void clearAllODriveErrors();
+    
+    int getODriveRequestedState();
 
     bool odriveAZOff = true;
     bool odriveALTOff = true;
 
+    ODriveVersion oDversion = {0, 0, 0, 0, 0, 0};
+    Component component = COMP_FIRST;
+
   private:
+
 };
 
 extern ODriveExt oDriveExt;
-
-// Odrive Arduino functions
-extern ODriveArduino oDriveArduino;
 
 #endif

@@ -4,8 +4,12 @@
 
 #if defined(ARDUINO_TEENSY41)
 
-#define ODRIVE_SWAP_AXES      ON      // ODrive axis 0 = OnStep axis 2 = ALT
+// ODrive Pins
+#define ODRIVE_SWAP_AXES       ON     // ODrive axis 0 = OnStep axis 2 = ALT
                                       // ODrive axis 1 = OnStep axis 1 = AZM
+#define ODRIVE_SERIAL     Serial3 
+#define ODRIVE_SERIAL_BAUD  19200
+#define ODRIVE_RST_PIN          3
 
 // DDScopeX Specific pins
 #define AZ_ENABLED_LED_PIN     20     // AZM Motor ON/OFF LED output active low
@@ -18,8 +22,9 @@
 #define FAN_ON_PIN             25     // Fan enable output active high
 #define BATTERY_LOW_LED_PIN    22     // 24V battery LED output active low
 
-// SPI Display pins - not explicitly declared in the code but assumed by Teensy driver as SPI port 1
-//          ....therefore they must be reserved
+// SPI Display pins 
+// . these are assumed by Teensy driver as SPI port 1
+// ....therefore they are reserved
 #define TFT_DC                  9     // Data/Command
 #define TFT_CS                 10     // Chip Select active low
 #define TFT_MOSI               11     // Master out, Slave in
@@ -41,8 +46,8 @@
 #define STATUS_BUZZER_PIN       4     // Output Piezo Buzzer
 #define STATUS_MOUNT_LED_PIN    7     // Output, active low
 
-// The PPS pin is a 3.3V logic input, OnStep measures time between rising edges and adjusts the internal sidereal clock frequency
-//#define PPS_SENSE_PIN           2     // Input Pin is connected to Teensy but GPS module does not support
+// Using Beitian BN-220 without the PPS pinned out. The BN-280 has PPS pinned out
+//#define PPS_SENSE_PIN           2     // Input Pin, Pulse Per Second from GPS
 
 #else
 #error "Wrong processor for this configuration!"

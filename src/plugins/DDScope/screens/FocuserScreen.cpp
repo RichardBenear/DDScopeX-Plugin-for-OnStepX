@@ -164,15 +164,15 @@ void FocuserScreen::updateThisStatus() {
       // Update IN and OUT focuser status
       tft.setFont(&FreeSansBold12pt7b);
       if (focMovingIn) {
-          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, true, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
+          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_ON, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
       } else {
-          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, false, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
+          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_OFF, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
       }
 
       if (!focMovingIn) {
-          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, true, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
+          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_ON, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
       } else {
-          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, false, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
+          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_OFF, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
       }
       tft.setFont(&Inconsolata_Bold8pt7b);
       
@@ -181,57 +181,57 @@ void FocuserScreen::updateThisStatus() {
       y_offset = 0;
       // Increment Speed
       if (incSpeed) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, true, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Inc'ing ");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Inc'ing ");
           incSpeed = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, false, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Inc Speed");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Inc Speed");
       }
 
       // Decrement Speed
       y_offset +=SPEED_BOXSIZE_Y + 2;
       if (decSpeed) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, true, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Dec'ing ");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Dec'ing ");
           decSpeed = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, false, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Dec Speed");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Dec Speed");
       }
 
       // Set a GoTo setpoint
       y_offset +=SPEED_BOXSIZE_Y + 2; 
       if (setPoint) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, true, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "  Setting ");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "  Setting ");
           setPoint = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, false, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Set Goto Pt");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Set Goto Pt");
       }
 
       // Goto the setpoint
       y_offset +=SPEED_BOXSIZE_Y + 2;
       if (gotoSetpoint) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, true, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Going to SP");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Going to SP");
           gotoSetpoint = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, false, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Goto Set Pt");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Goto Set Pt");
       }
 
       // Goto Halfway point
       y_offset +=SPEED_BOXSIZE_Y + 2;
       if (focGoToHalf) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, true, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "GoingTo Half");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "GoingTo Half");
           focGoToHalf = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, false, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " GoTo Half  ");
+          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " GoTo Half  ");
       }
 
       // Calibrate Min And Max
       y_offset = 0;
       if (!calibActive) {
-          display.drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, false, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, "Calibrate");
+          display.drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_OFF, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, "Calibrate");
       } else {
           if (inwardCalState && calibActive) {
-              display.drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, true, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Min Calib");
+              display.drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_ON, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Min Calib");
           } else if (!inwardCalState && calibActive) {
-              display.drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, true, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Max Calib");
+              display.drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_ON, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Max Calib");
           }
       }
 
@@ -239,46 +239,46 @@ void FocuserScreen::updateThisStatus() {
       y_offset = 0;
       // Increment Motor Power
       if (incMoveCt) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, true, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, " Inc'ing ");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, " Inc'ing ");
           incMoveCt = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, false, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Inc Cnt");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Inc Cnt");
       }
 
       y_offset +=SPEED_BOXSIZE_Y + 2;
       // Decrement Motor Power
       if (decMoveCt) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, true, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec'ing ");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec'ing ");
           decMoveCt = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, false, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec Cnt");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec Cnt");
       }
 
       y_offset +=SPEED_BOXSIZE_Y + 2;
       // Set Zero Position
       if (setZero) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, true, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
           setZero = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, false, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Zero");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Zero");
       }
 
       y_offset +=SPEED_BOXSIZE_Y + 2;
       // Set Maximum position
       if (setMax) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, true, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
           setMax = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, false, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Max ");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Max ");
       }
 
       y_offset +=SPEED_BOXSIZE_Y + 2;
       // Reset focuser
       if (focReset) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, true, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET,   "Reseting");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET,   "Reseting");
           focReset = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, false, MID_TEXT_X_OFFSET+5, MID_TEXT_Y_OFFSET, " RESET  ");
+          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET+5, MID_TEXT_Y_OFFSET, " RESET  ");
       }
   display.screenTouched = false;
   }

@@ -18,7 +18,7 @@
 // the following would be in the pinmap normally and should trigger #error on compile here when not present
 // for now, they fit your hardware as best as I can tell...
 #ifndef ODRIVE_SERIAL
-  #define ODRIVE_SERIAL      Serial3
+  #define ODRIVE_SERIAL      Serial3 
 #endif
 #ifndef ODRIVE_SERIAL_BAUD
   #define ODRIVE_SERIAL_BAUD 19200

@@ -5,7 +5,7 @@
 
 #include "HomeScreen.h"
 #include "../display/Display.h"
-#include "../odriveExt/OdriveExt.h"
+#include "../odriveExt/ODriveExt.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../../../telescope/mount/Mount.h"
 #include "../../../lib/tasks/OnTask.h"
@@ -219,7 +219,7 @@ void HomeScreen::updateStatusCol1() {
 
   // Update Battery Voltage
   y_offset +=COL1_LABEL_SPACING;
-  //currentBatVoltage = display.getBatteryVoltage();
+  currentBatVoltage = display.getBatteryVoltage();
   if ((currentBatVoltage != lastBatVoltage) || display.firstDraw) {
     if (currentBatVoltage < BATTERY_LOW_VOLTAGE) {
       display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, currentBatVoltage);
@@ -384,6 +384,7 @@ void HomeScreen::updateHomeButtons() {
     } else {
       display.drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, " Day Mode");          
     }
+    
     // Home Telescope
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
     if (gotoHome) {
@@ -397,19 +398,20 @@ void HomeScreen::updateHomeButtons() {
     // Park / unPark Telescope
     y_offset = 0;
     if (lCmountStatus.isParked()) { 
-      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, " Parked ");
+      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, " Parked ");
     } else { 
-      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Un Park ");
+      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Un Park ");
     }
 
     // Set Park Position
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
     if (parkWasSet) {
-      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,     "Park WasSet");
+      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,     "Park Is Set");
       parkWasSet = false;
     } else {
       display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-7, ACTION_TEXT_Y_OFFSET, "  Set Park ");
     }
+
     // Turn ON / OFF Fan
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
     if (!fanOn) {
@@ -434,11 +436,11 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
     if (oDriveExt.odriveAZOff) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
       oDriveExt.odriveAZOff = false; // false = NOT off
-      //motor1.power(true);
+      motor1.power(true);
     } else { // since already ON, toggle OFF
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
       oDriveExt.odriveAZOff = true;
-      //motor1.power(false);
+      motor1.power(false);
     }
     return;
   }
@@ -449,11 +451,11 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
     if (oDriveExt.odriveALTOff) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveALTOff = false; // false = NOT off
-      //motor2.power(true);
+      motor2.power(true);
     } else { // toggle OFF
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
       oDriveExt.odriveALTOff = true;
-      //motor2.power(false); // Idle the Odrive motor
+      motor2.power(false); // Idle the ODrive motor
     }
     return;
   }
@@ -467,8 +469,8 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
       oDriveExt.odriveALTOff = false; // false = NOT off
       motor1.power(false);
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
-      oDriveExt.odriveALTOff = true;
-      motor2.power(false); // Idle the Odrive motor
+      oDriveExt.odriveALTOff = false;
+      motor2.power(false); // Idle the ODrive motor
     }
     return;
   }

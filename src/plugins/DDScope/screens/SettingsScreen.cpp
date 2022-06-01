@@ -143,19 +143,19 @@ void SettingsScreen::draw() {
   }
 
 // Initialize TIME, DATE, TZ, Latitude, Longitude Enter/Accept buttons
-  display.drawButton(T_SELECT_X,   T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, T_T_OFF_X, T_T_OFF_Y, "TmSel");
-  display.drawButton( T_CLEAR_X,    T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, T_T_OFF_X, T_T_OFF_Y, "TmClr"); 
-  display.drawButton(D_SELECT_X,   D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, D_T_OFF_X, D_T_OFF_Y, "DaSel");
-  display.drawButton( D_CLEAR_X,    D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
-  display.drawButton(U_SELECT_X,   U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "TzSel");
-  display.drawButton( U_CLEAR_X,    U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
-  display.drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "LaSel");
-  display.drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
-  display.drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "LoSel");
-  display.drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
+  display.drawButton(T_SELECT_X,   T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X, T_T_OFF_Y, "TmSel");
+  display.drawButton( T_CLEAR_X,    T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X, T_T_OFF_Y, "TmClr"); 
+  display.drawButton(D_SELECT_X,   D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaSel");
+  display.drawButton( D_CLEAR_X,    D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
+  display.drawButton(U_SELECT_X,   U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzSel");
+  display.drawButton( U_CLEAR_X,    U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
+  display.drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaSel");
+  display.drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
+  display.drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoSel");
+  display.drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
   
   // Send data button
-  display.drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, false, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
+  display.drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_OFF, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
   
   // Initialize the background for the Text Entry fields
   tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+                CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
@@ -262,14 +262,14 @@ void SettingsScreen::updateThisStatus() {
 
     // Time Select Button
     if (Tselect) {
-      display.drawButton( T_SELECT_X,  T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, T_T_OFF_X,  T_T_OFF_Y,  "TiSel");
+      display.drawButton( T_SELECT_X,  T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, T_T_OFF_X,  T_T_OFF_Y,  "TiSel");
     } else {
-      display.drawButton( T_SELECT_X,  T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, T_T_OFF_X,  T_T_OFF_Y,  "TiSel");
+      display.drawButton( T_SELECT_X,  T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X,  T_T_OFF_Y,  "TiSel");
     }
 
     // Time Clear button
     if (Tclear) {
-      display.drawButton(  T_CLEAR_X,   T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, T_T_OFF_X,  T_T_OFF_Y,  "TiClr");
+      display.drawButton(  T_CLEAR_X,   T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, T_T_OFF_X,  T_T_OFF_Y,  "TiClr");
       tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
       memset(Ttext,0,sizeof(Ttext)); // clear Time buffer
       tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
@@ -277,19 +277,19 @@ void SettingsScreen::updateThisStatus() {
       sButtonPosition = 12;
       Tclear = false;
     } else {
-      display.drawButton(T_CLEAR_X, T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, T_T_OFF_X,  T_T_OFF_Y,  "TiClr");
+      display.drawButton(T_CLEAR_X, T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X,  T_T_OFF_Y,  "TiClr");
     }
     
     // Date Select button
     if (Dselect) {
-      display.drawButton(D_SELECT_X, D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, D_T_OFF_X, D_T_OFF_Y, "DaSel");
+      display.drawButton(D_SELECT_X, D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, D_T_OFF_X, D_T_OFF_Y, "DaSel");
     } else {
-      display.drawButton(D_SELECT_X, D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, D_T_OFF_X, D_T_OFF_Y, "DaSel"); 
+      display.drawButton(D_SELECT_X, D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaSel"); 
     }
 
     // Date Clear Button
     if (Dclear) {
-      display.drawButton( D_CLEAR_X,  D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
+      display.drawButton( D_CLEAR_X,  D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
       tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
       memset(Dtext,0,sizeof(Dtext)); // clear DATE buffer
       tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
@@ -297,19 +297,19 @@ void SettingsScreen::updateThisStatus() {
       sButtonPosition = 12;
       Dclear = false;
     } else {
-      display.drawButton( D_CLEAR_X,  D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
+      display.drawButton( D_CLEAR_X,  D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
     }
 
     // Time Zone Select button
     if (Tzselect) {
-      display.drawButton(U_SELECT_X, U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, U_T_OFF_X, U_T_OFF_Y, "TzSel");
+      display.drawButton(U_SELECT_X, U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "TzSel");
     } else {
-      display.drawButton(U_SELECT_X, U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "TzSel"); 
+      display.drawButton(U_SELECT_X, U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzSel"); 
     }
 
     // Time Zone Clear Button update
     if (Tzclear) {
-      display.drawButton( U_CLEAR_X,  U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
+      display.drawButton( U_CLEAR_X,  U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
       tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*2, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
       memset(Tztext,0,sizeof(Tztext)); // clear TZ buffer
       tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
@@ -317,19 +317,19 @@ void SettingsScreen::updateThisStatus() {
       sButtonPosition = 12;
       Tzclear = false;
     } else {
-      display.drawButton( U_CLEAR_X,  U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
+      display.drawButton( U_CLEAR_X,  U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
     }
 
     // Latitude Select button
     if (LaSelect) {
-      display.drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, U_T_OFF_X, U_T_OFF_Y, "LaSel");
+      display.drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LaSel");
     } else {
-      display.drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "LaSel"); 
+      display.drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaSel"); 
     }
 
     // Latitude Clear Button update
     if (LaClear) {
-      display.drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
+      display.drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
       tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*3, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
       memset(LaText,0,sizeof(LaText)); // clear latitude buffer
       tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
@@ -337,19 +337,19 @@ void SettingsScreen::updateThisStatus() {
       sButtonPosition = 12;
       LaClear = false;
     } else {
-      display.drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
+      display.drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
     }
 
     // Longitude Select button
     if (LoSelect) {
-      display.drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, U_T_OFF_X, U_T_OFF_Y, "LoSel");
+      display.drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LoSel");
     } else {
-      display.drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "LoSel"); 
+      display.drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoSel"); 
     }
 
     // Longitude Clear Button update
     if (LoClear) {
-      display.drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, true, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
+      display.drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
       tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*4, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
       memset(LoText,0,sizeof(LoText)); // clear longitude buffer
       tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
@@ -357,15 +357,15 @@ void SettingsScreen::updateThisStatus() {
       sButtonPosition = 12;
       LoClear = false;
     } else {
-      display.drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, false, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
+      display.drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
     }
     
     // Send Data Button update
     if (sSendOn) {
-      display.drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, true, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Sent");
+      display.drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_ON, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Sent");
       sSendOn = false; 
     } else {
-      display.drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, false, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
+      display.drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_OFF, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
     }
 
     // Get and show the Time and Location status

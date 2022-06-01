@@ -8,10 +8,11 @@
 #include "../catalog/Catalog.h"
 #include "../../../telescope/mount/Mount.h"
 #include "src/telescope/mount/goto/Goto.h"
+#include "src/lib/tasks/OnTask.h"
 #include "../../../lib/axis/motor/oDrive/ODrive.h"
 #include "../odriveExt/ODriveExt.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
-#include "../../../lib/tasks/OnTask.h"
+
 
 #define BIG_BOX_W           80
 #define BIG_BOX_H           40
@@ -228,50 +229,50 @@ void AlignScreen::updateThisStatus() {
     // Go to Home Position
     if (homeBut) {
       if (!lCmountStatus.isHome() || lCmountStatus.isSlewing()) {
-          display.drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, false, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");  
+          display.drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_OFF, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");  
       }
     } else {
-      display.drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, true, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");           
+      display.drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_ON, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");           
     }
       
     // Number of Stars for Alignment Buttons
     // Alignment become active here
     int x_offset = 0;
     if (numAlignStars == 1) {   
-        display.drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, true, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 1 "); 
+        display.drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 1 "); 
     } else {
-        display.drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, false, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 1 ");
+        display.drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 1 ");
     } 
     x_offset += NUM_S_SPACING_X;
     if (numAlignStars == 2) {  
-        display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, true, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 2 "); 
+        display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 2 "); 
     } else {
-        display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, false, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 2 ");
+        display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 2 ");
     } 
     x_offset += NUM_S_SPACING_X;
     if (numAlignStars == 3) {  
-        display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, true, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 3 "); 
+        display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 3 "); 
     } else {
-        display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, false, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 3 ");
+        display.drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 3 ");
     } 
 
     // go to the Star Catalog
     if (catalogBut) {
-        display.drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, true, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");   
+        display.drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, BUTTON_ON, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");   
     } else {
-        display.drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, false, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");            
+        display.drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, BUTTON_OFF, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");            
     }
 
     // Go To Coordinates Button
     if (gotoBut || lCmountStatus.isSlewing()) {
-        display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, true, GOTO_T_OFF_X-2, GOTO_T_OFF_Y, "Going");
+        display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-2, GOTO_T_OFF_Y, "Going");
     } else {
-        display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, false, GOTO_T_OFF_X, GOTO_T_OFF_Y, "GOTO"); 
+        display.drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X, GOTO_T_OFF_Y, "GOTO"); 
     }
     
     // Abort Alignment Button
     if (abortBut) {
-      display.drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, true, GOTO_T_OFF_X-5, GOTO_T_OFF_Y, "Abort'g");
+      display.drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-5, GOTO_T_OFF_Y, "Abort'g");
       display.setLocalCmd(":Q#"); // stops move
       // How do you select which axis to power down???
       motor1.power(false); // do this for safety reasons...mount may be colliding with something
@@ -286,29 +287,29 @@ void AlignScreen::updateThisStatus() {
       alignBut = false;
       Next_State = Idle_State;
     } else {
-      display.drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, false, GOTO_T_OFF_X-9, GOTO_T_OFF_Y, " ABORT "); 
+      display.drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X-9, GOTO_T_OFF_Y, " ABORT "); 
       aborted = false;
     }
 
     // ALIGN button; calculate alignment parameters
     if (alignBut) {
-      display.drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, true, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");    
+      display.drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_ON, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");    
     } else {
-      display.drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, false, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");            
+      display.drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_OFF, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");            
     }
 
     // save the alignment calculations to EEPROM
     if (saveAlignBut) {
-      display.drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, true, SA_T_OFF_X, SA_T_OFF_Y, "SAVEed");
+      display.drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, BUTTON_ON, SA_T_OFF_X, SA_T_OFF_Y, "SAVEed");
     } else {
-      display.drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, false, SA_T_OFF_X, SA_T_OFF_Y, "SAVE");
+      display.drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, BUTTON_OFF, SA_T_OFF_X, SA_T_OFF_Y, "SAVE");
     }
 
     // start alignnment
     if (startAlignBut) {
-      display.drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, true, ST_T_OFF_X-10, ST_T_OFF_Y, "STARTed");
+      display.drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, BUTTON_ON, ST_T_OFF_X-10, ST_T_OFF_Y, "STARTed");
     } else {
-      display.drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, false, ST_T_OFF_X, ST_T_OFF_Y, "START");
+      display.drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, BUTTON_OFF, ST_T_OFF_X, ST_T_OFF_Y, "START");
     }
   }
   display.screenTouched = false;
