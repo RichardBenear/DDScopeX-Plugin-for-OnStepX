@@ -9,6 +9,8 @@
 #include "../odriveExt/ODriveExt.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../../../telescope/mount/Mount.h"
+#include "src/lib/tasks/OnTask.h"
+#include <HardwareSerial.h>
 
 #define OD_ERR_OFFSET_X           4 
 #define OD_ERR_OFFSET_Y         184 
@@ -452,9 +454,16 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   // Reset ODRIVE
   if (px > OD_ACT_COL_3_X + x_offset && px < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_3_Y + y_offset && py <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     VLF("MSG: Reseting ODrive");
+    tasks.setDurationComplete(tasks.getHandleByName("Target_0")); // not sure about the name
+    tasks.setDurationComplete(tasks.getHandleByName("Target_1")); // not sure about the name
+    ODRIVE_SERIAL.end();
+    delay(5);
     digitalWrite(ODRIVE_RST, LOW);
     delay(1);
     digitalWrite(ODRIVE_RST, HIGH);
+    delay(500);
+    axis1.init(&motor1); // start motor timers and serial
+    axis2.init(&motor2);
     resetODriveFlag = true;
     AZgainHigh = false;
     AZgainDefault = true;
@@ -487,8 +496,8 @@ void ODriveScreen::updateODriveErrBar() {
   tft.setCursor(label_x, y);
   tft.print("ALT Ctrl err:");
   
-  //display.canvPrint(        data_x, y, 0, C_WIDTH-40, C_HEIGHT, oDriveExt.getODriveErrors(AZM_MOTOR, AXIS));
-  //display.canvPrint(label_x+data_x, y, 0, C_WIDTH-40, C_HEIGHT, oDriveExt.getODriveErrors(ALT_MOTOR, AXIS));
+  // display.canvPrint(        data_x, y, 0, C_WIDTH-40, C_HEIGHT, oDriveExt.getODriveErrors(AZM_MOTOR, AXIS));
+  // display.canvPrint(label_x+data_x, y, 0, C_WIDTH-40, C_HEIGHT, oDriveExt.getODriveErrors(ALT_MOTOR, AXIS));
 }
 
 ODriveScreen oDriveScreen;

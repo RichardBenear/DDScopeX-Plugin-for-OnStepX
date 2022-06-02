@@ -26,54 +26,53 @@ ODriveArduino oDriveArduino(ODRIVE_SERIAL);
 // Read bus voltage
 float ODriveExt::getODriveBusVoltage() {
   ODRIVE_SERIAL << "r vbus_voltage\n";
-  delay(1);
+  tasks.yield(4);
   float bat_volt = (float)(oDriveArduino.readFloat());
 return (float)bat_volt;  
 }
 
 // get absolute Encoder positions in degrees
 float ODriveExt::getEncoderPositionDeg(int axis) {
-  noInterrupts();
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
+  tasks.yield(4);
   float turns = oDriveArduino.readFloat();
-  interrupts();
   return turns*360;
 }  
 
 // get motor positions in turns
 float ODriveExt::getMotorPositionTurns(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  delay(1);
+  tasks.yield(4);
   return oDriveArduino.readFloat();
 }  
 
 // get motor position in counts
 int ODriveExt::getMotorPositionCounts(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate_counts\n";
-  delay(1);
+  tasks.yield(4);
   return oDriveArduino.readInt();
 } 
 
 // get Motor Current
 float ODriveExt::getMotorCurrent(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n";
-  delay(1);  
+  tasks.yield(4);
   return oDriveArduino.readFloat();
 }  
 
 // read current requested state
 int ODriveExt::getODriveRequestedState() {
   ODRIVE_SERIAL << "r axis0.requested_state\n";
-  delay(1);
+  tasks.yield(4);
   return oDriveArduino.readInt();
 }
 
 float ODriveExt::getMotorPositionDelta(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
-  delay(1);
+  tasks.yield(4);
   float reqPos = oDriveArduino.readFloat();   
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n";
-  delay(1);
+  tasks.yield(4);
   float posEst = oDriveArduino.readFloat();   
   float deltaPos = abs(reqPos - posEst);
   return deltaPos;
@@ -121,19 +120,19 @@ void ODriveExt::setODrivePosGain(int axis, float level) {
 
 float ODriveExt::getODriveVelGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n";
-  delay(1);
+  tasks.yield(4);
   return oDriveArduino.readFloat();
 }
 
 float ODriveExt::getODriveVelIntGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n";
-  delay(1);
+  tasks.yield(4);
   return oDriveArduino.readFloat();
 }
 
 float ODriveExt::getODrivePosGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n";
-  delay(1);
+  tasks.yield(4);
   return oDriveArduino.readFloat();
 }
 
@@ -180,16 +179,22 @@ uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
 
 void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
   ODRIVE_SERIAL << "r hw_version_major\n"; 
+  tasks.yield(4);
   oDversion.hwMajor = oDriveArduino.readInt();
   ODRIVE_SERIAL << "r hw_version_minor\n"; 
+  tasks.yield(4);
   oDversion.hwMinor = oDriveArduino.readInt();
   ODRIVE_SERIAL << "r hw_version_variant\n"; 
+  tasks.yield(4);
   oDversion.hwVar = oDriveArduino.readInt();
   ODRIVE_SERIAL << "r fw_version_major\n"; 
+  tasks.yield(4);
   oDversion.fwMajor = oDriveArduino.readInt();
   ODRIVE_SERIAL << "r fw_version_minor\n"; 
+  tasks.yield(4);
   oDversion.fwMinor = oDriveArduino.readInt();
   ODRIVE_SERIAL << "r fw_version_revision\n"; 
+  tasks.yield(4);
   oDversion.fwRev = oDriveArduino.readInt();
 }
 
