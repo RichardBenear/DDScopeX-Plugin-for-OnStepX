@@ -45,10 +45,10 @@ bool ODriveMotor::init() {
 
   if (axisNumber == 1) {
     pinModeEx(ODRIVE_RST_PIN, OUTPUT);
-    digitalWriteEx(ODRIVE_RST_PIN, LOW); // force low in case pin has pullup
+    digitalWriteEx(ODRIVE_RST_PIN, LOW); // active low, don't know if ODrive has pullup on this pin
     delay(2); 
     digitalWriteEx(ODRIVE_RST_PIN, HIGH); // bring ODrive out of Reset
-    delay(1000);                          // allow time for ODrive to boot
+    delay(2000);                          // allow time for ODrive to boot
     ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
     VLF("MSG: ODrive channel Init");
   }
@@ -117,13 +117,13 @@ void ODriveMotor::power(bool state) {
   if (state) {
     requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
   }
-
+  
   if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
     VF("WRN: ODrive"); V(axisNumber); VF(", ");
-    VLF("closed loop control - command timeout!");
+    VLF(" Power, closed loop control - command timeout!");
     return;
   }
-  V(axisPrefix); VLF("closed loop control - ");
+  V(axisPrefix); VF("Power, closed loop control - ");
   if (state) { VLF("Active"); } else { VLF("Idle"); }
 }
 
@@ -152,7 +152,19 @@ void ODriveMotor::resetPositionSteps(long value) {
   long oPosition;
   // if (axisNumber - 1 == 0) oPosition = o_position0;
   // if (axisNumber - 1 == 1) oPosition = o_position1;
+
+  // get ODrive position in fractionial Turns
+  
   oPosition = _oDriveDriver->GetPosition(axisNumber - 1)*TWO_PI*stepsPerMeasure; // axis1/2 are in steps per radian
+
+  //...should always be less than abs(0.5000)
+  if (oPosition < 0) { // negative turns
+    if (abs(oPosition) > 0.5) oPosition = -0.5; else oPosition = oPosition;
+  } else { // positive fractional turns
+    if (oPosition >= 0.5) oPosition = -0.5; else oPosition = oPosition;
+  }
+
+VF("oPosition="); VL(oPosition);
 
   noInterrupts();
   motorSteps    = oPosition;
@@ -236,6 +248,13 @@ void ODriveMotor::poll() {
     long target = motorSteps + backlashSteps;
   #endif
   interrupts();
+
+  //VF("motorSteps="); VL(motorSteps);
+  //VF("targetSteps="); VL(targetSteps);
+  //VF("backlashSteps="); VL(backlashSteps);
+  //VF("target="); VL(target);
+  //VF("stepsPerMeasure"); VL(stepsPerMeasure);
+  //VF("position="); VL(target/(TWO_PI*stepsPerMeasure));
 
   setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
 }

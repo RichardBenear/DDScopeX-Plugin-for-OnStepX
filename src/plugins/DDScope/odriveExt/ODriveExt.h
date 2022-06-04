@@ -33,6 +33,8 @@ template<>        inline Print& operator <<(Print& obj, float arg) { obj.print(a
 class ODriveExt
 {
   public:
+    ODriveExt();
+
     // getters
     float getEncoderPositionDeg(int axis);
     float getMotorPositionTurns(int axis);
@@ -64,11 +66,13 @@ class ODriveExt
     bool odriveAZOff = true;
     bool odriveALTOff = true;
 
+    bool oDserialAvail = false;
+
     ODriveVersion oDversion = {0, 0, 0, 0, 0, 0};
     Component component = COMP_FIRST;
 
   private:
-
+    bool batLED = false;
 };
 
 extern ODriveExt oDriveExt;

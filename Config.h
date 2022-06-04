@@ -46,6 +46,18 @@
 #define STEP_WAVE_FORM             SQUARE // SQUARE, PULSE Step signal wave form faster rates. SQUARE best signal integrity.  Adjust
                                           //         Applies to all axes.
 
+
+// ODRIVE ------------------------------------------------------
+#define ODRIVE_SWAP_AXES              ON  // ODrive axis 0 = OnStep axis 2 = ALT
+                                          // ODrive axis 1 = OnStep axis 1 = AZM
+#define ODRIVE_SERIAL            Serial3  // Teensy HW serial
+#define ODRIVE_SERIAL_BAUD         19200
+#define ODRIVE_SLEW_DIRECT            ON  // using ODrive trapezoidal move profile
+#define ODRIVE_ABSOLUTE               ON  // using absolute encoder
+#define ODRIVE_SYNC_LIMIT           1300  // in arc seconds..encoder resolution=2^14=16380=16380/360=45.5/deg=45.5/60=0.7583/arc-min
+                                          //         or 1/0.7583 = 1.32 arc-min/encoder tick
+#define ODRIVE_UPDATE_MS             1000  // 10 HZ position update rate
+
 // =================================================================================================================================
 // MOUNT ===========================================================================================================================
 
@@ -98,7 +110,7 @@
 #define AXIS2_STEPS_PER_DEGREE      455 //  12800, n. Number of steps per degree:                                          <-Req'd
                                           //         n = (stepper_steps * micro_steps * overall_gear_reduction)/360.0
 #define AXIS2_REVERSE                 OFF //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
-#define AXIS2_LIMIT_MIN                 0 //    -90, n. Where n=-90..0 (degrees.) Minimum allowed Declination or Altitude.    Infreq
+#define AXIS2_LIMIT_MIN               -90 //    -90, n. Where n=-90..0 (degrees.) Minimum allowed Declination or Altitude.    Infreq
 #define AXIS2_LIMIT_MAX                90 //     90, n. Where n=0..90 (degrees.) Maximum allowed Declination or Altitude.     Infreq
 
 #define AXIS2_DRIVER_MICROSTEPS       OFF //    OFF, n. Microstep mode when tracking.                                        <-Often

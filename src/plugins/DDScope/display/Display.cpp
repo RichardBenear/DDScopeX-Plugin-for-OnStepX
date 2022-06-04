@@ -66,9 +66,6 @@ void Display::init() {
 
   pinMode(ALT_THERMISTOR_PIN, INPUT); // Analog input
   pinMode(AZ_THERMISTOR_PIN, INPUT); // Analog input
-  
-  pinMode(ODRIVE_RST, OUTPUT);
-  digitalWrite(ODRIVE_RST, LOW); // start ODrive in Reset
 
   pinMode(AZ_ENABLED_LED_PIN, OUTPUT);
   digitalWrite(AZ_ENABLED_LED_PIN,HIGH); // LED OFF, active low 
@@ -95,12 +92,7 @@ void Display::init() {
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
   
   sdInit(); // initialize the SD card and draw start screen
-  DDmountInit(); // initialize some mount parameters
   delay(1500); // let start screen show for 1.5 sec
-
-  // draw Home screen
-  tft.setFont(&Inconsolata_Bold8pt7b);
-  homeScreen.draw();
 
   // start common-most-screens status
   VF("MSG: Setup, start Common screen status polling task (rate 900 ms priority 7)... ");
@@ -113,7 +105,7 @@ void Display::init() {
   if (CDhandle) { VLF("success"); } else { VLF("FAILED!"); }
 
   // update the ODrive Error status 
-  VF("MSG: Setup, start OnStep CMD status polling task (rate 1000 ms priority 7)... ");
+  VF("MSG: Setup, start ODrive Errors polling task (rate 1000 ms priority 7)... ");
   uint8_t ODhandle = tasks.add(1000, 0, true, 7, updateODriveErrWrapper, "UpdateODriveErrors");
   if (ODhandle) { VLF("success"); } else { VLF("FAILED!"); }
 
@@ -121,6 +113,10 @@ void Display::init() {
   VF("MSG: Setup, start Screen-specific status polling task (rate 2000 ms priority 7)... ");
   uint8_t SShandle = tasks.add(2000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
   if (SShandle)  { VLF("success"); } else { VLF("FAILED!"); }
+
+  // draw Home screen
+  tft.setFont(&Inconsolata_Bold8pt7b);
+  homeScreen.draw();
 }
 
 // initialize the SD card and boot screen
@@ -175,17 +171,6 @@ void Display::specificScreenUpdate() {
   tasks.yield(100);
 }
 
-// Initialize some Mount parameters
-void Display::DDmountInit() {
-  display.setLocalCmd(":SG+07:00#"); // Set Default Time Zone
-  display.setLocalCmd(":Sh-03#"); //Set horizon limit -3 deg
-  display.setLocalCmd(":So89#"); // Set overhead limit 89 deg
-  display.setLocalCmd(":SMMy Home#"); // Set Site 0 name "Home"
-  display.setLocalCmd(":SX93,1#"); // 2x slew speed
-  //display.setLocalCmd(":SX93,2#"); // 1.5x slew speed
-  //display.setLocalCmd(":SX93,3#"); // 1.0x slew speed
-}
-
 // ======= Use Local Command Channel ========
 void Display::setLocalCmd(char *command) {
   SERIAL_LOCAL.transmit(command);
@@ -197,13 +182,13 @@ void Display::setLocalCmd(const char *command) {
 
 void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
-  tasks.yield(40);
+  tasks.yield(60);
   strcpy(reply, SERIAL_LOCAL.receive()); 
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command); 
-  tasks.yield(40);
+  tasks.yield(60);
   strcpy(reply, SERIAL_LOCAL.receive()); 
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
 }
@@ -741,28 +726,7 @@ void Display::drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint1
   }
 }
 
-float Display::getBatteryVoltage() {
-// ** Low Battery LED **
-  float battery_voltage = 0;
-  oDriveExt.getODriveBusVoltage();
-  if (battery_voltage > BATTERY_LOW_VOLTAGE) { // battery ok
-    digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // turn off low battery low LED
-    batLED = false;
-  } else if (battery_voltage > 3) { // don't want beeping when developing code and battery off V=0
-    if (batLED) {
-      digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // already on, then flash it off
-      batLED = false;
-      //status.sound.alert();
-    } else {
-      digitalWrite(BATTERY_LOW_LED_PIN, LOW); // already off, then flash it on
-      batLED = true;
-    }
-  } else { // battery must be off and in development mode
-    digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // turn it off
-    batLED = false;
-  }
-  return battery_voltage;
-}
+
 
 void Display::soundFreq(int freq, int duration) {
   tone(STATUS_BUZZER_PIN, freq, duration);

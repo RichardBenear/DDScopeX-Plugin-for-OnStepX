@@ -20,6 +20,7 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include <Fonts/FreeSansBold9pt7b.h>
 #include "../../../telescope/mount/Mount.h"
+#include "src/lib/tasks/OnTask.h"
 
 // Catalog Selection buttons
 #define CAT_SEL_X               5
@@ -94,6 +95,22 @@ void MoreScreen::draw() {
 
   display.drawCommonStatusLabels();
   tft.setFont(&Inconsolata_Bold8pt7b);
+  //while(tasks.getHandleByName("CmdL")==0) Y;
+  // set some defaults
+  // this is here since we have to wait for Local command channel to start
+  VLF("MSG: Setting up Limits, TZ, Site Name, Speed");
+  display.setLocalCmd(":SG+07:00#"); // Set Default Time Zone
+  tasks.yield(40);
+  display.setLocalCmd(":Sh-01#"); //Set horizon limit -1 deg
+  tasks.yield(40);
+  display.setLocalCmd(":So86#"); // Set overhead limit 86 deg
+  tasks.yield(40);
+  display.setLocalCmd(":SMMy Home#"); // Set Site 0 name "Home"
+  tasks.yield(40);
+  display.setLocalCmd(":SX93,1#"); // 2x slew speed
+  tasks.yield(40);
+  //display.setLocalCmd(":SX93,2#"); // 1.5x slew speed
+  //display.setLocalCmd(":SX93,3#"); // 1.0x slew speed
 }
 
 //================== Update the Buttons ======================
@@ -391,12 +408,15 @@ void MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     }
     return;
   }
-
+char reply[5];
   // **** Go To Target Coordinates ****
   if (py > GOTO_BUT_Y && py < (GOTO_BUT_Y + GOTO_M_BOXSIZE_Y) && px > GOTO_BUT_X && px < (GOTO_BUT_X + GOTO_M_BOXSIZE_X)) {
     goToButton = true;
-    display.setLocalCmd(":MS#"); // move to
-    return;
+   // display.setLocalCmd(":MS#"); // move to
+  
+    display.getLocalCmdTrim(":MS#", reply); 
+  VF("reply="); VL(reply);
+  return;
   }
 
   // **** ABORT GOTO ****

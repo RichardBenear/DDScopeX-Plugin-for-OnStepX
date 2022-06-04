@@ -9,6 +9,7 @@
 
 #include <ODriveArduino.h>
 #include "ODriveExt.h"
+#include "src/lib/axis/motor/oDrive/ODrive.h"
 #include "../display/Display.h"
 #include "../../../telescope/mount/Mount.h"
 #include "../../../lib/tasks/OnTask.h"
@@ -20,60 +21,89 @@ const char* ODriveComponentsStr[4] = {
             "Encoder"        
 };
 
-ODriveArduino oDriveArduino(ODRIVE_SERIAL);
+// ODrive servo motor driver
+ODriveArduino *_oDserial;
+
+
+
+// constructor
+ODriveExt::ODriveExt() {
+  this->oDserialAvail = oDserialAvail;
+  _oDserial = new ODriveArduino(ODRIVE_SERIAL);
+
+}
 
 //=========================================================
 // Read bus voltage
 float ODriveExt::getODriveBusVoltage() {
   ODRIVE_SERIAL << "r vbus_voltage\n";
-  tasks.yield(4);
-  float bat_volt = (float)(oDriveArduino.readFloat());
-return (float)bat_volt;  
+  //tasks.yield(4);
+  float battery_voltage = (float)(_oDserial->readFloat());
+  VF("batV="); VL(battery_voltage);
+
+  // ** Low Battery Voltage LED **
+  if (battery_voltage > BATTERY_LOW_VOLTAGE) { // battery ok
+    digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // turn off low battery low LED
+    batLED = false;
+  } else if (battery_voltage > 3) { // don't want beeping when developing code and battery off V=0
+    if (batLED) {
+      digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // already on, then flash it off
+      batLED = false;
+      //status.sound.alert();
+    } else {
+      digitalWrite(BATTERY_LOW_LED_PIN, LOW); // already off, then flash it on
+      batLED = true;
+    }
+  } else { // battery must be off and in development mode
+    digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // turn it off
+    batLED = false;
+  }
+  return battery_voltage;
 }
 
 // get absolute Encoder positions in degrees
 float ODriveExt::getEncoderPositionDeg(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  tasks.yield(4);
-  float turns = oDriveArduino.readFloat();
+  //tasks.yield(4);
+  float turns = _oDserial->readFloat();
   return turns*360;
 }  
 
 // get motor positions in turns
 float ODriveExt::getMotorPositionTurns(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  tasks.yield(4);
-  return oDriveArduino.readFloat();
+  //tasks.yield(4);
+  return _oDserial->readFloat();
 }  
 
 // get motor position in counts
 int ODriveExt::getMotorPositionCounts(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate_counts\n";
-  tasks.yield(4);
-  return oDriveArduino.readInt();
+  //tasks.yield(4);
+  return _oDserial->readInt();
 } 
 
 // get Motor Current
 float ODriveExt::getMotorCurrent(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n";
-  tasks.yield(4);
-  return oDriveArduino.readFloat();
+  //tasks.yield(4);
+  return _oDserial->readFloat();
 }  
 
 // read current requested state
 int ODriveExt::getODriveRequestedState() {
   ODRIVE_SERIAL << "r axis0.requested_state\n";
-  tasks.yield(4);
-  return oDriveArduino.readInt();
+  //tasks.yield(4);
+  return _oDserial->readInt();
 }
 
 float ODriveExt::getMotorPositionDelta(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
-  tasks.yield(4);
-  float reqPos = oDriveArduino.readFloat();   
+  //tasks.yield(4);
+  float reqPos = _oDserial->readFloat();   
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n";
-  tasks.yield(4);
-  float posEst = oDriveArduino.readFloat();   
+  //tasks.yield(4);
+  float posEst = _oDserial->readFloat();   
   float deltaPos = abs(reqPos - posEst);
   return deltaPos;
 }
@@ -120,20 +150,20 @@ void ODriveExt::setODrivePosGain(int axis, float level) {
 
 float ODriveExt::getODriveVelGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n";
-  tasks.yield(4);
-  return oDriveArduino.readFloat();
+  //tasks.yield(4);
+  return _oDserial->readFloat();
 }
 
 float ODriveExt::getODriveVelIntGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n";
-  tasks.yield(4);
-  return oDriveArduino.readFloat();
+  //tasks.yield(4);
+  return _oDserial->readFloat();
 }
 
 float ODriveExt::getODrivePosGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n";
-  tasks.yield(4);
-  return oDriveArduino.readFloat();
+  //tasks.yield(4);
+  return _oDserial->readFloat();
 }
 
 // =========== Motor Thermistor Support =============
@@ -165,37 +195,37 @@ float ODriveExt::getMotorTemp(int axis) {
 uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
   if (axis == -1) { // ODrive top level error
     ODRIVE_SERIAL << "r odrive.error\n";
-    return oDriveArduino.readInt();
+    return _oDserial->readInt();
   }
 
   if (component == NONE) {
     ODRIVE_SERIAL << "r odrive.axis"<<axis<<".error\n";
-    return oDriveArduino.readInt();
+    return _oDserial->readInt();
   } else {
     ODRIVE_SERIAL << "r odrive.axis"<<axis<<"."<<ODriveComponentsStr[component]<<".error\n";
-    return oDriveArduino.readInt();
+    return _oDserial->readInt();
   }
 }
 
 void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
   ODRIVE_SERIAL << "r hw_version_major\n"; 
-  tasks.yield(4);
-  oDversion.hwMajor = oDriveArduino.readInt();
+  //tasks.yield(4);
+  oDversion.hwMajor = _oDserial->readInt();
   ODRIVE_SERIAL << "r hw_version_minor\n"; 
-  tasks.yield(4);
-  oDversion.hwMinor = oDriveArduino.readInt();
+  //tasks.yield(4);
+  oDversion.hwMinor = _oDserial->readInt();
   ODRIVE_SERIAL << "r hw_version_variant\n"; 
-  tasks.yield(4);
-  oDversion.hwVar = oDriveArduino.readInt();
+  //tasks.yield(4);
+  oDversion.hwVar = _oDserial->readInt();
   ODRIVE_SERIAL << "r fw_version_major\n"; 
-  tasks.yield(4);
-  oDversion.fwMajor = oDriveArduino.readInt();
+  //tasks.yield(4);
+  oDversion.fwMajor = _oDserial->readInt();
   ODRIVE_SERIAL << "r fw_version_minor\n"; 
-  tasks.yield(4);
-  oDversion.fwMinor = oDriveArduino.readInt();
+  //tasks.yield(4);
+  oDversion.fwMinor = _oDserial->readInt();
   ODRIVE_SERIAL << "r fw_version_revision\n"; 
-  tasks.yield(4);
-  oDversion.fwRev = oDriveArduino.readInt();
+  //tasks.yield(4);
+  oDversion.fwRev = _oDserial->readInt();
 }
 
 // =================== Demo Mode ====================
@@ -217,34 +247,34 @@ void ODriveExt::demoMode(bool onState) {
   if (onState) {
     switch(demo_pos) {
       case 0:
-        oDriveArduino.SetPosition(ALT_MOTOR, pos_one);
-        oDriveArduino.SetPosition(AZM_MOTOR, pos_one);
+        _oDserial->SetPosition(ALT_MOTOR, pos_one);
+        _oDserial->SetPosition(AZM_MOTOR, pos_one);
         ++demo_pos;
         break;
       case 1:
-        oDriveArduino.SetPosition(ALT_MOTOR, pos_two);
-        oDriveArduino.SetPosition(AZM_MOTOR, pos_two);
+        _oDserial->SetPosition(ALT_MOTOR, pos_two);
+        _oDserial->SetPosition(AZM_MOTOR, pos_two);
         ++demo_pos;
         break;
       case 2:
-        oDriveArduino.SetPosition(ALT_MOTOR, pos_three);
-        oDriveArduino.SetPosition(AZM_MOTOR, pos_one);
+        _oDserial->SetPosition(ALT_MOTOR, pos_three);
+        _oDserial->SetPosition(AZM_MOTOR, pos_one);
         ++demo_pos;
         break;
       case 3:
-        oDriveArduino.SetPosition(ALT_MOTOR, pos_four);
-        oDriveArduino.SetPosition(AZM_MOTOR, pos_five);
+        _oDserial->SetPosition(ALT_MOTOR, pos_four);
+        _oDserial->SetPosition(AZM_MOTOR, pos_five);
         demo_pos = 0;
         break;
       default:
-        oDriveArduino.SetPosition(ALT_MOTOR, pos_one);
-        oDriveArduino.SetPosition(AZM_MOTOR, pos_one);
+        _oDserial->SetPosition(ALT_MOTOR, pos_one);
+        _oDserial->SetPosition(AZM_MOTOR, pos_one);
         demo_pos = 0;
         break;
     }
   } else { // off
-    oDriveArduino.SetPosition(ALT_MOTOR, 0);
-    oDriveArduino.SetPosition(AZM_MOTOR, 0);
+    _oDserial->SetPosition(ALT_MOTOR, 0);
+    _oDserial->SetPosition(AZM_MOTOR, 0);
     axis1.init(&motor1); // start motor timers
     axis2.init(&motor2);
   }

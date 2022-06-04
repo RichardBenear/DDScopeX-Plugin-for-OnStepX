@@ -41,7 +41,7 @@
 #define ACTION_TEXT_X_OFFSET     10
 #define ACTION_TEXT_Y_OFFSET     20
 
-#define MOTOR_CURRENT_WARNING  2.0  // Warning when over 2 amps....coil heating occuring
+#define MOTOR_CURRENT_WARNING    2.0  // Warning when over 2 amps....coil heating occuring
 
 // ============================================
 // ======= Draw Base content of HOME PAGE =====
@@ -134,6 +134,9 @@ void HomeScreen::draw() {
   y_offset +=COL2_LABEL_SPACING;
   tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
   tft.print("AZM MotTemp:");
+
+  
+  
 }
 
 // update multiple status items
@@ -219,7 +222,7 @@ void HomeScreen::updateStatusCol1() {
 
   // Update Battery Voltage
   y_offset +=COL1_LABEL_SPACING;
-  currentBatVoltage = display.getBatteryVoltage();
+  currentBatVoltage = oDriveExt.getODriveBusVoltage();
   if ((currentBatVoltage != lastBatVoltage) || display.firstDraw) {
     if (currentBatVoltage < BATTERY_LOW_VOLTAGE) {
       display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, currentBatVoltage);

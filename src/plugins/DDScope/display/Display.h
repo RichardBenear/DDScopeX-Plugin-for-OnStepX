@@ -28,9 +28,6 @@
 #define MENU_TEXT_X_OFFSET     8
 #define MENU_TEXT_Y_OFFSET    28
 
-// recommended cutoff for LiPo battery is 19.2V but want some saftey margin
-#define BATTERY_LOW_VOLTAGE   21  
-
 // This is calibration data for the raw touch data to the screen coordinates
 #define TS_MINX        250 
 #define TS_MINY        250
@@ -61,6 +58,9 @@
 #define GREENYELLOW 0xAFE5      /* 173, 255,  47 */
 #define PINK        0xF81F		//
 #define DEEP_MAROON 0x4800		// 
+
+// recommended cutoff for LiPo battery is 19.2V but want some saftey margin
+#define BATTERY_LOW_VOLTAGE   21  
 
 enum Screen
 {
@@ -98,7 +98,6 @@ class Display {
     void init();
     void sdInit();
     void specificScreenUpdate();
-    void DDmountInit();
 
   // Local Command Channel support
     void setLocalCmd(char *command);
@@ -122,7 +121,6 @@ class Display {
     void updateCommonStatus();  
     void updateOnStepCmdStatus();
     void setDayNight();
-    float getBatteryVoltage();
 
     // frequency based tone add here since not supported in OnStepX
     void soundFreq(int freq, int duration); 
@@ -161,7 +159,6 @@ class Display {
     double current_talt = 1.1;
     double altitudeFt = 0.0;
 
-    bool batLED = false;
     bool firstGPS = true;
 };
 

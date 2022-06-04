@@ -5,11 +5,7 @@
 #if defined(ARDUINO_TEENSY41)
 
 // ODrive Pins
-#define ODRIVE_SWAP_AXES       ON     // ODrive axis 0 = OnStep axis 2 = ALT
-                                      // ODrive axis 1 = OnStep axis 1 = AZM
-#define ODRIVE_SERIAL     Serial3 
-#define ODRIVE_SERIAL_BAUD  19200
-#define ODRIVE_RST_PIN          3
+#define ODRIVE_RST_PIN          3     // ODrive Reset Pin
 
 // DDScopeX Specific pins
 #define AZ_ENABLED_LED_PIN     20     // AZM Motor ON/OFF LED output active low

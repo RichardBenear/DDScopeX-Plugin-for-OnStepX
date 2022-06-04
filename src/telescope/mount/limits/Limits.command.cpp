@@ -13,7 +13,7 @@
 
 bool Limits::command(char *reply, char *command, char *parameter, bool *supressFrame, bool *numericReply, CommandError *commandError) {
   *supressFrame = false;
-  
+  VF("parameter="); VL(parameter);
   if (command[0] == 'G') {
     // :Gh#       Get Horizon Limit, the minimum elevation of the mount relative to the horizon
     //            Returns: sDD*#
@@ -55,6 +55,8 @@ bool Limits::command(char *reply, char *command, char *parameter, bool *supressF
     if (command[1] == 'h') {
       int16_t deg;
       if (convert.atoi2(parameter, &deg)) {
+         VF("deg="); VL(deg);
+         
         if (deg >= -30.0F && deg <= 30.0F) {
           settings.altitude.min = degToRadF(deg);
           nv.updateBytes(NV_MOUNT_LIMITS_BASE, &settings, sizeof(LimitSettings));
@@ -69,6 +71,8 @@ bool Limits::command(char *reply, char *command, char *parameter, bool *supressF
     if (command[1] == 'o') {
       int16_t deg;
       if (convert.atoi2(parameter, &deg)) {
+        VF("deg="); VL(deg);
+        
         if (deg >= 60.0F && deg <= 90.0F) {
           settings.altitude.max = degToRadF(deg);
           if (transform.mountType == ALTAZM && settings.altitude.max > 87) settings.altitude.max = 87;
