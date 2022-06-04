@@ -53,7 +53,7 @@ void HomeScreen::draw() {
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
   display.drawMenuButtons();
-  display.drawTitle(25, 30, "DIRECT-DRIVE SCOPE");
+  display.drawTitle(25, 25, "DIRECT-DRIVE SCOPE");
   tft.drawFastVLine(165, 155, 165,display.textColor);
   display.drawCommonStatusLabels();
   tft.setFont(&Inconsolata_Bold8pt7b);
@@ -101,11 +101,6 @@ void HomeScreen::draw() {
   tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
   tft.print("Altitude-:");
 
-  // Battery Voltage
-  y_offset +=COL1_LABEL_SPACING;
-  tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
-  tft.print("Battery V:");
-
 //======= 2nd Column =======
 // Motor encoder positions
   y_offset = 0;
@@ -134,9 +129,6 @@ void HomeScreen::draw() {
   y_offset +=COL2_LABEL_SPACING;
   tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
   tft.print("AZM MotTemp:");
-
-  
-  
 }
 
 // update multiple status items
@@ -214,22 +206,10 @@ void HomeScreen::updateStatusCol1() {
     
   // Show Altitude
   y_offset +=COL1_LABEL_SPACING;
-  //display.getLocalCmdTrim(":GX9D#", xchReply); // Note: this command is not supported anymore???
+  display.getLocalCmdTrim(":GX9D#", xchReply); // Note: this command is not supported anymore???
   if (strcmp(curAlti, xchReply)!=0 || display.firstDraw) {
     display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
     strcpy(curAlti, xchReply);
-  }
-
-  // Update Battery Voltage
-  y_offset +=COL1_LABEL_SPACING;
-  currentBatVoltage = oDriveExt.getODriveBusVoltage();
-  if ((currentBatVoltage != lastBatVoltage) || display.firstDraw) {
-    if (currentBatVoltage < BATTERY_LOW_VOLTAGE) {
-      display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, currentBatVoltage);
-    } else {
-      display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, currentBatVoltage);
-    }
-    lastBatVoltage = currentBatVoltage;
   }
 }
 
@@ -350,14 +330,14 @@ void HomeScreen::updateHomeButtons() {
     
     // ============== Column 1 ===============
     // Enable / Disable Azimuth Motor
-    if (oDriveExt.odriveAZOff) {
-      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN AZ   ");
+    if (!oDriveExt.odriveAzmPwr) {
+      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN AZM   ");
     } else { //motor on
-      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "AZ Enabled");
+      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "AZM Enabled");
     }
     // Enable / Disable Altitude Motor
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-    if (oDriveExt.odriveALTOff) {
+    if (!oDriveExt.odriveAltPwr) {
       display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN ALT   ");
     } else { //motor on
       display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,   "ALT Enabled");
@@ -436,13 +416,14 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // ======= Column 1 - Leftmost =======
   // Enable Azimuth motor
   if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    if (oDriveExt.odriveAZOff) { // toggle ON
+    DD_TONE;
+    if (oDriveExt.odriveAzmPwr) { // toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-      oDriveExt.odriveAZOff = false; // false = NOT off
+      oDriveExt.odriveAzmPwr = true;
       motor1.power(true);
     } else { // since already ON, toggle OFF
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-      oDriveExt.odriveAZOff = true;
+      oDriveExt.odriveAzmPwr = false;
       motor1.power(false);
     }
     return;
@@ -451,13 +432,14 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   // Enable Altitude motor
   if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    if (oDriveExt.odriveALTOff) { // toggle ON
+    DD_TONE;
+    if (oDriveExt.odriveAltPwr) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-      oDriveExt.odriveALTOff = false; // false = NOT off
+      oDriveExt.odriveAltPwr = true; 
       motor2.power(true);
     } else { // toggle OFF
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
-      oDriveExt.odriveALTOff = true;
+      oDriveExt.odriveAltPwr = false;
       motor2.power(false); // Idle the ODrive motor
     }
     return;
@@ -466,14 +448,16 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // STOP everthing requested
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
+    DD_TONE;
     if (!stopButton) {
       stopButton = true;
-      digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-      oDriveExt.odriveALTOff = false; // false = NOT off
+
+      digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
+      oDriveExt.odriveAzmPwr = false; 
       motor1.power(false);
-      digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
-      oDriveExt.odriveALTOff = false;
-      motor2.power(false); // Idle the ODrive motor
+      digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
+      oDriveExt.odriveAltPwr = false;
+      motor2.power(false);
     }
     return;
   }
@@ -482,6 +466,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Start/Stop Tracking
   y_offset = 0;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
+    DD_TONE;
     if (!lCmountStatus.isTracking()) {
       display.setLocalCmd(":Te#"); // Enable Tracking
     } else {
@@ -493,6 +478,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Set Night or Day Mode
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
+    DD_TONE;
     if (!display.nightMode) {
       display.nightMode = true; // toggle on
     } else {
@@ -507,6 +493,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Go to Home Telescope 
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
+    DD_TONE;
     display.setLocalCmd(":hC#"); // go HOME
     gotoHome = true;
     return;
@@ -516,6 +503,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Park and UnPark Telescope
   y_offset = 0;
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
+    DD_TONE;
     if (!lCmountStatus.isParked()) { 
       display.setLocalCmd(":hP#"); // go Park
     } else { // already parked
@@ -527,6 +515,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Set Park Position to Current
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
+    DD_TONE;
     display.setLocalCmd(":hQ#"); // Set Park Position
     parkWasSet = true;
     return;
@@ -535,6 +524,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Fan Control Action Button
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
+    DD_TONE;
     if (!fanOn) {
       digitalWrite(FAN_ON_PIN, HIGH);
       fanOn = true;

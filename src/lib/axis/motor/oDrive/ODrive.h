@@ -2,7 +2,6 @@
 // axis servo motor
 #pragma once
 #include "../../../../Common.h"
-#include "src/plugins/DDScope/odriveExt/ODriveExt.h"
 
 // ODRIVE DRIVER MODEL
 #ifndef ODRIVE_DRIVER_FIRST
@@ -118,9 +117,7 @@ class ODriveMotor : public Motor {
       char command[32];
       sprintF(command, "p n %1.8f 0.0 0.0", position);
       command[2] = '0' + motor_number;
-      oDriveExt.oDserialAvail = false;
       ODRIVE_SERIAL.println(command);
-      oDriveExt.oDserialAvail = true;
     }
 
     unsigned long lastSetPositionTime = 0;

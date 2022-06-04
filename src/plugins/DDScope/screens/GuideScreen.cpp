@@ -76,25 +76,25 @@ void GuideScreen::updateThisStatus() {
         //tft.setFont(&UbuntuMono_Bold11pt7b);
         tft.setFont(&FreeSansBold9pt7b);
 
-        if (!guidingEast) { //&& !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
+        if (!guidingEast || !lCmountStatus.isSlewing()) { 
             display.drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " EAST");
         } else {
             display.drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " EAST");
         }
 
-        if (!guidingWest) { // && !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
+        if (!guidingWest || !lCmountStatus.isSlewing()) { 
             display.drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " WEST");
         } else {
             display.drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " WEST");
         }
 
-        if (!guidingNorth) {// && !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
+        if (!guidingNorth || !lCmountStatus.isSlewing()) {
             display.drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+13, GUIDE_TEXT_Y_OFFSET, "  UP ");
         } else {
             display.drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET+13, GUIDE_TEXT_Y_OFFSET, "  UP ");
         }
 
-        if (!guidingSouth) {// && !trackingSyncInProgress() && (trackingState != TrackingMoveTo)) {
+        if (!guidingSouth || !lCmountStatus.isSlewing()) {
             display.drawButton(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " DOWN");
         } else {
             display.drawButton(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " DOWN");
@@ -174,7 +174,8 @@ void GuideScreen::updateThisStatus() {
 // Manage Touching of Guiding Buttons
 void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     // SYNC Button 
-    if (py > SYNC_OFFSET_Y && py < (SYNC_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > SYNC_OFFSET_X && px < (SYNC_OFFSET_X + GUIDE_BOXSIZE_X)) {            
+    if (py > SYNC_OFFSET_Y && py < (SYNC_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > SYNC_OFFSET_X && px < (SYNC_OFFSET_X + GUIDE_BOXSIZE_X)) { 
+      DD_TONE;           
         display.setLocalCmd(":CS#"); // doesn't have reply
         syncOn = true;
         return;  
@@ -182,6 +183,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
                     
     // EAST / RIGHT button
     if (py > RIGHT_OFFSET_Y && py < (RIGHT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > RIGHT_OFFSET_X && px < (RIGHT_OFFSET_X + GUIDE_BOXSIZE_X)) {
+      DD_TONE;
         if (!guidingEast) {
             display.setLocalCmd(":Mw#"); // east west is swapped for DDScope
             guidingEast = true;
@@ -194,6 +196,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
                     
     // WEST / LEFT button
     if (py > LEFT_OFFSET_Y && py < (LEFT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > LEFT_OFFSET_X && px < (LEFT_OFFSET_X + GUIDE_BOXSIZE_X)) {
+      DD_TONE;
         if (!guidingWest) {
             display.setLocalCmd(":Me#"); // east west is swapped for DDScope
             guidingWest = true;
@@ -206,6 +209,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
                     
     // NORTH / UP button
     if (py > UP_OFFSET_Y && py < (UP_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > UP_OFFSET_X && px < (UP_OFFSET_X + GUIDE_BOXSIZE_X)) {
+      DD_TONE;
         if (!guidingNorth) {
             display.setLocalCmd(":Mn#");
             guidingNorth = true;
@@ -218,6 +222,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
                     
     // SOUTH / DOWN button
     if (py > DOWN_OFFSET_Y && py < (DOWN_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > DOWN_OFFSET_X && px < (DOWN_OFFSET_X + GUIDE_BOXSIZE_X)) {
+      DD_TONE;
         if (!guidingSouth) {
             display.setLocalCmd(":Ms#");
             guidingSouth = true;
@@ -235,6 +240,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     
     // 1x Guide Rate 
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
+      DD_TONE;
         display.setLocalCmd(":RG#");
         oneXisOn = true;
         eightXisOn = false;
@@ -246,6 +252,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     // 8x Rate for Centering
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
+      DD_TONE;
         display.setLocalCmd(":RC#");
         oneXisOn = false;
         eightXisOn = true;
@@ -257,6 +264,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     // 24x Rate for Moving
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
+      DD_TONE;
         display.setLocalCmd(":RM#");
         oneXisOn = false;
         eightXisOn = false;
@@ -268,6 +276,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     // Half Max Rate for Slewing
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
+      DD_TONE;
         display.setLocalCmd(":RS#");
         oneXisOn = false;
         eightXisOn = false;
@@ -278,6 +287,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // Spiral Search
     if (py > SPIRAL_Y && py < (SPIRAL_Y + SPIRAL_BOXSIZE_Y) && px > SPIRAL_X && px < (SPIRAL_X + SPIRAL_BOXSIZE_X)) {
+      DD_TONE;
         if (!spiralOn) {
             display.setLocalCmd(":Mp#");
             spiralOn = true;
@@ -290,6 +300,7 @@ void GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     
     // STOP moving
     if (py > STOP_Y && py < (STOP_Y + STOP_BOXSIZE_Y) && px > STOP_X && px < (STOP_X + STOP_BOXSIZE_X)) {
+      DD_TONE;
         display.setLocalCmd(":Q#");
         stopPressed = true;
         spiralOn = false;

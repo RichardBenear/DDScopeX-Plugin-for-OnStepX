@@ -344,6 +344,7 @@ void PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
     for (int row=0; row<PLANET_ROWS; row++) {
         if (py > PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING)) && py < (PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING))) + PLANET_H 
                 && px > PLANET_X && px < (PLANET_X+PLANET_W)) {
+            DD_TONE;
             planetButSelPos = row;
             planetsScreen.mapPlanetIndex(row);
             planetButDetected = true;
@@ -353,6 +354,7 @@ void PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // RETURN page button - reuse BACK button box size
     if (py > P_RETURN_Y && py < (P_RETURN_Y + BACK_H) && px > P_RETURN_X && px < (P_RETURN_X + P_RETURN_W)) {
+      DD_TONE;
         display.screenTouched = false;
         moreScreen.draw();
         return;

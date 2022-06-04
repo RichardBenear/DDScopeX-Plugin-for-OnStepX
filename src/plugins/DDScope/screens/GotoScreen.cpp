@@ -225,9 +225,9 @@ void GotoScreen::updateThisStatus() {
 
     tft.setFont(&FreeSansBold9pt7b);    
     // Go To Coordinates Button
-    if (goToPgBut) {
+    if (goToButton) {
       display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
-      goToPgBut = false;
+      goToButton = false;
     } else {
       if (!lCmountStatus.isSlewing()) { 
         display.drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
@@ -258,6 +258,7 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
        && py <  (NUM_BUTTON_Y+row*(NUM_BUTTON_H+NUM_BUTTON_SPACING_Y)) + NUM_BUTTON_H 
        && px >   NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) 
        && px <  (NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) + NUM_BUTTON_W)) {
+        DD_TONE;
         buttonPosition=row*3+col;
         //VF("buttonPosition="); VL(buttonPosition);
         numDetected = true;
@@ -267,12 +268,14 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Select RA field
   if (py > RA_SELECT_Y && py < (RA_SELECT_Y + CO_BOXSIZE_Y) && px > RA_SELECT_X && px < (RA_SELECT_X + CO_BOXSIZE_X)) {
+    DD_TONE;
     RAselect = true; 
     DECselect = false; 
   }
 
   // Clear RA field
   if (py > RA_CLEAR_Y && py < (RA_CLEAR_Y + CO_BOXSIZE_Y) && px > RA_CLEAR_X && px < (RA_CLEAR_X + CO_BOXSIZE_X)) {
+    DD_TONE;
     RAclear = true; 
     RAtextIndex = 0;
     buttonPosition = 12; 
@@ -280,12 +283,14 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Select DEC field
   if (py > DEC_SELECT_Y && py < (DEC_SELECT_Y + CO_BOXSIZE_Y) && px > DEC_SELECT_X && px < (DEC_SELECT_X + CO_BOXSIZE_X)) {
+    DD_TONE;
     DECselect = true;
     RAselect = false;
   }
 
   // Clear DEC field
   if (py > DEC_CLEAR_Y && py < (DEC_CLEAR_Y + CO_BOXSIZE_Y) && px > DEC_CLEAR_X && px < (DEC_CLEAR_X + CO_BOXSIZE_X)) {
+    DD_TONE;
     DECclear = true; 
     DECtextIndex = 0;
     buttonPosition = 12; 
@@ -293,6 +298,7 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // SEND Coordinates
   if (py > SEND_BUTTON_Y && py < (SEND_BUTTON_Y + SEND_BOXSIZE_Y) && px > SEND_BUTTON_X && px < (SEND_BUTTON_X + SEND_BOXSIZE_X)) {
+    DD_TONE;
     sendOn = true; 
     RAtextIndex = 0;
     DECtextIndex = 0;
@@ -311,18 +317,21 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Quick set Polaris Target
   if (py > POL_BUTTON_Y && py < (POL_BUTTON_Y + POL_BOXSIZE_Y) && px > POL_BUTTON_X && px < (POL_BUTTON_X + POL_BOXSIZE_X)) {
+    DD_TONE;
     setPolOn = true;
     gotoScreen.setTargPolaris(); 
   }
 
   // ==== Go To Target Coordinates ====
   if (py > GOTO_BUTTON_Y && py < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && px > GOTO_BUTTON_X && px < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
-    goToPgBut = true;
-    display.setLocalCmd(":MS#"); // move to
+    DD_TONE;
+    goToButton = true;
+    display.setLocalCmd(":MA#"); // move to
   }
 
   // ==== ABORT GOTO ====
   if (py > ABORT_BUTTON_Y && py < (ABORT_BUTTON_Y + GOTO_BOXSIZE_Y) && px > ABORT_BUTTON_X && px < (ABORT_BUTTON_X + GOTO_BOXSIZE_X)) {
+    DD_TONE;
     abortPgBut = true;
     display.setLocalCmd(":Q#"); // stops move
     motor1.power(false); // do this for safety reasons...mount may be colliding with something

@@ -50,8 +50,6 @@ void TouchScreen::touchScreenPoll() {
     p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
     //VF("x="); V(p.x); VF(", y="); V(p.y); VF(", z="); VL(p.z); //for calibration
 
-    display.soundFreq(1000, 70);
-
     // Check for touchscreen button action on the selected Screen
     switch (display.currentScreen) {
         case HOME_SCREEN:     homeScreen.touchPoll(p.x, p.y); break;

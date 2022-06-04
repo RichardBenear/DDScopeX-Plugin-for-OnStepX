@@ -42,18 +42,19 @@
 #define TITLE_BOX_Y               1 
 
 // Shared common Status 
-#define COM_LABEL_Y_SPACE       16
-#define COM_COL1_LABELS_X        8
-#define COM_COL1_LABELS_Y       98
-#define COM_COL1_DATA_X         72
-#define COM_COL1_DATA_Y         COM_COL1_LABELS_Y
+#define COM_LABEL_Y_SPACE        16
+#define COM_COL1_LABELS_X         8
+#define COM_COL1_LABELS_Y        98
+#define COM_COL1_DATA_X          72
+#define COM_COL1_DATA_Y          COM_COL1_LABELS_Y
 #define COM_COL2_LABELS_X       179
 #define COM_COL2_DATA_X         245
 
-void updateScreenWrapper() { display.specificScreenUpdate(); }
+void updateScreenWrapper() { display.updateSpecificScreen(); }
 void updateCommonWrapper() { display.updateCommonStatus(); }
 void updateOnStepCmdWrapper() { display.updateOnStepCmdStatus(); }
-void updateODriveErrWrapper() { oDriveScreen.updateODriveErrBar(); }
+void updateODriveErrWrapper() { display.updateODriveErrBar(); }
+void updateBatVoltWrapper() { display.updateBatVoltage(); }
 
 Adafruit_ILI9486_Teensy tft;
 
@@ -114,6 +115,11 @@ void Display::init() {
   uint8_t SShandle = tasks.add(2000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
   if (SShandle)  { VLF("success"); } else { VLF("FAILED!"); }
 
+  // update battery voltage
+  VF("MSG: Setup, start Screen-specific status polling task (rate 2000 ms priority 7)... ");
+  uint8_t BVhandle = tasks.add(5000, 0, true, 7, updateBatVoltWrapper, "UpdateBatVolt");
+  if (BVhandle)  { VLF("success"); } else { VLF("FAILED!"); }
+
   // draw Home screen
   tft.setFont(&Inconsolata_Bold8pt7b);
   homeScreen.draw();
@@ -147,7 +153,7 @@ void Display::sdInit() {
 }
 
 // select which screen to update
-void Display::specificScreenUpdate() {
+void Display::updateSpecificScreen() {
   if (display.lastScreen != display.currentScreen) {
     display.firstDraw = true;
     display.lastScreen = display.currentScreen;
@@ -182,13 +188,13 @@ void Display::setLocalCmd(const char *command) {
 
 void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
-  tasks.yield(60);
+  tasks.yield(20);
   strcpy(reply, SERIAL_LOCAL.receive()); 
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command); 
-  tasks.yield(60);
+  tasks.yield(20);
   strcpy(reply, SERIAL_LOCAL.receive()); 
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
 }
@@ -324,6 +330,28 @@ void Display::updateOnStepCmdStatus() {
   } else {
     display.canvPrint(2, 454, 0, 319, C_HEIGHT, cmd);
   }
+}
+
+// ODrive AZ and ALT CONTROLLER (only) Error Status
+void Display::updateODriveErrBar() {
+  if (display.currentScreen == CATALOG_SCREEN || 
+    display.currentScreen == PLANETS_SCREEN ||
+    display.currentScreen == CUST_CAT_SCREEN) return;
+  int x = 2;
+  int y = 473;
+  int label_x = 160;
+  int data_x = 110;
+
+  tft.setCursor(x, y);
+  tft.print("AZ Ctrl err:");
+  tft.setCursor(label_x, y);
+  tft.print("ALT Ctrl err:");
+  
+  display.canvPrint(        data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(AZM_MOTOR, AXIS));
+  display.canvPrint(label_x+data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(ALT_MOTOR, AXIS));
+
+  // sound varying frequency alarm if Motor and Encoders positioins are too far apart
+  oDriveExt.MotorEncoderDelta();
 }
 
 // Draw the Menu buttons
@@ -539,7 +567,22 @@ void Display::drawCommonStatusLabels() {
   tft.drawFastHLine(1, COM_COL1_LABELS_Y+y_offset+6, TFTWIDTH-1,textColor);
 }
 
-// Common Status - Real time data update for the particular labels printed above
+// Update Battery Voltage
+void Display::updateBatVoltage() {
+  display.currentBatVoltage = oDriveExt.getODriveBusVoltage();
+  if ((display.currentBatVoltage != display.lastBatVoltage) || display.firstDraw) {
+    if (display.currentBatVoltage < BATTERY_LOW_VOLTAGE) {
+      tft.setCursor(140, 40);
+      tft.print(display.currentBatVoltage);
+    } else {
+      tft.setCursor(140, 40);
+      tft.print(display.currentBatVoltage);
+    }
+    display.lastBatVoltage = display.currentBatVoltage;
+  }
+}
+
+// UpdateCommon Status - Real time data update for the particular labels printed above
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
   if (display.currentScreen == CATALOG_SCREEN || 
@@ -638,7 +681,7 @@ void Display::updateCommonStatus() {
   display.firstDraw = false;
 }
 
-// draw a picture -This function is a copy from rDUINOScope but with 
+// draw a picture -This member function is a copy from rDUINOScope but with 
 //    pushColors() changed to drawPixel() with a loop
 // rDUINOScope - Arduino based telescope control system (GOTO).
 //    Copyright (C) 2016 Dessislav Gouzgounov (Desso)
@@ -724,12 +767,6 @@ void Display::drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint1
       }
     }
   }
-}
-
-
-
-void Display::soundFreq(int freq, int duration) {
-  tone(STATUS_BUZZER_PIN, freq, duration);
 }
 
 //================ SHC routines ====================

@@ -17,8 +17,6 @@ class HomeScreen {
     void touchPoll(int16_t px, int16_t py);
 
   private:
-    float currentBatVoltage;
-    float lastBatVoltage;
     float currentAZEncPos;
     float lastAZEncPos;
     float currentALTEncPos;

@@ -62,6 +62,14 @@
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
 #define BATTERY_LOW_VOLTAGE   21  
 
+// wait time to allow ODrive serial receive in milliseconds
+#define ODRIVE_SERIAL_WAIT    10
+
+#define SOUND_FREQUENCY     1000 // in Milliseconds
+#define SOUND_DURATION        40 // in Milliseconds
+
+#define DD_TONE tone(SOUND_FREQUENCY, SOUND_DURATION);
+
 enum Screen
 {
   HOME_SCREEN,     // 0
@@ -97,7 +105,7 @@ class Display {
   public:
     void init();
     void sdInit();
-    void specificScreenUpdate();
+    void updateSpecificScreen();
 
   // Local Command Channel support
     void setLocalCmd(char *command);
@@ -120,10 +128,13 @@ class Display {
     Screen lastScreen = GUIDE_SCREEN; // must be different than current to force initial draw of HOME screen
     void updateCommonStatus();  
     void updateOnStepCmdStatus();
+    void updateODriveErrBar();
+    void updateBatVoltage();
+  
     void setDayNight();
 
-    // frequency based tone add here since not supported in OnStepX
-    void soundFreq(int freq, int duration); 
+    // frequency and duration adjustable tone
+    inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration);}
 
     // Color Theme
     uint16_t pgBackground = DEEP_MAROON; 
@@ -136,6 +147,9 @@ class Display {
     bool refreshScreen = false;
     bool screenTouched = false;
     bool nightMode = false;
+
+    float currentBatVoltage = 0.0;
+    float lastBatVoltage = 0.0;
 
   private:
     char ra_hms[10], dec_dms[11];
@@ -158,6 +172,7 @@ class Display {
     double current_tazm = 1.1;
     double current_talt = 1.1;
     double altitudeFt = 0.0;
+    
 
     bool firstGPS = true;
 };

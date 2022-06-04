@@ -13,6 +13,7 @@
 #include "../display/Display.h"
 #include "../../../telescope/mount/Mount.h"
 #include "../../../lib/tasks/OnTask.h"
+#include "src/telescope/mount/status/Status.h"
 
 const char* ODriveComponentsStr[4] = {
             "None",   
@@ -21,42 +22,28 @@ const char* ODriveComponentsStr[4] = {
             "Encoder"        
 };
 
-// ODrive servo motor driver
+// ODrive serial
 ODriveArduino *_oDserial;
-
-
 
 // constructor
 ODriveExt::ODriveExt() {
-  this->oDserialAvail = oDserialAvail;
   _oDserial = new ODriveArduino(ODRIVE_SERIAL);
-
 }
 
 //=========================================================
-// Read bus voltage
+// Read ODrive bus voltage which is approx. the battery voltage
 float ODriveExt::getODriveBusVoltage() {
   ODRIVE_SERIAL << "r vbus_voltage\n";
-  //tasks.yield(4);
-  float battery_voltage = (float)(_oDserial->readFloat());
-  VF("batV="); VL(battery_voltage);
-
-  // ** Low Battery Voltage LED **
-  if (battery_voltage > BATTERY_LOW_VOLTAGE) { // battery ok
-    digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // turn off low battery low LED
-    batLED = false;
-  } else if (battery_voltage > 3) { // don't want beeping when developing code and battery off V=0
-    if (batLED) {
-      digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // already on, then flash it off
-      batLED = false;
-      //status.sound.alert();
-    } else {
-      digitalWrite(BATTERY_LOW_LED_PIN, LOW); // already off, then flash it on
-      batLED = true;
-    }
-  } else { // battery must be off and in development mode
-    digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // turn it off
-    batLED = false;
+  tasks.yield(ODRIVE_SERIAL_WAIT);
+  float battery_voltage = _oDserial->readFloat();
+  
+  if (battery_voltage < BATTERY_LOW_VOLTAGE && battery_voltage > 3) { // battery low
+    digitalWrite(BATTERY_LOW_LED_PIN, LOW); // LED on
+    batLowLED = true;
+    status.sound.alert();
+  } else { // battery either above low voltage limit (ok) or in development mode  
+    digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // LED off
+    batLowLED = false;
   }
   return battery_voltage;
 }
@@ -64,7 +51,7 @@ float ODriveExt::getODriveBusVoltage() {
 // get absolute Encoder positions in degrees
 float ODriveExt::getEncoderPositionDeg(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  //tasks.yield(4);
+  tasks.yield( ODRIVE_SERIAL_WAIT);
   float turns = _oDserial->readFloat();
   return turns*360;
 }  
@@ -72,42 +59,62 @@ float ODriveExt::getEncoderPositionDeg(int axis) {
 // get motor positions in turns
 float ODriveExt::getMotorPositionTurns(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDserial->readFloat();
 }  
 
 // get motor position in counts
 int ODriveExt::getMotorPositionCounts(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate_counts\n";
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDserial->readInt();
 } 
 
 // get Motor Current
 float ODriveExt::getMotorCurrent(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n";
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDserial->readFloat();
 }  
 
 // read current requested state
 int ODriveExt::getODriveRequestedState() {
   ODRIVE_SERIAL << "r axis0.requested_state\n";
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDserial->readInt();
 }
 
 float ODriveExt::getMotorPositionDelta(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   float reqPos = _oDserial->readFloat();   
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n";
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   float posEst = _oDserial->readFloat();   
   float deltaPos = abs(reqPos - posEst);
   return deltaPos;
 }
 
+// Check encoders to see if positions are too far outside range of requested position inferring that there are interfering forces
+// This will warn that the motors may be getting too hot since more current is required trying to move them to the requested position
+// Beeping occurs at higher frequency as position delta from target increases
+void ODriveExt::MotorEncoderDelta() {
+  if (odriveAzmPwr) {
+    float AZposDelta = getMotorPositionDelta(AZM_MOTOR);
+    if (AZposDelta > 0.002 && AZposDelta < 0.03) display.soundFreq(AZposDelta * 50000, 20);
+    else if (AZposDelta > 0.03) display.soundFreq(3000, 20); // saturated
+  }
+  
+  if (oDriveExt.odriveAltPwr) {
+    float ALTposDelta = getMotorPositionDelta(ALT_MOTOR);
+    if (ALTposDelta > .002 && ALTposDelta < 0.03) {
+      display.soundFreq(ALTposDelta * 50000, 40);
+      delay(1);
+      display.soundFreq(ALTposDelta * 40000, 40); // double beep to distinguish ALT from AZM
+    }
+    else if (ALTposDelta > 0.03) display.soundFreq(3000, 40); 
+  }
+}
 
 // ODrive clear ALL errors
 void ODriveExt::clearAllODriveErrors() {
@@ -150,19 +157,19 @@ void ODriveExt::setODrivePosGain(int axis, float level) {
 
 float ODriveExt::getODriveVelGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n";
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDserial->readFloat();
 }
 
 float ODriveExt::getODriveVelIntGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n";
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDserial->readFloat();
 }
 
 float ODriveExt::getODrivePosGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n";
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDserial->readFloat();
 }
 
@@ -195,36 +202,39 @@ float ODriveExt::getMotorTemp(int axis) {
 uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
   if (axis == -1) { // ODrive top level error
     ODRIVE_SERIAL << "r odrive.error\n";
+    tasks.yield(ODRIVE_SERIAL_WAIT);
     return _oDserial->readInt();
   }
 
   if (component == NONE) {
     ODRIVE_SERIAL << "r odrive.axis"<<axis<<".error\n";
+    tasks.yield(ODRIVE_SERIAL_WAIT);
     return _oDserial->readInt();
   } else {
     ODRIVE_SERIAL << "r odrive.axis"<<axis<<"."<<ODriveComponentsStr[component]<<".error\n";
+    tasks.yield(ODRIVE_SERIAL_WAIT);
     return _oDserial->readInt();
   }
 }
 
 void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
   ODRIVE_SERIAL << "r hw_version_major\n"; 
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.hwMajor = _oDserial->readInt();
   ODRIVE_SERIAL << "r hw_version_minor\n"; 
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.hwMinor = _oDserial->readInt();
   ODRIVE_SERIAL << "r hw_version_variant\n"; 
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.hwVar = _oDserial->readInt();
   ODRIVE_SERIAL << "r fw_version_major\n"; 
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.fwMajor = _oDserial->readInt();
   ODRIVE_SERIAL << "r fw_version_minor\n"; 
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.fwMinor = _oDserial->readInt();
   ODRIVE_SERIAL << "r fw_version_revision\n"; 
-  //tasks.yield(4);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.fwRev = _oDserial->readInt();
 }
 

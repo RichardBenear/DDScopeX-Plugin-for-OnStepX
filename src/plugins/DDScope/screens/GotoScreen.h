@@ -32,7 +32,7 @@ class GotoScreen {
     bool setPolOn;
     bool timeOn;
     bool numDetected;
-    bool goToPgBut;
+    bool goToButton;
     bool abortPgBut;
 };
 

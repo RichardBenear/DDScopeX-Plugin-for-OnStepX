@@ -11,7 +11,6 @@ class ODriveScreen {
   public:
     void draw();
     void touchPoll(uint16_t px, uint16_t py);
-    void updateODriveErrBar();
     void updateThisStatus();
     void decodeODriveErrors(int axis, Component, uint32_t errorCode);
     

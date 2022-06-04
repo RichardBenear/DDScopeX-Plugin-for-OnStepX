@@ -591,105 +591,107 @@ void CatalogScreen::updateThisStatus() {
   
   tft.setFont(); // basic Arial
 
-  // ====== TREASURE Catalog =========
-  if (catButDetected && treasureCatalog) { 
-    tRelIndex = catButSelPos; // save the relative-to-this-screen-index of button pressed
-    tAbsIndex = tFiltArray[catButSelPos]; // this is absolute full array index
+    // ====== TREASURE Catalog =========
+    if (catButDetected && treasureCatalog) { 
+      tRelIndex = catButSelPos; // save the relative-to-this-screen-index of button pressed
+      tAbsIndex = tFiltArray[catButSelPos]; // this is absolute full array index
 
-    if (tPrevPage == tCurrentPage) { //erase previous selection
-        display.drawButton(CAT_X, CAT_Y+pre_tRelIndex*(CAT_H+CAT_Y_SPACING), 
-            CAT_W-WIDTH_OFF, CAT_H, false, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, _tArray[pre_tAbsIndex].tObjName); 
+      if (tPrevPage == tCurrentPage) { //erase previous selection
+          display.drawButton(CAT_X, CAT_Y+pre_tRelIndex*(CAT_H+CAT_Y_SPACING), 
+              CAT_W-WIDTH_OFF, CAT_H, false, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, _tArray[pre_tAbsIndex].tObjName); 
+      }
+      // highlight selected by settting background ON color 
+      display.drawButton(CAT_X, CAT_Y+tRelIndex*(CAT_H+CAT_Y_SPACING), 
+          CAT_W-WIDTH_OFF, CAT_H, true, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, _tArray[tAbsIndex].tObjName); 
+      
+      // the following 5 lines are displayed on the Catalog/More page
+      // Note: ObjName and SubId are swapped here relative to other catalogs since the Treasure catalog is formatted differently
+      snprintf(catSelectionStr1, 26, "Name:%-19s", _tArray[tAbsIndex].tSubId);   //VF("t_subID=");   VL(_tArray[tAbsIndex].tSubId);
+      snprintf(catSelectionStr2, 11, "Mag-:%-4s",  _tArray[tAbsIndex].tMag);     //VF("t_mag=");     VL(_tArray[tAbsIndex].tMag);
+      snprintf(catSelectionStr3, 11, "Cons:%-4s",  _tArray[tAbsIndex].tCons);    //VF("t_constel="); VL(_tArray[tAbsIndex].tCons);
+      snprintf(catSelectionStr4, 16, "Type:%-9s",  _tArray[tAbsIndex].tObjType); //VF("t_objType="); VL(_tArray[tAbsIndex].tObjType);
+      snprintf(catSelectionStr5, 15, "Id--:%-7s",  _tArray[tAbsIndex].tObjName); //VF("t_objName="); VL(_tArray[tAbsIndex].tObjName);
+      
+      // show if we are above and below visible limits
+      if (dtAlt[tAbsIndex] > 10.0) {   // show minimum 10 degrees altitude, use dtAlt[tAbsIndex] previously calculated in catalogScreen.draw()
+          display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+      } else {
+          display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+      }
+      writeTarget(tAbsIndex); // write RA and DEC as target for GoTo
+      showTargetCoords(); // display the target coordinates that were just written
+
+      pre_tRelIndex = tRelIndex;
+      pre_tAbsIndex = tAbsIndex;
+      curSelTIndex = tAbsIndex;
+      tPrevPage = tCurrentPage;
+      catButDetected = false;
+      display.screenTouched = false; // passed back to the touchscreen handler
+      return;
     }
-    // highlight selected by settting background ON color 
-    display.drawButton(CAT_X, CAT_Y+tRelIndex*(CAT_H+CAT_Y_SPACING), 
-        CAT_W-WIDTH_OFF, CAT_H, true, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, _tArray[tAbsIndex].tObjName); 
-    
-    // the following 5 lines are displayed on the Catalog/More page
-    // Note: ObjName and SubId are swapped here relative to other catalogs since the Treasure catalog is formatted differently
-    snprintf(catSelectionStr1, 26, "Name:%-19s", _tArray[tAbsIndex].tSubId);   //VF("t_subID=");   VL(_tArray[tAbsIndex].tSubId);
-    snprintf(catSelectionStr2, 11, "Mag-:%-4s",  _tArray[tAbsIndex].tMag);     //VF("t_mag=");     VL(_tArray[tAbsIndex].tMag);
-    snprintf(catSelectionStr3, 11, "Cons:%-4s",  _tArray[tAbsIndex].tCons);    //VF("t_constel="); VL(_tArray[tAbsIndex].tCons);
-    snprintf(catSelectionStr4, 16, "Type:%-9s",  _tArray[tAbsIndex].tObjType); //VF("t_objType="); VL(_tArray[tAbsIndex].tObjType);
-    snprintf(catSelectionStr5, 15, "Id--:%-7s",  _tArray[tAbsIndex].tObjName); //VF("t_objName="); VL(_tArray[tAbsIndex].tObjName);
-    
-    // show if we are above and below visible limits
-    if (dtAlt[tAbsIndex] > 10.0) {   // show minimum 10 degrees altitude, use dtAlt[tAbsIndex] previously calculated in catalogScreen.draw()
-        display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
-    } else {
-        display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
-    }
-    writeTarget(tAbsIndex); // write RA and DEC as target for GoTo
-    showTargetCoords(); // display the target coordinates that were just written
 
-    pre_tRelIndex = tRelIndex;
-    pre_tAbsIndex = tAbsIndex;
-    curSelTIndex = tAbsIndex;
-    tPrevPage = tCurrentPage;
-    catButDetected = false;
-  }
-
-    // ====== CUSTOM USER catalog ... uses different spacing =====
-  if (catButDetected && customCatalog) { 
+    // ====== CUSTOM USER catalog ... uses different row spacing =====
+    if (catButDetected && customCatalog) { 
 
     cRelIndex = catButSelPos; // save the "screen/page" index of button pressed
     cAbsIndex = cFiltArray[catButSelPos];
 
-    if (cPrevPage == cCurrentPage) { //erase previous selection
-        display.drawButton(CUS_X, CUS_Y+pre_cRelIndex*(CUS_H+CUS_Y_SPACING), 
-            CUS_W, CUS_H, false, CUS_TEXT_X_OFF, CUS_TEXT_Y_OFF, _cArray[pre_cAbsIndex].cObjName); 
+      if (cPrevPage == cCurrentPage) { //erase previous selection
+          display.drawButton(CUS_X, CUS_Y+pre_cRelIndex*(CUS_H+CUS_Y_SPACING), 
+              CUS_W, CUS_H, false, CUS_TEXT_X_OFF, CUS_TEXT_Y_OFF, _cArray[pre_cAbsIndex].cObjName); 
+      }
+      // highlight selected by settting background ON color 
+      display.drawButton(CUS_X, CUS_Y+cRelIndex*(CUS_H+CUS_Y_SPACING), 
+          CUS_W, CUS_H, true, CUS_TEXT_X_OFF, CUS_TEXT_Y_OFF, _cArray[cAbsIndex].cObjName); 
+
+      // the following 5 lines are displayed on the Catalog/More page
+      snprintf(catSelectionStr1, 26, "Name-:%-19s", _cArray[cAbsIndex].cObjName);  //VF("c_objName="); //VL(_cArray[cAbsIndex].cObjName);
+      snprintf(catSelectionStr2, 11, "Mag--:%-4s",  _cArray[cAbsIndex].cMag);      //VF("c_Mag=");     //VL(_cArray[cAbsIndex].cMag);
+      snprintf(catSelectionStr3, 11, "Const:%-4s",  _cArray[cAbsIndex].cCons);     //VF("c_constel="); //VL(_cArray[cAbsIndex].cCons);
+      snprintf(catSelectionStr4, 16, "Type-:%-9s",  _cArray[cAbsIndex].cObjType);  //VF("c_objType="); //VL(_cArray[cAbsIndex].cObjType);
+      snprintf(catSelectionStr5, 15, "Id---:%-7s",  _cArray[cAbsIndex].cSubId);    //VF("c_subID=");   //VL(_cArray[cAbsIndex].cSubId);
+      
+      // show if we are above and below visible limits
+      if (dcAlt[cAbsIndex] > 10.0) {      // minimum 10 degrees altitude
+          display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+      } else {
+          display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+      }
+      writeTarget(cAbsIndex); // write RA and DEC as target for GoTo
+      showTargetCoords(); // display the target coordinates that were just written
+
+      pre_cRelIndex = cRelIndex;
+      pre_cAbsIndex = cAbsIndex;
+      curSelCIndex = cAbsIndex;
+      cPrevPage = cCurrentPage;
+      catButDetected = false;
+      customItemSelected = true;
     }
-    // highlight selected by settting background ON color 
-    display.drawButton(CUS_X, CUS_Y+cRelIndex*(CUS_H+CUS_Y_SPACING), 
-        CUS_W, CUS_H, true, CUS_TEXT_X_OFF, CUS_TEXT_Y_OFF, _cArray[cAbsIndex].cObjName); 
 
-    // the following 5 lines are displayed on the Catalog/More page
-    snprintf(catSelectionStr1, 26, "Name-:%-19s", _cArray[cAbsIndex].cObjName);  //VF("c_objName="); //VL(_cArray[cAbsIndex].cObjName);
-    snprintf(catSelectionStr2, 11, "Mag--:%-4s",  _cArray[cAbsIndex].cMag);      //VF("c_Mag=");     //VL(_cArray[cAbsIndex].cMag);
-    snprintf(catSelectionStr3, 11, "Const:%-4s",  _cArray[cAbsIndex].cCons);     //VF("c_constel="); //VL(_cArray[cAbsIndex].cCons);
-    snprintf(catSelectionStr4, 16, "Type-:%-9s",  _cArray[cAbsIndex].cObjType);  //VF("c_objType="); //VL(_cArray[cAbsIndex].cObjType);
-    snprintf(catSelectionStr5, 15, "Id---:%-7s",  _cArray[cAbsIndex].cSubId);    //VF("c_subID=");   //VL(_cArray[cAbsIndex].cSubId);
-    
-    // show if we are above and below visible limits
-    if (dcAlt[cAbsIndex] > 10.0) {      // minimum 10 degrees altitude
-        display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
-    } else {
-        display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
-    }
-    writeTarget(cAbsIndex); // write RA and DEC as target for GoTo
-    showTargetCoords(); // display the target coordinates that were just written
+    // DELETE CUSTOM USER library ROW check
+    // Delete the row and shift other rows up, write back to storage media
+    if (delSelected && customItemSelected) {
+      delSelected = false;
 
-    pre_cRelIndex = cRelIndex;
-    pre_cAbsIndex = cAbsIndex;
-    curSelCIndex = cAbsIndex;
-    cPrevPage = cCurrentPage;
-    catButDetected = false;
-    customItemSelected = true;
-  }
-
-  // DELETE CUSTOM USER library ROW check
-  // Delete the row and shift other rows up, write back to storage media
-  if (delSelected && customItemSelected) {
-    delSelected = false;
-
-    // delIndex is Row to delete in full array
-    cAbsIndex = cFiltArray[catButSelPos];
-    uint16_t delIndex = cAbsIndex;
-    if (cusRowEntries == 0) { // check if delete of only one entry in catalog, if so, just delete catalog
-        File rmFile = SD.open("/custom.csv");
-            if (rmFile) {
-                SD.remove("/custom.csv");
-            }
-        rmFile.close(); 
-        return;
-    } else { // copy rows after the one to be deleted over rows -1
-        //VF("cAbsIndex="); VL(cAbsIndex);
-        while (delIndex <= cusRowEntries-1) {
-            strcpy(Copy_Custom_Array[delIndex], Copy_Custom_Array[delIndex+1]);
-            delIndex++;
-        }
-        memset(Copy_Custom_Array[cusRowEntries], '\0', SD_CARD_LINE_LEN); // null terminate row left over at the end
-        //for (int i = 0; i<=cusRowEntries-1; i++) { VL(Copy_Custom_Array[i]); }
-    }
+      // delIndex is Row to delete in full array
+      cAbsIndex = cFiltArray[catButSelPos];
+      uint16_t delIndex = cAbsIndex;
+      if (cusRowEntries == 0) { // check if delete of only one entry in catalog, if so, just delete catalog
+          File rmFile = SD.open("/custom.csv");
+              if (rmFile) {
+                  SD.remove("/custom.csv");
+              }
+          rmFile.close(); 
+          return;
+      } else { // copy rows after the one to be deleted over rows -1
+          //VF("cAbsIndex="); VL(cAbsIndex);
+          while (delIndex <= cusRowEntries-1) {
+              strcpy(Copy_Custom_Array[delIndex], Copy_Custom_Array[delIndex+1]);
+              delIndex++;
+          }
+          memset(Copy_Custom_Array[cusRowEntries], '\0', SD_CARD_LINE_LEN); // null terminate row left over at the end
+          //for (int i = 0; i<=cusRowEntries-1; i++) { VL(Copy_Custom_Array[i]); }
+      }
 
     // delete old SD file
     File rmFile = SD.open("/custom.csv");
@@ -715,6 +717,7 @@ void CatalogScreen::updateThisStatus() {
     }
     display.currentScreen = MORE_SCREEN; // tell the RETURN button where to return to
     catalogScreen.draw((cat_mgr.numCatalogs())+2);
+    display.screenTouched = false; // passed back to the touchscreen handler
     return;
   }
 
@@ -745,6 +748,8 @@ void CatalogScreen::updateThisStatus() {
     pre_shcIndex = catButSelPos;
     curSelSIndex = catButSelPos;
     catButDetected = false;
+    display.screenTouched = false; // passed back to the touchscreen handler
+    return;
   }
 
     // ======  now check buttons not part of catalog listings  ========
@@ -757,22 +762,22 @@ void CatalogScreen::updateThisStatus() {
       display.drawButton(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, true, SAVE_LIB_T_X_OFF, SAVE_LIB_T_Y_OFF, " Saving  ");
   
       if (treasureCatalog) { 
-          // Custom User Catalog Format: SubID or ObjName, Mag, Cons, ObjType, ObjName or SubID, RA, DEC
-          snprintf(treaCustWrSD, 81, "%-19s;%-4s;%-4s;%-9s;%-18s;%8s;%9s\n", 
-                                                          _tArray[curSelTIndex].tSubId,
-                                                          _tArray[curSelTIndex].tMag, 
-                                                          _tArray[curSelTIndex].tCons, 
-                                                          _tArray[curSelTIndex].tObjType,
-                                                          _tArray[curSelTIndex].tObjName, 
-                                                          tRAhhmmss[curSelTIndex],
-                                                          tDECsddmmss[curSelTIndex]);
-          // write string to the SD card
-          File wrFile = SD.open("custom.csv", FILE_WRITE);
-          if (wrFile) {
-              wrFile.print(treaCustWrSD);
-              }
-              //VF("twrFileSize="); VL(wrFile.size());
-          wrFile.close();
+        // Custom Catalog Format: SubID or ObjName, Mag, Cons, ObjType, ObjName or SubID, RA, DEC
+        snprintf(treaCustWrSD, 81, "%-19s;%-4s;%-4s;%-9s;%-18s;%8s;%9s\n", 
+                                                        _tArray[curSelTIndex].tSubId,
+                                                        _tArray[curSelTIndex].tMag, 
+                                                        _tArray[curSelTIndex].tCons, 
+                                                        _tArray[curSelTIndex].tObjType,
+                                                        _tArray[curSelTIndex].tObjName, 
+                                                        tRAhhmmss[curSelTIndex],
+                                                        tDECsddmmss[curSelTIndex]);
+        // write string to the SD card
+        File wrFile = SD.open("custom.csv", FILE_WRITE);
+        if (wrFile) {
+            wrFile.print(treaCustWrSD);
+            }
+            //VF("twrFileSize="); VL(wrFile.size());
+        wrFile.close();
 
       } else if (shcCatalog) { // ======= handle any of the SHC catalogs button presses =======
         // "UNK",  "OC",  "GC",  "PN",  "DN",  "SG",  "EG",  "IG", "KNT", "SNR", "GAL",  "CN", "STR", "PLA", "CMT", "AST"
@@ -816,6 +821,7 @@ void CatalogScreen::updateThisStatus() {
     }
   }
   display.screenTouched = false; // passed back to the touchscreen handler
+  return;
 }
 
 //=====================================================
@@ -829,6 +835,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
         for (i=0; i<(NUM_CAT_ROWS_PER_SCREEN); i++) {
             if (py > CAT_Y+(i*(CAT_H+CAT_Y_SPACING)) && py < (CAT_Y+(i*(CAT_H+CAT_Y_SPACING))) + CAT_H 
                     && px > CAT_X && px < (CAT_X+CAT_W)) {
+                DD_TONE;
                 if (treasureCatalog && tAbsRow == MAX_TREASURE_ROWS+1) return; 
                 if (shcCatalog && shcLastPage && i >= shcRow)  return; 
                 catButSelPos = i;
@@ -843,6 +850,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
             if (cAbsRow == cusRowEntries+2) return;
             if (py > CUS_Y+(i*(CUS_H+CUS_Y_SPACING)) && py < (CUS_Y+(i*(CUS_H+CUS_Y_SPACING))) + CUS_H 
                     && px > CUS_X && px < (CUS_X+CUS_W)) {
+                DD_TONE;
                 if (customCatalog && cLastPage==0 && i >= cRow) return; // take care of only one entry on the page
                 catButSelPos = i;
                 catButDetected = true;
@@ -853,7 +861,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // BACK button
     if (py > BACK_Y && py < (BACK_Y + BACK_H) && px > BACK_X && px < (BACK_X + BACK_W)) {
-        
+        DD_TONE;
         if (treasureCatalog && tCurrentPage > 0) {
             tPrevPage = tCurrentPage;
             tEndOfList = false;
@@ -875,7 +883,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // NEXT page button - reuse BACK button box size
     if (py > NEXT_Y && py < (NEXT_Y + BACK_H) && px > NEXT_X && px < (NEXT_X + BACK_W)) {
-        
+        DD_TONE;
         if (treasureCatalog && !tEndOfList) {
             tPrevPage = tCurrentPage;
             tCurrentPage++;
@@ -894,7 +902,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // RETURN page button - reuse BACK button box size
     if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
-        
+        DD_TONE;
         display.screenTouched = false;
         moreScreen.objectSelected = objSel; 
         if (returnToPage == ALIGN_SCREEN) {
@@ -908,12 +916,14 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // SAVE page to custom library button
     if (py > SAVE_LIB_Y && py < (SAVE_LIB_Y + SAVE_LIB_H) && px > SAVE_LIB_X && px < (SAVE_LIB_X + SAVE_LIB_W)) {
-        saveTouched = true;
+      DD_TONE;
+      saveTouched = true;
     }   
 
     // Delete custom library item that is selected 
     if (py > 3 && py < 42 && px > 282 && px < 317) {
-        delSelected = true;
+      DD_TONE;
+      delSelected = true;
     }   
 }
 

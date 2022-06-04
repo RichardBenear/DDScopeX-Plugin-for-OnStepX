@@ -45,12 +45,10 @@ bool ODriveMotor::init() {
 
   if (axisNumber == 1) {
     pinModeEx(ODRIVE_RST_PIN, OUTPUT);
-    digitalWriteEx(ODRIVE_RST_PIN, LOW); // active low, don't know if ODrive has pullup on this pin
-    delay(2); 
     digitalWriteEx(ODRIVE_RST_PIN, HIGH); // bring ODrive out of Reset
-    delay(2000);                          // allow time for ODrive to boot
+    delay(1000);                          // allow time for ODrive to boot
     ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
-    VLF("MSG: ODrive channel Init");
+    VLF("MSG: ODrive, channel init");
   }
 
   power(false);
@@ -118,7 +116,9 @@ void ODriveMotor::power(bool state) {
     requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
   }
   
+  //oDriveExt(true);
   if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
+   // oDriveExt(false);
     VF("WRN: ODrive"); V(axisNumber); VF(", ");
     VLF(" Power, closed loop control - command timeout!");
     return;

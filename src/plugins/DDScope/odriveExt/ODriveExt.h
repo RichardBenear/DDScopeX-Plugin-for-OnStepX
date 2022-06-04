@@ -54,6 +54,7 @@ class ODriveExt
     void setODriveVelIntGain(int axis, float level);
     void setODrivePosGain(int axis, float level);
     void updateODriveMotorPositions();
+    void MotorEncoderDelta();
     void clearODriveErrors(int axis, int comp);
     
     static void demoMode(bool onState);
@@ -63,16 +64,16 @@ class ODriveExt
     
     int getODriveRequestedState();
 
-    bool odriveAZOff = true;
-    bool odriveALTOff = true;
+    bool odriveAzmPwr = false;
+    bool odriveAltPwr = false;
 
     bool oDserialAvail = false;
 
     ODriveVersion oDversion = {0, 0, 0, 0, 0, 0};
     Component component = COMP_FIRST;
-
+    
   private:
-    bool batLED = false;
+    bool batLowLED = false;
 };
 
 extern ODriveExt oDriveExt;
