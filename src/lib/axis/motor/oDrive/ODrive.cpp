@@ -115,7 +115,7 @@ void ODriveMotor::power(bool state) {
   if (state) {
     requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
   }
-  
+
   // since wait_for_idle=false, then timeout not used
   if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
     VF("WRN: ODrive"); V(axisNumber); VF(", ");
