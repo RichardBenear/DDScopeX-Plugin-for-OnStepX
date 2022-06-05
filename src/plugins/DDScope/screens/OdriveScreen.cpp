@@ -233,14 +233,14 @@ void ODriveScreen::updateThisStatus() {
     y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
 
     // =========== Column 1 ===========
-    if (oDriveExt.odriveAzmPwr) {
+    if (!oDriveExt.odriveAzmPwr) {
       display.drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET, "  EN AZ   ");
     } else { //motor on
       display.drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,   "AZ Enabled");
     }
 
     y_offset += OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-    if (oDriveExt.odriveAltPwr) {
+    if (!oDriveExt.odriveAltPwr) {
       display.drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET, "  EN ALT   ");
     } else { //motor on
       display.drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,   "ALT Enabled");
@@ -337,14 +337,14 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   // Enable Azimuth motor
   if (px > OD_ACT_COL_1_X + x_offset && px < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_1_Y + y_offset && py <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     DD_TONE;
-    if (oDriveExt.odriveAzmPwr) { // toggle ON
+    if (!oDriveExt.odriveAzmPwr) { // if not On, toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-      oDriveExt.odriveAzmPwr = false; // false = NOT off
-      motor1.power(true); // put in closed loop control
+      oDriveExt.odriveAzmPwr = true;
+      motor1.power(true);
     } else { // since already ON, toggle OFF
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-      oDriveExt.odriveAzmPwr = true;
-      motor1.power(false); // put in Idle
+      oDriveExt.odriveAzmPwr = false;
+      motor1.power(false);
     }
   }
             
@@ -352,13 +352,13 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   // Enable Altitude motor
   if (px > OD_ACT_COL_1_X + x_offset && px < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_1_Y + y_offset && py <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     DD_TONE;
-    if (oDriveExt.odriveAltPwr) { // toggle ON
+    if (!oDriveExt.odriveAltPwr) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-      oDriveExt.odriveAltPwr = false; // false = NOT off
+      oDriveExt.odriveAltPwr = true; 
       motor2.power(true);
     } else { // toggle OFF
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
-      oDriveExt.odriveAltPwr = true;
+      oDriveExt.odriveAltPwr = false;
       motor2.power(false); // Idle the ODrive motor
     }
   }
@@ -374,8 +374,8 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
       motor1.power(false); // turn off the motors
       motor2.power(false);
       OdStopButton = true;
-      oDriveExt.odriveAzmPwr = true;
-      oDriveExt.odriveAltPwr = true;
+      oDriveExt.odriveAzmPwr = false;
+      oDriveExt.odriveAltPwr = false;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
     }

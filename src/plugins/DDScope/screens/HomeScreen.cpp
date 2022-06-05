@@ -417,7 +417,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Enable Azimuth motor
   if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     DD_TONE;
-    if (oDriveExt.odriveAzmPwr) { // toggle ON
+    if (!oDriveExt.odriveAzmPwr) { // if not On, toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
       oDriveExt.odriveAzmPwr = true;
       motor1.power(true);
@@ -433,7 +433,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Enable Altitude motor
   if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     DD_TONE;
-    if (oDriveExt.odriveAltPwr) { // toggle ON
+    if (!oDriveExt.odriveAltPwr) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveAltPwr = true; 
       motor2.power(true);
@@ -494,7 +494,11 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     DD_TONE;
-    display.setLocalCmd(":hC#"); // go HOME
+    //display.setLocalCmd(":hF#"); // reset Home position
+    //tasks.yield(4);
+    _oDriveDriver->SetPosition(0, 0.0);
+    _oDriveDriver->SetPosition(1, 0.0);
+    //display.setLocalCmd(":hC#"); // go HOME
     gotoHome = true;
     return;
   }

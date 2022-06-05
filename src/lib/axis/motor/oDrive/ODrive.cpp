@@ -109,16 +109,15 @@ bool ODriveMotor::validateParameters(float param1, float param2, float param3, f
 void ODriveMotor::power(bool state) {
   int requestedState = AXIS_STATE_IDLE;
   float timeout = 0.5;
-  // timeout value is multiplied by 10 in the run_state routine 
+  // timeout value is multiplied by 10 in the Arduino run_state routine 
     // and is the number of retries for the read of Current_State to not be IDLE
     // ONLY if the wait-for-idle flag is true
   if (state) {
     requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
   }
   
-  //oDriveExt(true);
+  // since wait_for_idle=false, then timeout not used
   if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
-   // oDriveExt(false);
     VF("WRN: ODrive"); V(axisNumber); VF(", ");
     VLF(" Power, closed loop control - command timeout!");
     return;
@@ -154,17 +153,7 @@ void ODriveMotor::resetPositionSteps(long value) {
   // if (axisNumber - 1 == 1) oPosition = o_position1;
 
   // get ODrive position in fractionial Turns
-  
   oPosition = _oDriveDriver->GetPosition(axisNumber - 1)*TWO_PI*stepsPerMeasure; // axis1/2 are in steps per radian
-
-  //...should always be less than abs(0.5000)
-  if (oPosition < 0) { // negative turns
-    if (abs(oPosition) > 0.5) oPosition = -0.5; else oPosition = oPosition;
-  } else { // positive fractional turns
-    if (oPosition >= 0.5) oPosition = -0.5; else oPosition = oPosition;
-  }
-
-VF("oPosition="); VL(oPosition);
 
   noInterrupts();
   motorSteps    = oPosition;
@@ -249,14 +238,9 @@ void ODriveMotor::poll() {
   #endif
   interrupts();
 
-  //VF("motorSteps="); VL(motorSteps);
-  //VF("targetSteps="); VL(targetSteps);
-  //VF("backlashSteps="); VL(backlashSteps);
-  //VF("target="); VL(target);
-  //VF("stepsPerMeasure"); VL(stepsPerMeasure);
-  //VF("position="); VL(target/(TWO_PI*stepsPerMeasure));
-
-  setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
+  _oDriveDriver->SetPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
+  // high resolution setPosition interferes with other ODRIVE_SERIAL
+  //setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
 }
 
 // sets dir as required and moves coord toward target at setFrequencySteps() rate

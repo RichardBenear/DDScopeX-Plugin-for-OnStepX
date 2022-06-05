@@ -326,7 +326,7 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > GOTO_BUTTON_Y && py < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && px > GOTO_BUTTON_X && px < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
     DD_TONE;
     goToButton = true;
-    display.setLocalCmd(":MA#"); // move to
+    display.setLocalCmd(":MS#"); // move to
   }
 
   // ==== ABORT GOTO ====

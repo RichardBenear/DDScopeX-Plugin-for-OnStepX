@@ -411,8 +411,10 @@ void MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     DD_TONE;
     if (!soundEnabled) {
       soundEnabled = true; // turn on
+      display.setLocalCmd(":SX97,1#");
     } else {
       soundEnabled = false; // toggle off
+      display.setLocalCmd(":SX97,0#");
     }
     return;
   }
@@ -421,10 +423,8 @@ char reply[5];
   if (py > GOTO_BUT_Y && py < (GOTO_BUT_Y + GOTO_M_BOXSIZE_Y) && px > GOTO_BUT_X && px < (GOTO_BUT_X + GOTO_M_BOXSIZE_X)) {
     DD_TONE;
     goToButton = true;
-   // display.setLocalCmd(":MS#"); // move to
-  
-    display.getLocalCmdTrim(":MA#", reply); 
-  VF("reply="); VL(reply);
+    display.getLocalCmdTrim(":MS#", reply);
+    VF("reply="); VL(reply);
   return;
   }
 

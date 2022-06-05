@@ -144,4 +144,7 @@ class ODriveMotor : public Motor {
     float stepsPerMeasure = 0.0F;
 };
 
+// ODrive servo motor driver
+extern ODriveArduino *_oDriveDriver;
+
 #endif

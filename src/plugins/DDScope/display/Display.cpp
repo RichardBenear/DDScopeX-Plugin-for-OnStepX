@@ -120,9 +120,13 @@ void Display::init() {
   uint8_t BVhandle = tasks.add(5000, 0, true, 7, updateBatVoltWrapper, "UpdateBatVolt");
   if (BVhandle)  { VLF("success"); } else { VLF("FAILED!"); }
 
+ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
+
   // draw Home screen
   tft.setFont(&Inconsolata_Bold8pt7b);
   homeScreen.draw();
+  oDriveExt.odriveAzmPwr = false;
+  oDriveExt.odriveAltPwr = false;
 }
 
 // initialize the SD card and boot screen

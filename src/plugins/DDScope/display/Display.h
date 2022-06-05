@@ -65,10 +65,7 @@
 // wait time to allow ODrive serial receive in milliseconds
 #define ODRIVE_SERIAL_WAIT    10
 
-#define SOUND_FREQUENCY     1000 // in Milliseconds
-#define SOUND_DURATION        40 // in Milliseconds
-
-#define DD_TONE tone(SOUND_FREQUENCY, SOUND_DURATION);
+#define DD_TONE tone(STATUS_BUZZER_PIN, 1000UL, 40ULL); // both in milliseconds
 
 enum Screen
 {
