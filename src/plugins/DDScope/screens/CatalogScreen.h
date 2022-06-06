@@ -68,7 +68,7 @@ class CatalogScreen {
     void draw(int catSel);
     void touchPoll(uint16_t px, uint16_t py);
     void updateThisStatus();
-
+    
     char catSelectionStr1[26];
     char catSelectionStr2[11];
     char catSelectionStr3[11];
@@ -76,11 +76,17 @@ class CatalogScreen {
     char catSelectionStr5[15];
    
   private:
+    void updateTreasureCat();
+    void updateCustomCat();
+    void updateShcCat();
+    void updateCatButtons();
     bool loadTreasureArray();
     bool loadCustomArray();
     void parseTcatIntoArray();
     void parseCcatIntoArray();
-    void drawACatPage();
+    void drawTreasureCat();
+    void drawCustomCat();
+    void drawShcCat();
     void writeTarget(uint16_t index);
     void showTargetCoords();
 
@@ -98,9 +104,8 @@ class CatalogScreen {
     bool shcEndOfList;
     bool customItemSelected;
 
-    uint16_t catButSelPos;
     uint16_t catButDetected;
-
+    uint16_t catButSelPos = 0;
     uint16_t tCurrentPage;
     uint16_t cCurrentPage;
     uint16_t shcCurrentPage;
