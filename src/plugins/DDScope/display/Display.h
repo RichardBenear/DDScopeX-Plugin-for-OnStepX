@@ -11,31 +11,33 @@
 #define C_WIDTH  80
 #define C_HEIGHT 14
 
-#define BUTTON_ON    true
-#define BUTTON_OFF   false
+#define BUTTON_ON  true
+#define BUTTON_OFF false
 
 // ODrive hardwired motor numbers
 #define AZM_MOTOR 1
 #define ALT_MOTOR 0 
 
+#define TITLE_TEXT_Y       35
+
 // Screen Selection buttons
-#define MENU_X                 3
-#define MENU_Y                42
-#define MENU_Y_SPACING         0
-#define MENU_X_SPACING        80
-#define MENU_BOXSIZE_X        72
-#define MENU_BOXSIZE_Y        45
-#define MENU_TEXT_X_OFFSET     8
-#define MENU_TEXT_Y_OFFSET    28
+#define MENU_X              3
+#define MENU_Y             42
+#define MENU_Y_SPACING      0
+#define MENU_X_SPACING     80
+#define MENU_BOXSIZE_X     72
+#define MENU_BOXSIZE_Y     45
+#define MENU_TEXT_X_OFFSET  8
+#define MENU_TEXT_Y_OFFSET 28
 
 // This is calibration data for the raw touch data to the screen coordinates
-#define TS_MINX        250 
-#define TS_MINY        250
-#define TS_MAXX       3900
-#define TS_MAXY       3900
-#define MINPRESSURE     80
-#define MAXPRESSU     1000
-#define PENRADIUS        3
+#define TS_MINX           250 
+#define TS_MINY           250
+#define TS_MAXX          3900
+#define TS_MAXY          3900
+#define MINPRESSURE        80
+#define MAXPRESSU        1000
+#define PENRADIUS           3
 
 // Color definitions
 #define BLACK       0x0000      /*   0,   0,   0 */
@@ -65,7 +67,9 @@
 // wait time to allow ODrive serial receive in milliseconds
 #define ODRIVE_SERIAL_WAIT    10
 
-#define DD_TONE tone(STATUS_BUZZER_PIN, 1000UL, 40ULL); // both in milliseconds
+// sound control of both duration and frequency
+#define DD_CLICK tone(STATUS_BUZZER_PIN, 1000UL, 40ULL); // both in milliseconds
+#define DD_ALERT tone(STATUS_BUZZER_PIN, 700UL, 80ULL); // both in milliseconds
 
 enum Screen
 {

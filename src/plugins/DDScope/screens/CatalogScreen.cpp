@@ -88,7 +88,7 @@ void CatalogScreen::draw(int catSel) {
 
   // Check which Catalog is active
   if (moreScreen.catSelected == cat_mgr.numCatalogs()+1) { //This is Treasure catalog
-    display.drawTitle(90, 30, "Treasure");
+    display.drawTitle(90, TITLE_TEXT_Y, "Treasure");
     treasureCatalog = true;
     customCatalog = false;
     shcCatalog = false;
@@ -102,7 +102,7 @@ void CatalogScreen::draw(int catSel) {
     tAbsRow = 0; // initialize the absolute index pointer into total array
 
   } else if (moreScreen.catSelected == cat_mgr.numCatalogs()+2) { //This is Custom User catalog
-    display.drawTitle(83, 30, "User Catalog");
+    display.drawTitle(83, TITLE_TEXT_Y, "User Catalog");
     customCatalog = true;
     treasureCatalog = false;
     shcCatalog = false;
@@ -135,7 +135,7 @@ void CatalogScreen::draw(int catSel) {
     strcpy(title, cat_mgr.catalogTitle());
     if (moreScreen.catSelected == HERSCHEL) strcpy(title, "Herschel"); else // shorten title
     if (moreScreen.catSelected == STARS) strcpy(title, "Stars"); // shorten title
-    display.drawTitle(110, 32, title); 
+    display.drawTitle(110, TITLE_TEXT_Y, title); 
     tft.setFont(); // revert to basic Arial font
     tft.setTextSize(1);
     tft.setCursor(9,25); 
@@ -835,7 +835,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
         for (i=0; i<(NUM_CAT_ROWS_PER_SCREEN); i++) {
             if (py > CAT_Y+(i*(CAT_H+CAT_Y_SPACING)) && py < (CAT_Y+(i*(CAT_H+CAT_Y_SPACING))) + CAT_H 
                     && px > CAT_X && px < (CAT_X+CAT_W)) {
-                DD_TONE;
+                DD_CLICK;
                 if (treasureCatalog && tAbsRow == MAX_TREASURE_ROWS+1) return; 
                 if (shcCatalog && shcLastPage && i >= shcRow)  return; 
                 catButSelPos = i;
@@ -850,7 +850,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
             if (cAbsRow == cusRowEntries+2) return;
             if (py > CUS_Y+(i*(CUS_H+CUS_Y_SPACING)) && py < (CUS_Y+(i*(CUS_H+CUS_Y_SPACING))) + CUS_H 
                     && px > CUS_X && px < (CUS_X+CUS_W)) {
-                DD_TONE;
+                DD_CLICK;
                 if (customCatalog && cLastPage==0 && i >= cRow) return; // take care of only one entry on the page
                 catButSelPos = i;
                 catButDetected = true;
@@ -861,7 +861,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // BACK button
     if (py > BACK_Y && py < (BACK_Y + BACK_H) && px > BACK_X && px < (BACK_X + BACK_W)) {
-        DD_TONE;
+        DD_CLICK;
         if (treasureCatalog && tCurrentPage > 0) {
             tPrevPage = tCurrentPage;
             tEndOfList = false;
@@ -883,7 +883,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // NEXT page button - reuse BACK button box size
     if (py > NEXT_Y && py < (NEXT_Y + BACK_H) && px > NEXT_X && px < (NEXT_X + BACK_W)) {
-        DD_TONE;
+        DD_CLICK;
         if (treasureCatalog && !tEndOfList) {
             tPrevPage = tCurrentPage;
             tCurrentPage++;
@@ -902,7 +902,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // RETURN page button - reuse BACK button box size
     if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
-        DD_TONE;
+        DD_CLICK;
         display.screenTouched = false;
         moreScreen.objectSelected = objSel; 
         if (returnToPage == ALIGN_SCREEN) {
@@ -916,13 +916,13 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // SAVE page to custom library button
     if (py > SAVE_LIB_Y && py < (SAVE_LIB_Y + SAVE_LIB_H) && px > SAVE_LIB_X && px < (SAVE_LIB_X + SAVE_LIB_W)) {
-      DD_TONE;
+      DD_CLICK;
       saveTouched = true;
     }   
 
     // Delete custom library item that is selected 
     if (py > 3 && py < 42 && px > 282 && px < 317) {
-      DD_TONE;
+      DD_CLICK;
       delSelected = true;
     }   
 }

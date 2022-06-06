@@ -96,7 +96,7 @@ void SettingsScreen::draw() {
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
   
-  display.drawTitle(100, 30, "Settings");
+  display.drawTitle(100, TITLE_TEXT_Y, "Settings");
   display.drawMenuButtons();
   display.drawCommonStatusLabels(); // status common to many pages
   tft.setFont(&Inconsolata_Bold8pt7b);

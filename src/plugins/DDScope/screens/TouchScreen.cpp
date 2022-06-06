@@ -88,7 +88,7 @@ void TouchScreen::touchScreenPoll() {
     // Check for any Menu buttons pressed
     // == LeftMost Menu Button ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X                   ) && p.x < (MENU_X                    + MENU_BOXSIZE_X)) {
-      DD_TONE;
+      DD_CLICK;
       switch(display.currentScreen) {
           case HOME_SCREEN:    guideScreen.draw(); break;
           case GUIDE_SCREEN:    homeScreen.draw(); break;
@@ -103,7 +103,7 @@ void TouchScreen::touchScreenPoll() {
     }
     // == Center Left Menu - Column 2 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X +   MENU_X_SPACING) && p.x < (MENU_X +   MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      DD_TONE;
+      DD_CLICK;
       switch(display.currentScreen) {
           case HOME_SCREEN:     focuserScreen.draw(); break;
           case GUIDE_SCREEN:    focuserScreen.draw(); break;
@@ -118,7 +118,7 @@ void TouchScreen::touchScreenPoll() {
     }
     // == Center Right Menu - Column 3 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 2*MENU_X_SPACING) && p.x < (MENU_X + 2*MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      DD_TONE;
+      DD_CLICK;
       switch(display.currentScreen) {
           case HOME_SCREEN:      gotoScreen.draw(); break;
           case GUIDE_SCREEN:    alignScreen.draw(); break;
@@ -133,7 +133,7 @@ void TouchScreen::touchScreenPoll() {
     }
     // == Right Menu - Column 4 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 3*MENU_X_SPACING) && p.x < (MENU_X + 3*MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      DD_TONE;   
+      DD_CLICK;   
       switch(display.currentScreen) {
           case HOME_SCREEN:       moreScreen.draw(); break;
           case GUIDE_SCREEN:      moreScreen.draw(); break;

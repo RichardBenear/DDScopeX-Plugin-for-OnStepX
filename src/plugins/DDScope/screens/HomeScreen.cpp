@@ -53,7 +53,7 @@ void HomeScreen::draw() {
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
   display.drawMenuButtons();
-  display.drawTitle(25, 25, "DIRECT-DRIVE SCOPE");
+  display.drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
   tft.drawFastVLine(165, 155, 165,display.textColor);
   display.drawCommonStatusLabels();
   tft.setFont(&Inconsolata_Bold8pt7b);
@@ -416,7 +416,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // ======= Column 1 - Leftmost =======
   // Enable Azimuth motor
   if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    DD_TONE;
+    DD_CLICK;
     if (!oDriveExt.odriveAzmPwr) { // if not On, toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
       oDriveExt.odriveAzmPwr = true;
@@ -432,7 +432,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   // Enable Altitude motor
   if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    DD_TONE;
+    DD_CLICK;
     if (!oDriveExt.odriveAltPwr) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveAltPwr = true; 
@@ -448,7 +448,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // STOP everthing requested
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    DD_TONE;
+    DD_CLICK;
     if (!stopButton) {
       stopButton = true;
 
@@ -466,9 +466,11 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Start/Stop Tracking
   y_offset = 0;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    DD_TONE;
+    DD_CLICK;
     if (!lCmountStatus.isTracking()) {
       display.setLocalCmd(":Te#"); // Enable Tracking
+      oDriveExt.odriveAltPwr = true;
+      oDriveExt.odriveAzmPwr = true;
     } else {
       display.setLocalCmd(":Td#"); // Disable Tracking
     }
@@ -478,7 +480,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Set Night or Day Mode
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    DD_TONE;
+    DD_CLICK;
     if (!display.nightMode) {
       display.nightMode = true; // toggle on
     } else {
@@ -493,7 +495,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Go to Home Telescope 
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    DD_TONE;
+    DD_CLICK;
     //display.setLocalCmd(":hF#"); // reset Home position
     //tasks.yield(4);
     _oDriveDriver->SetPosition(0, 0.0);
@@ -507,7 +509,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Park and UnPark Telescope
   y_offset = 0;
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
-    DD_TONE;
+    DD_CLICK;
     if (!lCmountStatus.isParked()) { 
       display.setLocalCmd(":hP#"); // go Park
     } else { // already parked
@@ -519,7 +521,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Set Park Position to Current
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
-    DD_TONE;
+    DD_CLICK;
     display.setLocalCmd(":hQ#"); // Set Park Position
     parkWasSet = true;
     return;
@@ -528,7 +530,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Fan Control Action Button
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
-    DD_TONE;
+    DD_CLICK;
     if (!fanOn) {
       digitalWrite(FAN_ON_PIN, HIGH);
       fanOn = true;

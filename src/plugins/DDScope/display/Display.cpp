@@ -37,7 +37,7 @@
 #include "../screens/SettingsScreen.h"
 
 #define TITLE_BOXSIZE_X         313
-#define TITLE_BOXSIZE_Y          40 
+#define TITLE_BOXSIZE_Y          40
 #define TITLE_BOX_X               3
 #define TITLE_BOX_Y               1 
 
@@ -116,7 +116,7 @@ void Display::init() {
   if (SShandle)  { VLF("success"); } else { VLF("FAILED!"); }
 
   // update battery voltage
-  VF("MSG: Setup, start Screen-specific status polling task (rate 2000 ms priority 7)... ");
+  VF("MSG: Setup, start battery status polling task (rate 5000 ms priority 7)... ");
   uint8_t BVhandle = tasks.add(5000, 0, true, 7, updateBatVoltWrapper, "UpdateBatVolt");
   if (BVhandle)  { VLF("success"); } else { VLF("FAILED!"); }
 

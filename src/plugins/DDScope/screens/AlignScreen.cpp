@@ -115,7 +115,7 @@ void AlignScreen::draw() {
   tft.setTextColor(display.textColor);
   tft.fillScreen(display.pgBackground);
   display.drawMenuButtons();
-  display.drawTitle(100, 30, "Alignment");
+  display.drawTitle(100, TITLE_TEXT_Y, "Alignment");
   display.drawCommonStatusLabels();
   getAlignStatus();
   showCorrections();
@@ -514,7 +514,7 @@ void AlignScreen::stateMachine() {
 void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
   // Go to Home Telescope Requested
   if (px > HOME_X && px < HOME_X + HOME_BOXSIZE_W && py > HOME_Y  && py < HOME_Y + HOME_BOXSIZE_H) {
-    DD_TONE;
+    DD_CLICK;
     if (Current_State==Home_State) {
       homeBut = true;
     }
@@ -524,24 +524,24 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
   int x_offset = 0;
   if (Current_State==Num_Stars_State) {
     if (py > NUM_S_Y && py < (NUM_S_Y + NUM_S_BOXSIZE_H) && px > NUM_S_X+x_offset && px < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
-      DD_TONE;
+      DD_CLICK;
       numAlignStars = 1;
     }
     x_offset += NUM_S_SPACING_X;
     if (py > NUM_S_Y && py < (NUM_S_Y + NUM_S_BOXSIZE_H) && px > NUM_S_X+x_offset && px < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
-      DD_TONE;
+      DD_CLICK;
       numAlignStars = 2;
     }
     x_offset += NUM_S_SPACING_X;
     if (py > NUM_S_Y && py < (NUM_S_Y + NUM_S_BOXSIZE_H) && px > NUM_S_X+x_offset && px < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
-      DD_TONE;
+      DD_CLICK;
       numAlignStars = 3;
     }
   }
 
   // Call up the Catalog Button
   if (py > ACAT_Y && py < (ACAT_Y + CAT_BOXSIZE_H) && px > ACAT_X && px < (ACAT_X + CAT_BOXSIZE_W)) {
-    DD_TONE;
+    DD_CLICK;
     if (Current_State==Select_Catalog_State ) {
       catalogBut = true;
     }
@@ -549,7 +549,7 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Go To Target Coordinates
   if (py > GOTO_Y && py < (GOTO_Y + GOTO_BOXSIZE_H) && px > GOTO_X && px < (GOTO_X + GOTO_BOXSIZE_W)) {
-    DD_TONE;
+    DD_CLICK;
     if (Current_State==Goto_State) { 
       gotoBut = true;
     }
@@ -557,14 +557,14 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // ==== ABORT GOTO ====
   if (py > ABORT_Y && py < (ABORT_Y + GOTO_BOXSIZE_H) && px > ABORT_X && px < (ABORT_X + GOTO_BOXSIZE_W)) {
-    DD_TONE;
+    DD_CLICK;
     abortBut = true;
     tasks.setDurationComplete(tasks.getHandleByName("AlignStateMachine"));
   }
 
   // ALIGN / calculate alignment corrections Button
   if (py > ALIGN_Y && py < (ALIGN_Y + ALIGN_BOXSIZE_H) && px > ALIGN_X && px < (ALIGN_X + ALIGN_BOXSIZE_W)) {
-    DD_TONE; 
+    DD_CLICK; 
     if (Current_State==Align_State) {
       alignBut = true;
     }
@@ -572,7 +572,7 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Write Alignment Button
   if (py > WRITE_ALIGN_Y && py < (WRITE_ALIGN_Y + SA_BOXSIZE_H) && px > WRITE_ALIGN_X && px < (WRITE_ALIGN_X + SA_BOXSIZE_W)) {
-    DD_TONE; 
+    DD_CLICK; 
     if (Current_State==Write_State) {
       saveAlignBut = true;
     }
@@ -580,7 +580,7 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // START Alignment Button - clear the corrections, reset the state machine
   if (py > START_ALIGN_Y && py < (START_ALIGN_Y + ST_BOXSIZE_H) && px > START_ALIGN_X && px < (START_ALIGN_X + ST_BOXSIZE_W)) { 
-    DD_TONE;
+    DD_CLICK;
     startAlignBut = true;
     display.setLocalCmd(":SX02#");
     display.setLocalCmd(":SX03#");

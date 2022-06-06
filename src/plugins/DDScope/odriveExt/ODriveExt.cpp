@@ -1,4 +1,4 @@
-// =====================================================
+// ============================================
 // ODriveExt.cpp
 // ======== ODrive Extended Support ===========
 // ============================================
@@ -13,7 +13,6 @@
 #include "../display/Display.h"
 #include "../../../telescope/mount/Mount.h"
 #include "../../../lib/tasks/OnTask.h"
-#include "src/telescope/mount/status/Status.h"
 
 const char* ODriveComponentsStr[4] = {
             "None",   
@@ -32,7 +31,7 @@ float ODriveExt::getODriveBusVoltage() {
   if (battery_voltage < BATTERY_LOW_VOLTAGE && battery_voltage > 3) { // battery low
     digitalWrite(BATTERY_LOW_LED_PIN, LOW); // LED on
     batLowLED = true;
-    status.sound.alert();
+    DD_ALERT;
   } else { // battery either above low voltage limit (ok) or in development mode  
     digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // LED off
     batLowLED = false;
