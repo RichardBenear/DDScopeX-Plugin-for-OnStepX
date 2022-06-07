@@ -1,5 +1,6 @@
 // -------------------------------------------------------------------------------------------------
 // Pin map for DDScopeX Direct Drive Telescope (Teensy4.1)
+// -------------------------------------------------------------------------------------------------
 #pragma once
 
 #include "src/HAL/HAL.h"
@@ -46,7 +47,7 @@
 #define STATUS_MOUNT_LED_PIN    7     // Output, active low
 
 // Using Beitian BN-220 without the PPS pinned out. The BN-280 has PPS pinned out
-//#define PPS_SENSE_PIN           2     // Input Pin, Pulse Per Second from GPS
+#define PPS_SENSE_PIN           2     // Input Pin, Pulse Per Second from GPS
 
 #else
 #error "Wrong processor for this configuration!"
