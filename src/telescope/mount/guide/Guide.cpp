@@ -20,7 +20,7 @@ inline void guideWrapper() { guide.poll(); }
 
 void Guide::init() {
   // confirm the data structure size
-  if (GuideSettingsSize < sizeof(GuideSettings)) { nv.initError = true; DL("ERR: Guide::init(); GuideSettingsSize error"); }
+  if (GuideSettingsSize < sizeof(GuideSettings)) { nv.initError = true; DL("ERR: Guide::init(), GuideSettingsSize error"); }
 
   // write the default settings to NV
   if (!nv.hasValidKey()) {
@@ -43,7 +43,7 @@ void Guide::init() {
 }
 
 // start guide at a given direction and rate on Axis1
-CommandError Guide::startAxis1(GuideAction guideAction, GuideRateSelect rateSelect, unsigned long guideTimeLimit, bool pulseGuide) {
+CommandError Guide::startAxis1(GuideAction guideAction, GuideRateSelect rateSelect, unsigned long guideTimeLimit) {
   if (guideAction == GA_NONE || guideActionAxis1 == guideAction) return CE_NONE;
   if (guide.state == GU_HOME_GUIDE) return CE_NONE;
 
@@ -57,10 +57,10 @@ CommandError Guide::startAxis1(GuideAction guideAction, GuideRateSelect rateSele
   if (guideTimeLimit == 0) guideTimeLimit = 0x1FFFFFFF;
   guideFinishTimeAxis1 = millis() + guideTimeLimit;
 
-  if (pulseGuide && rate <= 2) {
+  if (rate <= 2) {
     state = GU_PULSE_GUIDE;
-    axis1.setPowerDownOverrideTime(30000);
-    axis2.setPowerDownOverrideTime(30000);
+    axis1.setPowerDownOverrideTime(300000UL);
+    axis2.setPowerDownOverrideTime(300000UL);
     if (guideAction == GA_REVERSE) { VF("MSG: Guide, Axis1 rev @"); rateAxis1 = -rate; } else { VF("MSG: Guide, Axis1 fwd @"); rateAxis1 = rate; }
     V(rate); VL("X");
 
@@ -94,7 +94,7 @@ void Guide::stopAxis1(GuideAction stopDirection, bool abort) {
 }
 
 // start guide at a given direction and rate on Axis2
-CommandError Guide::startAxis2(GuideAction guideAction, GuideRateSelect rateSelect, unsigned long guideTimeLimit, bool pulseGuide) {
+CommandError Guide::startAxis2(GuideAction guideAction, GuideRateSelect rateSelect, unsigned long guideTimeLimit) {
   if (guideAction == GA_NONE || guideActionAxis2 == guideAction) return CE_NONE;
   if (guide.state == GU_HOME_GUIDE) return CE_NONE;
 
@@ -108,10 +108,10 @@ CommandError Guide::startAxis2(GuideAction guideAction, GuideRateSelect rateSele
   if (guideTimeLimit == 0) guideTimeLimit = 0x1FFFFFFF;
   guideFinishTimeAxis2 = millis() + guideTimeLimit;
 
-  if (pulseGuide && rate <= 2) {
+  if (rate <= 2) {
     state = GU_PULSE_GUIDE;
-    axis1.setPowerDownOverrideTime(30000);
-    axis2.setPowerDownOverrideTime(30000);
+    axis1.setPowerDownOverrideTime(300000UL);
+    axis2.setPowerDownOverrideTime(300000UL);
     if (pierSide == PIER_SIDE_WEST) { if (guideAction == GA_FORWARD) guideAction = GA_REVERSE; else guideAction = GA_FORWARD; };
     if (guideAction == GA_REVERSE) { VF("MSG: Guide, Axis2 rev @"); rateAxis2 = -rate; } else { VF("MSG: Guide, Axis2 fwd @"); rateAxis2 = rate; }
     V(rate); VL("X");
@@ -155,7 +155,7 @@ CommandError Guide::startSpiral(GuideRateSelect rateSelect, unsigned long guideT
   if (rateSelect > GR_HALF_MAX) rateSelect = GR_HALF_MAX;
   spiralGuideRateSelect = rateSelect;
 
-  VF("MSG: guideSpiralStart(); using guide rates to "); V(rateSelectToRate(spiralGuideRateSelect)); VL("X");
+  VF("MSG: guideSpiralStart(), using guide rates to "); V(rateSelectToRate(spiralGuideRateSelect)); VL("X");
 
   // unlimited 0 means the maximum period, about 49 days
   if (guideTimeLimit == 0) guideTimeLimit = 0x1FFFFFFF;
@@ -174,7 +174,7 @@ CommandError Guide::startSpiral(GuideRateSelect rateSelect, unsigned long guideT
 
 // start guide home (for use with home switches)
 CommandError Guide::startHome() {
-  #if SLEW_GOTO == ON
+  #if GOTO_FEATURE == ON
     // use guiding and switches to find home
     guide.state = GU_HOME_GUIDE;
 
@@ -211,7 +211,7 @@ void Guide::abort() {
 
 // keep guide rate <= half max
 float Guide::limitGuideRate(float rate) {
-  #if SLEW_GOTO == ON
+  #if GOTO_FEATURE == ON
     float rateLimit = radToDegF(goTo.rate)*120.0F;
     if (rate > rateLimit) rate = rateLimit;
   #endif
@@ -229,7 +229,7 @@ float Guide::rateSelectToRate(GuideRateSelect rateSelect, uint8_t axis) {
     case GR_8X: return limitGuideRate(8.0F);
     case GR_20X: return limitGuideRate(20.0F);
     case GR_48X: return limitGuideRate(48.0F);
-    #if SLEW_GOTO == ON
+    #if GOTO_FEATURE == ON
       case GR_HALF_MAX: return radToDegF(goTo.rate)*120.0F;
       case GR_MAX: return radToDegF(goTo.rate)*240.0F;
     #endif
@@ -294,7 +294,7 @@ CommandError Guide::validate(int axis, GuideAction guideAction) {
   if (!mount.isEnabled()) return CE_SLEW_ERR_IN_STANDBY;
   if (mount.isFault()) return CE_SLEW_ERR_HARDWARE_FAULT;
   if (guideAction == GA_SPIRAL && mount.isSlewing()) return CE_SLEW_IN_MOTION;
-  #if SLEW_GOTO == ON
+  #if GOTO_FEATURE == ON
     if (park.state == PS_PARKED) return CE_SLEW_ERR_IN_PARK;
     if (goTo.state != GS_NONE) { goTo.stop(); return CE_SLEW_IN_MOTION; }
   #endif

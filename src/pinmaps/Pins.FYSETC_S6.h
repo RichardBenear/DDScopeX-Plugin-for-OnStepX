@@ -31,7 +31,13 @@
   #endif
 #endif
 
-// Use the following settings for any TMC2209 that may be present
+// Use the following settings for any TMC UART driver (TMC2209U) that may be present
+#ifndef DRIVER_UART_HARDWARE_SERIAL
+  #define DRIVER_UART_HARDWARE_SERIAL OFF        // Default is software serial for this board
+#elif DRIVER_UART_HARDWARE_SERIAL != OFF
+  #error "Configuration (Config.h): DRIVER_UART_HARDWARE_SERIAL must be OFF for this board"
+#endif
+
 #define SERIAL_TMC              SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
 #define SERIAL_TMC_BAUD         115200           // Baud rate
 #define SERIAL_TMC_NO_RX                         // Recieving data doesn't work with software serial
@@ -46,17 +52,17 @@
   #undef FOCUSER_TEMPERATURE_PIN
   #define FOCUSER_TEMPERATURE_PIN TEMP0_PIN
 #endif
-#if FEATURE1_TEMP_PIN == OFF
-  #undef FEATURE1_TEMP_PIN
-  #define FEATURE1_TEMP_PIN     TEMP1_PIN
+#if FEATURE1_TEMPERATURE_PIN == OFF
+  #undef FEATURE1_TEMPERATURE_PIN
+  #define FEATURE1_TEMPERATURE_PIN     TEMP1_PIN
 #endif
-#if FEATURE2_TEMP_PIN == OFF
-  #undef FEATURE2_TEMP_PIN
-  #define FEATURE2_TEMP_PIN     TEMP2_PIN
+#if FEATURE2_TEMPERATURE_PIN == OFF
+  #undef FEATURE2_TEMPERATURE_PIN
+  #define FEATURE2_TEMPERATURE_PIN     TEMP2_PIN
 #endif
-#if FEATURE3_TEMP_PIN == OFF
-  #undef FEATURE3_TEMP_PIN
-  #define FEATURE3_TEMP_PIN     TEMP3_PIN
+#if FEATURE3_TEMPERATURE_PIN == OFF
+  #undef FEATURE3_TEMPERATURE_PIN
+  #define FEATURE3_TEMPERATURE_PIN     TEMP3_PIN
 #endif
 
 // Fans (From Marlin) we use for Auxiliary Features (switches etc.)  Probably with a little crafty wiring these can be 3V3 or 5V.
@@ -101,8 +107,6 @@
 // The status LED is a two wire jumper with a 10k resistor in series to limit the current to the LED
 #define STATUS_LED_PIN          PC6              // Drain (on EXP2) One could perhaps move these to the RGB leds, there's a header but no +5V present on it.
 #define MOUNT_STATUS_LED_PIN    PC6              // Drain (on EXP2 shared with Reticle/BME280_CS)
-#define STATUS_ROTATOR_LED_PIN  PC6              // Drain (on EXP2 shared with Reticle/BME280_CS)
-#define STATUS_FOCUSER_LED_PIN  PC6              // Drain (on EXP2 shared with Reticle/BME280_CS)
 #ifndef RETICLE_LED_PIN 
   #define RETICLE_LED_PIN       PC7              // Drain (on EXP2 shared with LED2/BME280_CS)
 #endif
@@ -202,6 +206,15 @@
 #define AXIS5_M3_PIN            SS_MISO          // SPI MISO (UART RX)
 #define AXIS5_STEP_PIN          PE6
 #define AXIS5_DIR_PIN           PC13
+
+// For focuser3 stepper driver
+#define AXIS6_ENABLE_PIN        PE3
+#define AXIS6_M0_PIN            SS_MOSI          // SPI MOSI
+#define AXIS6_M1_PIN            SS_SCK           // SPI SCK
+#define AXIS6_M2_PIN            PC15             // SPI CS (UART TX)
+#define AXIS6_M3_PIN            SS_MISO          // SPI MISO (UART RX)
+#define AXIS6_STEP_PIN          PE2
+#define AXIS6_DIR_PIN           PE4
 
 // ST4 interface
 #define ST4_RA_W_PIN            PA8              // ST4 RA- West  (on EXP1)

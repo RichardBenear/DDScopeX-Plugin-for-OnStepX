@@ -41,7 +41,7 @@ IRAM_ATTR void clockTickWrapper() { fracLAST++; }
       site.dateIsReady = true;
       site.timeIsReady = true;
       site.setDateTime(jd);
-      #if SLEW_GOTO == ON
+      #if GOTO_FEATURE == ON
         if (park.state == PS_PARKED) park.restore(false);
       #endif
 
@@ -84,8 +84,8 @@ void Site::init() {
         #endif
       }
     } else {
-      DLF("WRN: Site::init(); Warning TLS initialization failed");
-      VLF("WRN: Site::init(); fallback to last Date/Time from NV");
+      DLF("WRN: Site::init(), Warning TLS initialization failed");
+      VLF("WRN: Site::init(), fallback to last Date/Time from NV");
       readJD();
     }
   #else
@@ -101,7 +101,7 @@ void Site::init() {
   handle = tasks.add(0, 0, true, 0, clockTickWrapper, "ClkTick");
   if (handle) {
     VLF("success"); 
-    if (!tasks.requestHardwareTimer(handle, 3, 1)) { DLF("WRN: Site::init(); didn't get h/w timer for Clock (using s/w timer)"); }
+    if (!tasks.requestHardwareTimer(handle, 3, 1)) { DLF("WRN: Site::init(), didn't get h/w timer for Clock (using s/w timer)"); }
   } else { VLF("FAILED!"); }
 
   setSiderealPeriod(SIDEREAL_PERIOD);
@@ -131,7 +131,7 @@ void Site::updateTLS() {
 
   if (initError.tls && dateIsReady && timeIsReady) {
     initError.tls = false;
-    #if SLEW_GOTO == ON
+    #if GOTO_FEATURE == ON
       if (park.state == PS_PARKED) park.restore(false);
     #endif
   }
@@ -240,7 +240,7 @@ double Site::julianDateToGAST(JulianDate julianDate) {
 
 // reads the julian date information from NV
 void Site::readJD() {
-  if (JulianDateSize < sizeof(ut1)) { nv.initError = true; DL("ERR: Site::readJD(); JulianDateSize error"); }
+  if (JulianDateSize < sizeof(ut1)) { nv.initError = true; DL("ERR: Site::readJD(), JulianDateSize error"); }
   if (!nv.hasValidKey()) {
     VLF("MSG: Mount, site writing default date/time to NV");
     ut1.day = 2451544.5;
@@ -248,14 +248,14 @@ void Site::readJD() {
     nv.updateBytes(NV_SITE_JD_BASE, &ut1, JulianDateSize);
   }
   nv.readBytes(NV_SITE_JD_BASE, &ut1, JulianDateSize);
-  if (ut1.day < 2451544.5 || ut1.day > 2816787.5) { ut1.day = 2451544.5; initError.value = true; DLF("ERR: Site::readJD(); bad NV julian date (day)"); }
-  if (ut1.hour < 0.0 || ut1.hour > 24.0)  { ut1.hour = 0.0; initError.value = true; DLF("ERR: Site::readJD(); bad NV julian date (hour)"); }
+  if (ut1.day < 2451544.5 || ut1.day > 2816787.5) { ut1.day = 2451544.5; initError.value = true; DLF("ERR: Site::readJD(), bad NV julian date (day)"); }
+  if (ut1.hour < 0.0 || ut1.hour > 24.0)  { ut1.hour = 0.0; initError.value = true; DLF("ERR: Site::readJD(), bad NV julian date (hour)"); }
 }
 
 // reads the location information from NV
 // locationNumber can be 0..3
 void Site::readLocation(uint8_t number) {
-  if (LocationSize < sizeof(Location)) { nv.initError = true; DL("ERR: Site::readLocation(); LocationSize error"); }
+  if (LocationSize < sizeof(Location)) { nv.initError = true; DL("ERR: Site::readLocation(), LocationSize error"); }
   if (!nv.hasValidKey()) {
     VLF("MSG: Mount, site writing default sites 0-3 to NV");
     location.latitude = 0.0;

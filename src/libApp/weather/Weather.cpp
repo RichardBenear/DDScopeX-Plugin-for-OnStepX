@@ -104,11 +104,11 @@ void Weather::poll() {
       } else {
         if (nanCount < 15) {
           nanCount++;
-          VLF("WRN, Weather.poll(): ambient temp. invalid");
+          VLF("WRN: Weather.poll(), ambient temp. invalid");
         } else {
           averageTemperature = NAN;
           firstSample = true;
-          VLF("WRN, Weather.poll(): ambient temp. reset");
+          VLF("WRN: Weather.poll(), ambient temp. reset");
         }
       }
     }
@@ -136,7 +136,7 @@ float Weather::getPressure() {
   return pressure;
 }
 
-// get barometric pressure in hPa/mb
+// set barometric pressure in hPa/mb
 bool Weather::setPressure(float p) {
   if (weatherSensor == WS_NONE) { 
     if (p >= 500.0 && p < 1500.0) pressure = p; else return false;

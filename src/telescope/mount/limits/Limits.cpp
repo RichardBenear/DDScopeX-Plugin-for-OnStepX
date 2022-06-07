@@ -16,7 +16,7 @@ inline void limitsWrapper() { limits.poll(); }
 
 void Limits::init() {
   // confirm the data structure size
-  if (LimitSettingsSize < sizeof(LimitSettings)) { nv.initError = true; DL("ERR: Limits::init(); LimitSettingsSize error"); }
+  if (LimitSettingsSize < sizeof(LimitSettings)) { nv.initError = true; DL("ERR: Limits::init(), LimitSettingsSize error"); }
 
   // write the default settings to NV
   if (!nv.hasValidKey()) {
@@ -145,7 +145,7 @@ uint8_t Limits::errorCode() {
 }
 
 void Limits::stop() {
-  #if SLEW_GOTO == ON
+  #if GOTO_FEATURE == ON
     goTo.stop();
   #endif
   guide.stopAxis1(GA_BREAK, true);
@@ -154,7 +154,7 @@ void Limits::stop() {
 }
 
 void Limits::stopAxis1(GuideAction stopDirection) {
-  #if SLEW_GOTO == ON
+  #if GOTO_FEATURE == ON
     goTo.stop();
   #endif
   guide.stopAxis1(stopDirection, true);
@@ -162,7 +162,7 @@ void Limits::stopAxis1(GuideAction stopDirection) {
 }
 
 void Limits::stopAxis2(GuideAction stopDirection) {
-  #if SLEW_GOTO == ON
+  #if GOTO_FEATURE == ON
     goTo.stop();
   #endif
   guide.stopAxis2(stopDirection, true);
@@ -192,7 +192,7 @@ void Limits::poll() {
 
     if (transform.meridianFlips && current.pierSide == PIER_SIDE_WEST) {
       if (current.h > settings.pastMeridianW && autoFlipDelayCycles == 0) {
-        #if SLEW_GOTO == ON && AXIS2_TANGENT_ARM == OFF
+        #if GOTO_FEATURE == ON && AXIS2_TANGENT_ARM == OFF
           if (goTo.isAutoFlipEnabled() && mount.isTracking()) {
             // disable this limit for a second to allow goto to exit the out of limits region
             autoFlipDelayCycles = 10;
@@ -202,7 +202,7 @@ void Limits::poll() {
             if (e != CE_NONE) {
               stopAxis1(GA_FORWARD);
               error.meridian.west = true;
-              VF("MSG: Limits::limitPoll() goto for automatic meridian flip failed ("); V(e); VL(")");
+              DF("WRN: Limits::limitPoll(), goto for automatic meridian flip failed ("); D(e); DL(")");
             }
           } else
         #endif
@@ -223,7 +223,7 @@ void Limits::poll() {
       error.limit.axis1.min = true;
       // ---------------------------------------------------------
       if (lastError.limit.axis1.min != error.limit.axis1.min) {
-        D("MSG: Limits, min error A1 = ");
+        D("WRN: Limits, min error A1 = ");
         D(radToDeg(current.a1));
         D(" A2 = ");
         D(radToDeg(current.a2));
@@ -234,7 +234,7 @@ void Limits::poll() {
     } else error.limit.axis1.min = false;
 
     if (fgt(current.a1, axis1.settings.limits.max) && autoFlipDelayCycles == 0) {
-      #if SLEW_GOTO == ON && AXIS2_TANGENT_ARM == OFF
+      #if GOTO_FEATURE == ON && AXIS2_TANGENT_ARM == OFF
         if (transform.meridianFlips && current.pierSide == PIER_SIDE_EAST && goTo.isAutoFlipEnabled() && mount.isTracking()) {
           // disable this limit for a second to allow goto to exit the out of limits region
           autoFlipDelayCycles = 10;
@@ -244,7 +244,7 @@ void Limits::poll() {
           if (e != CE_NONE) {
             stopAxis1(GA_FORWARD);
             error.limit.axis1.max = true;
-            VF("MSG: Limits::limitPoll() goto for automatic meridian flip failed ("); V(e); VL(")");
+            DF("WRN: Limits::limitPoll(), goto for automatic meridian flip failed ("); D(e); DL(")");
           }
         } else
       #endif

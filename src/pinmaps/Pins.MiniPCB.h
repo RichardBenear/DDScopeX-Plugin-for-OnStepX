@@ -25,7 +25,13 @@
   #define SERIAL_E_BAUD_DEFAULT 9600
 #endif
 
-// Use the following settings for any TMC UART driver (TMC2209) that may be present
+// Use the following settings for any TMC UART driver (TMC2209U) that may be present
+#ifndef DRIVER_UART_HARDWARE_SERIAL
+  #define DRIVER_UART_HARDWARE_SERIAL OFF        // Default is software serial for this board
+#elif DRIVER_UART_HARDWARE_SERIAL != OFF
+  #error "Configuration (Config.h): DRIVER_UART_HARDWARE_SERIAL must be OFF for this board"
+#endif
+
 #define SERIAL_TMC              SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
 #define SERIAL_TMC_BAUD         230400           // Baud rate
 #define SERIAL_TMC_NO_RX                         // Recieving data doesn't work with software serial
@@ -58,8 +64,6 @@
 // The status LED is a two wire jumper with a 10k resistor in series to limit the current to the LED
 #define STATUS_LED_PIN          AUX0_PIN         // Default LED Cathode (-)
 #define MOUNT_STATUS_LED_PIN    AUX0_PIN         // Default LED Cathode (-)
-#define STATUS_ROTATOR_LED_PIN  AUX0_PIN         // Default LED Cathode (-)
-#define STATUS_FOCUSER_LED_PIN  AUX0_PIN         // Default LED Cathode (-)
 #ifndef RETICLE_LED_PIN 
   #define RETICLE_LED_PIN       AUX4_PIN         // Default LED Cathode (-)
 #endif
@@ -93,8 +97,8 @@
 #endif
 #define AXIS1_SERVO_ENC1_PIN    AXIS1_M0_PIN
 #define AXIS1_SERVO_ENC2_PIN    AXIS1_M1_PIN
-#define AXIS1_SERVO_PH1_PIN     AXIS1_STEP_PIN
-#define AXIS1_SERVO_PH2_PIN     AXIS1_DIR_PIN
+#define AXIS1_SERVO_PH1_PIN     AXIS1_DIR_PIN
+#define AXIS1_SERVO_PH2_PIN     AXIS1_STEP_PIN
 
 // Axis2 Dec/Alt step/dir driver
 #define AXIS2_ENABLE_PIN        9
@@ -115,8 +119,8 @@
 #endif
 #define AXIS2_SERVO_ENC1_PIN    AXIS2_M0_PIN
 #define AXIS2_SERVO_ENC2_PIN    AXIS2_M1_PIN
-#define AXIS2_SERVO_PH1_PIN     AXIS2_STEP_PIN
-#define AXIS2_SERVO_PH2_PIN     AXIS2_DIR_PIN
+#define AXIS2_SERVO_PH1_PIN     AXIS2_DIR_PIN
+#define AXIS2_SERVO_PH2_PIN     AXIS2_STEP_PIN
 
 // For rotator stepper driver
 #define AXIS3_ENABLE_PIN        OFF

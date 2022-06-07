@@ -24,9 +24,12 @@
 #define MaxSTM3                     11     // update to the MaxPCB3 using an Blackpill F411CE instead of the Teensy3.5/3.6
 #define MaxSTM3I                    12     // as above but using an onboard STM32F411CE with M24C64 EEPROM as default
 
-#define STM32Blue                   13     // Khalid and Dave's PCB for STM32 Blue pill (STM32F103CB and STM32F303CC)
-#define DDtPCB                      14     // DDScope - Direct Drive Telescope
-#define PINMAP_LAST                 14
+#define MaxESP3                     13     // adds 4th axis and option to flash the WeMos D1 Mini WiFi through OnStep
+#define CNC3                        14     // Arduino CNC Sheild on WeMos D1 R32 (ESP32)
+
+#define STM32Blue                   15     // Khalid and Dave's PCB for STM32 Blue pill (STM32F103CB and STM32F303CC)
+
+#define PINMAP_LAST                 15
 
 // WEATHER sensors (temperature, pressure, and humidity)
 #define WEATHER_FIRST               1
@@ -51,7 +54,12 @@
 #define GEM                         1      // German Equatorial Mount, meridian flips enabled
 #define FORK                        2      // Fork Mount, meridian flips disabled
 #define ALTAZM                      3      // Altitude Azimuth Mounts, Dobsonians, etc.
-#define MOUNT_TYPE_LAST             3
+#define GEM_TA                      4      // GEM, w/tangent arm Declination
+#define GEM_TAC                     5      // GEM, w/tangent arm Declination and geometry correction
+#define FORK_TA                     6      // FORK, w/tangent arm Declination
+#define FORK_TAC                    7      // FORK, w/tangent arm Declination and geometry correction
+#define ALTAZM_UNL                  8      // ALTAZM, w/unlimited Azmiuth motion
+#define MOUNT_TYPE_LAST             8
 
 // MOUNT COORDS
 #define MOUNT_COORDS_FIRST          1

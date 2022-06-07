@@ -108,10 +108,7 @@ bool ODriveMotor::validateParameters(float param1, float param2, float param3, f
 // sets motor power on/off (if possible)
 void ODriveMotor::power(bool state) {
   int requestedState = AXIS_STATE_IDLE;
-  float timeout = 0.5;
-  // timeout value is multiplied by 10 in the Arduino run_state routine 
-    // and is the number of retries for the read of Current_State to not be IDLE
-    // ONLY if the wait-for-idle flag is true
+  float timeout = 0.01;
   if (state) {
     requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
   }
@@ -122,7 +119,7 @@ void ODriveMotor::power(bool state) {
     VLF(" Power, closed loop control - command timeout!");
     return;
   }
-  V(axisPrefix); VF("Power, closed loop control - ");
+  V(axisPrefix); VF("closed loop control - ");
   if (state) { VLF("Active"); } else { VLF("Idle"); }
 }
 

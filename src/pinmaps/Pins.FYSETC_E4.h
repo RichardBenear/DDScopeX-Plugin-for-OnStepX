@@ -16,17 +16,21 @@
   #define SERIAL_A              Serial
 #endif
 
-// Use the following settings TMC2209
-#define SERIAL_TMC              Serial1          // Use a single hardware serial port to up to four drivers
-#define SERIAL_TMC_BAUD         460800           // Baud rate
-
-// map the driver addresses so axis5 becomes axis3 in hardware serial mode
-#define TMC_UART_DRIVER_ADDRESS_REMAP_AXIS5
+// Use the following settings for any TMC UART driver (TMC2209U) that may be present
+#define TMC_UART_DRIVER_ADDRESS_REMAP_AXIS5      // Map driver axis5 to axis3 in hardware serial mode
 
 // map the driver addresses so axis X is 0, Y is 1, Z is 2, and E0 is 3 instead of the actual...
 //                                  X is 1, Y is 3, Z is 0, and E0 is 2
 #define TMC_UART_DRIVER_ADDRESS_REMAP(x) (((x)==0)?1 : (((x)==1)?3 : (((x)==2)?0 : 2)))
 
+#ifndef DRIVER_UART_HARDWARE_SERIAL
+  #define DRIVER_UART_HARDWARE_SERIAL ON        // Default is hardware serial for this board
+#elif DRIVER_UART_HARDWARE_SERIAL != ON
+  #error "Configuration (Config.h): DRIVER_UART_HARDWARE_SERIAL must be ON for this board"
+#endif
+
+#define SERIAL_TMC              Serial1          // Use a single hardware serial port to up to four drivers
+#define SERIAL_TMC_BAUD         460800           // Baud rate
 #if DRIVER_UART_HARDWARE_SERIAL == ON
   #define SERIAL_TMC_RX         0                // Recieving data (GPIO0 unused except for flashing)
   #define SERIAL_TMC_TX         15               // Transmit data (Z-MIN)
@@ -35,7 +39,8 @@
   #define HAL_SCL_PIN           22
 #elif DRIVER_UART_HARDWARE_SERIAL == ALT
   #if SERIAL_A_BAUD_DEFAULT == OFF
-    // if SERIAL_A is OFF map the hardware serial UART to the Serial0 pins (remove jumpers for E4 fimware update)
+    // if SERIAL_A is OFF map the hardware serial UART to the Serial0 pins
+    // you will need to remove jumpers to allow USB to work for an E4 fimware update
     #define SERIAL_TMC_RX       3                // Recieving data
     #define SERIAL_TMC_TX       1                // Transmit data
     #define SPARE_RX_PIN        OFF              // Set _RX above to 0 (GPIO0) and use 3 here
@@ -70,13 +75,13 @@
   #undef FOCUSER_TEMPERATURE_PIN
   #define FOCUSER_TEMPERATURE_PIN TEMP0_PIN
 #endif
-#if FEATURE1_TEMP_PIN == OFF
-  #undef FEATURE1_TEMP_PIN
-  #define FEATURE1_TEMP_PIN     TEMP0_PIN
+#if FEATURE1_TEMPERATURE_PIN == OFF
+  #undef FEATURE1_TEMPERATURE_PIN
+  #define FEATURE1_TEMPERATURE_PIN     TEMP0_PIN
 #endif
-#if FEATURE2_TEMP_PIN == OFF
-  #undef FEATURE2_TEMP_PIN
-  #define FEATURE2_TEMP_PIN     TEMP1_PIN
+#if FEATURE2_TEMPERATURE_PIN == OFF
+  #undef FEATURE2_TEMPERATURE_PIN
+  #define FEATURE2_TEMPERATURE_PIN     TEMP1_PIN
 #endif
 
 // Misc. pins
@@ -94,8 +99,6 @@
   #define STATUS_LED_PIN        AUX8_PIN         // Default LED Cathode (-)
 #endif
 #define MOUNT_STATUS_LED_PIN    STATUS_LED_PIN   // Default LED Cathode (-)
-#define STATUS_ROTATOR_LED_PIN  STATUS_LED_PIN   // Default LED Cathode (-)
-#define STATUS_FOCUSER_LED_PIN  STATUS_LED_PIN   // Default LED Cathode (-)
 #ifndef RETICLE_LED_PIN 
   #define RETICLE_LED_PIN       STATUS_LED_PIN   // Default LED Cathode (-)
 #endif

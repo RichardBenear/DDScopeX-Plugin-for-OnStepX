@@ -126,7 +126,7 @@ bool Mount::command(char *reply, char *command, char *parameter, bool *supressFr
       double f = strtod(parameter,&conv_end);
       if (&parameter[0] != conv_end && ((f >= 30.0 && f < 90.0) || fabs(f) < 0.1)) {
         if (fabs(f) < 0.1) tracking(false); else {
-          #if SLEW_GOTO == ON
+          #if GOTO_FEATURE == ON
             if (park.state != PS_PARKED) {
               trackingRate = hzToSidereal(f);
               tracking(true);
@@ -170,7 +170,7 @@ bool Mount::command(char *reply, char *command, char *parameter, bool *supressFr
           // sync from encoder values
           case '2':
             if (parameter[3] == '1' && parameter[4] == 0) {
-              #if SLEW_GOTO == ON
+              #if GOTO_FEATURE == ON
                 CommandError e = goTo.validate();
                 if (e != CE_NONE) { *commandError = e; return true; }
                 if (goTo.alignActive()) { *commandError = CE_0; return true; }
@@ -190,7 +190,10 @@ bool Mount::command(char *reply, char *command, char *parameter, bool *supressFr
       //                      1 on success
       if (parameter[0] == 'E' && parameter[1] == 'M') {
         long l = atol(&parameter[3]);
-        if (l == 0 || l == GEM || l == FORK || (l == ALTAZM && AXIS2_TANGENT_ARM == OFF)) {
+        if (l == 0 ||
+            (l == GEM && AXIS1_WRAP == OFF) ||
+            (l == FORK && AXIS1_WRAP == OFF) ||
+            (l == ALTAZM && AXIS2_TANGENT_ARM == OFF)) {
           nv.write(NV_MOUNT_TYPE_BASE, (uint8_t)l);
         } else *commandError = CE_PARAM_RANGE;
 
@@ -240,14 +243,14 @@ bool Mount::command(char *reply, char *command, char *parameter, bool *supressFr
     if (command[1] == '-') { site.setSiderealPeriod(site.getSiderealPeriod() + hzToSubMicros(0.02F)); } else
     if (command[1] == 'R') { site.setSiderealPeriod(SIDEREAL_PERIOD); } else
     if (command[1] == 'e') {
-      #if SLEW_GOTO == ON
+      #if GOTO_FEATURE == ON
         if (park.state != PS_PARKED) tracking(true); else *commandError = CE_PARKED;
       #else
         tracking(true);
       #endif
     } else
     if (command[1] == 'd') {
-      #if SLEW_GOTO == ON
+      #if GOTO_FEATURE == ON
         if (goTo.state == GS_NONE && guide.state == GU_NONE) tracking(false); else *commandError = CE_SLEW_IN_MOTION;
       #else
         tracking(false);

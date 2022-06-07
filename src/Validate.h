@@ -153,10 +153,6 @@
   #error "Configuration (Config.h): Setting AXIS1_POWER_DOWN unknown, use OFF or ON."
 #endif
 
-#if AXIS1_WRAP != ON && AXIS1_WRAP != OFF
-  #error "Configuration (Config.h): Setting AXIS1_WRAP unknown, use OFF or ON."
-#endif
-
 #if AXIS1_LIMIT_MIN < -360 || AXIS1_LIMIT_MIN > -90
   #error "Configuration (Config.h): Setting AXIS1_LIMIT_MIN unknown, use value in the range -90 to -360."
 #endif
@@ -268,12 +264,8 @@
   #error "Configuration (Config.h): Setting AXIS2_TANGENT_ARM_CORRECTION unknown, use OFF or ON."
 #endif
 
-#if AXIS2_TANGENT_ARM != OFF && MOUNT_TYPE == ALTAZM
-  #error "Configuration (Config.h): Setting AXIS2_TANGENT_ARM is not supported for default MOUNT_TYPE ALTAZM"
-#endif
-
 // MOUNT TYPE
-#if MOUNT_TYPE < MOUNT_TYPE_FIRST && MOUNT_TYPE > MOUNT_TYPE_LAST
+#if MOUNT_SUBTYPE < GEM || MOUNT_SUBTYPE > ALTAZM
   #error "Configuration (Config.h): Setting MOUNT_TYPE unknown, use a valid MOUNT TYPE (from Constants.h)"
 #endif
 
@@ -359,8 +351,8 @@
 #endif
 
 // SLEWING BEHAVIOUR
-#if SLEW_GOTO != ON && SLEW_GOTO != OFF
-  #error "Configuration (Config.h): Setting SLEW_GOTO unknown, use OFF or ON."
+#if GOTO_FEATURE != ON && GOTO_FEATURE != OFF
+  #error "Configuration (Config.h): Setting GOTO_FEATURE unknown, use OFF or ON."
 #endif
 
 #if SLEW_RATE_MEMORY != ON && SLEW_RATE_MEMORY != OFF
@@ -504,11 +496,6 @@
 
 #if (AXIS3_SENSE_LIMIT_MAX) != OFF && (AXIS3_SENSE_LIMIT_MAX) < 0
   #error "Configuration (Config.h): Setting AXIS3_SENSE_LIMIT_MAX unknown, use OFF or HIGH/LOW and HYST() and/or THLD() as described in comments."
-#endif
-
-// USER FEEDBACK
-#if STATUS_ROTATOR_LED != ON && STATUS_ROTATOR_LED != OFF
-  #error "Configuration (Config.h): Setting STATUS_ROTATOR_LED unknown, use OFF or ON."
 #endif
 
 // FOCUSER ---------------------------------------
@@ -1003,11 +990,6 @@
   #if AXIS9_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS9_SERVO_ENCODER > SERVO_ENCODER_LAST
     #error "Configuration (Config.h): Setting AXIS9_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
-#endif
-
-// USER FEEDBACK
-#if STATUS_FOCUSER_LED != ON && STATUS_FOCUSER_LED != OFF
-  #error "Configuration (Config.h): Setting STATUS_FOCUSER_LED unknown, use OFF or ON."
 #endif
 
 // FOCUSER TEMPERATURE

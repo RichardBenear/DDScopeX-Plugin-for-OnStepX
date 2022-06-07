@@ -27,7 +27,13 @@
   #define SERIAL_B_TX           PB10
 #endif
 
-// Use the following settings for any TMC UART driver (TMC2209) that may be present
+// Use the following settings for any TMC UART driver (TMC2209U) that may be present
+#ifndef DRIVER_UART_HARDWARE_SERIAL
+  #define DRIVER_UART_HARDWARE_SERIAL OFF        // Default is software serial for this board
+#elif DRIVER_UART_HARDWARE_SERIAL != OFF
+  #error "Configuration (Config.h): DRIVER_UART_HARDWARE_SERIAL must be OFF for this board"
+#endif
+
 #define SERIAL_TMC              SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
 #define SERIAL_TMC_BAUD         230400           // Baud rate
 #define SERIAL_TMC_NO_RX                         // Recieving data doesn't work with software serial
@@ -64,8 +70,6 @@
 // available from it too, in case you want to power another LED with a wire
 #define STATUS_LED_PIN          AUX0_PIN         // Default LED Cathode (-)
 #define MOUNT_STATUS_LED_PIN    AUX0_PIN         // Default LED Cathode (-)
-#define STATUS_ROTATOR_LED_PIN  AUX0_PIN         // Default LED Cathode (-)
-#define STATUS_FOCUSER_LED_PIN  AUX0_PIN         // Default LED Cathode (-)
 #ifndef RETICLE_LED_PIN 
   #define RETICLE_LED_PIN       AUX3_PIN         // Default LED Cathode (-)
 #endif

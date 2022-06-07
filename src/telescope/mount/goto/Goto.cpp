@@ -3,7 +3,7 @@
 
 #include "Goto.h"
 
-#if defined(MOUNT_PRESENT) && SLEW_GOTO == ON
+#if defined(MOUNT_PRESENT) && GOTO_FEATURE == ON
 
 #include "../../../lib/tasks/OnTask.h"
 
@@ -20,7 +20,7 @@ inline void gotoWrapper() { goTo.poll(); }
 
 void Goto::init() {
   // confirm the data structure size
-  if (GotoSettingsSize < sizeof(GotoSettings)) { nv.initError = true; DLF("ERR: Goto::init(); GotoSettingsSize error"); }
+  if (GotoSettingsSize < sizeof(GotoSettings)) { nv.initError = true; DLF("ERR: Goto::init(), GotoSettingsSize error"); }
 
   // write the default settings to NV
   if (!nv.hasValidKey()) {
@@ -85,9 +85,9 @@ CommandError Goto::request(Coordinate *coords, PierSideSelect pierSideSelect, bo
   if (transform.mountType != ALTAZM && 
       park.state != PS_PARKING &&
       home.state != HS_HOMING &&
-      fabs(target.d) < Deg90 - degToRad(SLEW_GOTO_OFFSET)) {
-    slewDestinationDistHA = degToRad(SLEW_GOTO_OFFSET);
-    slewDestinationDistDec = degToRad(SLEW_GOTO_OFFSET);
+      fabs(target.d) < Deg90 - degToRad(GOTO_OFFSET)) {
+    slewDestinationDistHA = degToRad(GOTO_OFFSET);
+    slewDestinationDistDec = degToRad(GOTO_OFFSET);
     if (target.pierSide == PIER_SIDE_WEST) slewDestinationDistDec = -slewDestinationDistDec;
   }
 
@@ -368,16 +368,13 @@ float Goto::usPerStepLowerLimit() {
   #if STEP_WAVE_FORM == PULSE || STEP_WAVE_FORM == DEDGE
     r_us /= 1.6F;
   #endif
-  
+
   // average required goto us rates for each axis with any micro-step mode switching applied
   float r_us_axis1 = r_us/axis1.getStepsPerStepSlewing();
   float r_us_axis2 = r_us/axis2.getStepsPerStepSlewing();
-  
+
   // average in axis2 step rate scaling for drives where the reduction ratio isn't equal
   r_us = (r_us_axis1 + r_us_axis2)/2.0F;
- 
-  // the timer granulaity can start to make for some very abrupt rate changes below 0.25us
-  if (r_us < 0.25F) { r_us = 0.25F; DLF("WRN, Mount::usPerStepLowerLimit(): r_us exceeds design limit"); }
 
   // return rate in us units
   return r_us;
@@ -421,7 +418,7 @@ void Goto::poll() {
 
         VLF("MSG: Mount, goto near destination reached");
         destination = target;
-        if (!alignActive() || SLEW_GOTO_OFFSET_ALIGN == OFF) {
+        if (!alignActive() || GOTO_OFFSET_ALIGN == OFF) {
           slewDestinationDistHA = 0.0;
           slewDestinationDistDec = 0.0;
         }

@@ -3,7 +3,7 @@
 
 #include "Library.h"
 
-#if defined(MOUNT_PRESENT) && SLEW_GOTO == ON
+#if defined(MOUNT_PRESENT) && GOTO_FEATURE == ON
 
 #include "../../Telescope.h"
 
@@ -21,7 +21,7 @@ void Library::init() {
 
   recMax = byteCount/rec_size; // maximum number of records
 
-  if (recMax == 0) { VLF("WRN: Library::Library(); recMax == 0, no library space available"); return; }
+  if (recMax == 0) { VLF("WRN: Library::init(); recMax == 0, no library space available"); return; }
 
   // write default library structure to NV
   if (!nv.hasValidKey()) {

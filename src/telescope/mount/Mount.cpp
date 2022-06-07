@@ -24,7 +24,7 @@ inline void mountWrapper() { mount.poll(); }
 
 void Mount::init() {
   // confirm the data structure size
-  if (MountSettingsSize < sizeof(MountSettings)) { nv.initError = true; DL("ERR: Mount::init(); MountSettingsSize error"); }
+  if (MountSettingsSize < sizeof(MountSettings)) { nv.initError = true; DL("ERR: Mount::init(), MountSettingsSize error"); }
 
   // write the default settings to NV
   if (!nv.hasValidKey()) {
@@ -37,13 +37,13 @@ void Mount::init() {
 
   // get the main axes ready
   delay(100);
-  if (!axis1.init(&motor1)) {  DLF("ERR: Axis1, no motion controller exiting!"); return;  }
+  if (!axis1.init(&motor1)) { initError.driver = true; DLF("ERR: Axis1, no motion controller exiting!"); return;  }
   axis1.setBacklash(settings.backlash.axis1);
   axis1.setMotionLimitsCheck(false);
   if (AXIS1_POWER_DOWN == ON) axis1.setPowerDownTime(DEFAULT_POWER_DOWN_TIME);
 
   delay(100);
-  if (!axis2.init(&motor2)) {  DLF("ERR: Axis2, no motion controller exiting!"); return;  }
+  if (!axis2.init(&motor2)) { initError.driver = true; DLF("ERR: Axis2, no motion controller exiting!"); return;  }
   axis2.setBacklash(settings.backlash.axis2);
   axis2.setMotionLimitsCheck(false);
   if (AXIS2_POWER_DOWN == ON) axis1.setPowerDownTime(DEFAULT_POWER_DOWN_TIME);
@@ -78,7 +78,7 @@ void Mount::init() {
     limits.settings.pastMeridianW = Deg360;
   }
 
-  #if SLEW_GOTO == ON
+  #if GOTO_FEATURE == ON
     goTo.init();
     library.init();
     park.init();
@@ -106,7 +106,7 @@ void Mount::init() {
     }
   #else
     tracking(false);
-    #if SLEW_GOTO == ON
+    #if GOTO_FEATURE == ON
       if (park.state == PS_PARKED) park.restore(false);
     #endif
   #endif
@@ -174,7 +174,7 @@ void Mount::update() {
   static int lastStatusFlashMs = 0;
   int statusFlashMs = 0;
 
-#if SLEW_GOTO == ON
+#if GOTO_FEATURE == ON
   if (goTo.state == GS_NONE && guide.state < GU_GUIDE) {
 #else
   if (guide.state < GU_GUIDE) {

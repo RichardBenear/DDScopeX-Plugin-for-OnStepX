@@ -15,7 +15,7 @@
 // =================================================================================================================================
 // CONTROLLER ======================================================================================================================
 
-// DEBUG ------------------------------------------------------------ see https://onstep.groups.io/g/main/wiki/6-Configuration#DEBUG
+// DEBUG ---------------------------------------------------------------------------------------------------------------------------
 // Enable additional debugging and/or status messages on the specified SERIAL_DEBUG port
 // Note that the SERIAL_DEBUG port cannot be used for normal communication with OnStep
 #define DEBUG                     VERBOSE //    OFF, Use ON for background error messages only, use VERBOSE for all           Infreq
@@ -38,64 +38,5 @@
                                           //         MCP23017, X9555, or X8575: for 16-ch I2C gpio.
                                           //         SSR74HC595: for up to 32-ch gpio (serial shift register, output only.)
                                           //         Works w/most OnStep features, channels assigned in order pin# 512 and up.
-
-// UART STEP/DIR DRIVER SUPPORT ----------------------------------------------------------------------------------------------------
-#define DRIVER_UART_HARDWARE_SERIAL   OFF //    OFF, Uses SoftwareSerial or ON for hardware serial.                           Option
-
-// =================================================================================================================================
-// MOUNT ===========================================================================================================================
-
-// AXIS1 RA/AZM -------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration---Rotator-and-Focusers#AXIS1
-
-// for SERVO_II and SERVO_SD driver models, PID and encoder settings:
-#define AXIS1_SERVO_ENCODER        ENC_AB // ..._AB, Encoder type, ENC_AB, ENC_CW_CCW, ENC_PULSE_DIR, ENC_PULSE_ONLY.         Adjust
-#define AXIS1_SERVO_P                 2.0 //    2.0, Proportional; scale of immediate response to position error.             Adjust 
-#define AXIS1_SERVO_I                 5.0 //    5.0, Integral; rate of increasing response to position error over time.       Adjust
-#define AXIS1_SERVO_D                 1.0 //    1.0, Derivative; overshoot supression.                                        Adjust
-#define AXIS1_SERVO_P_GOTO            2.0 //    2.0, Proportional; as above except active only while slewing.                 Adjust 
-#define AXIS1_SERVO_I_GOTO            5.0 //    5.0, Integral; as above except active only while slewing.                     Adjust
-#define AXIS1_SERVO_D_GOTO            1.0 //    1.0, Derivative; as above except active only while slewing.                   Adjust
-
-// AXIS2 DEC/ALT ------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration---Rotator-and-Focusers#AXIS2
-
-// for SERVO_II and SERVO_SD driver models, PID and encoder settings:
-#define AXIS2_SERVO_ENCODER        ENC_AB // ..._AB, Encoder type, ENC_AB, ENC_CW_CCW, ENC_PULSE_DIR, ENC_PULSE_ONLY.         Adjust
-#define AXIS2_SERVO_P                 2.0 //    2.0, Proportional; scale of immediate response to position error.             Adjust 
-#define AXIS2_SERVO_I                 5.0 //    5.0, Integral; rate of increasing response to position error over time.       Adjust
-#define AXIS2_SERVO_D                 1.0 //    1.0, Derivative; overshoot supression.                                        Adjust
-#define AXIS2_SERVO_P_GOTO            2.0 //    2.0, Proportional; as above except active only while slewing.                 Adjust 
-#define AXIS2_SERVO_I_GOTO            5.0 //    5.0, Integral; as above except active only while slewing.                     Adjust
-#define AXIS2_SERVO_D_GOTO            1.0 //    1.0, Derivative; ; as above except active only while slewing.                 Adjust
-
-// =================================================================================================================================
-// ROTATOR =========================================================================================================================
-
-// AXIS3 ROTATOR ------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration---Rotator-and-Focusers#AXIS3
-
-// for SERVO_II and SERVO_SD driver models, PID and encoder settings:
-#define AXIS3_SERVO_ENCODER        ENC_AB // ..._AB, Encoder type, ENC_AB, ENC_CW_CCW, ENC_PULSE_DIR, ENC_PULSE_ONLY.         Adjust
-#define AXIS3_SERVO_P                 2.0 //    2.0, Proportional; scale of immediate response to position error.             Adjust 
-#define AXIS3_SERVO_I                 5.0 //    5.0, Integral; rate of increasing response to position error over time.       Adjust
-#define AXIS3_SERVO_D                 1.0 //    1.0, Derivative; overshoot supression.                                        Adjust
-#define AXIS3_SERVO_P_GOTO            2.0 //    2.0, Proportional; as above except active only while slewing.                 Adjust 
-#define AXIS3_SERVO_I_GOTO            5.0 //    5.0, Integral; as above except active only while slewing.                     Adjust
-#define AXIS3_SERVO_D_GOTO            1.0 //    1.0, Derivative; ; as above except active only while slewing.                 Adjust
-
-// =================================================================================================================================
-// FOCUSERS ========================================================================================================================
-
-// AXIS4 FOCUSER 1 -------------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#AXIS4
-
-// for SERVO_II and SERVO_SD driver models, PID and encoder settings:
-#define AXIS4_SERVO_ENCODER        ENC_AB // ..._AB, Encoder type, ENC_AB, ENC_CW_CCW, ENC_PULSE_DIR, ENC_PULSE_ONLY.         Adjust
-#define AXIS4_SERVO_P                 2.0 //    2.0, Proportional; scale of immediate response to position error.             Adjust 
-#define AXIS4_SERVO_I                 5.0 //    5.0, Integral; rate of increasing response to position error over time.       Adjust
-#define AXIS4_SERVO_D                 1.0 //    1.0, Derivative; overshoot supression.                                        Adjust
-#define AXIS4_SERVO_P_GOTO            2.0 //    2.0, Proportional; as above except active only while slewing.                 Adjust 
-#define AXIS4_SERVO_I_GOTO            5.0 //    5.0, Integral; as above except active only while slewing.                     Adjust
-#define AXIS4_SERVO_D_GOTO            1.0 //    1.0, Derivative; ; as above except active only while slewing.                 Adjust
-
-// AXIS5 FOCUSER 2 -----------------------------------------------------------------------------------------------------------------
-// Up to 6 focusers can be present (AXIS4 to AXIS9) simply copy the above text for focuser 1 and rename to AXIS5_ for focuser 2, etc
 
 // ---------------------------------------------------------------------------------------------------------------------------------

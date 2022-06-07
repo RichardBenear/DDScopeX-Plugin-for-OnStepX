@@ -165,9 +165,6 @@
 #ifndef AXIS1_ENABLE_STATE
 #define AXIS1_ENABLE_STATE            LOW                         // default state of ENable pin for motor power on
 #endif
-#ifndef AXIS1_WRAP
-#define AXIS1_WRAP                    OFF                         // wrap for unlimited range
-#endif
 #ifndef AXIS1_LIMIT_MIN
 #define AXIS1_LIMIT_MIN               -180                        // in degrees
 #endif
@@ -292,12 +289,6 @@
 #ifndef AXIS2_ENABLE_STATE
 #define AXIS2_ENABLE_STATE            LOW                         // stepper enable state
 #endif
-#ifndef AXIS2_TANGENT_ARM
-#define AXIS2_TANGENT_ARM             OFF                         // ON to enable support for Dec tangent arm equatorial mounts
-#endif
-#ifndef AXIS2_TANGENT_ARM_CORRECTION
-#define AXIS2_TANGENT_ARM_CORRECTION  OFF                         // ON enables tangent arm geometry correction for Axis2
-#endif
 #ifndef AXIS2_LIMIT_MIN
 #define AXIS2_LIMIT_MIN               -90                         // in degrees
 #endif
@@ -407,10 +398,60 @@
   #endif
 #endif
 
-// mount type
+// decode internal mount type, tangent arm, azm wrap
 #ifndef MOUNT_TYPE
 #define MOUNT_TYPE                    GEM
 #endif
+#if MOUNT_TYPE == GEM
+#define MOUNT_SUBTYPE                 GEM
+#endif
+#if MOUNT_TYPE == GEM_TA
+#define MOUNT_SUBTYPE                 GEM
+#define AXIS2_TANGENT_ARM             ON
+#endif
+#if MOUNT_TYPE == GEM_TAC
+#define MOUNT_SUBTYPE                 GEM
+#define AXIS2_TANGENT_ARM             ON
+#define AXIS2_TANGENT_ARM_CORRECTION  ON
+#endif
+#if MOUNT_TYPE == FORK
+#define MOUNT_SUBTYPE                 FORK
+#endif
+#if MOUNT_TYPE == FORK_TA
+#define MOUNT_SUBTYPE                 FORK
+#define AXIS2_TANGENT_ARM             ON
+#endif
+#if MOUNT_TYPE == FORK_TAC
+#define MOUNT_SUBTYPE                 FORK
+#define AXIS2_TANGENT_ARM             ON
+#define AXIS2_TANGENT_ARM_CORRECTION  ON
+#endif
+#if MOUNT_TYPE == ALTAZM
+#define MOUNT_SUBTYPE                 ALTAZM
+#endif
+#if MOUNT_TYPE == ALTAZM_UNL
+#define MOUNT_SUBTYPE                 ALTAZM
+#define AXIS1_WRAP                    ON
+#endif
+#ifndef MOUNT_SUBTYPE
+#define MOUNT_SUBTYPE                 OFF
+#endif
+#ifndef AXIS1_WRAP
+#define AXIS1_WRAP                    OFF
+#endif
+#ifndef AXIS2_TANGENT_ARM
+#define AXIS2_TANGENT_ARM             OFF
+#endif
+#ifndef AXIS2_TANGENT_ARM_CORRECTION
+#define AXIS2_TANGENT_ARM_CORRECTION  OFF
+#endif
+#ifndef TANGENT_ARM_INSTRUMENT_TO_MOUNT
+#define TANGENT_ARM_INSTRUMENT_TO_MOUNT(a) (atan(a))              // returns angle in radians
+#endif
+#ifndef TANGENT_ARM_MOUNT_TO_INSTRUMENT
+#define TANGENT_ARM_MOUNT_TO_INSTRUMENT(a) (tan(a))               // angle (a) in radians
+#endif
+
 #ifndef MOUNT_COORDS
 #define MOUNT_COORDS                  TOPOCENTRIC                 // mount coordinate system
 #endif
@@ -427,18 +468,6 @@
 #endif
 #ifndef STATUS_MOUNT_LED_ON_STATE
 #define STATUS_MOUNT_LED_ON_STATE     LOW
-#endif
-#ifndef STATUS_ROTATOR_LED
-#define STATUS_ROTATOR_LED            OFF
-#endif
-#ifndef STATUS_ROTATOR_LED_ON_STATE
-#define STATUS_ROTATOR_LED_ON_STATE   LOW
-#endif
-#ifndef STATUS_FOCUSER_LED
-#define STATUS_FOCUSER_LED            OFF
-#endif
-#ifndef STATUS_FOCUSER_LED_ON_STATE
-#define STATUS_FOCUSER_LED_ON_STATE   LOW
 #endif
 #ifndef STATUS_BUZZER
 #define STATUS_BUZZER                 OFF
@@ -558,8 +587,8 @@
 #endif
 
 // slewing
-#ifndef SLEW_GOTO
-#define SLEW_GOTO                     ON                          // OFF disables goto functionality
+#ifndef GOTO_FEATURE
+#define GOTO_FEATURE                  ON                          // OFF disables goto functionality
 #endif
 #ifndef SLEW_RATE_BASE_DESIRED
 #define SLEW_RATE_BASE_DESIRED        1.0                         // *desired* maximum slew rate, actual slew rate depends on many factors
@@ -573,11 +602,11 @@
 #ifndef SLEW_RAPID_STOP_DIST
 #define SLEW_RAPID_STOP_DIST          2.0                         // distance in degrees for emergency stop
 #endif
-#ifndef SLEW_GOTO_OFFSET
-#define SLEW_GOTO_OFFSET              0.25                        // distance in degrees for goto target unidirectional approach, 0.0 disables
+#ifndef GOTO_OFFSET
+#define GOTO_OFFSET                   0.25                        // distance in degrees for goto target unidirectional approach, 0.0 disables
 #endif
-#ifndef SLEW_GOTO_OFFSET_ALIGN
-#define SLEW_GOTO_OFFSET_ALIGN        OFF                         // skip final phase of goto for align stars so user tends to
+#ifndef GOTO_OFFSET_ALIGN
+#define GOTO_OFFSET_ALIGN             OFF                         // skip final phase of goto for align stars so user tends to
 #endif                                                            // approach from the correct direction when centering
 
 // meridian flip, pier side
@@ -1561,8 +1590,8 @@
 #ifndef FEATURE1_TEMP
 #define FEATURE1_TEMP                 OFF                         // temperature sensor, thermistor or DS1820
 #endif
-#ifndef FEATURE1_TEMP_PIN
-#define FEATURE1_TEMP_PIN             OFF                         // for thermistors, analog pin
+#ifndef FEATURE1_TEMPERATURE_PIN
+#define FEATURE1_TEMPERATURE_PIN             OFF                         // for thermistors, analog pin
 #endif
 #ifndef FEATURE1_PIN
 #define FEATURE1_PIN                  OFF                         // OUTPUT control pin
@@ -1583,8 +1612,8 @@
 #ifndef FEATURE2_TEMP
 #define FEATURE2_TEMP                 OFF
 #endif
-#ifndef FEATURE2_TEMP_PIN
-#define FEATURE2_TEMP_PIN             OFF
+#ifndef FEATURE2_TEMPERATURE_PIN
+#define FEATURE2_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE2_PIN
 #define FEATURE2_PIN                  OFF
@@ -1605,8 +1634,8 @@
 #ifndef FEATURE3_TEMP
 #define FEATURE3_TEMP                 OFF
 #endif
-#ifndef FEATURE3_TEMP_PIN
-#define FEATURE3_TEMP_PIN             OFF
+#ifndef FEATURE3_TEMPERATURE_PIN
+#define FEATURE3_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE3_PIN
 #define FEATURE3_PIN                  OFF
@@ -1627,8 +1656,8 @@
 #ifndef FEATURE4_TEMP
 #define FEATURE4_TEMP                 OFF
 #endif
-#ifndef FEATURE4_TEMP_PIN
-#define FEATURE4_TEMP_PIN             OFF
+#ifndef FEATURE4_TEMPERATURE_PIN
+#define FEATURE4_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE4_PIN
 #define FEATURE4_PIN                  OFF
@@ -1649,8 +1678,8 @@
 #ifndef FEATURE5_TEMP
 #define FEATURE5_TEMP                 OFF
 #endif
-#ifndef FEATURE5_TEMP_PIN
-#define FEATURE5_TEMP_PIN             OFF
+#ifndef FEATURE5_TEMPERATURE_PIN
+#define FEATURE5_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE5_PIN
 #define FEATURE5_PIN                  OFF
@@ -1671,8 +1700,8 @@
 #ifndef FEATURE6_TEMP
 #define FEATURE6_TEMP                 OFF
 #endif
-#ifndef FEATURE6_TEMP_PIN
-#define FEATURE6_TEMP_PIN             OFF
+#ifndef FEATURE6_TEMPERATURE_PIN
+#define FEATURE6_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE6_PIN
 #define FEATURE6_PIN                  OFF
@@ -1693,8 +1722,8 @@
 #ifndef FEATURE7_TEMP
 #define FEATURE7_TEMP                 OFF
 #endif
-#ifndef FEATURE7_TEMP_PIN
-#define FEATURE7_TEMP_PIN             OFF
+#ifndef FEATURE7_TEMPERATURE_PIN
+#define FEATURE7_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE7_PIN
 #define FEATURE7_PIN                  OFF
@@ -1715,8 +1744,8 @@
 #ifndef FEATURE8_TEMP
 #define FEATURE8_TEMP                 OFF
 #endif
-#ifndef FEATURE8_TEMP_PIN
-#define FEATURE8_TEMP_PIN             OFF
+#ifndef FEATURE8_TEMPERATURE_PIN
+#define FEATURE8_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE8_PIN
 #define FEATURE8_PIN                  OFF
