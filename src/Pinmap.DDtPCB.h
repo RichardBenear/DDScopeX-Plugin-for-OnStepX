@@ -2,6 +2,9 @@
 // Pin map for DDScopeX Direct Drive Telescope (Teensy4.1)
 #pragma once
 
+#include "src/HAL/HAL.h"
+#include "src/lib/Macros.h"
+
 #if defined(ARDUINO_TEENSY41)
 
 // ODrive Pins

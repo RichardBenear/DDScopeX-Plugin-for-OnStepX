@@ -6,6 +6,7 @@
 
 #include <SD.h>
 #include "src/Common.h"
+#include <XPT2046_Touchscreen.h>
 #include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
 
 #define C_WIDTH  80
@@ -100,6 +101,9 @@ enum SelectedCatalog
 
 // Display object
 extern Adafruit_ILI9486_Teensy tft;
+
+static XPT2046_Touchscreen ts(TS_CS, TS_IRQ); // Use Interrupts for touchscreen
+static TS_Point p;
 
 // =========================================
 class Display {

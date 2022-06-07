@@ -377,3 +377,6 @@
 // ---------------------------------------------------------------------------------------------------------------------------------
 #define FileVersionConfig 5
 #include "Extended.config.h"
+
+// Direct Drive Scope Plugin PCB pinmap
+#include "src/Pinmap.DDtPCB.h" 

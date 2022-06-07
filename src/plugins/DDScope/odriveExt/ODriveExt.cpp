@@ -42,7 +42,7 @@ float ODriveExt::getODriveBusVoltage() {
 // get absolute Encoder positions in degrees
 float ODriveExt::getEncoderPositionDeg(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  tasks.yield( ODRIVE_SERIAL_WAIT);
+  tasks.yield(ODRIVE_SERIAL_WAIT);
   float turns = _oDriveDriver->readFloat();
   return turns*360;
 }  
