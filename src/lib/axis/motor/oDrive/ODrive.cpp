@@ -108,12 +108,8 @@ bool ODriveMotor::validateParameters(float param1, float param2, float param3, f
 // sets motor power on/off (if possible)
 void ODriveMotor::power(bool state) {
   int requestedState = AXIS_STATE_IDLE;
-  float timeout = 0.01;
-  if (state) {
-    requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
-  }
-
-  // since wait_for_idle=false, then timeout not used
+  if (state) requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
+  float timeout = 0.5;
   if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
     VF("WRN: ODrive"); V(axisNumber); VF(", ");
     VLF(" Power, closed loop control - command timeout!");
