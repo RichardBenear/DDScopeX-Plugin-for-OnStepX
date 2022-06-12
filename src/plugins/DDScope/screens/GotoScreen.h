@@ -5,8 +5,9 @@
 #define GOTO_S_H
 
 #include <Arduino.h>
+#include "../display/Display.h"
 
-class GotoScreen {
+class GotoScreen : public Display {
   public:
     void draw();
     void touchPoll(uint16_t px, uint16_t py);

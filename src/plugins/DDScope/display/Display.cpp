@@ -13,7 +13,8 @@
 #include <gfxfont.h>
 
 #include "../../../telescope/mount/Mount.h"
-//#include "../../../lib/sound/Sound.h"
+#include "src/lib/commands/CommandErrors.h"
+#include "src/libApp/commands/ProcessCmds.h"
 #include "../../../lib/tasks/OnTask.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold8pt7b.h"
@@ -21,20 +22,25 @@
 #include <Fonts/FreeSansBold12pt7b.h>
 
 // DDScope specific
+#include "../DDScope.h"
 #include "Display.h"
 #include "../catalog/Catalog.h"
-#include "../odriveExt/ODriveExt.h"
-#include "../screens/ODriveScreen.h"
 #include "../screens/AlignScreen.h"
 #include "../screens/CatalogScreen.h"
-#include "../screens/FocuserScreen.h"
+#include "../screens/DCFocuserScreen.h"
 #include "../screens/GotoScreen.h"
 #include "../screens/GuideScreen.h"
 #include "../screens/HomeScreen.h"
 #include "../screens/MoreScreen.h"
-#include "../screens/ODriveScreen.h"
 #include "../screens/PlanetsScreen.h"
 #include "../screens/SettingsScreen.h"
+#include "../screens/ExtStatusScreen.h"
+
+#ifdef ODRIVE_MOTOR_PRESENT
+  #include "../odriveExt/ODriveExt.h"
+  #include "../screens/ODriveScreen.h"
+#endif
+
 
 #define TITLE_BOXSIZE_X         313
 #define TITLE_BOXSIZE_Y          40
@@ -53,8 +59,11 @@
 void updateScreenWrapper() { display.updateSpecificScreen(); }
 void updateCommonWrapper() { display.updateCommonStatus(); }
 void updateOnStepCmdWrapper() { display.updateOnStepCmdStatus(); }
-void updateODriveErrWrapper() { display.updateODriveErrBar(); }
-void updateBatVoltWrapper() { display.updateBatVoltage(); }
+
+#ifdef ODRIVE_MOTOR_PRESENT
+  void updateODriveErrWrapper() { display.updateODriveErrBar(); }
+  void updateBatVoltWrapper() { display.updateBatVoltage(); }
+#endif
 
 Adafruit_ILI9486_Teensy tft;
 
@@ -105,26 +114,30 @@ void Display::init() {
   uint8_t CDhandle = tasks.add(1000, 0, true, 7, updateOnStepCmdWrapper, "UpdateOnStepCmdScreen");
   if (CDhandle) { VLF("success"); } else { VLF("FAILED!"); }
 
-  // update the ODrive Error status 
-  VF("MSG: Setup, start ODrive Errors polling task (rate 1000 ms priority 7)... ");
-  uint8_t ODhandle = tasks.add(1000, 0, true, 7, updateODriveErrWrapper, "UpdateODriveErrors");
-  if (ODhandle) { VLF("success"); } else { VLF("FAILED!"); }
-
   // update this specific screen status
   VF("MSG: Setup, start Screen-specific status polling task (rate 2000 ms priority 7)... ");
   uint8_t SShandle = tasks.add(2000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
   if (SShandle)  { VLF("success"); } else { VLF("FAILED!"); }
 
-  // update battery voltage
-  VF("MSG: Setup, start battery status polling task (rate 5000 ms priority 7)... ");
-  uint8_t BVhandle = tasks.add(5000, 0, true, 7, updateBatVoltWrapper, "UpdateBatVolt");
-  if (BVhandle)  { VLF("success"); } else { VLF("FAILED!"); }
+  #ifdef ODRIVE_MOTOR_PRESENT
+    // update the ODrive Error status 
+    VF("MSG: Setup, start ODrive Errors polling task (rate 1000 ms priority 7)... ");
+    uint8_t ODhandle = tasks.add(1000, 0, true, 7, updateODriveErrWrapper, "UpdateODriveErrors");
+    if (ODhandle) { VLF("success"); } else { VLF("FAILED!"); }
+
+    // update battery voltage
+    VF("MSG: Setup, start battery status polling task (rate 5000 ms priority 7)... ");
+    uint8_t BVhandle = tasks.add(5000, 0, true, 7, updateBatVoltWrapper, "UpdateBatVolt");
+    if (BVhandle)  { VLF("success"); } else { VLF("FAILED!"); }
+  
+    // make sure motor power starts OFF
+    oDriveExt.odriveAzmPwr = false;
+    oDriveExt.odriveAltPwr = false;
+  #endif
 
   // draw Home screen
   tft.setFont(&Inconsolata_Bold8pt7b);
   homeScreen.draw();
-  oDriveExt.odriveAzmPwr = false;
-  oDriveExt.odriveAltPwr = false;
 }
 
 // initialize the SD card and boot screen
@@ -144,8 +157,8 @@ void Display::sdInit() {
 
   tft.fillScreen(BLACK); 
   tft.setTextColor(YELLOW);
-  display.drawPic(&StarMaps, 1, 0, 320, 480);  
-  display.drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
+  drawPic(&StarMaps, 1, 0, 320, 480);  
+  drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
   tft.setCursor(60, 80);
   tft.setTextSize(2);
   tft.printf("Initializing");
@@ -156,25 +169,28 @@ void Display::sdInit() {
 
 // select which screen to update
 void Display::updateSpecificScreen() {
-  if (display.lastScreen != display.currentScreen) {
-    display.firstDraw = true;
-    display.lastScreen = display.currentScreen;
+  if (lastScreen != currentScreen) {
+    firstDraw = true;
+    lastScreen = currentScreen;
   }
   
-  switch (display.currentScreen) {
-    case HOME_SCREEN:     homeScreen.updateThisStatus();     break;
-    case GUIDE_SCREEN:    guideScreen.updateThisStatus();    break;
-    case FOCUSER_SCREEN:  focuserScreen.updateThisStatus();  break;
-    case GOTO_SCREEN:     gotoScreen.updateThisStatus();     break;
-    case MORE_SCREEN:     moreScreen.updateThisStatus();     break;
-    case ODRIVE_SCREEN:   oDriveScreen.updateThisStatus();   break;
-    case SETTINGS_SCREEN: settingsScreen.updateThisStatus(); break;
-    case ALIGN_SCREEN:    alignScreen.updateThisStatus();    break;
-    case CATALOG_SCREEN:  catalogScreen.updateThisStatus();  break;
-    case PLANETS_SCREEN:  planetsScreen.updateThisStatus();  break;
-    case CUST_CAT_SCREEN: catalogScreen.updateThisStatus();  break;
+  switch (currentScreen) {
+    case HOME_SCREEN:       homeScreen.updateThisStatus();      break;
+    case GUIDE_SCREEN:      guideScreen.updateThisStatus();     break;
+    case FOCUSER_SCREEN:    dCfocuserScreen.updateThisStatus(); break;
+    case GOTO_SCREEN:       gotoScreen.updateThisStatus();      break;
+    case MORE_SCREEN:       moreScreen.updateThisStatus();      break;
+    case SETTINGS_SCREEN:   settingsScreen.updateThisStatus();  break;
+    case ALIGN_SCREEN:      alignScreen.updateThisStatus();     break;
+    case CATALOG_SCREEN:    catalogScreen.updateThisStatus();   break;
+    case PLANETS_SCREEN:    planetsScreen.updateThisStatus();   break;
+    case CUST_CAT_SCREEN:   catalogScreen.updateThisStatus();   break;
+    case XSTATUS_SCREEN:                                        break;
+    #ifdef ODRIVE_MOTOR_PRESENT
+      case ODRIVE_SCREEN:   oDriveScreen.updateThisStatus();    break;
+    #endif
   }
-  display.firstDraw = false;
+  firstDraw = false;
 
   tasks.yield(100);
 }
@@ -282,63 +298,25 @@ void Display::setDayNight() {
   }
 }
 
-// --------------------------------------------------------------------------
-// copied this from ProcessCmds.cpp since the following is declared private:
-#define L_CE_NONE                    "No Errors"
-#define L_CE_0                       "reply 0"
-#define L_CE_CMD_UNKNOWN             "command unknown"
-#define L_CE_REPLY_UNKNOWN           "invalid reply"
-#define L_CE_PARAM_RANGE             "parameter out of range"
-#define L_CE_PARAM_FORM              "bad parameter format"
-#define L_CE_ALIGN_FAIL              "align failed"
-#define L_CE_ALIGN_NOT_ACTIVE        "align not active"
-#define L_CE_NOT_PARKED_OR_AT_HOME   "not parked or at home"
-#define L_CE_PARKED                  "already parked"
-#define L_CE_PARK_FAILED             "park failed"
-#define L_CE_NOT_PARKED              "not parked"
-#define L_CE_NO_PARK_POSITION_SET    "no park position set"
-#define L_CE_GOTO_FAIL               "goto failed"
-#define L_CE_LIBRARY_FULL            "library full"
-#define L_CE_GOTO_ERR_BELOW_HORIZON  "goto below horizon"
-#define L_CE_GOTO_ERR_ABOVE_OVERHEAD "goto above overhead"
-#define L_CE_SLEW_ERR_IN_STANDBY     "slew in standby"
-#define L_CE_SLEW_ERR_IN_PARK        "slew in park"
-#define L_CE_GOTO_ERR_GOTO           "already in goto"
-#define L_CE_SLEW_ERR_OUTSIDE_LIMITS "outside limits"
-#define L_CE_SLEW_ERR_HARDWARE_FAULT "hardware fault"
-#define L_CE_MOUNT_IN_MOTION         "mount in motion"
-#define L_CE_GOTO_ERR_UNSPECIFIED    "other"
-#define L_CE_UNK                     "unknown"
-
-static const char cmdErrStr[30][25] = {
-  L_CE_NONE, L_CE_0, L_CE_CMD_UNKNOWN, L_CE_REPLY_UNKNOWN, L_CE_PARAM_RANGE,
-  L_CE_PARAM_FORM, L_CE_ALIGN_FAIL, L_CE_ALIGN_NOT_ACTIVE, L_CE_NOT_PARKED_OR_AT_HOME,
-  L_CE_PARKED, L_CE_PARK_FAILED, L_CE_NOT_PARKED, L_CE_NO_PARK_POSITION_SET, L_CE_GOTO_FAIL,
-  L_CE_LIBRARY_FULL, L_CE_GOTO_ERR_BELOW_HORIZON, L_CE_GOTO_ERR_ABOVE_OVERHEAD,
-  L_CE_SLEW_ERR_IN_STANDBY, L_CE_SLEW_ERR_IN_PARK, L_CE_GOTO_ERR_GOTO, L_CE_SLEW_ERR_OUTSIDE_LIMITS,
-  L_CE_SLEW_ERR_HARDWARE_FAULT, L_CE_MOUNT_IN_MOTION, L_CE_GOTO_ERR_UNSPECIFIED, L_CE_UNK};
-// ----------------------------------------------------------------------
-CommandError commandError = CE_NONE;; 
-
 // ============ OnStep Command Errors ===============
 void Display::updateOnStepCmdStatus() {
-  if (display.currentScreen == CATALOG_SCREEN || 
-    display.currentScreen == PLANETS_SCREEN ||
-    display.currentScreen == CUST_CAT_SCREEN) return;
+  if (currentScreen == CATALOG_SCREEN || 
+    currentScreen == PLANETS_SCREEN ||
+    currentScreen == CUST_CAT_SCREEN) return;
   char cmd[40];
-  sprintf(cmd, "OnStep Err: %s", cmdErrStr[commandError]);
+  //NEEDS WORK: sprintf(cmd, "OnStep Err: %s", commandErrorStr[commandError]);
   if (!tls.isReady()) {
-    display.canvPrint(2, 454, 0, 319, C_HEIGHT, " Time and/or Date Not Set");
+    canvPrint(2, 454, 0, 319, C_HEIGHT, " Time and/or Date Not Set");
   } else {
-    display.canvPrint(2, 454, 0, 319, C_HEIGHT, cmd);
+    canvPrint(2, 454, 0, 319, C_HEIGHT, cmd);
   }
 }
 
 // ODrive AZ and ALT CONTROLLER (only) Error Status
 void Display::updateODriveErrBar() {
-  if (display.currentScreen == CATALOG_SCREEN || 
-    display.currentScreen == PLANETS_SCREEN ||
-    display.currentScreen == CUST_CAT_SCREEN) return;
+  if (currentScreen == CATALOG_SCREEN || 
+    currentScreen == PLANETS_SCREEN ||
+    currentScreen == CUST_CAT_SCREEN) return;
   int x = 2;
   int y = 473;
   int label_x = 160;
@@ -349,8 +327,8 @@ void Display::updateODriveErrBar() {
   tft.setCursor(label_x, y);
   tft.print("ALT Ctrl err:");
   
-  display.canvPrint(        data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(AZM_MOTOR, AXIS));
-  display.canvPrint(label_x+data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(ALT_MOTOR, AXIS));
+  canvPrint(        data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(AZM_MOTOR, AXIS));
+  canvPrint(label_x+data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(ALT_MOTOR, AXIS));
 
   // sound varying frequency alarm if Motor and Encoders positioins are too far apart
   oDriveExt.MotorEncoderDelta();
@@ -360,7 +338,7 @@ void Display::updateODriveErrBar() {
 void Display::drawMenuButtons() {
   int y_offset = 0;
   int x_offset = 0;
-  tft.setTextColor(display.textColor);
+  tft.setTextColor(textColor);
   tft.setFont(&UbuntuMono_Bold11pt7b); 
   
   // *************** MENU MAP ****************
@@ -369,56 +347,64 @@ void Display::drawMenuButtons() {
   // Guide----------| Gu | Ho | Fo | Al | Mo |
   // Focuser--------| Fo | Ho | Gu | GT | Mo |
   // GoTo-----------| GT | Ho | Fo | Gu | Mo |
-  // More & (CATs)--| Mo | GT | Se | Od | Al |
-  // ODrive---------| Od | Ho | Se | Al | Xs |
-  // Extended Status| Xs | Ho | Se | Al | Od |
-  // Settings-------| Se | Ho | Fo | Al | Od |
-  // Alignment------| Al | Ho | Fo | Gu | Od |
+
+  // if ODRIVE_PRESENT then use this menu structure
+  //  More & (CATs)--| Mo | GT | Se | Od | Al |
+  //  ODrive---------| Od | Ho | Se | Al | Xs |
+  //  Extended Status| Xs | Ho | Se | Al | Od |
+  //  Settings-------| Se | Ho | Fo | Al | Od |
+  //  Alignment------| Al | Ho | Fo | Gu | Od |
+  // else if not ODRIVE_PRESENT use this menu structure
+  //  More & (CATs)--| Mo | GT | Se | Gu | Al |
+  //  Extended Status| Xs | Ho | Se | Al | Mo |
+  //  Settings-------| Se | Ho | Xs | Al | Mo |
+  //  Alignment------| Al | Ho | Fo | Gu | Mo |
+
   
-  switch(display.currentScreen) {
+  switch(currentScreen) {
     case HOME_SCREEN: 
       x_offset = 0;
       y_offset = 0;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "FOCUS");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "FOCUS");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GO TO");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GO TO");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
       break;
 
    case GUIDE_SCREEN:
       x_offset = 0;
       y_offset = 0;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "FOCUS");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "FOCUS");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ALIGN");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ALIGN");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
       break;
 
    case FOCUSER_SCREEN:
       x_offset = 0;
       y_offset = 0;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GO TO");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GO TO");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
       break;
@@ -426,91 +412,107 @@ void Display::drawMenuButtons() {
    case GOTO_SCREEN:
       x_offset = 0;
       y_offset = 0;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "FOCUS");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "FOCUS");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
       break;
       
    case MORE_SCREEN:
       x_offset = 0;
       y_offset = 0;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GO TO");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GO TO");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "SETng");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "SETng");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ODRIV");
+
+      #ifdef ODRIVE_MOTOR_PRESENT
+        drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ODRIV");
+      #elif
+        drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
+      #endif
+
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ALIGN");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ALIGN");
       break;
 
+    #ifdef ODRIVE_MOTOR_PRESENT
     case ODRIVE_SCREEN: 
       x_offset = 0;
       y_offset = 0;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "SETng");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "SETng");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ALIGN");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ALIGN");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "xSTAT");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "xSTAT");
       break;
+    #endif
     
     case SETTINGS_SCREEN: 
       x_offset = 0;
       y_offset = 0;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "FOCUS");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "xSTAT");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ALIGN");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ALIGN");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ODRIV");
+      #ifdef ODRIVE_MOTOR_PRESENT
+        drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ODRIV");
+      #elif
+        drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
+      #endif  
       break;
 
     case ALIGN_SCREEN: 
       x_offset = 0;
       y_offset = 0;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET+3, MENU_TEXT_Y_OFFSET, "HOME");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "FOCUS");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "FOCUS");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ODRIV");
+      #ifdef ODRIVE_MOTOR_PRESENT
+        drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "ODRIV");
+      #elif
+        drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET-4, MENU_TEXT_Y_OFFSET, ".MORE.");
+      #endif  
       break;
 
    default: // HOME Screen
       x_offset = 0;
       y_offset = 0;
-       display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
+       drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, "GUIDE");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET,  "FOCUS");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET,  "FOCUS");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET,  "GO TO");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET,  "GO TO");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      display.drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, ".MORE.");
+      drawButton(MENU_X + x_offset, MENU_Y + y_offset, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, BUTTON_OFF, MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, ".MORE.");
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
       break;
@@ -571,25 +573,25 @@ void Display::drawCommonStatusLabels() {
 
 // Update Battery Voltage
 void Display::updateBatVoltage() {
-  display.currentBatVoltage = oDriveExt.getODriveBusVoltage();
-  if ((display.currentBatVoltage != display.lastBatVoltage) || display.firstDraw) {
-    if (display.currentBatVoltage < BATTERY_LOW_VOLTAGE) {
+  currentBatVoltage = oDriveExt.getODriveBusVoltage();
+  if ((currentBatVoltage != lastBatVoltage) || firstDraw) {
+    if (currentBatVoltage < BATTERY_LOW_VOLTAGE) {
       tft.setCursor(140, 40);
-      tft.print(display.currentBatVoltage);
+      tft.print(currentBatVoltage);
     } else {
       tft.setCursor(140, 40);
-      tft.print(display.currentBatVoltage);
+      tft.print(currentBatVoltage);
     }
-    display.lastBatVoltage = display.currentBatVoltage;
+    lastBatVoltage = currentBatVoltage;
   }
 }
 
 // UpdateCommon Status - Real time data update for the particular labels printed above
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
-  if (display.currentScreen == CATALOG_SCREEN || 
-      display.currentScreen == PLANETS_SCREEN ||
-      display.currentScreen == CUST_CAT_SCREEN) return;
+  if (currentScreen == CATALOG_SCREEN || 
+      currentScreen == PLANETS_SCREEN ||
+      currentScreen == CUST_CAT_SCREEN) return;
 
   // One Time update the SHC LST and Latitude if GPS locked
   if (tls.isReady() && firstGPS) {
@@ -601,86 +603,91 @@ void Display::updateCommonStatus() {
   int y_offset = 0;
   // Column 1
   // Current RA, Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-  display.getLocalCmdTrim(":GR#", ra_hms);
-  if ((strcmp(currentRA, ra_hms)) || display.firstDraw) {
-   display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
+  getLocalCmdTrim(":GR#", ra_hms);
+  if ((strcmp(currentRA, ra_hms)) || firstDraw) {
+   canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
     strcpy(currentRA, ra_hms);
   }
 
 // Target RA, Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
   y_offset +=COM_LABEL_Y_SPACE; 
-  display.getLocalCmdTrim(":Gr#", tra_hms);
-  if ((strcmp(currentTargRA, tra_hms)) || display.firstDraw) {
-    display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tra_hms);
+  getLocalCmdTrim(":Gr#", tra_hms);
+  if ((strcmp(currentTargRA, tra_hms)) || firstDraw) {
+    canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tra_hms);
     strcpy(currentTargRA, tra_hms);
   }
 
 // Current DEC
    y_offset +=COM_LABEL_Y_SPACE; 
-  display.getLocalCmdTrim(":GD#", dec_dms);
-  if ((strcmp(currentDEC, dec_dms)) || display.firstDraw) {
-    display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, dec_dms);
+  getLocalCmdTrim(":GD#", dec_dms);
+  if ((strcmp(currentDEC, dec_dms)) || firstDraw) {
+    canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, dec_dms);
     strcpy(currentDEC, dec_dms);
   }
 
   // Target DEC
   y_offset +=COM_LABEL_Y_SPACE;  
-  display.getLocalCmdTrim(":Gd#", tdec_dms); 
-  if ((strcmp(currentTargDEC, tdec_dms)) || display.firstDraw) {
-    display.canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tdec_dms);
+  getLocalCmdTrim(":Gd#", tdec_dms); 
+  if ((strcmp(currentTargDEC, tdec_dms)) || firstDraw) {
+    canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tdec_dms);
     strcpy(currentTargDEC, tdec_dms);
   }
 
   // ============ Column 2 ==============
   y_offset =0;
-  char azmDMS[10] = "";
-  char altDMS[11] = "";
-  
+
   // === Show both Target and Current ALT and AZM ===
 
   // Calculate Target AZM / ALT from Column 1 (:Gr#, :Gd#, target RA/DEC)
   // first, convert them to Double
-  shc.hmsToDouble(&currentTargRA_d, currentTargRA);
-  shc.dmsToDouble(&currentTargDEC_d, currentTargDEC, true, true);
+  //shc.hmsToDouble(&currentTargRA_d, currentTargRA);
+  //shc.dmsToDouble(&currentTargDEC_d, currentTargDEC, true, true);
  
   // convert to Horizon
-  currentTargRA_d *= 15;
-  cat_mgr.EquToHor(currentTargRA_d, currentTargDEC_d, &talt_d, &tazm_d);
+ // currentTargRA_d *= 15;
+  //cat_mgr.EquToHor(currentTargRA_d, currentTargDEC_d, &tAlt_d, &tAzm_d);
 
   // Get Current ALT and AZ and display them as Double
-  display.getLocalCmdTrim(":GZ#", azmDMS); // DDD*MM'SS# 
-  shc.dmsToDouble(&azm_d, azmDMS, false, true);
+  getLocalCmdTrim(":GZ#", cAzmDMS); // DDD*MM'SS# 
+  shc.dmsToDouble(&cAzm_d, cAzmDMS, false, true);
 
-  display.getLocalCmdTrim(":GA#", altDMS);	// sDD*MM'SS#
-  shc.dmsToDouble(&alt_d, altDMS, true, true);
+  getLocalCmdTrim(":GA#", cAltDMS);	// sDD*MM'SS#
+  shc.dmsToDouble(&cAlt_d, cAltDMS, true, true);
+
+  // Get Target ALT and AZ and display them as Double
+  getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
+  shc.dmsToDouble(&tAzm_d, tAzmDMS, false, true);
+
+  getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
+  shc.dmsToDouble(&tAlt_d, tAltDMS, true, true);
 
   //--Current-- AZM float
-  if ((current_azm != azm_d) || display.firstDraw) { 
-    display.canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, azm_d);
-    current_azm = azm_d;
+  if ((current_cAzm != cAzm_d) || firstDraw) { 
+    canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAzm_d);
+    current_cAzm = cAzm_d;
   }
 
   // --Target-- AZM in degrees float
   y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_tazm != tazm_d) || display.firstDraw) {
-    display.canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tazm_d);
-    current_tazm = tazm_d;
+  if ((current_tAzm != tAzm_d) || firstDraw) {
+    canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAzm_d);
+    current_tAzm = tAzm_d;
   }
 
   // --Current-- ALT
   y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_alt != alt_d) || display.firstDraw) {
-    display.canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, alt_d);
-    current_alt = alt_d;
+  if ((current_cAlt != cAlt_d) || firstDraw) {
+    canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAlt_d);
+    current_cAlt = cAlt_d;
   }
   
   // --Target-- ALT in degrees
   y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_talt != talt_d) || display.firstDraw) {
-    display.canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, talt_d);
-    current_talt = talt_d;
+  if ((current_tAlt != tAlt_d) || firstDraw) {
+    canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAlt_d);
+    current_tAlt = tAlt_d;
   }
-  display.firstDraw = false;
+  firstDraw = false;
 }
 
 // draw a picture -This member function is a copy from rDUINOScope but with 

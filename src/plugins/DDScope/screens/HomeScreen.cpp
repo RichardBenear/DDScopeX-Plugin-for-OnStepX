@@ -4,11 +4,13 @@
 // Author: Richard Benear 3/20/21
 
 #include "HomeScreen.h"
-#include "../display/Display.h"
-#include "../odriveExt/ODriveExt.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../../../telescope/mount/Mount.h"
 #include "../../../lib/tasks/OnTask.h"
+
+#ifdef ODRIVE_MOTOR_PRESENT
+  #include "../odriveExt/ODriveExt.h"
+#endif
 
 // Column 1 Home Screen
 #define COL1_LABELS_X            3
@@ -43,92 +45,81 @@
 
 #define MOTOR_CURRENT_WARNING    2.0  // Warning when over 2 amps....coil heating occuring
 
+// ------------ Page Drawing Support ----------------
+// Modify the following strings to customize the Home Screen
+// Column 1 Status strings
+#define COL_1_NUM_ROWS 8
+
+#define COL_1_ROW_1_S_STR "Time-----:"
+#define COL_1_ROW_2_S_STR "LST------:"
+#define COL_1_ROW_3_S_STR "Latitude-:"
+#define COL_1_ROW_4_S_STR "Longitude:"
+#define COL_1_ROW_5_S_STR "Temperat-:"
+#define COL_1_ROW_6_S_STR "Humidity-:"
+#define COL_1_ROW_7_S_STR "Dew Point:"
+#define COL_1_ROW_8_S_STR "Altitude-:"
+
+static const char colOneStatusStr[COL_1_NUM_ROWS][12] = {
+  COL_1_ROW_1_S_STR, COL_1_ROW_2_S_STR, COL_1_ROW_3_S_STR, COL_1_ROW_4_S_STR,
+  COL_1_ROW_5_S_STR, COL_1_ROW_6_S_STR, COL_1_ROW_7_S_STR, COL_1_ROW_8_S_STR};
+
+// Column 2 Status strings
+#define COL_2_NUM_ROWS 6
+
+#define COL_2_ROW_1_S_STR "AZM enc deg:"
+#define COL_2_ROW_2_S_STR "ALT enc deg:"
+#define COL_2_ROW_3_S_STR "AZM Ibus---:"
+#define COL_2_ROW_4_S_STR "ALT Ibus---:"
+#define COL_2_ROW_5_S_STR "AZM MotTemp:"
+#define COL_2_ROW_6_S_STR "ALT MotTemp:"
+
+static const char colTwoStatusStr[COL_2_NUM_ROWS][14] = {
+  COL_2_ROW_1_S_STR, COL_2_ROW_2_S_STR, COL_2_ROW_3_S_STR, COL_2_ROW_4_S_STR,
+  COL_2_ROW_5_S_STR, COL_2_ROW_6_S_STR};
+
+// Column 1 Command strings
+#define COL_1_ROW_1_C_STR ":GL#"
+#define COL_1_ROW_2_C_STR ":GS#"
+#define COL_1_ROW_3_C_STR ":Gt#"
+#define COL_1_ROW_4_C_STR ":Gg#"
+#define COL_1_ROW_5_C_STR ":GX9A#"
+#define COL_1_ROW_6_C_STR ":GX9C#"
+#define COL_1_ROW_7_C_STR ":GX9E#"
+#define COL_1_ROW_8_C_STR ":GX9D#"
+
+static const char colOneCmdStr[COL_1_NUM_ROWS][8] = {
+  COL_1_ROW_1_C_STR, COL_1_ROW_2_C_STR, COL_1_ROW_3_C_STR, COL_1_ROW_4_C_STR,
+  COL_1_ROW_5_C_STR, COL_1_ROW_6_C_STR, COL_1_ROW_7_C_STR, COL_1_ROW_8_C_STR};
+
+
 // ============================================
 // ======= Draw Base content of HOME PAGE =====
 // ============================================
 void HomeScreen::draw() {
-  display.currentScreen = HOME_SCREEN;
-  display.setDayNight();
+  currentScreen = HOME_SCREEN;
+  setDayNight();
   tft.setTextSize(1);
-  tft.setTextColor(display.textColor);
-  tft.fillScreen(display.pgBackground);
-  display.drawMenuButtons();
-  display.drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
-  tft.drawFastVLine(165, 155, 165,display.textColor);
-  display.drawCommonStatusLabels();
+  tft.setTextColor(textColor);
+  tft.fillScreen(pgBackground);
+  drawMenuButtons();
+  drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
+  tft.drawFastVLine(165, 155, 165,textColor);
+  drawCommonStatusLabels();
   tft.setFont(&Inconsolata_Bold8pt7b);
   
   //========== Status Text ===========
   // Draw Status Labels for Real Time data only here, no data displayed
   int y_offset = 0;
-  
-  // Show Current Local Time
-  tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
-  tft.print("Time-----:");
+  for (int i=0; i<COL_1_NUM_ROWS; i++) {
+    tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
+    tft.print(colOneStatusStr[i]);
+  }
 
-  // Show LST
-  y_offset +=COL1_LABEL_SPACING;
-  tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
-  tft.print("LST------:");
-  
-  // Display Latitude
-  y_offset +=COL1_LABEL_SPACING;
-  tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
-  tft.print("Latitude-:");
-
-  // Display Longitude
-  y_offset +=COL1_LABEL_SPACING;
-  tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
-  tft.print("Longitude:");
-
-  // Display ambient Temperature
-  y_offset +=COL1_LABEL_SPACING;
-  tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
-  tft.print("Temperat-:");
-
-  // Display ambient Humidity
-  y_offset +=COL1_LABEL_SPACING;
-  tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
-  tft.print("Humidity-:");
-
-  // Display Dew Point
-  y_offset +=COL1_LABEL_SPACING;
-  tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
-  tft.print("Dew Point:");
-  
-  // Display Altitude
-  y_offset +=COL1_LABEL_SPACING;
-  tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
-  tft.print("Altitude-:");
-
-//======= 2nd Column =======
-// Motor encoder positions
   y_offset = 0;
-  tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
-  tft.print("AZM enc deg:");
-
-  y_offset +=COL2_LABEL_SPACING;
-  tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
-  tft.print("ALT enc deg:");
-
-  // Motor currents
-  y_offset +=COL2_LABEL_SPACING;
-  tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
-  tft.print("AZM Ibus---:");
-
-  y_offset +=COL2_LABEL_SPACING;
-  tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
-  tft.print("ALT Ibus---:");
-
-  // ALT Motor Temperature
-  y_offset +=COL2_LABEL_SPACING;
-  tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
-  tft.print("ALT MotTemp:");
-
-   // AZ Motor Temperature
-  y_offset +=COL2_LABEL_SPACING;
-  tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
-  tft.print("AZM MotTemp:");
+  for (int i=0; i<COL_2_NUM_ROWS; i++) {
+    tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
+    tft.print(colTwoStatusStr[i]);
+  }
 }
 
 // update multiple status items
@@ -142,146 +133,114 @@ void HomeScreen::updateThisStatus() {
 // =================================================
 // ============ Update HOME Screen Status ============
 // =================================================
-// Column 1 
+// Column 1 poll updates
 void HomeScreen::updateStatusCol1() {
   char xchReply[10]="";
-  int y_offset = 0; 
+  int y_offset = 0;
 
-  // Show Local Time
-  display.getLocalCmdTrim(":GL#", xchReply); 
-  if (strcmp(curTime, xchReply) !=0 || display.firstDraw || tls.isReady()) {
-    display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
-    strcpy(curTime, xchReply);
-  }
-
-  // Show LST
-  y_offset +=COL1_LABEL_SPACING;
-  display.getLocalCmdTrim(":GS#", xchReply); 
-  if (strcmp(curLST, xchReply)!=0 || display.firstDraw || tls.isReady()) { 
-    display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
-    strcpy(curLST, xchReply);
-  }
-  
-  y_offset +=COL1_LABEL_SPACING;
-  // Show Latitude
-  display.getLocalCmdTrim(":Gt#", xchReply); 
-  if (strcmp(curLatitude, xchReply)!=0 || display.firstDraw || tls.isReady()) {
-    display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
-    strcpy(curLatitude, xchReply);
-  }
-
-  // Show Longitude
-  y_offset +=COL1_LABEL_SPACING;
-  display.getLocalCmdTrim(":Gg#", xchReply); 
-  if (strcmp(curLongitude, xchReply)!=0 || display.firstDraw || tls.isReady()) {
-    display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
-    strcpy(curLongitude, xchReply);
-  }
-
-  // Ambient Temperature
-  y_offset +=COL1_LABEL_SPACING;
-  display.getLocalCmdTrim(":GX9A#", xchReply); 
-  double tempF = ((atof(xchReply)*9)/5) + 32;
-  sprintf(xchReply, "%3.1f F", tempF); // convert back to string to right justify
-  if (strcmp(curTemp, xchReply)!=0 || display.firstDraw) {
-    display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
-    strcpy(curTemp, xchReply);
-  }
-   
-  // Ambient Humidity
-  y_offset +=COL1_LABEL_SPACING;
-  display.getLocalCmdTrim(":GX9C#", xchReply); 
-  if (strcmp(curHumidity, xchReply)!=0 || display.firstDraw) {
-    display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
-    strcpy(curHumidity, xchReply);
-  }
-  
-  // Ambient Dew Point
-  y_offset +=COL1_LABEL_SPACING;
-  display.getLocalCmdTrim(":GX9E#", xchReply); 
-  if (strcmp(curDewpoint, xchReply)!=0 || display.firstDraw) {
-    display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
-    strcpy(curDewpoint, xchReply);
-  }  
-    
-  // Show Altitude
-  y_offset +=COL1_LABEL_SPACING;
-  display.getLocalCmdTrim(":GX9D#", xchReply); // Note: this command is not supported anymore???
-  if (strcmp(curAlti, xchReply)!=0 || display.firstDraw) {
-    display.canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
-    strcpy(curAlti, xchReply);
+  for (int i=0; i<COL_1_NUM_ROWS; i++) {
+    getLocalCmdTrim(colOneCmdStr[i], xchReply); 
+    if (strcmp(curCol1[i], xchReply) !=0 || firstDraw) {
+      canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
+      strcpy(curCol1[i], xchReply);
+    }
+    y_offset +=COL1_LABEL_SPACING;
   }
 }
 
-// =================================================
-// ============ Update Column 2 Status =============
-// =================================================
-// Show ODrive encoder positions
-// AZ encoder
+// Column 2 poll updates
 void HomeScreen::updateStatusCol2() {
-  int y_offset =0;
   int bitmap_width_sub = 30;
-  currentAZEncPos = oDriveExt.getEncoderPositionDeg(AZM_MOTOR);
-  if ((currentAZEncPos != lastAZEncPos) || display.firstDraw) {
-    display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZEncPos);
+  int y_offset =0;
+
+  #ifdef ODRIVE_MOTOR_PRESENT
+    // Show ODrive AZM encoder positions
+    currentAZEncPos = oDriveExt.getEncoderPositionDeg(AZM_MOTOR);
+  #elif
+    currentAZEncPos = 0; // needs to be defined
+  #endif
+  if ((currentAZEncPos != lastAZEncPos) || firstDraw) {
+    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZEncPos);
     lastAZEncPos = currentAZEncPos;
   }
   
   // ALT encoder
   y_offset +=COL1_LABEL_SPACING;
-  currentALTEncPos = oDriveExt.getEncoderPositionDeg(ALT_MOTOR);
-  if ((currentALTEncPos != lastALTEncPos) || display.firstDraw) {
-    display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTEncPos);
+  #ifdef ODRIVE_MOTOR_PRESENT
+    // Show ODrive ALT encoder positions
+    currentALTEncPos = oDriveExt.getEncoderPositionDeg(ALT_MOTOR);
+  #elif
+    currentALTEncPos = 0; // needs to be defined
+  #endif
+  if ((currentALTEncPos != lastALTEncPos) || firstDraw) {
+    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTEncPos);
     lastALTEncPos = currentALTEncPos;
   }
 
-  // Show ODrive motor currents
   // AZ current
   y_offset +=COL1_LABEL_SPACING;
-  currentAZMotorCur = oDriveExt.getMotorCurrent(AZM_MOTOR);
-  if ((currentAZMotorCur != lastAZMotorCur) || display.firstDraw) {
+  #ifdef ODRIVE_MOTOR_PRESENT
+    // Show ODrive AZM motor current
+    currentAZMotorCur = oDriveExt.getMotorCurrent(AZM_MOTOR);
+  #elif
+    currentAZMotorCur = 0; // needs to be defined
+  #endif
+  if ((currentAZMotorCur != lastAZMotorCur) || firstDraw) {
     if (lastAZMotorCur > MOTOR_CURRENT_WARNING) {
-      display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur);
+      canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur);
     } else {
-      display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur);
+      canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur);
     }
   lastAZMotorCur = currentAZMotorCur;
   }
   
   // ALT current
   y_offset +=COL1_LABEL_SPACING;
-  currentALTMotorCur = oDriveExt.getMotorCurrent(ALT_MOTOR);
-  if ((currentALTMotorCur != lastALTMotorCur) || display.firstDraw) {
+  #ifdef ODRIVE_MOTOR_PRESENT
+    // Show ODrive ALT motor current
+    currentALTMotorCur = oDriveExt.getMotorCurrent(ALT_MOTOR);
+  #elif
+    currentALTMotorCur = 0; // needs to be defined
+  #endif
+  if ((currentALTMotorCur != lastALTMotorCur) || firstDraw) {
     if (lastALTMotorCur > MOTOR_CURRENT_WARNING) {
-      display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur);
+      canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur);
     } else {
-      display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur);
+      canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur);
     }
   lastALTMotorCur = currentALTMotorCur;
-  }
- 
-  // ALT Motor Temperature
-  y_offset +=COL1_LABEL_SPACING;
-  currentALTMotorTemp = oDriveExt.getMotorTemp(ALT_MOTOR);
-  if ((currentALTMotorTemp != lastALTMotorTemp) || display.firstDraw) {
-    if (currentALTMotorTemp >= 120) { // make box red
-      display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
-    } else {
-      display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
-    }
-    lastALTMotorTemp = currentALTMotorTemp;
   }
 
   // AZ Motor Temperature
   y_offset +=COL1_LABEL_SPACING;
-  currentAZMotorTemp = oDriveExt.getMotorTemp(AZM_MOTOR);
-  if ((currentAZMotorTemp != lastAZMotorTemp) || display.firstDraw) {
+  #ifdef ODRIVE_MOTOR_PRESENT
+    currentAZMotorTemp = oDriveExt.getMotorTemp(AZM_MOTOR);
+  #elif
+    currentAZMotorTemp = 0; // needs to be defined
+  #endif
+  if ((currentAZMotorTemp != lastAZMotorTemp) || firstDraw) {
     if (currentAZMotorTemp >= 120) { // make box red
-    display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
+    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
     } else {
-      display.canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
+      canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
     }
     lastAZMotorTemp = currentAZMotorTemp;
+  }
+
+  // ALT Motor Temperature
+  y_offset +=COL1_LABEL_SPACING;
+  #ifdef ODRIVE_MOTOR_PRESENT
+    currentALTMotorTemp = oDriveExt.getMotorTemp(ALT_MOTOR);
+    #elif
+    currentALTMotorTemp = 0; // needs to be defined
+  #endif
+  if ((currentALTMotorTemp != lastALTMotorTemp) || firstDraw) {
+    if (currentALTMotorTemp >= 120) { // make box red
+      canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
+    } else {
+      canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
+    }
+    lastALTMotorTemp = currentALTMotorTemp;
   }
 }
 
@@ -294,25 +253,25 @@ void HomeScreen::updateMountStatus() {
 
   // Parking Status
   if (lCmountStatus.isParked()) {
-    display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Parked    ");
+    canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Parked    ");
   } else { 
-    display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Not Parked");
+    canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Not Parked");
   } 
   
   // Slewing
   y_offset +=COL1_LABEL_SPACING;
   if (lCmountStatus.isSlewing()) {
-    display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, "  Slewing   ");
+    canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, "  Slewing   ");
   } else {
-    display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Not Slewing");
+    canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, " Not Slewing");
   }
 
   // Homing Status
   y_offset +=COL1_LABEL_SPACING;
   if (lCmountStatus.isHome()) {
-    display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, "  Homed ");   
+    canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, "  Homed ");   
   } else { 
-    display.canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, "Not Home");
+    canvPrint(COL2_LABELS_X+x_offset, COL2_LABELS_Y, y_offset, C_WIDTH+30, C_HEIGHT, "Not Home");
   }
 }
 
@@ -320,89 +279,89 @@ void HomeScreen::updateMountStatus() {
 // ============ Update Home Buttons ==============
 // ===============================================
 void HomeScreen::updateHomeButtons() {
-  if (display.screenTouched || display.firstDraw || display.refreshScreen) {
-    display.refreshScreen = false;
-    if (display.screenTouched) display.refreshScreen = true;
+  if (screenTouched || firstDraw || refreshScreen) {
+    refreshScreen = false;
+    if (screenTouched) refreshScreen = true;
 
     int x_offset = 0;
     int y_offset = 0;
-    tft.setTextColor(display.textColor);
+    tft.setTextColor(textColor);
     
     // ============== Column 1 ===============
     // Enable / Disable Azimuth Motor
     if (!oDriveExt.odriveAzmPwr) {
-      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN AZM   ");
+      drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN AZM   ");
     } else { //motor on
-      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "AZM Enabled");
+      drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "AZM Enabled");
     }
     // Enable / Disable Altitude Motor
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
     if (!oDriveExt.odriveAltPwr) {
-      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN ALT   ");
+      drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN ALT   ");
     } else { //motor on
-      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,   "ALT Enabled");
+      drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,   "ALT Enabled");
     }
     // Stop all movement
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
     if (stopButton) {
-      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,    "AllStopped");
+      drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,    "AllStopped");
       stopButton = false;
     } else { 
-      display.drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET+5, ACTION_TEXT_Y_OFFSET, "  STOP!  ");
+      drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET+5, ACTION_TEXT_Y_OFFSET, "  STOP!  ");
     }
 
     // ============== Column 2 ===============
     y_offset = 0;
     // Start / Stop Tracking
     if (!lCmountStatus.isTracking()) { 
-      display.drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "Start Track");
+      drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "Start Track");
     } else { 
-      display.drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,     " Tracking  ");
+      drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,     " Tracking  ");
     }
     
     // Night / Day Mode
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-    if (!display.nightMode) {
-      display.drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "Night Mode");   
+    if (!nightMode) {
+      drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "Night Mode");   
     } else {
-      display.drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, " Day Mode");          
+      drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, " Day Mode");          
     }
     
     // Home Telescope
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
     if (gotoHome) {
-      display.drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "  Homing ");
+      drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "  Homing ");
       gotoHome = false;             
     } else {
-      display.drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "  Go Home ");
+      drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "  Go Home ");
     }  
 
     // ============== Column 3 ===============
     // Park / unPark Telescope
     y_offset = 0;
     if (lCmountStatus.isParked()) { 
-      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, " Parked ");
+      drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, " Parked ");
     } else { 
-      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Un Park ");
+      drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Un Park ");
     }
 
     // Set Park Position
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
     if (parkWasSet) {
-      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,     "Park Is Set");
+      drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,     "Park Is Set");
       parkWasSet = false;
     } else {
-      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-7, ACTION_TEXT_Y_OFFSET, "  Set Park ");
+      drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-7, ACTION_TEXT_Y_OFFSET, "  Set Park ");
     }
 
     // Turn ON / OFF Fan
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
     if (!fanOn) {
-      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "  Fan Off ");
+      drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "  Fan Off ");
     } else {
-      display.drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,   "  Fan On  ");
+      drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,   "  Fan On  ");
     }
-    display.screenTouched = false;
+    screenTouched = false;
   }
 }
 
@@ -468,11 +427,11 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     DD_CLICK;
     if (!lCmountStatus.isTracking()) {
-      display.setLocalCmd(":Te#"); // Enable Tracking
+      setLocalCmd(":Te#"); // Enable Tracking
       oDriveExt.odriveAltPwr = true;
       oDriveExt.odriveAzmPwr = true;
     } else {
-      display.setLocalCmd(":Td#"); // Disable Tracking
+      setLocalCmd(":Td#"); // Disable Tracking
     }
     return; 
   }
@@ -481,13 +440,13 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     DD_CLICK;
-    if (!display.nightMode) {
-      display.nightMode = true; // toggle on
+    if (!nightMode) {
+      nightMode = true; // toggle on
     } else {
-      display.nightMode = false; // toggle off
+      nightMode = false; // toggle off
     }
-    display.setDayNight();
-    display.firstDraw = true;
+    setDayNight();
+    firstDraw = true;
     homeScreen.draw(); 
     return;
   }
@@ -496,11 +455,11 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     DD_CLICK;
-    //display.setLocalCmd(":hF#"); // reset Home position
+    //setLocalCmd(":hF#"); // reset Home position
     //tasks.yield(4);
     _oDriveDriver->SetPosition(0, 0.0);
     _oDriveDriver->SetPosition(1, 0.0);
-    //display.setLocalCmd(":hC#"); // go HOME
+    //setLocalCmd(":hC#"); // go HOME
     gotoHome = true;
     return;
   }
@@ -511,9 +470,9 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     DD_CLICK;
     if (!lCmountStatus.isParked()) { 
-      display.setLocalCmd(":hP#"); // go Park
+      setLocalCmd(":hP#"); // go Park
     } else { // already parked
-      display.setLocalCmd(":hR#"); // Un park position
+      setLocalCmd(":hR#"); // Un park position
     }
     return;
   }
@@ -522,7 +481,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     DD_CLICK;
-    display.setLocalCmd(":hQ#"); // Set Park Position
+    setLocalCmd(":hQ#"); // Set Park Position
     parkWasSet = true;
     return;
   }

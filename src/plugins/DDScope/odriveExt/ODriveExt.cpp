@@ -7,10 +7,8 @@
 // ODrive communication via Teensy 4.0
 // Uses GitHub ODrive Arduino library
 
-#include <ODriveArduino.h>
 #include "ODriveExt.h"
 #include "src/lib/axis/motor/oDrive/ODrive.h"
-#include "../display/Display.h"
 #include "../../../telescope/mount/Mount.h"
 #include "../../../lib/tasks/OnTask.h"
 
@@ -92,18 +90,18 @@ float ODriveExt::getMotorPositionDelta(int axis) {
 void ODriveExt::MotorEncoderDelta() {
   if (odriveAzmPwr) {
     float AZposDelta = getMotorPositionDelta(AZM_MOTOR);
-    if (AZposDelta > 0.002 && AZposDelta < 0.03) display.soundFreq(AZposDelta * 50000, 20);
-    else if (AZposDelta > 0.03) display.soundFreq(3000, 20); // saturated
+    if (AZposDelta > 0.002 && AZposDelta < 0.03) soundFreq(AZposDelta * 50000, 20);
+    else if (AZposDelta > 0.03) soundFreq(3000, 20); // saturated
   }
   
   if (odriveAltPwr) {
     float ALTposDelta = getMotorPositionDelta(ALT_MOTOR);
     if (ALTposDelta > .002 && ALTposDelta < 0.03) {
-      display.soundFreq(ALTposDelta * 50000, 40);
+      soundFreq(ALTposDelta * 50000, 40);
       delay(1);
-      display.soundFreq(ALTposDelta * 40000, 40); // double beep to distinguish ALT from AZM
+      soundFreq(ALTposDelta * 40000, 40); // double beep to distinguish ALT from AZM
     }
-    else if (ALTposDelta > 0.03) display.soundFreq(3000, 40); 
+    else if (ALTposDelta > 0.03) soundFreq(3000, 40); 
   }
 }
 
@@ -243,7 +241,7 @@ void ODriveExt::demoMode(bool onState) {
   float pos_four = -0.4;
   float pos_five = 0.4;
   int demo_pos = 0;
-  display.setLocalCmd(":Q#"); // does not turn off Motor power
+  setLocalCmd(":Q#"); // does not turn off Motor power
   
   if (onState) {
     switch(demo_pos) {

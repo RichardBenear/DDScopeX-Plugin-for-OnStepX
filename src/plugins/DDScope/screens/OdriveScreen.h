@@ -6,8 +6,9 @@
 
 #include <Arduino.h>
 #include "../odriveExt/ODriveExt.h"
+#include "../display/display.h"
 
-class ODriveScreen {
+class ODriveScreen : public Display {
   public:
     void draw();
     void touchPoll(uint16_t px, uint16_t py);

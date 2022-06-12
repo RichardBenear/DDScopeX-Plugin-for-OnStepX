@@ -4,7 +4,9 @@
 #ifndef TOUCHSCREEN_H
 #define TOUCHSCREEN_H
 
-class TouchScreen {
+#include "../display/Display.h"
+
+class TouchScreen : public Display {
   public:
     void init();
     void touchScreenPoll();

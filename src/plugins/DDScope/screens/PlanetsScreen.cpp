@@ -14,7 +14,6 @@
 #include "PlanetsScreen.h"
 #include "CatalogScreen.h"
 #include "MoreScreen.h"
-#include "../display/Display.h"
 #include "../../../telescope/mount/site/Site.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 
@@ -40,18 +39,18 @@ const char PlanetNames[8][8] = {"Mercury", "Venus", "Mars", "Jupiter", "Saturn",
 
 // Initialize the PLANETS page
 void PlanetsScreen::draw() {
-    display.currentScreen = PLANETS_SCREEN;
-    display.setDayNight();
-    tft.setTextColor(display.textColor);
-    tft.fillScreen(display.pgBackground);
-    display.drawTitle(110, TITLE_TEXT_Y, "Planets");
+    currentScreen = PLANETS_SCREEN;
+    setDayNight();
+    tft.setTextColor(textColor);
+    tft.fillScreen(pgBackground);
+    drawTitle(110, TITLE_TEXT_Y, "Planets");
     tft.setFont(&Inconsolata_Bold8pt7b);
     planetPrevSel = 0;
     planetButSelPos = 2; // Mars on page entry
 
     // Get the UTC offset from Onstep 
     char utcOffset[4];
-    display.getLocalCmdTrim(":GG#", utcOffset); 
+    getLocalCmdTrim(":GG#", utcOffset); 
     utcOffset[3] = 0; // clear # character
 
     // UTC adjustment for Ephemeris code...e.g. :GG# returns 7 for my location..Ephemeris wants -6 
@@ -61,9 +60,9 @@ void PlanetsScreen::draw() {
     getPlanet(planetButSelPos); // init screen
 
     for(int row=0; row<PLANET_ROWS; row++) {
-        display.drawButton(PLANET_X, PLANET_Y+row*(PLANET_H+PLANET_Y_SPACING), PLANET_W, PLANET_H, false, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[row]);
+        drawButton(PLANET_X, PLANET_Y+row*(PLANET_H+PLANET_Y_SPACING), PLANET_W, PLANET_H, false, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[row]);
     }
-    display.drawButton(P_RETURN_X, P_RETURN_Y, P_RETURN_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "RETURN");
+    drawButton(P_RETURN_X, P_RETURN_Y, P_RETURN_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "RETURN");
 }
 
 // Need to map the index used here for selected planets to the ones used for solar system index in the Ephermeris
@@ -96,9 +95,9 @@ void PlanetsScreen::GetTime(unsigned int &hour, unsigned int &minute, unsigned i
 {
   char out[20];
   if (ut) {
-    display.getLocalCmdTrim(":GX80#", out);
+    getLocalCmdTrim(":GX80#", out);
   } else {
-    display.getLocalCmdTrim(":GL#", out);
+    getLocalCmdTrim(":GL#", out);
   }
     char2RA(out, hour, minute, second);
 }
@@ -108,9 +107,9 @@ void PlanetsScreen::GetDate(unsigned int &day, unsigned int &month, unsigned int
 {
   char out[20];
   if (ut) {
-    display.getLocalCmdTrim(":GX81#", out);
+    getLocalCmdTrim(":GX81#", out);
   } else {
-    display.getLocalCmdTrim(":GC#", out);
+    getLocalCmdTrim(":GC#", out);
   }
   char* pEnd;
   month = strtol(&out[0], &pEnd, 10);
@@ -122,7 +121,7 @@ void PlanetsScreen::GetDate(unsigned int &day, unsigned int &month, unsigned int
 void PlanetsScreen::GetLatitude(int &degree, int &minute, int &second)
 {
   char out[20];
-  display.getLocalCmdTrim(":Gt#", out);
+  getLocalCmdTrim(":Gt#", out);
   char* pEnd;
   degree = strtol(&out[0], &pEnd, 10);
   minute = strtol(&out[4], &pEnd, 10);
@@ -133,7 +132,7 @@ void PlanetsScreen::GetLatitude(int &degree, int &minute, int &second)
 void PlanetsScreen::GetLongitude(int &degree, int &minute, int &second)
 {
   char out[20];
-  display.getLocalCmdTrim(":Gg#", out);
+  getLocalCmdTrim(":Gg#", out);
   char* pEnd;
   degree = strtol(&out[0], &pEnd, 10);
   minute = strtol(&out[5], &pEnd, 10);
@@ -210,57 +209,57 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     int x = 5; int y=365; int y_off=0; int y_spc=12; int w = 180; int h=17;
     char d[14], t[14], la[14], lg[14];
 
-    tft.fillRect(x, y-y_spc, w, h,  display.butBackground);
+    tft.fillRect(x, y-y_spc, w, h,  butBackground);
     tft.setCursor(x, y);
     sprintf(d, "Date-----: %02d/%02d/%4d", monthP, dayP, yearP);
     tft.print(d);
 
-    tft.fillRect(x, y+=y_spc-y_off, w, h,  display.butBackground);
+    tft.fillRect(x, y+=y_spc-y_off, w, h,  butBackground);
     tft.setCursor(x, y+=y_spc);
     sprintf(t, "UTC Time-: %02d:%02d:%02d", hourP, minuteP, secondP);
     tft.print(t);
 
-    tft.fillRect(x, y+=y_spc-y_off, w, h,  display.butBackground);
+    tft.fillRect(x, y+=y_spc-y_off, w, h,  butBackground);
     tft.setCursor(x, y+=y_spc);
     sprintf(la, "Latitude-:  %02d:%02d:%02d", latD, latM, latS);
     tft.print(la);
 
-    tft.fillRect(x, y+=y_spc-y_off, w, h,  display.butBackground);
+    tft.fillRect(x, y+=y_spc-y_off, w, h,  butBackground);
     tft.setCursor(x, y+=y_spc);
     sprintf(lg, "Longitude: %+3d:%2d:%2d", longD, longM, longS);
     tft.print(lg);
 
     // Print the Selected Planet's coordinates and other data
     int x1 = 95; int y1=70; int y1_off=0; int y1_spc=13; int w1=220; int h1=18;
-    tft.fillRect(x1,  y1-y_spc, w1, h1,  display.butBackground);
+    tft.fillRect(x1,  y1-y_spc, w1, h1,  butBackground);
     tft.setCursor(x1, y1);
     tft.print("Name : ");
     tft.println(PlanetNames[planetButSelPos]);
 
     // Print the RA/DEC and AZ/ALT
-    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  display.butBackground);
+    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  butBackground);
     tft.setCursor(x1, y1+=y1_spc);
     tft.print("R.A. : "); tft.print(Ra); tft.print("|");
     tft.println(raCoord);
     
-    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  display.butBackground);
+    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  butBackground);
     tft.setCursor(x1, y1+=y1_spc);
     tft.print("Dec  : "); tft.print(Dec); tft.print("|");
     tft.println(decCoord);
 
-    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  display.butBackground);
+    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  butBackground);
     tft.setCursor(x1, y1+=y1_spc);
     tft.print("Azm  : ");
     tft.print(obj.horiCoordinates.azi,2);
     tft.println(" deg");
 
-    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  display.butBackground);
+    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  butBackground);
     tft.setCursor(x1, y1+=y1_spc);
     tft.print("Alt  : ");
     tft.print(obj.horiCoordinates.alt,2);
     tft.println(" deg");
 
-    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  display.butBackground);
+    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  butBackground);
     tft.setCursor(x1, y1+=y1_spc);
     tft.print("Dist : ");
     tft.print(obj.distance);
@@ -270,13 +269,13 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     float sec;
     char strg[14];
     Eph.floatingHoursToHoursMinutesSeconds(Eph.floatingHoursWithUTCOffset(obj.rise, utc), &hr, &mi, &sec); 
-    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  display.butBackground);
+    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  butBackground);
     tft.setCursor(x1, y1+=y1_spc);
     sprintf(strg, "Rise : %02dh %02dm %2.1fs", hr, mi, sec);
     tft.print(strg);
     
     Eph.floatingHoursToHoursMinutesSeconds(Eph.floatingHoursWithUTCOffset(obj.set, utc), &hr, &mi, &sec);
-    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  display.butBackground);
+    tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  butBackground);
     tft.setCursor(x1, y1+=y1_spc);
     sprintf(strg, "Set  : %02dh %02dm %2.1fs", hr, mi, sec);
     tft.print(strg);
@@ -290,11 +289,11 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     char raPrint[9], decPrint[10];
     sprintf(raPrint, "%02d:%02d:%02d", ivr1, ivr2, (int)fvr3);
     sprintf(cmd, ":Sr%02d:%02d:%02d#", ivr1, ivr2, (int)fvr3);
-    display.setLocalCmd(cmd);
+    setLocalCmd(cmd);
 
     sprintf(decPrint, "%c%02d:%02d:%02d", sign, ivd1, ivd2, (int)fvd3);  
     sprintf(cmd, ":Sd%c%02d:%02d:%02d#", sign, ivd1, ivd2, (int)fvd3);
-    display.setLocalCmd(cmd);
+    setLocalCmd(cmd);
     
     // the following 5 lines are displayed on the Catalog/More page
     CatalogScreen cs;
@@ -311,20 +310,20 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
 // Update for buttons 
 // ******************************************************
 void PlanetsScreen::updateThisStatus() {
-    if (display.screenTouched || display.firstDraw || display.refreshScreen) { 
-      display.refreshScreen = false;
-      if (display.screenTouched) display.refreshScreen = true;
+    if (screenTouched || firstDraw || refreshScreen) { 
+      refreshScreen = false;
+      if (screenTouched) refreshScreen = true;
         //VF("planetButSelPos="); VL(planetButSelPos);
         //VF("planetName=");  VL(PlanetNames[planetButSelPos]);
         // Detect which Planet selected
         if (planetButDetected) {
            
             // ERASE old: set background back to unselected and replace the previous name field
-            display.drawButton(PLANET_X, PLANET_Y+planetPrevSel*(PLANET_H+PLANET_Y_SPACING), 
+            drawButton(PLANET_X, PLANET_Y+planetPrevSel*(PLANET_H+PLANET_Y_SPACING), 
                     PLANET_W, PLANET_H, false, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[planetPrevSel]);  
             
             // DRAW new: highlight by settting background ON color for button selected
-            display.drawButton(PLANET_X, PLANET_Y+planetButSelPos*(PLANET_H+PLANET_Y_SPACING), 
+            drawButton(PLANET_X, PLANET_Y+planetButSelPos*(PLANET_H+PLANET_Y_SPACING), 
                     PLANET_W, PLANET_H, true, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[planetButSelPos]);
             
             getPlanet(planetButSelPos);
@@ -332,7 +331,7 @@ void PlanetsScreen::updateThisStatus() {
             planetButDetected = false;
             planetPrevSel = planetButSelPos;
         }
-    display.screenTouched = false; // passed back to the touchscreen handler
+    screenTouched = false; // passed back to the touchscreen handler
     }
 }
 
@@ -355,7 +354,7 @@ void PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
     // RETURN page button - reuse BACK button box size
     if (py > P_RETURN_Y && py < (P_RETURN_Y + BACK_H) && px > P_RETURN_X && px < (P_RETURN_X + P_RETURN_W)) {
       DD_CLICK;
-        display.screenTouched = false;
+        screenTouched = false;
         moreScreen.draw();
         return;
     }

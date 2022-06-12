@@ -4,6 +4,7 @@
 #define ALIGN_S_H
 
 #include <Arduino.h>
+#include "../display/Display.h"
 
 //States of the Align State machine
 typedef enum {
@@ -18,7 +19,7 @@ typedef enum {
     Write_State,
 } AlignStates;
 
-class AlignScreen {
+class AlignScreen : public Display {
   public:
     void draw();
     void touchPoll(uint16_t px, uint16_t py);

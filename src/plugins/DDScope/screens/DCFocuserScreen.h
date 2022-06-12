@@ -1,12 +1,13 @@
 // =====================================================
-// FocuserScreen.h
+// DCFocuserScreen.h
 
-#ifndef FOCUSER_S_H
-#define FOCUSER_S_H
+#ifndef DCFOCUSER_S_H
+#define DCFOCUSER_S_H
 
 #include <Arduino.h>
+#include "../display/Display.h"
 
-class FocuserScreen {
+class DCFocuserScreen : public Display {
   public:
     void draw();
     void touchPoll(uint16_t px, uint16_t py);
@@ -51,6 +52,6 @@ class FocuserScreen {
     int setPointTarget;
 };
 
-extern FocuserScreen focuserScreen;
+extern DCFocuserScreen dCfocuserScreen;
 
 #endif

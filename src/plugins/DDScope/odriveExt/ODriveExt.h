@@ -2,6 +2,7 @@
 // ODriveExt.h
 
 #include <ODriveArduino.h>
+#include "../display/Display.h"
 
 #ifndef ODRIVEEXT_H
 #define ODRIVEEXT_H
@@ -30,8 +31,7 @@ typedef struct ODriveVersion {
 template<class T> inline Print& operator <<(Print& obj, T arg) { obj.print(arg);    return obj; }
 template<>        inline Print& operator <<(Print& obj, float arg) { obj.print(arg, 4); return obj; }
 
-class ODriveExt
-{
+class ODriveExt : public Display {
   public:
     // getters
     float getEncoderPositionDeg(int axis);
@@ -46,6 +46,7 @@ class ODriveExt
     void getODriveVersion(ODriveVersion oDversion);
     float getODriveBusVoltage();
     uint32_t getODriveErrors(int axis, Component component);
+    void demoMode(bool onState);
     
     // other actions
     void setODriveVelGain(int axis, float level);
@@ -55,8 +56,6 @@ class ODriveExt
     void MotorEncoderDelta();
     void clearODriveErrors(int axis, int comp);
     
-    static void demoMode(bool onState);
-  
     // not currently used
     void clearAllODriveErrors();
     int getODriveRequestedState();

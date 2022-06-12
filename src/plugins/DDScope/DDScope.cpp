@@ -38,7 +38,6 @@ void DDScope::init() {
   // Initialize TFT Display
   VLF("MSG: Display, Initializing");
   display.init();
-  
 }
 
 DDScope dDScope;

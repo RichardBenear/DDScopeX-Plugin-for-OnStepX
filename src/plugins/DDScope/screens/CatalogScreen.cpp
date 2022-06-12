@@ -5,7 +5,6 @@
 #include "CatalogScreen.h"
 #include "MoreScreen.h"
 #include "AlignScreen.h"
-#include "../display/Display.h"
 #include "../catalog/Catalog.h"
 #include "../catalog/CatalogTypes.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -69,8 +68,8 @@ extern const char* Txt_Bayer[];
 //============ Draw the Initial Catalog Screen =====================
 //==================================================================
 void CatalogScreen::draw(int catSel) { 
-  returnToPage = display.currentScreen; // save page from where this function was called so we can return
-  display.currentScreen = CATALOG_SCREEN;
+  returnToPage = currentScreen; // save page from where this function was called so we can return
+  currentScreen = CATALOG_SCREEN;
   moreScreen.objectSelected = false;
   moreScreen.catSelected = catSel;
   tCurrentPage = 0; 
@@ -82,18 +81,18 @@ void CatalogScreen::draw(int catSel) {
   cEndOfList = false;
   shcEndOfList = false;
   
-  display.setDayNight();
-  tft.setTextColor(display.textColor);
-  tft.fillScreen(display.pgBackground);
+  setDayNight();
+  tft.setTextColor(textColor);
+  tft.fillScreen(pgBackground);
 
   // Check which Catalog is active
   if (moreScreen.catSelected == cat_mgr.numCatalogs()+1) { //This is Treasure catalog
-    display.drawTitle(90, TITLE_TEXT_Y, "Treasure");
+    drawTitle(90, TITLE_TEXT_Y, "Treasure");
     treasureCatalog = true;
     customCatalog = false;
     shcCatalog = false;
     if (!loadTreasureArray()) {
-        display.canvPrint(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Treasure");
+        canvPrint(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Treasure");
         moreScreen.draw();
         return;
     } else { 
@@ -104,12 +103,12 @@ void CatalogScreen::draw(int catSel) {
     drawTreasureCat(); // draw first page of the selected catalog
 
   } else if (moreScreen.catSelected == cat_mgr.numCatalogs()+2) { //This is Custom User catalog
-    display.drawTitle(83, TITLE_TEXT_Y, "User Catalog");
+    drawTitle(83, TITLE_TEXT_Y, "User Catalog");
     customCatalog = true;
     treasureCatalog = false;
     shcCatalog = false;
     if (!loadCustomArray()) {
-        display.canvPrint(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Custom"); 
+        canvPrint(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Custom"); 
         moreScreen.draw();
         return;
     } else {
@@ -119,7 +118,7 @@ void CatalogScreen::draw(int catSel) {
     
     // Draw the Trash can/Delete Icon bitmap; used to delete an entry in only the CUSTOM USER catalog
     uint8_t extern trash_icon[];
-    tft.drawBitmap(270, 5, trash_icon, 28, 32, display.butBackground, ORANGE);
+    tft.drawBitmap(270, 5, trash_icon, 28, 32, butBackground, ORANGE);
 
     drawCustomCat(); // draw first page of the selected catalog
 
@@ -139,7 +138,7 @@ void CatalogScreen::draw(int catSel) {
     strcpy(title, cat_mgr.catalogTitle());
     if (moreScreen.catSelected == HERSCHEL) strcpy(title, "Herschel"); else // shorten title
     if (moreScreen.catSelected == STARS) strcpy(title, "Stars"); // shorten title
-    display.drawTitle(110, TITLE_TEXT_Y, title); 
+    drawTitle(110, TITLE_TEXT_Y, title); 
     tft.setFont(); // revert to basic Arial font
     tft.setTextSize(1);
     tft.setCursor(9,25); 
@@ -155,10 +154,10 @@ void CatalogScreen::draw(int catSel) {
   }
 
   tft.setFont(&Inconsolata_Bold8pt7b);
-  display.drawButton(BACK_X, BACK_Y, BACK_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "BACK");
-  display.drawButton(NEXT_X, NEXT_Y, BACK_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "NEXT");
-  display.drawButton(RETURN_X, RETURN_Y, RETURN_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "RETURN");
-  display.drawButton(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, false, SAVE_LIB_T_X_OFF, SAVE_LIB_T_Y_OFF, "SAVE LIB");
+  drawButton(BACK_X, BACK_Y, BACK_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "BACK");
+  drawButton(NEXT_X, NEXT_Y, BACK_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "NEXT");
+  drawButton(RETURN_X, RETURN_Y, RETURN_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "RETURN");
+  drawButton(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, false, SAVE_LIB_T_X_OFF, SAVE_LIB_T_Y_OFF, "SAVE LIB");
 }
 
 // The Treasure catalog is a compilation of popular objects from :rDUINO Scope-http://www.rduinoscope.tk/index.html
@@ -285,13 +284,13 @@ void CatalogScreen::drawTreasureCat() {
   pre_tAbsIndex=0;
   
   tft.setFont(); //revert to basic Arial font
-  tft.fillRect(0,60,319,358,display.pgBackground);
+  tft.fillRect(0,60,319,358,pgBackground);
   
   tAbsRow = (tPagingArrayIndex[tCurrentPage]); // array of page 1st row indexes
   tLastPage = ((MAX_TREASURE_ROWS / NUM_CAT_ROWS_PER_SCREEN)+1);
   
   // Show Page number and total Pages
-  tft.fillRect(6, 9, 70, 12,  display.butBackground);
+  tft.fillRect(6, 9, 70, 12,  butBackground);
   tft.setFont();
   tft.setTextSize(1);
   tft.setCursor(6, 9); 
@@ -349,10 +348,10 @@ void CatalogScreen::drawTreasureCat() {
     
       // Erase text background
       tft.setCursor(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING));
-      tft.fillRect(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), 215+WIDTH_OFF, 17,  display.butBackground);
+      tft.fillRect(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), 215+WIDTH_OFF, 17,  butBackground);
 
       // get object names and put them on the buttons
-      display.drawButton(CAT_X, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), CAT_W-WIDTH_OFF, CAT_H, false, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, _tArray[tAbsRow].tObjName);
+      drawButton(CAT_X, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), CAT_W-WIDTH_OFF, CAT_H, false, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, _tArray[tAbsRow].tObjName);
                   
       // format and print the text field for this row next to the button
       // FYI: mod1_treasure.csv file field order and spacing: 7;8;7;4;9;4;9;18 = 66 total w/out semicolons, 73 with ;'s
@@ -383,7 +382,7 @@ void CatalogScreen::drawTreasureCat() {
     // stop printing data if last row on the last page
     if (tAbsRow == MAX_TREASURE_ROWS) {
       tEndOfList = true; 
-      if (tRow == 0) {display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "None above 10 deg");}
+      if (tRow == 0) {canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "None above 10 deg");}
       return; 
     }
   }
@@ -398,7 +397,7 @@ void CatalogScreen::drawCustomCat() {
   char catLine[47]=""; //hold the string that is displayed beside the button on each page
 
   // Show Page number and total Pages
-  tft.fillRect(6, 9, 70, 12,  display.butBackground);
+  tft.fillRect(6, 9, 70, 12,  butBackground);
   tft.setFont();
   tft.setTextSize(1);
   tft.setCursor(6, 9); 
@@ -410,7 +409,7 @@ void CatalogScreen::drawCustomCat() {
   tft.print(activeFilterStr[moreScreen.activeFilter]);
 
   tft.setFont(); //revert to basic Arial font
-  tft.fillRect(0,60,319,358,display.pgBackground);
+  tft.fillRect(0,60,319,358,pgBackground);
 
   cAbsRow = (cPagingArrayIndex[cCurrentPage]); // array of page 1st row indexes
   cLastPage = (cusRowEntries / NUM_CUS_ROWS_PER_SCREEN)+1;
@@ -420,7 +419,7 @@ void CatalogScreen::drawCustomCat() {
   //VF("cCurPage="); VL(cCurrentPage);
 
   // Show Page number and total Pages
-  tft.fillRect(6, 9, 70, 12,  display.butBackground);
+  tft.fillRect(6, 9, 70, 12,  butBackground);
   tft.setCursor(6, 9); tft.printf("Page "); tft.print(cCurrentPage+1);
   tft.printf(" of "); if (moreScreen.activeFilter == FM_ABOVE_HORIZON) tft.print("??"); else tft.print(cLastPage+1);
   tft.setCursor(6, 25); tft.print(activeFilterStr[moreScreen.activeFilter]);
@@ -449,10 +448,10 @@ void CatalogScreen::drawCustomCat() {
       //VF("printing row="); VL(cAbsRow);
       // Erase text background
       tft.setCursor(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING));
-      tft.fillRect(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), 215, 17,  display.butBackground);
+      tft.fillRect(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), 215, 17,  butBackground);
 
       // get object names and put them on the buttons
-      display.drawButton(CUS_X, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, false, CUS_TEXT_X_OFF, CUS_TEXT_Y_OFF, _cArray[cAbsRow].cObjName);
+      drawButton(CUS_X, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, false, CUS_TEXT_X_OFF, CUS_TEXT_Y_OFF, _cArray[cAbsRow].cObjName);
                   
       // format and print the text field for this row next to the button
       snprintf(catLine, 42, "%-4s |%-4s |%-9s |%-18s",  // 35 + 6 + NULL = 42
@@ -473,7 +472,7 @@ void CatalogScreen::drawCustomCat() {
     // stop printing data if last row on the last page
     if (cAbsRow == cusRowEntries+1) {
       cEndOfList = true; 
-      if (cRow == 0) {display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "None above 10 deg");}
+      if (cRow == 0) {canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "None above 10 deg");}
       //VF("endOfList");
       return; 
     }
@@ -489,7 +488,7 @@ void CatalogScreen::drawShcCat() {
   char catLine[47]=""; //hold the string that is displayed beside the button on each page
 
   // Show Page number and total Pages
-  tft.fillRect(6, 9, 70, 12,  display.butBackground);
+  tft.fillRect(6, 9, 70, 12,  butBackground);
   tft.setFont();
   tft.setTextSize(1);
   tft.setCursor(6, 9); 
@@ -501,7 +500,7 @@ void CatalogScreen::drawShcCat() {
   tft.print(activeFilterStr[moreScreen.activeFilter]);
 
   tft.setFont(); //revert to basic Arial font
-  tft.fillRect(0,60,319,358,display.pgBackground);
+  tft.fillRect(0,60,319,358,pgBackground);
 
   cat_mgr.setIndex(shcPagingArrayIndex[shcCurrentPage]); // array of page 1st row indexes
   if (cat_mgr.hasActiveFilter()) {
@@ -513,14 +512,14 @@ void CatalogScreen::drawShcCat() {
 
   while ((shcRow < NUM_CAT_ROWS_PER_SCREEN) || ((shcRow < shcLastRow) && shcLastPage)) { 
     // Page number and total Pages
-    tft.fillRect(8, 9, 70, 12,  display.butBackground);
+    tft.fillRect(8, 9, 70, 12,  butBackground);
     tft.setCursor(8, 9); tft.printf("Page "); tft.print(shcCurrentPage+1);
     tft.printf(" of ");
     if (moreScreen.activeFilter) tft.print("??"); else tft.print((cat_mgr.getMaxIndex()/NUM_CAT_ROWS_PER_SCREEN)+1);
 
     // erase any previous data
     tft.setCursor(CAT_X+CAT_W+2, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING));
-    tft.fillRect(CAT_X+CAT_W+2, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), 215, 17,  display.butBackground);
+    tft.fillRect(CAT_X+CAT_W+2, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), 215, 17,  butBackground);
 
     //fill the button with some identifying text which varies depending on catalog chosen
     memset(shcObjName[shcRow], '\0', 20); //NULL out row first
@@ -535,7 +534,7 @@ void CatalogScreen::drawShcCat() {
     } else {
       strcpy(shcObjName[shcRow], "Unknown");
     }
-    display.drawButton(CAT_X, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, false, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, shcObjName[shcRow]);
+    drawButton(CAT_X, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, false, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, shcObjName[shcRow]);
 
     // Object type e.g. Star, Galaxy, etc
     memset(objTypeStr[shcRow], '\0', sizeof(objTypeStr[shcRow]));
@@ -615,9 +614,9 @@ void CatalogScreen::drawShcCat() {
 // =====  Update Screen for buttons and text ===========
 //======================================================
 void CatalogScreen::updateThisStatus() { 
-  if (display.screenTouched || display.refreshScreen) { 
-    display.refreshScreen = false;
-    if (display.screenTouched) display.refreshScreen = true;
+  if (screenTouched || refreshScreen) { 
+    refreshScreen = false;
+    if (screenTouched) refreshScreen = true;
     
     tft.setFont(); // basic Arial
 
@@ -636,11 +635,11 @@ void CatalogScreen::updateTreasureCat() {
   uint16_t tAbsIndex = tFiltArray[catButSelPos]; // this is absolute full array index
 
   if (tPrevPage == tCurrentPage) { //erase previous selection
-    display.drawButton(CAT_X, CAT_Y+pre_tRelIndex*(CAT_H+CAT_Y_SPACING), 
+    drawButton(CAT_X, CAT_Y+pre_tRelIndex*(CAT_H+CAT_Y_SPACING), 
       CAT_W-WIDTH_OFF, CAT_H, false, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, _tArray[pre_tAbsIndex].tObjName); 
   }
   // highlight selected by settting background ON color 
-  display.drawButton(CAT_X, CAT_Y+tRelIndex*(CAT_H+CAT_Y_SPACING), 
+  drawButton(CAT_X, CAT_Y+tRelIndex*(CAT_H+CAT_Y_SPACING), 
       CAT_W-WIDTH_OFF, CAT_H, true, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, _tArray[tAbsIndex].tObjName); 
   
   // the following 5 lines are displayed on the Catalog/More page
@@ -653,9 +652,9 @@ void CatalogScreen::updateTreasureCat() {
   
   // show if we are above and below visible limits
   if (dtAlt[tAbsIndex] > 10.0) {   // show minimum 10 degrees altitude, use dtAlt[tAbsIndex] previously calculated in catalogScreen.draw()
-      display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
   } else {
-      display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
   }
   writeTarget(tAbsIndex); // write RA and DEC as target for GoTo
   showTargetCoords(); // display the target coordinates that were just written
@@ -665,7 +664,7 @@ void CatalogScreen::updateTreasureCat() {
   curSelTIndex = tAbsIndex;
   tPrevPage = tCurrentPage;
   catButDetected = false;
-  display.screenTouched = false; // passed back to the touchscreen handler
+  screenTouched = false; // passed back to the touchscreen handler
 }
 
 // ====== CUSTOM USER catalog ... uses different row spacing =====
@@ -674,11 +673,11 @@ void CatalogScreen::updateCustomCat() {
   uint16_t cAbsIndex = cFiltArray[catButSelPos];
 
   if (cPrevPage == cCurrentPage) { //erase previous selection
-    display.drawButton(CUS_X, CUS_Y+pre_cRelIndex*(CUS_H+CUS_Y_SPACING), 
+    drawButton(CUS_X, CUS_Y+pre_cRelIndex*(CUS_H+CUS_Y_SPACING), 
       CUS_W, CUS_H, false, CUS_TEXT_X_OFF, CUS_TEXT_Y_OFF, _cArray[pre_cAbsIndex].cObjName); 
   }
   // highlight selected by settting background ON color 
-  display.drawButton(CUS_X, CUS_Y+cRelIndex*(CUS_H+CUS_Y_SPACING), 
+  drawButton(CUS_X, CUS_Y+cRelIndex*(CUS_H+CUS_Y_SPACING), 
     CUS_W, CUS_H, true, CUS_TEXT_X_OFF, CUS_TEXT_Y_OFF, _cArray[cAbsIndex].cObjName); 
 
   // the following 5 lines are displayed on the Catalog/More page
@@ -690,9 +689,9 @@ void CatalogScreen::updateCustomCat() {
   
   // show if we are above and below visible limits
   if (dcAlt[cAbsIndex] > 10.0) {      // minimum 10 degrees altitude
-      display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
   } else {
-      display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
   }
   writeTarget(cAbsIndex); // write RA and DEC as target for GoTo
   showTargetCoords(); // display the target coordinates that were just written
@@ -739,7 +738,7 @@ void CatalogScreen::updateCustomCat() {
     // write new array into SD File
     File cWrFile;
     if ((cWrFile = SD.open("custom.csv", FILE_WRITE)) == 0) {
-      display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "SD open ERROR");
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "SD open ERROR");
       return;
     } else {
       if (cWrFile) {
@@ -752,17 +751,17 @@ void CatalogScreen::updateCustomCat() {
       }
     }
   }
-  display.currentScreen = MORE_SCREEN; // tell the RETURN button where to return to
+  currentScreen = MORE_SCREEN; // tell the RETURN button where to return to
   catalogScreen.draw((cat_mgr.numCatalogs())+2);
-  display.screenTouched = false; // passed back to the touchscreen handler
+  screenTouched = false; // passed back to the touchscreen handler
 }
 
 // =============== SHC Catalogs ================
 void CatalogScreen::updateShcCat() {
-  display.drawButton(CAT_X, CAT_Y+pre_shcIndex*(CAT_H+CAT_Y_SPACING), 
+  drawButton(CAT_X, CAT_Y+pre_shcIndex*(CAT_H+CAT_Y_SPACING), 
           CAT_W, CAT_H, false, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, shcObjName[pre_shcIndex]);  
   
-  display.drawButton(CAT_X, CAT_Y+catButSelPos*(CAT_H+CAT_Y_SPACING), 
+  drawButton(CAT_X, CAT_Y+catButSelPos*(CAT_H+CAT_Y_SPACING), 
           CAT_W, CAT_H, true, CAT_TEXT_X_OFF, CAT_TEXT_Y_OFF, shcObjName[catButSelPos]);
   
   // the following 5 lines are displayed on the Catalog/More page
@@ -773,9 +772,9 @@ void CatalogScreen::updateShcCat() {
   snprintf(catSelectionStr5, 15, "Id---:%-7s",   shcSubId[catButSelPos]);      //VF("shcSubId=");   VL(shcSubId[catButSelPos]);
 
   if (shcAlt[catButSelPos] > 10.0) {      // minimum 10 degrees altitude
-      display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
   } else {
-      display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
   }
 
   writeTarget(catButSelPos); // write RA and DEC as target for GoTo
@@ -784,7 +783,7 @@ void CatalogScreen::updateShcCat() {
   curSelSIndex = catButSelPos;
   catButDetected = false;
   
-  display.screenTouched = false; // passed back to the touchscreen handler
+  screenTouched = false; // passed back to the touchscreen handler
 }
 
 // ====== check buttons not part of catalog listings  ========
@@ -792,10 +791,10 @@ void CatalogScreen::updateShcCat() {
 void CatalogScreen::updateCatButtons() {
   if (saveTouched) {
     if (customCatalog) {
-      display.canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Can't Save Custom");
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Can't Save Custom");
       return;
     }
-    display.drawButton(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, true, SAVE_LIB_T_X_OFF, SAVE_LIB_T_Y_OFF, " Saving  ");
+    drawButton(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, true, SAVE_LIB_T_X_OFF, SAVE_LIB_T_Y_OFF, " Saving  ");
 
     if (treasureCatalog) { 
       // Custom Catalog Format: SubID or ObjName, Mag, Cons, ObjType, ObjName or SubID, RA, DEC
@@ -853,9 +852,9 @@ void CatalogScreen::updateCatButtons() {
     saveTouched = false;
   } else { // save button not touched
     tft.setFont(&Inconsolata_Bold8pt7b);
-    display.drawButton(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, false, SAVE_LIB_T_X_OFF, SAVE_LIB_T_Y_OFF, "SaveToCat");
+    drawButton(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, false, SAVE_LIB_T_X_OFF, SAVE_LIB_T_Y_OFF, "SaveToCat");
   }
-  display.screenTouched = false; // passed back to the touchscreen handler
+  screenTouched = false; // passed back to the touchscreen handler
 }
 
 //=====================================================
@@ -937,7 +936,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
   // RETURN page button - reuse BACK button box size
   if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
     DD_CLICK;
-    display.screenTouched = false;
+    screenTouched = false;
     moreScreen.objectSelected = objSel; 
     if (returnToPage == ALIGN_SCREEN) {
       alignScreen.draw();
@@ -965,20 +964,20 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
 void CatalogScreen::writeTarget(uint16_t index) {
   //:Sr[HH:MM.T]# or :Sr[HH:MM:SS]# 
   if (shcCatalog) {
-      display.setLocalCmd(shcRaSrCmd[index]);
+      setLocalCmd(shcRaSrCmd[index]);
   } else if (treasureCatalog) { 
-      display.setLocalCmd(tRaSrCmd[index]);
+      setLocalCmd(tRaSrCmd[index]);
   } else if (customCatalog) {
-      display.setLocalCmd(cRaSrCmd[index]);
+      setLocalCmd(cRaSrCmd[index]);
   }
       
   //:Sd[sDD*MM]# or :Sd[sDD*MM:SS]#
   if (shcCatalog) {
-      display.setLocalCmd(shcDecSrCmd[index]);
+      setLocalCmd(shcDecSrCmd[index]);
   } else if (treasureCatalog) {
-      display.setLocalCmd(tDecSrCmd[index]);
+      setLocalCmd(tDecSrCmd[index]);
   } else if (customCatalog) {
-      display.setLocalCmd(cDecSrCmd[index]);
+      setLocalCmd(cDecSrCmd[index]);
   }
   objSel = true;
 }
@@ -987,42 +986,54 @@ void CatalogScreen::writeTarget(uint16_t index) {
 void CatalogScreen::showTargetCoords() {
   char raTargReply[15];
   char decTargReply[15];
-  double _catAzm, _catAlt;
+  //double _catAzm, _catAlt;
   uint16_t radec_x = 160;
   uint16_t ra_y = 420;
   uint16_t dec_y = 433;
   uint16_t altazm_x = 240;
+  char tAzmDMS[10] = "";
+  char tAltDMS[11] = "";
+  double tAzm_d = 0.0;
+  double tAlt_d = 0.0;
   tft.setFont();
 
   // Get Target RA: Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
-  display.getLocalCmdTrim(":Gr#", raTargReply);  
+  getLocalCmdTrim(":Gr#", raTargReply);  
   raTargReply[8] = 0; // clear # character
   
-  tft.fillRect(radec_x, ra_y, 75, 11, display.pgBackground);
+  tft.fillRect(radec_x, ra_y, 75, 11, pgBackground);
   tft.setCursor(radec_x, ra_y); tft.print(" RA:");
   tft.setCursor(radec_x+24, ra_y); tft.print(raTargReply);    
   
   // Get Target DEC: sDD*MM# or sDD*MM:SS# (based on precision setting)
-  display.getLocalCmdTrim(":Gd#", decTargReply); 
+  getLocalCmdTrim(":Gd#", decTargReply); 
   decTargReply[9] = 0; // clear # character
 
-  tft.fillRect(radec_x, dec_y, 75, 11, display.pgBackground);
+  tft.fillRect(radec_x, dec_y, 75, 11, pgBackground);
   tft.setCursor(radec_x, dec_y); tft.print("DEC:");
   tft.setCursor(radec_x+24, dec_y); tft.print(decTargReply);
 
   // === Show ALT and AZM ===
-  double DEC_d=0.0, RA_d=0.0;
-  shc.hmsToDouble(&RA_d, raTargReply);
-  shc.dmsToDouble(&DEC_d, decTargReply, true, true);
-  cat_mgr.EquToHor(RA_d*15, DEC_d, &_catAlt, &_catAzm);
 
-  tft.fillRect(altazm_x, ra_y, 70, 11, display.pgBackground);
+  // Get Target ALT and AZ and display them as Double
+  getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
+  shc.dmsToDouble(&tAzm_d, tAzmDMS, false, true);
+
+  getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
+  shc.dmsToDouble(&tAlt_d, tAltDMS, true, true);
+
+  //shc.hmsToDouble(&RA_d, raTargReply);
+  //shc.dmsToDouble(&DEC_d, decTargReply, true, true);
+  //cat_mgr.EquToHor(RA_d*15, DEC_d, &_catAlt, &_catAzm);
+
+  tft.fillRect(altazm_x, ra_y, 70, 11, pgBackground);
   tft.setCursor(altazm_x, ra_y); tft.print("| AZ:");
-  tft.setCursor(altazm_x+29, ra_y); tft.print(_catAzm);   
+  //tft.setCursor(altazm_x+29, ra_y); tft.print(_catAzm);
+  tft.setCursor(altazm_x+29, ra_y); tft.print(tAzm_d);      
 
-  tft.fillRect(altazm_x, dec_y, 70, 11, display.pgBackground);
+  tft.fillRect(altazm_x, dec_y, 70, 11, pgBackground);
   tft.setCursor(altazm_x, dec_y); tft.print("| AL:");
-  tft.setCursor(altazm_x+29, dec_y); tft.print(_catAlt);
+  tft.setCursor(altazm_x+29, dec_y); tft.print(tAlt_d);
 }
 
 CatalogScreen catalogScreen;

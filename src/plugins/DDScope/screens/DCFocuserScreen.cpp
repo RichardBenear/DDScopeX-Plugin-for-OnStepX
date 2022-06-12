@@ -1,5 +1,5 @@
 // =====================================================
-// FocuserScreen.cpp  (DC motor focuser only)
+// DCFocuserScreen.cpp  (DC motor focuser only)
 
 // Author: Richard Benear
 // The following comments are only true for OnStep, not OnStepX..TBD what to do in OnStepX
@@ -17,8 +17,7 @@
 // parameters more directly. These functions are found near the end 
 // of this file.
 
-#include "FocuserScreen.h"
-#include "../display/Display.h"
+#include "DCFocuserScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include <Fonts/FreeSansBold12pt7b.h>
 
@@ -69,15 +68,15 @@
 #define EN_OFF_TIME 2000 // microseconds
 
 // Draw the initial content for Focuser Page
-void FocuserScreen::draw() {
-  display.currentScreen = FOCUSER_SCREEN;
-  display.setDayNight();
-  tft.setTextColor(display.textColor);
-  tft.fillScreen(display.pgBackground);
+void DCFocuserScreen::draw() {
+  currentScreen = FOCUSER_SCREEN;
+  setDayNight();
+  tft.setTextColor(textColor);
+  tft.fillScreen(pgBackground);
   
-  display.drawMenuButtons();
-  display.drawTitle(110, TITLE_TEXT_Y, "Focuser");
-  display.drawCommonStatusLabels();
+  drawMenuButtons();
+  drawTitle(110, TITLE_TEXT_Y, "Focuser");
+  drawCommonStatusLabels();
   tft.setFont(&Inconsolata_Bold8pt7b);
   
   int y_offset = 0;
@@ -113,66 +112,66 @@ void FocuserScreen::draw() {
 }
 
 // Update the following on timer tick
-void FocuserScreen::updateThisStatus() {
+void DCFocuserScreen::updateThisStatus() {
   int y_offset = 0;
-  if (current_focMaxPos != focMaxPosition || display.firstDraw) {
-      display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMaxPosition);
+  if (current_focMaxPos != focMaxPosition || firstDraw) {
+      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMaxPosition);
       current_focMaxPos = focMaxPosition;
   }
 
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focMinPos != focMinPosition || display.firstDraw) {
-      display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMinPosition);
+  if (current_focMinPos != focMinPosition || firstDraw) {
+      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMinPosition);
       current_focMinPos = focMinPosition;
   }
 
   // Focuser Speed
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focMoveSpeed != focMoveSpeed || display.firstDraw) {
-      display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveSpeed);
+  if (current_focMoveSpeed != focMoveSpeed || firstDraw) {
+      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveSpeed);
       current_focMoveSpeed = focMoveSpeed;
   }
 
   // Focuser move distance
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focMoveDistance != focMoveDistance || display.firstDraw) {
-      display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveDistance);
+  if (current_focMoveDistance != focMoveDistance || firstDraw) {
+      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveDistance);
       current_focMoveDistance = focMoveDistance;
   }
   
   // Update Current Focuser Position
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focPos != focPosition || display.firstDraw) {
-      display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focPosition);
+  if (current_focPos != focPosition || firstDraw) {
+      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focPosition);
       current_focPos = focPosition;
   }
 
   // Update Delta Focuser Position
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focDeltaMove != focDeltaMove || display.firstDraw) {
-      display.canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focDeltaMove);
+  if (current_focDeltaMove != focDeltaMove || firstDraw) {
+      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focDeltaMove);
       current_focDeltaMove = focDeltaMove;
   }
 
-  display.firstDraw = false;
+  firstDraw = false;
 
   //***** Update Label Status' for Buttons ******
-  if (display.screenTouched || display.refreshScreen) {
-      display.refreshScreen = false;
-      if (display.screenTouched) display.refreshScreen = true;
+  if (screenTouched || refreshScreen) {
+      refreshScreen = false;
+      if (screenTouched) refreshScreen = true;
         
       // Update IN and OUT focuser status
       tft.setFont(&FreeSansBold12pt7b);
       if (focMovingIn) {
-          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_ON, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
+          drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_ON, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
       } else {
-          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_OFF, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
+          drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_OFF, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
       }
 
       if (!focMovingIn) {
-          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_ON, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
+          drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_ON, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
       } else {
-          display.drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_OFF, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
+          drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_OFF, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
       }
       tft.setFont(&Inconsolata_Bold8pt7b);
       
@@ -181,57 +180,57 @@ void FocuserScreen::updateThisStatus() {
       y_offset = 0;
       // Increment Speed
       if (incSpeed) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Inc'ing ");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Inc'ing ");
           incSpeed = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Inc Speed");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Inc Speed");
       }
 
       // Decrement Speed
       y_offset +=SPEED_BOXSIZE_Y + 2;
       if (decSpeed) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Dec'ing ");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Dec'ing ");
           decSpeed = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Dec Speed");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Dec Speed");
       }
 
       // Set a GoTo setpoint
       y_offset +=SPEED_BOXSIZE_Y + 2; 
       if (setPoint) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "  Setting ");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "  Setting ");
           setPoint = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Set Goto Pt");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Set Goto Pt");
       }
 
       // Goto the setpoint
       y_offset +=SPEED_BOXSIZE_Y + 2;
       if (gotoSetpoint) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Going to SP");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Going to SP");
           gotoSetpoint = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Goto Set Pt");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Goto Set Pt");
       }
 
       // Goto Halfway point
       y_offset +=SPEED_BOXSIZE_Y + 2;
       if (focGoToHalf) {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "GoingTo Half");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "GoingTo Half");
           focGoToHalf = false;
       } else {
-          display.drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " GoTo Half  ");
+          drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " GoTo Half  ");
       }
 
       // Calibrate Min And Max
       y_offset = 0;
       if (!calibActive) {
-          display.drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_OFF, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, "Calibrate");
+          drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_OFF, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, "Calibrate");
       } else {
           if (inwardCalState && calibActive) {
-              display.drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_ON, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Min Calib");
+              drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_ON, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Min Calib");
           } else if (!inwardCalState && calibActive) {
-              display.drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_ON, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Max Calib");
+              drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_ON, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Max Calib");
           }
       }
 
@@ -239,59 +238,59 @@ void FocuserScreen::updateThisStatus() {
       y_offset = 0;
       // Increment Motor Power
       if (incMoveCt) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, " Inc'ing ");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, " Inc'ing ");
           incMoveCt = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Inc Cnt");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Inc Cnt");
       }
 
       y_offset +=SPEED_BOXSIZE_Y + 2;
       // Decrement Motor Power
       if (decMoveCt) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec'ing ");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec'ing ");
           decMoveCt = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec Cnt");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec Cnt");
       }
 
       y_offset +=SPEED_BOXSIZE_Y + 2;
       // Set Zero Position
       if (setZero) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
           setZero = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Zero");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Zero");
       }
 
       y_offset +=SPEED_BOXSIZE_Y + 2;
       // Set Maximum position
       if (setMax) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
           setMax = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Max ");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Max ");
       }
 
       y_offset +=SPEED_BOXSIZE_Y + 2;
       // Reset focuser
       if (focReset) {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET,   "Reseting");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET,   "Reseting");
           focReset = false;
       } else {
-          display.drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET+5, MID_TEXT_Y_OFFSET, " RESET  ");
+          drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET+5, MID_TEXT_Y_OFFSET, " RESET  ");
       }
-  display.screenTouched = false;
+  screenTouched = false;
   }
 }
 
 // Update buttons when touched
-void FocuserScreen::touchPoll(uint16_t px, uint16_t py)
+void DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
 {   
     // IN button
     if (py > FOC_INOUT_Y && py < (FOC_INOUT_Y + FOC_INOUT_BOXSIZE_Y) && px > FOC_INOUT_X && px < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
     {
       DD_CLICK;
-        display.soundFreq(2000, 400);
+        soundFreq(2000, 400);
         if (!focMovingIn) { //was moving out, change direction
             focChangeDirection();
         }   
@@ -304,7 +303,7 @@ void FocuserScreen::touchPoll(uint16_t px, uint16_t py)
     if (py > FOC_INOUT_Y + y_offset && py < (FOC_INOUT_Y + y_offset + FOC_INOUT_BOXSIZE_Y) && px > FOC_INOUT_X && px < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
     {
       DD_CLICK;
-        display.soundFreq(2100, 400);
+        soundFreq(2100, 400);
         if (focMovingIn) { //was moving in, change direction
             focChangeDirection();
         }
@@ -453,7 +452,7 @@ void FocuserScreen::touchPoll(uint16_t px, uint16_t py)
 
 // ======= A4988 Driver Functions =======
 // Initialize DC Focuser
-void FocuserScreen::focInit() {
+void DCFocuserScreen::focInit() {
     // set phase power from 70% Home position backward to 100% power position
     digitalWrite(FOCUSER_DIR_PIN,LOW);
     delayMicroseconds(2);
@@ -466,7 +465,7 @@ void FocuserScreen::focInit() {
 }
 
 // step phases to opposite current direction, 4 steps required in half step mode
-void FocuserScreen::focChangeDirection() {
+void DCFocuserScreen::focChangeDirection() {
     digitalWrite(FOCUSER_EN_PIN,LOW);
     delayMicroseconds(10);
     digitalWrite(FOCUSER_STEP_PIN,HIGH); delayMicroseconds(5); digitalWrite(FOCUSER_STEP_PIN,LOW); delayMicroseconds(5);
@@ -479,7 +478,7 @@ void FocuserScreen::focChangeDirection() {
 }
 
 // Move focuser; numPulses equivalent to move distance; pulseWidth equivalent to move speed
-void FocuserScreen::focMove(int numPulses, int pulseWidth) {   
+void DCFocuserScreen::focMove(int numPulses, int pulseWidth) {   
     for (int i=0; i<numPulses; i++) {
         digitalWrite(FOCUSER_EN_PIN,LOW); delayMicroseconds(pulseWidth); 
         digitalWrite(FOCUSER_EN_PIN,HIGH); delayMicroseconds(EN_OFF_TIME); // arbitrarily selected 1 ms off time
@@ -488,7 +487,7 @@ void FocuserScreen::focMove(int numPulses, int pulseWidth) {
 }
 
 // Focuser GoTo a target position. Updated via main loop timer. Target set elsewhere.
-void FocuserScreen::updateFocPosition() {
+void DCFocuserScreen::updateFocPosition() {
     if (!focGoToActive) return;
     focDeltaMove = focTarget - focPosition;
     if (abs(focDeltaMove) <= focMoveDistance) moveDistance = abs(focDeltaMove); else moveDistance = focMoveDistance;
@@ -511,4 +510,4 @@ void FocuserScreen::updateFocPosition() {
     }
 }
 
-FocuserScreen focuserScreen;
+DCFocuserScreen dCfocuserScreen;

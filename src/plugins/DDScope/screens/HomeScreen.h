@@ -5,8 +5,9 @@
 #define HOME_S_H
 
 #include "Arduino.h"
+#include "../display/display.h"
 
-class HomeScreen {
+class HomeScreen : public Display {
   public:
     void draw();
     void updateThisStatus();
@@ -16,6 +17,9 @@ class HomeScreen {
     void updateMountStatus();
     void touchPoll(int16_t px, int16_t py);
 
+    char curCol1[10][8];
+    char curCol2[10][8];
+    
   private:
     float currentAZEncPos;
     float lastAZEncPos;

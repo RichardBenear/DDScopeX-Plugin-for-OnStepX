@@ -4,7 +4,6 @@
 // Author: Richard Benear 2/13/22
 
 #include "SettingsScreen.h"
-#include "../display/Display.h"
 #include "../catalog/Catalog.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 
@@ -91,14 +90,14 @@
 
 // Draw the SETTINGS Page
 void SettingsScreen::draw() {
-  display.currentScreen = SETTINGS_SCREEN;
-  display.setDayNight();
-  tft.setTextColor(display.textColor);
-  tft.fillScreen(display.pgBackground);
+  currentScreen = SETTINGS_SCREEN;
+  setDayNight();
+  tft.setTextColor(textColor);
+  tft.fillScreen(pgBackground);
   
-  display.drawTitle(100, TITLE_TEXT_Y, "Settings");
-  display.drawMenuButtons();
-  display.drawCommonStatusLabels(); // status common to many pages
+  drawTitle(100, TITLE_TEXT_Y, "Settings");
+  drawMenuButtons();
+  drawCommonStatusLabels(); // status common to many pages
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   TtextIndex = 0; 
@@ -135,7 +134,7 @@ void SettingsScreen::draw() {
   for(int i=0; i<4; i++) { 
     for(int j=0; j<3; j++) {
       int row=i; int col=j; 
-      display.drawButton(PAD_BUTTON_X+col*(PAD_BUTTON_W+PAD_BUTTON_SPACING_X), 
+      drawButton(PAD_BUTTON_X+col*(PAD_BUTTON_W+PAD_BUTTON_SPACING_X), 
               PAD_BUTTON_Y+row*(PAD_BUTTON_H+PAD_BUTTON_SPACING_Y), 
               PAD_BUTTON_W, PAD_BUTTON_H, false, PAD_T_OFF_X, PAD_T_OFF_Y, sNumLabels[z]);
       z++;
@@ -143,26 +142,26 @@ void SettingsScreen::draw() {
   }
 
 // Initialize TIME, DATE, TZ, Latitude, Longitude Enter/Accept buttons
-  display.drawButton(T_SELECT_X,   T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X, T_T_OFF_Y, "TmSel");
-  display.drawButton( T_CLEAR_X,    T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X, T_T_OFF_Y, "TmClr"); 
-  display.drawButton(D_SELECT_X,   D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaSel");
-  display.drawButton( D_CLEAR_X,    D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
-  display.drawButton(U_SELECT_X,   U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzSel");
-  display.drawButton( U_CLEAR_X,    U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
-  display.drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaSel");
-  display.drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
-  display.drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoSel");
-  display.drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
+  drawButton(T_SELECT_X,   T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X, T_T_OFF_Y, "TmSel");
+  drawButton( T_CLEAR_X,    T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X, T_T_OFF_Y, "TmClr"); 
+  drawButton(D_SELECT_X,   D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaSel");
+  drawButton( D_CLEAR_X,    D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
+  drawButton(U_SELECT_X,   U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzSel");
+  drawButton( U_CLEAR_X,    U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
+  drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaSel");
+  drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
+  drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoSel");
+  drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
   
   // Send data button
-  display.drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_OFF, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
+  drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_OFF, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
   
   // Initialize the background for the Text Entry fields
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+                CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y+  CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*2+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*3+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*4+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+                CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y+  CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*2+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*3+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*4+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
 } // end initialize
 
 // Numpad handler, assign label to pressed button field array slot
@@ -171,7 +170,7 @@ void SettingsScreen::setProcessNumPadButton() {
     // Time Format: [HHMMSS]
     if (Tselect && TtextIndex < 6 && (sButtonPosition != 9 || sButtonPosition != 11)) {
       Ttext[TtextIndex] = sNumLabels[sButtonPosition][0];
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
       tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y);
       tft.print(Ttext); 
       TtextIndex++;
@@ -180,7 +179,7 @@ void SettingsScreen::setProcessNumPadButton() {
     // Date Format: [DDMMYY] last two digits of year
     if (Dselect && DtextIndex < 6 && (sButtonPosition != 9 || sButtonPosition != 11)) {
       Dtext[DtextIndex] = sNumLabels[sButtonPosition][0]; 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
       tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y);
       tft.print(Dtext);
       DtextIndex++;
@@ -190,7 +189,7 @@ void SettingsScreen::setProcessNumPadButton() {
     if (Tzselect && (((TztextIndex == 0 && (sButtonPosition == 9 || sButtonPosition == 11)) 
           || (TztextIndex>0 && (sButtonPosition!=9||sButtonPosition!=11)))) && TztextIndex < 3) { 
       Tztext[TztextIndex] = sNumLabels[sButtonPosition][0]; 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*2)+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*2)+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
       tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*2));
       tft.print(Tztext);
       TztextIndex++;
@@ -201,7 +200,7 @@ void SettingsScreen::setProcessNumPadButton() {
         || (LaTextIndex>0 && (sButtonPosition!=9||sButtonPosition!=11)))) && LaTextIndex < 4) { //
       LaText[LaTextIndex] = sNumLabels[sButtonPosition][0]; 
 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*3)+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*3)+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
       tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*3));
       if (LaSelect && LaTextIndex == 3) {
         sprintf(LaText, "%c%c%c.%c", LaText[0], LaText[1], LaText[2], LaText[3]);
@@ -216,7 +215,7 @@ void SettingsScreen::setProcessNumPadButton() {
       || (LoTextIndex>0 && (sButtonPosition!=9||sButtonPosition!=11)))) && LoTextIndex < 5) {
       LoText[LoTextIndex] = sNumLabels[sButtonPosition][0]; 
       
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*4)+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  display.butBackground);
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*4)+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
       tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*4));
       if (LoSelect && LoTextIndex == 4) {
         sprintf(LoText, "%c%c%c%c.%c", LoText[0], LoText[1], LoText[2], LoText[3], LoText[4]);
@@ -239,9 +238,9 @@ void SettingsScreen::setProcessNumPadButton() {
 void SettingsScreen::updateThisStatus() {
     
     // process number pad buttons
-    if (display.screenTouched || display.firstDraw || display.refreshScreen) {
-      if (display.screenTouched) display.refreshScreen = true; else
-      if (display.refreshScreen) display.refreshScreen = false; // cleans up state change for button presses
+    if (screenTouched || firstDraw || refreshScreen) {
+      if (screenTouched) refreshScreen = true; else
+      if (refreshScreen) refreshScreen = false; // cleans up state change for button presses
         
         // Get button and print label
         switch (sButtonPosition) {
@@ -262,140 +261,135 @@ void SettingsScreen::updateThisStatus() {
 
     // Time Select Button
     if (Tselect) {
-      display.drawButton( T_SELECT_X,  T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, T_T_OFF_X,  T_T_OFF_Y,  "TiSel");
+      drawButton( T_SELECT_X,  T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, T_T_OFF_X,  T_T_OFF_Y,  "TiSel");
     } else {
-      display.drawButton( T_SELECT_X,  T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X,  T_T_OFF_Y,  "TiSel");
+      drawButton( T_SELECT_X,  T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X,  T_T_OFF_Y,  "TiSel");
     }
 
     // Time Clear button
     if (Tclear) {
-      display.drawButton(  T_CLEAR_X,   T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, T_T_OFF_X,  T_T_OFF_Y,  "TiClr");
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
+      drawButton(  T_CLEAR_X,   T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, T_T_OFF_X,  T_T_OFF_Y,  "TiClr");
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  butBackground);
       memset(Ttext,0,sizeof(Ttext)); // clear Time buffer
-      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
+      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
       TtextIndex = 0;
       sButtonPosition = 12;
       Tclear = false;
     } else {
-      display.drawButton(T_CLEAR_X, T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X,  T_T_OFF_Y,  "TiClr");
+      drawButton(T_CLEAR_X, T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X,  T_T_OFF_Y,  "TiClr");
     }
     
     // Date Select button
     if (Dselect) {
-      display.drawButton(D_SELECT_X, D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, D_T_OFF_X, D_T_OFF_Y, "DaSel");
+      drawButton(D_SELECT_X, D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, D_T_OFF_X, D_T_OFF_Y, "DaSel");
     } else {
-      display.drawButton(D_SELECT_X, D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaSel"); 
+      drawButton(D_SELECT_X, D_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaSel"); 
     }
 
     // Date Clear Button
     if (Dclear) {
-      display.drawButton( D_CLEAR_X,  D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
+      drawButton( D_CLEAR_X,  D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  butBackground);
       memset(Dtext,0,sizeof(Dtext)); // clear DATE buffer
-      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
+      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
       DtextIndex = 0;
       sButtonPosition = 12;
       Dclear = false;
     } else {
-      display.drawButton( D_CLEAR_X,  D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
+      drawButton( D_CLEAR_X,  D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, D_T_OFF_X, D_T_OFF_Y, "DaClr"); 
     }
 
     // Time Zone Select button
     if (Tzselect) {
-      display.drawButton(U_SELECT_X, U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "TzSel");
+      drawButton(U_SELECT_X, U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "TzSel");
     } else {
-      display.drawButton(U_SELECT_X, U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzSel"); 
+      drawButton(U_SELECT_X, U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzSel"); 
     }
 
     // Time Zone Clear Button update
     if (Tzclear) {
-      display.drawButton( U_CLEAR_X,  U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*2, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
+      drawButton( U_CLEAR_X,  U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*2, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  butBackground);
       memset(Tztext,0,sizeof(Tztext)); // clear TZ buffer
-      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
+      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
       TztextIndex = 0;
       sButtonPosition = 12;
       Tzclear = false;
     } else {
-      display.drawButton( U_CLEAR_X,  U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
+      drawButton( U_CLEAR_X,  U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "TzClr"); 
     }
 
     // Latitude Select button
     if (LaSelect) {
-      display.drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LaSel");
+      drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LaSel");
     } else {
-      display.drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaSel"); 
+      drawButton(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaSel"); 
     }
 
     // Latitude Clear Button update
     if (LaClear) {
-      display.drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*3, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
+      drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*3, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  butBackground);
       memset(LaText,0,sizeof(LaText)); // clear latitude buffer
-      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
+      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
       LaTextIndex = 0;
       sButtonPosition = 12;
       LaClear = false;
     } else {
-      display.drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
+      drawButton( LA_CLEAR_X,  LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LaClr"); 
     }
 
     // Longitude Select button
     if (LoSelect) {
-      display.drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LoSel");
+      drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LoSel");
     } else {
-      display.drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoSel"); 
+      drawButton(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoSel"); 
     }
 
     // Longitude Clear Button update
     if (LoClear) {
-      display.drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*4, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  display.butBackground);
+      drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
+      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*4, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9,  butBackground);
       memset(LoText,0,sizeof(LoText)); // clear longitude buffer
-      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, display.pgBackground);
+      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
       LoTextIndex = 0;
       sButtonPosition = 12;
       LoClear = false;
     } else {
-      display.drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
+      drawButton( LO_CLEAR_X,  LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, U_T_OFF_X, U_T_OFF_Y, "LoClr"); 
     }
     
     // Send Data Button update
     if (sSendOn) {
-      display.drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_ON, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Sent");
+      drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_ON, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Sent");
       sSendOn = false; 
     } else {
-      display.drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_OFF, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
+      drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_OFF, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
     }
 
     // Get and show the Time and Location status
     char tempReply[10];
     // show Local Time 24 Hr format
-    display.getLocalCmdTrim(":GL#", tempReply); 
-    tempReply[8] = 0; // clear # character
-    display.canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y, 0, 80, 16, tempReply);
+    getLocalCmdTrim(":GL#", tempReply); 
+    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y, 0, 80, 16, tempReply);
 
     // show Current Date
-    display.getLocalCmdTrim(":GC#", tempReply); 
-    tempReply[8] = 0; // clear # character
-    display.canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y, 0, 80, 16, tempReply);
+    getLocalCmdTrim(":GC#", tempReply); 
+    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y, 0, 80, 16, tempReply);
 
     // show TZ Offset
-    display.getLocalCmdTrim(":GG#", tempReply); 
-    tempReply[3] = 0; // clear # character
-    display.canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*2, 0, 80, 16, tempReply);
+    getLocalCmdTrim(":GG#", tempReply); 
+    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*2, 0, 80, 16, tempReply);
 
     // show Latitude
-    display.getLocalCmdTrim(":Gt#", tempReply); 
-    tempReply[6] = 0; // clear # character
-    display.canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*3, 0, 80, 16, tempReply);
+    getLocalCmdTrim(":Gt#", tempReply); 
+    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*3, 0, 80, 16, tempReply);
 
     // show Longitude
-    display.getLocalCmdTrim(":Gg#", tempReply); 
-    tempReply[7] = 0; // clear # character
-    display.canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*4, 0, 80, 16, tempReply);
+    getLocalCmdTrim(":Gg#", tempReply); 
+    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*4, 0, 80, 16, tempReply);
 
-    display.screenTouched = false;
+    screenTouched = false;
   }
 }
 
@@ -512,7 +506,7 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     if (Tselect) {
       // Set Local Time :SL[HH:MM:SS]# 24Hr format
       sprintf(sCmd, ":SL%c%c:%c%c:%c%c#", Ttext[0], Ttext[1], Ttext[2], Ttext[3], Ttext[4], Ttext[5]);
-      display.setLocalCmd(sCmd);
+      setLocalCmd(sCmd);
       //if (commandError == 1) {
       //    tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
       //    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);
@@ -522,7 +516,7 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
      // }
     } else if (Dselect) { // :SC[MM/DD/YY]# 
       sprintf(sCmd, ":SC%c%c/%c%c/%c%c#", Dtext[0], Dtext[1], Dtext[2], Dtext[3], Dtext[4], Dtext[5]);
-      display.setLocalCmd(sCmd);
+      setLocalCmd(sCmd);
       //if (commandError == 1) {
      //     tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
      //     tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);
@@ -532,7 +526,7 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
      // }
     } else if (Tzselect) { // :SG[sHH]#
       sprintf(sCmd, ":SG%c%c%c#", Tztext[0], Tztext[1], Tztext[2]);
-      display.setLocalCmd(sCmd);
+      setLocalCmd(sCmd);
      // if (commandError == 1) {
      //     tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
       //    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);
@@ -544,7 +538,7 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
       uint8_t laMin = LaText[4] - '0';  //digit after decimal point
       sprintf(sLaMin, "%02d\n", laMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":St%c%c%c*%2s#", LaText[0], LaText[1], LaText[2], sLaMin);
-      display.setLocalCmd(sCmd);
+      setLocalCmd(sCmd);
      // if (commandError == 1) {
      //     tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
       //    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);
@@ -557,7 +551,7 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
       uint8_t loMin = LoText[5] - '0'; //digit after decimal point
       sprintf(sLoMin, "%02d\n", loMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":Sg%c%c%c%c*%2s#", LoText[0], LoText[1], LoText[2], LoText[3], sLoMin);
-      display.setLocalCmd(sCmd);
+      setLocalCmd(sCmd);
     //  if (commandError == 1) {
     //      tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
     //      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);

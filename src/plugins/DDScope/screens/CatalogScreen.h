@@ -5,6 +5,7 @@
 #define CATALOG_S_H
 
 #include <Arduino.h>
+#include "../display/Display.h"
 
 #define NUM_CAT_ROWS_PER_SCREEN 16 //(370/CAT_H+CAT_Y_SPACING)
 #define NUM_CUS_ROWS_PER_SCREEN 14 //(370/CUS_H+CUS_Y_SPACING)
@@ -63,7 +64,7 @@ typedef struct {
 } custom_t; 
 
 //===============================
-class CatalogScreen {
+class CatalogScreen : public Display {
   public:
     void draw(int catSel);
     void touchPoll(uint16_t px, uint16_t py);

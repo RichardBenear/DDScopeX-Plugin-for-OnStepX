@@ -66,7 +66,9 @@
 #define BATTERY_LOW_VOLTAGE   21  
 
 // wait time to allow ODrive serial receive in milliseconds
-#define ODRIVE_SERIAL_WAIT    10
+#ifdef ODRIVE_MOTOR_PRESENT
+  #define ODRIVE_SERIAL_WAIT    10
+#endif
 
 // sound control of both duration and frequency
 #define DD_CLICK tone(STATUS_BUZZER_PIN, 1000UL, 40ULL); // both in milliseconds
@@ -84,7 +86,8 @@ enum Screen
   ALIGN_SCREEN,    // 7
   CATALOG_SCREEN,  // 8
   PLANETS_SCREEN,  // 9
-  CUST_CAT_SCREEN  // 10
+  CUST_CAT_SCREEN, // 10
+  XSTATUS_SCREEN   // 11
 }; 
 
 enum SelectedCatalog
@@ -110,8 +113,7 @@ class Display {
   public:
     void init();
     void sdInit();
-    void updateSpecificScreen();
-
+ 
   // Local Command Channel support
     void setLocalCmd(char *command);
     void setLocalCmd(const char *command);
@@ -131,10 +133,13 @@ class Display {
     // Status and updates
     Screen currentScreen = HOME_SCREEN;
     Screen lastScreen = GUIDE_SCREEN; // must be different than current to force initial draw of HOME screen
+    void updateSpecificScreen();
     void updateCommonStatus();  
     void updateOnStepCmdStatus();
-    void updateODriveErrBar();
-    void updateBatVoltage();
+    #ifdef ODRIVE_MOTOR_PRESENT
+      void updateODriveErrBar();
+      void updateBatVoltage();
+    #endif
   
     void setDayNight();
 
@@ -159,30 +164,37 @@ class Display {
   private:
     char ra_hms[10], dec_dms[11];
     char tra_hms[10], tdec_dms[11];
+
     char currentRA[10] = "1.1";
     char currentDEC[11] = "1.1"; 
     char currentTargRA[10] = "1.1";
     char currentTargDEC[11] = "1.1";
     double currentTargRA_d = 1.1;
     double currentTargDEC_d = 1.1;
-    double azm_d = 0.0;
-    double alt_d = 0.0;
-    double tazm_d = 0.0;
-    double talt_d = 0.0;
-    double current_azm = 1.1;
-    double current_alt = 1.1;
+
+    char cAzmDMS[10] = "";
+    char cAltDMS[11] = "";
+    char tAzmDMS[10] = "";
+    char tAltDMS[11] = "";
+    double cAzm_d = 0.0;
+    double cAlt_d = 0.0;
+    double tAzm_d = 0.0;
+    double tAlt_d = 0.0;
+    
+    double current_cAzm = 1.1;
+    double current_cAlt = 1.1;
+    double current_tAzm = 1.1;
+    double current_tAlt = 1.1;
+    
     double tra_d = 0.0;
     double tra_dha = 0.0;
     double tdec_d = 0.0;
-    double current_tazm = 1.1;
-    double current_talt = 1.1;
+    
     double altitudeFt = 0.0;
     
-
     bool firstGPS = true;
 };
 
-extern Display display;
 
 // ============= Smart Hand Controller Class ======================
 // Leveraged the following from SHC with some modifications
@@ -199,7 +211,6 @@ class SHC {
     char locCmdReply[16];
 };
 
-extern SHC shc;
 
 // ================ Local Serial Mount status =====================
 // Local command channel mount status
@@ -214,6 +225,8 @@ class LCmountStatus {
     char xchReply[10];
 };
 
+extern Display display;
+extern SHC shc;
 extern LCmountStatus lCmountStatus;
 
 #endif

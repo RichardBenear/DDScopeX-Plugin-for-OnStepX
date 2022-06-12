@@ -5,8 +5,9 @@
 #define SETTINGS_S_H
 
 #include <Arduino.h>
+#include "../display/display.h"
 
-class SettingsScreen {
+class SettingsScreen : public Display {
   public:
     void draw();
     void touchPoll(uint16_t px, uint16_t py);
