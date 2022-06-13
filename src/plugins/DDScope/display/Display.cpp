@@ -41,7 +41,6 @@
   #include "../screens/ODriveScreen.h"
 #endif
 
-
 #define TITLE_BOXSIZE_X         313
 #define TITLE_BOXSIZE_Y          40
 #define TITLE_BOX_X               3

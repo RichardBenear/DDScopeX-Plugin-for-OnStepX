@@ -44,7 +44,7 @@
 #define FirmwareName                "On-Step"
 #define FirmwareVersionMajor        10
 #define FirmwareVersionMinor        07     // minor version 00 to 99
-#define FirmwareVersionPatch        "i"    // for example major.minor patch: 10.03c
+#define FirmwareVersionPatch        "h"    // for example major.minor patch: 10.03c
 #define FirmwareVersionConfig       5      // internal, for tracking configuration file changes
 
 #include "src/Common.h"
@@ -55,7 +55,8 @@ NVS nv;
 
 #include "src/telescope/Telescope.h"
 extern Telescope telescope;
-//#define REMOTE
+
+#include "src/plugins/Plugins.config.h"
 
 #if DEBUG == PROFILER
   extern void profiler();
@@ -71,9 +72,8 @@ void sensesPoll() {
 
 void setup() {
   #if DEBUG != OFF
-  SERIAL_A.begin(SERIAL_A_BAUD_DEFAULT);
     SERIAL_DEBUG.begin(SERIAL_DEBUG_BAUD);
-    delay(5000);
+    delay(2000);
   #endif
 
   // start low level hardware
@@ -100,11 +100,36 @@ void setup() {
 
   tasks.yield(2000);
 
+  // start any plugins
+  #if PLUGIN1 != OFF
+    PLUGIN1.init();
+  #endif
+  #if PLUGIN2 != OFF
+    PLUGIN2.init();
+  #endif
+  #if PLUGIN3 != OFF
+    PLUGIN3.init();
+  #endif
+  #if PLUGIN4 != OFF
+    PLUGIN4.init();
+  #endif
+  #if PLUGIN5 != OFF
+    PLUGIN5.init();
+  #endif
+  #if PLUGIN6 != OFF
+    PLUGIN6.init();
+  #endif
+  #if PLUGIN7 != OFF
+    PLUGIN7.init();
+  #endif
+  #if PLUGIN8 != OFF
+    PLUGIN8.init();
+  #endif
+
   // start task manager debug events
   #if DEBUG == PROFILER
     tasks.add(142, 0, true, 7, profiler, "Profilr");
   #endif
-  
 }
 
 void loop() {
