@@ -375,4 +375,4 @@
 #include "Extended.config.h"
 
 // Direct Drive Scope Plugin PCB pinmap
-#include "src/Pinmap.DDtPCB.h" 
+#include "src/Pinmap.Plugin.DDT.h" 
