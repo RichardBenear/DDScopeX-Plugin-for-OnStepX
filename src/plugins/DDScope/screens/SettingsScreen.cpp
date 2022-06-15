@@ -4,6 +4,7 @@
 // Author: Richard Benear 2/13/22
 
 #include "SettingsScreen.h"
+#include "../display/display.h"
 #include "../catalog/Catalog.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 
@@ -90,16 +91,20 @@
 
 // Draw the SETTINGS Page
 void SettingsScreen::draw() {
-  currentScreen = SETTINGS_SCREEN;
-  setDayNight();
+  setCurrentScreen(SETTINGS_SCREEN);
+  setNightMode(getNightMode());
+
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   
   drawTitle(100, TITLE_TEXT_Y, "Settings");
   drawMenuButtons();
-  drawCommonStatusLabels(); // status common to many pages
   tft.setFont(&Inconsolata_Bold8pt7b);
-
+  drawCommonStatusLabels(); // status common to many pages
+  updateCommonStatus();
+  updateSettingsButtons();
+  updateSettingsStatus();
+  
   TtextIndex = 0; 
   DtextIndex = 0; 
   TztextIndex = 0; 
@@ -141,6 +146,7 @@ void SettingsScreen::draw() {
     }
   }
 
+/*
 // Initialize TIME, DATE, TZ, Latitude, Longitude Enter/Accept buttons
   drawButton(T_SELECT_X,   T_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X, T_T_OFF_Y, "TmSel");
   drawButton( T_CLEAR_X,    T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, T_T_OFF_X, T_T_OFF_Y, "TmClr"); 
@@ -155,7 +161,7 @@ void SettingsScreen::draw() {
   
   // Send data button
   drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_OFF, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
-  
+  */
   // Initialize the background for the Text Entry fields
   tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+                CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
   tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y+  CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8,  butBackground);
@@ -235,29 +241,24 @@ void SettingsScreen::setProcessNumPadButton() {
   //VF("TztextIndex="); VL(TztextIndex); VLF("");
 }
 
-void SettingsScreen::updateThisStatus() {
-    
-    // process number pad buttons
-    if (screenTouched || firstDraw || refreshScreen) {
-      if (screenTouched) refreshScreen = true; else
-      if (refreshScreen) refreshScreen = false; // cleans up state change for button presses
+void SettingsScreen::updateSettingsButtons() {
         
-        // Get button and print label
-        switch (sButtonPosition) {
-        case 0:  setProcessNumPadButton(); break;
-        case 1:  setProcessNumPadButton(); break;
-        case 2:  setProcessNumPadButton(); break;
-        case 3:  setProcessNumPadButton(); break;
-        case 4:  setProcessNumPadButton(); break;
-        case 5:  setProcessNumPadButton(); break;
-        case 6:  setProcessNumPadButton(); break;
-        case 7:  setProcessNumPadButton(); break;
-        case 8:  setProcessNumPadButton(); break;
-        case 9:  setProcessNumPadButton(); break;
-        case 10: setProcessNumPadButton(); break;
-        case 11: setProcessNumPadButton(); break;
-        default: break;
-        }
+    // Get button and print label
+    switch (sButtonPosition) {
+      case 0:  setProcessNumPadButton(); break;
+      case 1:  setProcessNumPadButton(); break;
+      case 2:  setProcessNumPadButton(); break;
+      case 3:  setProcessNumPadButton(); break;
+      case 4:  setProcessNumPadButton(); break;
+      case 5:  setProcessNumPadButton(); break;
+      case 6:  setProcessNumPadButton(); break;
+      case 7:  setProcessNumPadButton(); break;
+      case 8:  setProcessNumPadButton(); break;
+      case 9:  setProcessNumPadButton(); break;
+      case 10: setProcessNumPadButton(); break;
+      case 11: setProcessNumPadButton(); break;
+      default: break;
+    }
 
     // Time Select Button
     if (Tselect) {
@@ -366,35 +367,34 @@ void SettingsScreen::updateThisStatus() {
     } else {
       drawButton(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, BUTTON_OFF, S_SEND_T_OFF_X, S_SEND_T_OFF_Y, "Send"); 
     }
+}
 
-    // Get and show the Time and Location status
-    char tempReply[10];
-    // show Local Time 24 Hr format
-    getLocalCmdTrim(":GL#", tempReply); 
-    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y, 0, 80, 16, tempReply);
+void SettingsScreen::updateSettingsStatus() {
+  // Get and show the Time and Location status
+  char tempReply[10];
+  // show Local Time 24 Hr format
+  getLocalCmdTrim(":GL#", tempReply); 
+  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y, 0, 80, 16, tempReply);
 
-    // show Current Date
-    getLocalCmdTrim(":GC#", tempReply); 
-    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y, 0, 80, 16, tempReply);
+  // show Current Date
+  getLocalCmdTrim(":GC#", tempReply); 
+  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y, 0, 80, 16, tempReply);
 
-    // show TZ Offset
-    getLocalCmdTrim(":GG#", tempReply); 
-    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*2, 0, 80, 16, tempReply);
+  // show TZ Offset
+  getLocalCmdTrim(":GG#", tempReply); 
+  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*2, 0, 80, 16, tempReply);
 
-    // show Latitude
-    getLocalCmdTrim(":Gt#", tempReply); 
-    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*3, 0, 80, 16, tempReply);
+  // show Latitude
+  getLocalCmdTrim(":Gt#", tempReply); 
+  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*3, 0, 80, 16, tempReply);
 
-    // show Longitude
-    getLocalCmdTrim(":Gg#", tempReply); 
-    canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*4, 0, 80, 16, tempReply);
-
-    screenTouched = false;
-  }
+  // show Longitude
+  getLocalCmdTrim(":Gg#", tempReply); 
+  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*4, 0, 80, 16, tempReply);
 }
 
 // **** TouchScreen was touched, determine which button *****
-void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
+bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
   
   //were number Pad buttons pressed?
   for(int i=0; i<4; i++) { 
@@ -407,6 +407,7 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
         sButtonPosition=row*3+col;
         //VF("sButtonPosition="); VL(sButtonPosition);
         sNumDetected = true;
+        return true;
       }
     }
   }
@@ -418,6 +419,7 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = false;
     LaSelect = false;
     LoSelect = false;
+    return true;
   }
 
   // Clear Time field
@@ -425,6 +427,7 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tclear = true; 
     TtextIndex = 0;
     sButtonPosition = 12; 
+    return true;
   }
 
   // Select Date field
@@ -434,13 +437,15 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = false;
     LaSelect = false;
     LoSelect = false;
+    return true;
   }
 
   // Clear DEC field
   if (py > D_CLEAR_Y && py < (D_CLEAR_Y + CO_BOXSIZE_Y) && px > D_CLEAR_X && px < (D_CLEAR_X + CO_BOXSIZE_X)) {
     Dclear = true; 
     DtextIndex = 0;
-    sButtonPosition = 12; 
+    sButtonPosition = 12;
+    return true; 
   }
 
   // Select TZ field
@@ -450,13 +455,15 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = true;
     LaSelect = false;
     LoSelect = false;
+    return true;
   }
 
   // Clear TZ field
   if (py > U_CLEAR_Y && py < (U_CLEAR_Y + CO_BOXSIZE_Y) && px > U_CLEAR_X && px < (U_CLEAR_X + CO_BOXSIZE_X)) {
     Tzclear = true; 
     TztextIndex = 0;
-    sButtonPosition = 12; 
+    sButtonPosition = 12;
+    return true; 
   }
 
   // Select Latitude field
@@ -466,13 +473,15 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = false;
     LaSelect = true;
     LoSelect = false;
+    return true;
   }
 
   // Clear Latitude field
   if (py > LA_CLEAR_Y && py < (LA_CLEAR_Y + CO_BOXSIZE_Y) && px > LA_CLEAR_X && px < (LA_CLEAR_X + CO_BOXSIZE_X)) {
     LaClear = true; 
     LaTextIndex = 0;
-    sButtonPosition = 12; 
+    sButtonPosition = 12;
+    return true; 
   }
 
 // Select Longitude field
@@ -482,13 +491,15 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = false;
     LaSelect = false;
     LoSelect = true;
+    return true;
   }
 
   // Clear Longitude field
   if (py > LO_CLEAR_Y && py < (LO_CLEAR_Y + CO_BOXSIZE_Y) && px > LO_CLEAR_X && px < (LO_CLEAR_X + CO_BOXSIZE_X)) {
     LoClear = true; 
     LoTextIndex = 0;
-    sButtonPosition = 12; 
+    sButtonPosition = 12;
+    return true; 
   }
 
   // SEND Data
@@ -560,7 +571,9 @@ void SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
       cat_mgr.setLstT0(shc.getLstT0());
     //  }
     }
+    return true;
   }
+  return false;
 }
 
 SettingsScreen settingsScreen;

@@ -11,8 +11,8 @@
 class ODriveScreen : public Display {
   public:
     void draw();
-    void touchPoll(uint16_t px, uint16_t py);
-    void updateThisStatus();
+    bool touchPoll(uint16_t px, uint16_t py);
+    void updateOdriveButtons();
     void decodeODriveErrors(int axis, Component, uint32_t errorCode);
     
   private:
@@ -29,7 +29,6 @@ class ODriveScreen : public Display {
     bool OdStopButton;
     bool demoActive;
     bool ODpositionUpdateEnabled;
-           
     int demoHandle;
 };
 

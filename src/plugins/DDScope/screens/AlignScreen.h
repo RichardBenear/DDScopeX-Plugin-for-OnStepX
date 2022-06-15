@@ -22,8 +22,8 @@ typedef enum {
 class AlignScreen : public Display {
   public:
     void draw();
-    void touchPoll(uint16_t px, uint16_t py);
-    void updateThisStatus();
+    bool touchPoll(uint16_t px, uint16_t py);
+    void updateAlignButtons();
     void stateMachine();
    
   private:

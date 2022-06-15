@@ -10,8 +10,9 @@
 class SettingsScreen : public Display {
   public:
     void draw();
-    void touchPoll(uint16_t px, uint16_t py);
-    void updateThisStatus();
+    bool touchPoll(uint16_t px, uint16_t py);
+    void updateSettingsButtons();
+    void updateSettingsStatus();
     
   private:
     void setProcessNumPadButton();

@@ -36,15 +36,21 @@ ODriveVersion oDversion;
 
 //****** Draw ODrive Screen ******
 void ODriveScreen::draw() {
-  currentScreen = ODRIVE_SCREEN;
-  setDayNight();
+  setCurrentScreen(ODRIVE_SCREEN);
+  setNightMode(getNightMode());
+  
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   
   drawMenuButtons();
   drawTitle(105, TITLE_TEXT_Y, "ODrive");
-  drawCommonStatusLabels();
   tft.setFont(&Inconsolata_Bold8pt7b);
+
+  drawCommonStatusLabels();
+  updateCommonStatus();
+  showGains();
+  showODriveErrors();
+  updateOdriveButtons();
 
   oDriveExt.getODriveVersion(oDversion);
 
@@ -53,9 +59,6 @@ void ODriveScreen::draw() {
   tft.setCursor(12, 177);
   tft.print("*FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
 
-  showGains();
-  showODriveErrors();
-  
   demoActive = false;
 }
 
@@ -219,115 +222,108 @@ void ODriveScreen::showODriveErrors() {
 }
 
 // ========  Update ODrive Page Status ========
-void ODriveScreen::updateThisStatus() {
+void ODriveScreen::updateOdriveButtons() {
+  tft.setFont(&Inconsolata_Bold8pt7b);
 
-  // ***** Button label updates *****
-  if (screenTouched || firstDraw || refreshScreen) { // reduce screen flicker
-    refreshScreen = false;
-    if (screenTouched) refreshScreen = true;
-    tft.setFont(&Inconsolata_Bold8pt7b);
+  int x_offset = 0;
+  int y_offset = 0;
+  y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
 
-    int x_offset = 0;
-    int y_offset = 0;
-    y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-
-    // =========== Column 1 ===========
-    if (!oDriveExt.odriveAzmPwr) {
-      drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET, "  EN AZ   ");
-    } else { //motor on
-      drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,   "AZ Enabled");
-    }
-
-    y_offset += OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-    if (!oDriveExt.odriveAltPwr) {
-      drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET, "  EN ALT   ");
-    } else { //motor on
-      drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,   "ALT Enabled");
-    }
-
-    // Second Column
-    y_offset = 0;
-    y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-    if (OdStopButton) {
-      drawButton(OD_ACT_COL_2_X + x_offset, OD_ACT_COL_2_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,    "AllStopped");
-      OdStopButton = false;
-    } else { 
-      drawButton(OD_ACT_COL_2_X + x_offset, OD_ACT_COL_2_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET+5, OD_ACT_TEXT_Y_OFFSET, "  STOP!  ");
-    }
-
-    y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-    // Clear Errors
-    if (!clearODriveErr) {
-      drawButton(OD_ACT_COL_2_X + x_offset, OD_ACT_COL_2_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "Clear Errors");
-    } else {
-      drawButton(OD_ACT_COL_2_X + x_offset, OD_ACT_COL_2_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "Errs Cleared");
-      clearODriveErr = false;
-    }
-
-    // 3rd Column
-    y_offset = -165;
-    
-    // AZ Gains High
-    if (!AZgainHigh) {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, false, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "AZ Gain Hi");
-    } else {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, true, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "AZ Gain Hi");
-    }
-
-    // AZ Gains Default
-    y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
-    if (!AZgainDefault) {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, false, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "AZ Gain Def");
-    } else {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, true, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "AZ Gain Def");
-    }
-
-    // ALT Velocity Gain High
-    y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
-    if (!ALTgainHigh) {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, false, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "ALT Gain Hi");
-    } else {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, true, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "ALT Gain Hi");
-    }
-
-    // ALT Velocity Gain Default
-    y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
-    if (!ALTgainDefault) {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, false, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "ALT Gain Def");
-    } else {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, true, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "ALT Gain Def");
-    }
-
-    y_offset = 0;
-    // Demo Button
-    if (!demoActive) {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET-4, OD_ACT_TEXT_Y_OFFSET, "Demo ODrive");
-    } else {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET-4, OD_ACT_TEXT_Y_OFFSET, "Demo Active");
-    }
-
-    y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-    // Reset ODrive Button
-    if (!resetODriveFlag) {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "Reset ODrive");
-    } else {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "  Resetting ");
-      resetODriveFlag = false;
-    }
-
-    y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-    // Enable or Disable the ODrive position update via UART
-    if (ODpositionUpdateEnabled) {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET-2, OD_ACT_TEXT_Y_OFFSET, "Dis UpDates");
-    } else {
-      drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET-2, OD_ACT_TEXT_Y_OFFSET,   "Ena UpDates");
-    }
+  // =========== Column 1 ===========
+  if (!oDriveExt.odriveAzmPwr) {
+    drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET, "  EN AZ   ");
+  } else { //motor on
+    drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,   "AZ Enabled");
   }
-  screenTouched = false;
+
+  y_offset += OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
+  if (!oDriveExt.odriveAltPwr) {
+    drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET, "  EN ALT   ");
+  } else { //motor on
+    drawButton(OD_ACT_COL_1_X + x_offset, OD_ACT_COL_1_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,   "ALT Enabled");
+  }
+
+  // Second Column
+  y_offset = 0;
+  y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
+  if (OdStopButton) {
+    drawButton(OD_ACT_COL_2_X + x_offset, OD_ACT_COL_2_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET, OD_ACT_TEXT_Y_OFFSET,    "AllStopped");
+    OdStopButton = false;
+  } else { 
+    drawButton(OD_ACT_COL_2_X + x_offset, OD_ACT_COL_2_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET+5, OD_ACT_TEXT_Y_OFFSET, "  STOP!  ");
+  }
+
+  y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
+  // Clear Errors
+  if (!clearODriveErr) {
+    drawButton(OD_ACT_COL_2_X + x_offset, OD_ACT_COL_2_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "Clear Errors");
+  } else {
+    drawButton(OD_ACT_COL_2_X + x_offset, OD_ACT_COL_2_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "Errs Cleared");
+    clearODriveErr = false;
+  }
+
+  // 3rd Column
+  y_offset = -165;
+  
+  // AZ Gains High
+  if (!AZgainHigh) {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, false, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "AZ Gain Hi");
+  } else {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, true, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "AZ Gain Hi");
+  }
+
+  // AZ Gains Default
+  y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
+  if (!AZgainDefault) {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, false, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "AZ Gain Def");
+  } else {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, true, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "AZ Gain Def");
+  }
+
+  // ALT Velocity Gain High
+  y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
+  if (!ALTgainHigh) {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, false, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "ALT Gain Hi");
+  } else {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, true, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "ALT Gain Hi");
+  }
+
+  // ALT Velocity Gain Default
+  y_offset +=OD_ACT_BOXSIZE_Y-box_height_adj + OD_ACT_Y_SPACING;
+  if (!ALTgainDefault) {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, false, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "ALT Gain Def");
+  } else {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y-box_height_adj, true, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "ALT Gain Def");
+  }
+
+  y_offset = 0;
+  // Demo Button
+  if (!demoActive) {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET-4, OD_ACT_TEXT_Y_OFFSET, "Demo ODrive");
+  } else {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET-4, OD_ACT_TEXT_Y_OFFSET, "Demo Active");
+  }
+
+  y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
+  // Reset ODrive Button
+  if (!resetODriveFlag) {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "Reset ODrive");
+  } else {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET-6, OD_ACT_TEXT_Y_OFFSET, "  Resetting ");
+    resetODriveFlag = false;
+  }
+
+  y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
+  // Enable or Disable the ODrive position update via UART
+  if (ODpositionUpdateEnabled) {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_OFF, OD_ACT_TEXT_X_OFFSET-2, OD_ACT_TEXT_Y_OFFSET, "Dis UpDates");
+  } else {
+    drawButton(OD_ACT_COL_3_X + x_offset, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, BUTTON_ON, OD_ACT_TEXT_X_OFFSET-2, OD_ACT_TEXT_Y_OFFSET,   "Ena UpDates");
+  }
 }
 
 // =========== ODrive touchscreen update ===========
-void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
+bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   int x_offset = 0;
   int y_offset = 0;
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
@@ -345,6 +341,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
       oDriveExt.odriveAzmPwr = false;
       motor1.power(false);
     }
+    return true;
   }
             
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
@@ -360,6 +357,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
       oDriveExt.odriveAltPwr = false;
       motor2.power(false); // Idle the ODrive motor
     }
+    return true;
   }
 
   // Column 2
@@ -378,6 +376,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
     }
+    return true;
   }
   
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
@@ -392,6 +391,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     oDriveExt.clearODriveErrors(ALT_MOTOR, CONTROLLER);
     oDriveExt.clearODriveErrors(ALT_MOTOR, MOTOR);
     clearODriveErr = true;
+    return true;
   }
 
   // Column 3
@@ -404,6 +404,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     oDriveExt.setODriveVelGain(AZM_MOTOR, 1.8); // Set Velocity Gain
     delay(1);
     oDriveExt.setODriveVelIntGain(AZM_MOTOR, 2.3); // Set Velocity Integrator Gain
+    return true;
   }
 
     // AZ Gain DEFault
@@ -415,6 +416,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     oDriveExt.setODriveVelGain(AZM_MOTOR, 1.5);
     delay(1);
     oDriveExt.setODriveVelIntGain(AZM_MOTOR, 2.0);
+    return true;
   }
 
     // ALT Gain HIGH
@@ -426,6 +428,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     oDriveExt.setODriveVelGain(ALT_MOTOR, 0.5); // Set Velocity Gain
     delay(1);
     oDriveExt.setODriveVelIntGain(ALT_MOTOR, 0.7); // Set Velocity Integrator Gain
+    return true;
   }
 
     // ALT Gain DEFault
@@ -437,6 +440,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     oDriveExt.setODriveVelGain(ALT_MOTOR, 0.3);
     delay(1);
     oDriveExt.setODriveVelIntGain(ALT_MOTOR, 0.4);
+    return true;
   }
 
   y_offset = 0;
@@ -456,6 +460,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
       oDriveExt.demoMode(false);
       //tasks.setDurationComplete(tasks.getHandleByName("Demo On"));
     }
+    return true;
   }
 
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
@@ -478,6 +483,7 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     AZgainDefault = true;
     ALTgainHigh = false;
     ALTgainDefault = true;
+    return true;
   }
 
   // Disable / Enable ODrive motor position update - UART between ODrive and Teensy
@@ -491,7 +497,9 @@ void ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     } else {
       ODpositionUpdateEnabled = true;
     }
+    return true;
   }  
+  return false;
 }    
 
 ODriveScreen oDriveScreen;

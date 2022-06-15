@@ -13,8 +13,7 @@
 #include <gfxfont.h>
 
 #include "../../../telescope/mount/Mount.h"
-#include "src/lib/commands/CommandErrors.h"
-#include "src/libApp/commands/ProcessCmds.h"
+//#include "src/lib/commands/CommandErrors.h"
 #include "../../../lib/tasks/OnTask.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold8pt7b.h"
@@ -64,38 +63,14 @@ void updateOnStepCmdWrapper() { display.updateOnStepCmdStatus(); }
   void updateBatVoltWrapper() { display.updateBatVoltage(); }
 #endif
 
+Screen Display::currentScreen = HOME_SCREEN;
+
 Adafruit_ILI9486_Teensy tft;
 
 // =========================================
 // ========= Initialize Display ============
 // =========================================
 void Display::init() {
-  
-  SerialLocal serialLocal; 
-
-  pinMode(ALT_THERMISTOR_PIN, INPUT); // Analog input
-  pinMode(AZ_THERMISTOR_PIN, INPUT); // Analog input
-
-  pinMode(AZ_ENABLED_LED_PIN, OUTPUT);
-  digitalWrite(AZ_ENABLED_LED_PIN,HIGH); // LED OFF, active low 
-  pinMode(ALT_ENABLED_LED_PIN, OUTPUT);
-  digitalWrite(ALT_ENABLED_LED_PIN,HIGH); // LED OFF, active low
-
-  pinMode(BATTERY_LOW_LED_PIN, OUTPUT); 
-  digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // LED OFF, active low
-
-  pinMode(FAN_ON_PIN, OUTPUT); 
-  digitalWrite(FAN_ON_PIN,LOW); // Fan is on active high
-
-  pinMode(FOCUSER_EN_PIN, OUTPUT); 
-  digitalWrite(FOCUSER_EN_PIN,HIGH); // Focuser enable is active low
-  pinMode(FOCUSER_STEP_PIN, OUTPUT); 
-  digitalWrite(FOCUSER_STEP_PIN,LOW); // Focuser Step is active high
-  pinMode(FOCUSER_DIR_PIN, OUTPUT); 
-  digitalWrite(FOCUSER_DIR_PIN,LOW); // Focuser Direction
-  pinMode(FOCUSER_SLEEP_PIN, OUTPUT); 
-  digitalWrite(FOCUSER_SLEEP_PIN,HIGH); // Focuser motor driver not sleeping
-
   VLF("MSG: Display, started"); 
   tft.begin(); delay(1);
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
@@ -105,38 +80,44 @@ void Display::init() {
 
   // start common-most-screens status
   VF("MSG: Setup, start Common screen status polling task (rate 900 ms priority 7)... ");
-  uint8_t CShandle = tasks.add(900, 0, true, 7, updateCommonWrapper, "UpdateCommonScreen");
-  if (CShandle)  { VLF("success"); } else { VLF("FAILED!"); }
+  uint8_t com_handle = tasks.add(900, 0, true, 7, updateCommonWrapper, "UpdateCommonScreen");
+  if (com_handle)  { VLF("success"); } else { VLF("FAILED!"); }
 
   // update the OnStep Cmd Error status 
   VF("MSG: Setup, start OnStep CMD status polling task (rate 1000 ms priority 7)... ");
-  uint8_t CDhandle = tasks.add(1000, 0, true, 7, updateOnStepCmdWrapper, "UpdateOnStepCmdScreen");
-  if (CDhandle) { VLF("success"); } else { VLF("FAILED!"); }
+  uint8_t cmd_handle = tasks.add(1000, 0, true, 7, updateOnStepCmdWrapper, "UpdateOnStepCmdScreen");
+  if (cmd_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   // update this specific screen status
   VF("MSG: Setup, start Screen-specific status polling task (rate 2000 ms priority 7)... ");
-  uint8_t SShandle = tasks.add(2000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
-  if (SShandle)  { VLF("success"); } else { VLF("FAILED!"); }
+  us_handle = tasks.add(2000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
+  if (us_handle)  { VLF("success"); } else { VLF("FAILED!"); }
 
   #ifdef ODRIVE_MOTOR_PRESENT
     // update the ODrive Error status 
     VF("MSG: Setup, start ODrive Errors polling task (rate 1000 ms priority 7)... ");
-    uint8_t ODhandle = tasks.add(1000, 0, true, 7, updateODriveErrWrapper, "UpdateODriveErrors");
-    if (ODhandle) { VLF("success"); } else { VLF("FAILED!"); }
+    uint8_t od_handle = tasks.add(1000, 0, true, 7, updateODriveErrWrapper, "UpdateODriveErrors");
+    if (od_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
     // update battery voltage
-    VF("MSG: Setup, start battery status polling task (rate 5000 ms priority 7)... ");
-    uint8_t BVhandle = tasks.add(5000, 0, true, 7, updateBatVoltWrapper, "UpdateBatVolt");
-    if (BVhandle)  { VLF("success"); } else { VLF("FAILED!"); }
+    VF("MSG: Setup, start Battery voltage polling task (rate 5000 ms priority 7)... ");
+    uint8_t bv_handle = tasks.add(5000, 0, true, 7, updateBatVoltWrapper, "UpdateBatVolt");
+    if (bv_handle)  { VLF("success"); } else { VLF("FAILED!"); }
   
     // make sure motor power starts OFF
     oDriveExt.odriveAzmPwr = false;
     oDriveExt.odriveAltPwr = false;
   #endif
 
-  // draw Home screen
-  tft.setFont(&Inconsolata_Bold8pt7b);
-  homeScreen.draw();
+ // set some defaults
+  VLF("MSG: Setting up Limits, TZ, Site Name, Slew Speed");
+  setLocalCmd(":SG+07:00#"); // Set Default Time Zone
+  setLocalCmd(":Sh-01#"); //Set horizon limit -1 deg
+  setLocalCmd(":So86#"); // Set overhead limit 86 deg
+  setLocalCmd(":SMHome#"); // Set Site 0 name "Home"
+  setLocalCmd(":SX93,1#"); // 2x slew speed
+  //setLocalCmd(":SX93,2#"); // 1.5x slew speed
+  //setLocalCmd(":SX93,3#"); // 1.0x slew speed
 }
 
 // initialize the SD card and boot screen
@@ -166,32 +147,29 @@ void Display::sdInit() {
   tft.printf("NGC 1566");
 }
 
+// screen selection
+void Display::setCurrentScreen(Screen curScreen) {
+currentScreen = curScreen;
+};
+
 // select which screen to update
 void Display::updateSpecificScreen() {
-  if (lastScreen != currentScreen) {
-    firstDraw = true;
-    lastScreen = currentScreen;
-  }
-  
   switch (currentScreen) {
-    case HOME_SCREEN:       homeScreen.updateThisStatus();      break;
-    case GUIDE_SCREEN:      guideScreen.updateThisStatus();     break;
-    case FOCUSER_SCREEN:    dCfocuserScreen.updateThisStatus(); break;
-    case GOTO_SCREEN:       gotoScreen.updateThisStatus();      break;
-    case MORE_SCREEN:       moreScreen.updateThisStatus();      break;
-    case SETTINGS_SCREEN:   settingsScreen.updateThisStatus();  break;
-    case ALIGN_SCREEN:      alignScreen.updateThisStatus();     break;
-    case CATALOG_SCREEN:    catalogScreen.updateThisStatus();   break;
-    case PLANETS_SCREEN:    planetsScreen.updateThisStatus();   break;
-    case CUST_CAT_SCREEN:   catalogScreen.updateThisStatus();   break;
+    case HOME_SCREEN:       homeScreen.updateHomeStatus();      break;
+    //case GUIDE_SCREEN:      guideScreen.updateGuideStatus();     break;
+    case FOCUSER_SCREEN:    dCfocuserScreen.updateFocuserStatus(); break;
+    //case GOTO_SCREEN:       gotoScreen.updateGotoStatus();      break;
+    //case MORE_SCREEN:       moreScreen.updateMoreStatus();      break;
+    case SETTINGS_SCREEN:   settingsScreen.updateSettingsStatus();  break;
+    //case ALIGN_SCREEN:      alignScreen.updateAlignStatus();     break;
+    //case CATALOG_SCREEN:    catalogScreen.updateCatalogStatus();   break;
+    //case PLANETS_SCREEN:    planetsScreen.updatePlanetsStatus();   break;
+    //case CUST_CAT_SCREEN:   catalogScreen.updateCustStatus();   break;
     case XSTATUS_SCREEN:                                        break;
     #ifdef ODRIVE_MOTOR_PRESENT
-      case ODRIVE_SCREEN:   oDriveScreen.updateThisStatus();    break;
+      //case ODRIVE_SCREEN:   oDriveScreen.updateOdriveStatus();    break;
     #endif
   }
-  firstDraw = false;
-
-  tasks.yield(100);
 }
 
 // ======= Use Local Command Channel ========
@@ -279,7 +257,7 @@ void Display::canvPrint(int x, int y, int y_off, int width, int height, int labe
 }
 
 // Color Themes (Day and Night)
-void Display::setDayNight() {
+void Display::setNightMode(bool nightMode) {
   if (!nightMode) {
     // Day Color Theme
     pgBackground = DEEP_MAROON; 
@@ -299,9 +277,9 @@ void Display::setDayNight() {
 
 // ============ OnStep Command Errors ===============
 void Display::updateOnStepCmdStatus() {
-  if (currentScreen == CATALOG_SCREEN || 
-    currentScreen == PLANETS_SCREEN ||
-    currentScreen == CUST_CAT_SCREEN) return;
+  if (Display::currentScreen == CATALOG_SCREEN || 
+    Display::currentScreen == PLANETS_SCREEN ||
+    Display::currentScreen == CUST_CAT_SCREEN) return;
   char cmd[40];
   //NEEDS WORK: sprintf(cmd, "OnStep Err: %s", commandErrorStr[commandError]);
   if (!tls.isReady()) {
@@ -313,9 +291,9 @@ void Display::updateOnStepCmdStatus() {
 
 // ODrive AZ and ALT CONTROLLER (only) Error Status
 void Display::updateODriveErrBar() {
-  if (currentScreen == CATALOG_SCREEN || 
-    currentScreen == PLANETS_SCREEN ||
-    currentScreen == CUST_CAT_SCREEN) return;
+if (Display::currentScreen == CATALOG_SCREEN || 
+    Display::currentScreen == PLANETS_SCREEN ||
+    Display::currentScreen == CUST_CAT_SCREEN) return;
   int x = 2;
   int y = 473;
   int label_x = 160;
@@ -329,7 +307,7 @@ void Display::updateODriveErrBar() {
   canvPrint(        data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(AZM_MOTOR, AXIS));
   canvPrint(label_x+data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(ALT_MOTOR, AXIS));
 
-  // sound varying frequency alarm if Motor and Encoders positioins are too far apart
+  // sound varying frequency alarm if Motor and Encoders positions are too far apart
   oDriveExt.MotorEncoderDelta();
 }
 
@@ -360,7 +338,7 @@ void Display::drawMenuButtons() {
   //  Alignment------| Al | Ho | Fo | Gu | Mo |
 
   
-  switch(currentScreen) {
+  switch(Display::currentScreen) {
     case HOME_SCREEN: 
       x_offset = 0;
       y_offset = 0;
@@ -573,7 +551,7 @@ void Display::drawCommonStatusLabels() {
 // Update Battery Voltage
 void Display::updateBatVoltage() {
   currentBatVoltage = oDriveExt.getODriveBusVoltage();
-  if ((currentBatVoltage != lastBatVoltage) || firstDraw) {
+  if (currentBatVoltage != lastBatVoltage) {
     if (currentBatVoltage < BATTERY_LOW_VOLTAGE) {
       tft.setCursor(140, 40);
       tft.print(currentBatVoltage);
@@ -588,9 +566,9 @@ void Display::updateBatVoltage() {
 // UpdateCommon Status - Real time data update for the particular labels printed above
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
-  if (currentScreen == CATALOG_SCREEN || 
-      currentScreen == PLANETS_SCREEN ||
-      currentScreen == CUST_CAT_SCREEN) return;
+  if (Display::currentScreen == CATALOG_SCREEN || 
+    Display::currentScreen == PLANETS_SCREEN ||
+    Display::currentScreen == CUST_CAT_SCREEN) return;
 
   // One Time update the SHC LST and Latitude if GPS locked
   if (tls.isReady() && firstGPS) {
@@ -603,7 +581,7 @@ void Display::updateCommonStatus() {
   // Column 1
   // Current RA, Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
   getLocalCmdTrim(":GR#", ra_hms);
-  if ((strcmp(currentRA, ra_hms)) || firstDraw) {
+  if ((strcmp(currentRA, ra_hms)) ) {
    canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
     strcpy(currentRA, ra_hms);
   }
@@ -611,7 +589,7 @@ void Display::updateCommonStatus() {
 // Target RA, Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
   y_offset +=COM_LABEL_Y_SPACE; 
   getLocalCmdTrim(":Gr#", tra_hms);
-  if ((strcmp(currentTargRA, tra_hms)) || firstDraw) {
+  if ((strcmp(currentTargRA, tra_hms)) ) {
     canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tra_hms);
     strcpy(currentTargRA, tra_hms);
   }
@@ -619,7 +597,7 @@ void Display::updateCommonStatus() {
 // Current DEC
    y_offset +=COM_LABEL_Y_SPACE; 
   getLocalCmdTrim(":GD#", dec_dms);
-  if ((strcmp(currentDEC, dec_dms)) || firstDraw) {
+  if ((strcmp(currentDEC, dec_dms)) ) {
     canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, dec_dms);
     strcpy(currentDEC, dec_dms);
   }
@@ -627,7 +605,7 @@ void Display::updateCommonStatus() {
   // Target DEC
   y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":Gd#", tdec_dms); 
-  if ((strcmp(currentTargDEC, tdec_dms)) || firstDraw) {
+  if ((strcmp(currentTargDEC, tdec_dms)) ) {
     canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tdec_dms);
     strcpy(currentTargDEC, tdec_dms);
   }
@@ -661,32 +639,31 @@ void Display::updateCommonStatus() {
   shc.dmsToDouble(&tAlt_d, tAltDMS, true, true);
 
   //--Current-- AZM float
-  if ((current_cAzm != cAzm_d) || firstDraw) { 
+  if ((current_cAzm != cAzm_d) ) { 
     canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAzm_d);
     current_cAzm = cAzm_d;
   }
 
   // --Target-- AZM in degrees float
   y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_tAzm != tAzm_d) || firstDraw) {
+  if ((current_tAzm != tAzm_d) ) {
     canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAzm_d);
     current_tAzm = tAzm_d;
   }
 
   // --Current-- ALT
   y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_cAlt != cAlt_d) || firstDraw) {
+  if ((current_cAlt != cAlt_d) ) {
     canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAlt_d);
     current_cAlt = cAlt_d;
   }
   
   // --Target-- ALT in degrees
   y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_tAlt != tAlt_d) || firstDraw) {
+  if ((current_tAlt != tAlt_d) ) {
     canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAlt_d);
     current_tAlt = tAlt_d;
   }
-  firstDraw = false;
 }
 
 // draw a picture -This member function is a copy from rDUINOScope but with 

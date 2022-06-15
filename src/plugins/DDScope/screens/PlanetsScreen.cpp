@@ -39,30 +39,33 @@ const char PlanetNames[8][8] = {"Mercury", "Venus", "Mars", "Jupiter", "Saturn",
 
 // Initialize the PLANETS page
 void PlanetsScreen::draw() {
-    currentScreen = PLANETS_SCREEN;
-    setDayNight();
-    tft.setTextColor(textColor);
-    tft.fillScreen(pgBackground);
-    drawTitle(110, TITLE_TEXT_Y, "Planets");
-    tft.setFont(&Inconsolata_Bold8pt7b);
-    planetPrevSel = 0;
-    planetButSelPos = 2; // Mars on page entry
-
-    // Get the UTC offset from Onstep 
-    char utcOffset[4];
-    getLocalCmdTrim(":GG#", utcOffset); 
-    utcOffset[3] = 0; // clear # character
-
-    // UTC adjustment for Ephemeris code...e.g. :GG# returns 7 for my location..Ephemeris wants -6 
-    // probably a result of the difference in how OnStep defines UTC and how Ephermeris defines it
-    utc = (atoi(utcOffset) -1) * -1; // adjust Onstep UTC to Ephemeris expected UT
+  setCurrentScreen(PLANETS_SCREEN);
+  setNightMode(getNightMode());
     
-    getPlanet(planetButSelPos); // init screen
+  tft.setTextColor(textColor);
+  tft.fillScreen(pgBackground);
+  drawTitle(110, TITLE_TEXT_Y, "Planets");
+  tft.setFont(&Inconsolata_Bold8pt7b);
+  planetPrevSel = 0;
+  planetButSelPos = 2; // Mars on page entry
 
-    for(int row=0; row<PLANET_ROWS; row++) {
-        drawButton(PLANET_X, PLANET_Y+row*(PLANET_H+PLANET_Y_SPACING), PLANET_W, PLANET_H, false, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[row]);
-    }
-    drawButton(P_RETURN_X, P_RETURN_Y, P_RETURN_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "RETURN");
+  // Get the UTC offset from Onstep 
+  char utcOffset[4];
+  getLocalCmdTrim(":GG#", utcOffset); 
+  utcOffset[3] = 0; // clear # character
+
+  // UTC adjustment for Ephemeris code...e.g. :GG# returns 7 for my location..Ephemeris wants -6 
+  // probably a result of the difference in how OnStep defines UTC and how Ephermeris defines it
+  utc = (atoi(utcOffset) -1) * -1; // adjust Onstep UTC to Ephemeris expected UT
+  
+  getPlanet(planetButSelPos); // init screen
+  updatePlanetsButtons();
+  /*
+  for(int row=0; row<PLANET_ROWS; row++) {
+      drawButton(PLANET_X, PLANET_Y+row*(PLANET_H+PLANET_Y_SPACING), PLANET_W, PLANET_H, false, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[row]);
+  }
+  drawButton(P_RETURN_X, P_RETURN_Y, P_RETURN_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "RETURN");
+  */
 }
 
 // Need to map the index used here for selected planets to the ones used for solar system index in the Ephermeris
@@ -296,12 +299,12 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     setLocalCmd(cmd);
     
     // the following 5 lines are displayed on the Catalog/More page
-    CatalogScreen cs;
-    snprintf(cs.catSelectionStr1, 16, "Name-:%-16s", PlanetNames[planetButSelPos]);
-    snprintf(cs.catSelectionStr2, 12, "AZM--:%-12f", obj.horiCoordinates.azi);
-    snprintf(cs.catSelectionStr3, 12, "ALT--:%-12f", obj.horiCoordinates.alt);
-    snprintf(cs.catSelectionStr4, 16, "RA---:%-16s", raPrint);
-    snprintf(cs.catSelectionStr5, 16, "DEC--:%-16s", decPrint);
+   // CatalogScreen cs;
+    //snprintf(cs.catSelectionStr1, 16, "Name-:%-16s", PlanetNames[planetButSelPos]);
+    //snprintf(cs.catSelectionStr2, 12, "AZM--:%-12f", obj.horiCoordinates.azi);
+    //snprintf(cs.catSelectionStr3, 12, "ALT--:%-12f", obj.horiCoordinates.alt);
+   // snprintf(cs.catSelectionStr4, 16, "RA---:%-16s", raPrint);
+    //snprintf(cs.catSelectionStr5, 16, "DEC--:%-16s", decPrint);
 
     moreScreen.objectSelected = true;
 }
@@ -309,36 +312,30 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
 // ******************************************************
 // Update for buttons 
 // ******************************************************
-void PlanetsScreen::updateThisStatus() {
-    if (screenTouched || firstDraw || refreshScreen) { 
-      refreshScreen = false;
-      if (screenTouched) refreshScreen = true;
-        //VF("planetButSelPos="); VL(planetButSelPos);
-        //VF("planetName=");  VL(PlanetNames[planetButSelPos]);
-        // Detect which Planet selected
-        if (planetButDetected) {
-           
-            // ERASE old: set background back to unselected and replace the previous name field
-            drawButton(PLANET_X, PLANET_Y+planetPrevSel*(PLANET_H+PLANET_Y_SPACING), 
-                    PLANET_W, PLANET_H, false, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[planetPrevSel]);  
-            
-            // DRAW new: highlight by settting background ON color for button selected
-            drawButton(PLANET_X, PLANET_Y+planetButSelPos*(PLANET_H+PLANET_Y_SPACING), 
-                    PLANET_W, PLANET_H, true, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[planetButSelPos]);
-            
-            getPlanet(planetButSelPos);
-        
-            planetButDetected = false;
-            planetPrevSel = planetButSelPos;
-        }
-    screenTouched = false; // passed back to the touchscreen handler
-    }
+void PlanetsScreen::updatePlanetsButtons() {
+  //VF("planetButSelPos="); VL(planetButSelPos);
+  //VF("planetName=");  VL(PlanetNames[planetButSelPos]);
+  // Detect which Planet selected
+  if (planetButDetected) {
+    // ERASE old: set background back to unselected and replace the previous name field
+    drawButton(PLANET_X, PLANET_Y+planetPrevSel*(PLANET_H+PLANET_Y_SPACING), 
+            PLANET_W, PLANET_H, false, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[planetPrevSel]);  
+    
+    // DRAW new: highlight by settting background ON color for button selected
+    drawButton(PLANET_X, PLANET_Y+planetButSelPos*(PLANET_H+PLANET_Y_SPACING), 
+            PLANET_W, PLANET_H, true, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[planetButSelPos]);
+    
+    getPlanet(planetButSelPos);
+
+    planetButDetected = false;
+    planetPrevSel = planetButSelPos;
+  }
 }
 
 // *****************************************************
 // **** Handle any buttons that have been pressed ****
 // *****************************************************
-void PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
+bool PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
     // check the Planet Buttons
     for (int row=0; row<PLANET_ROWS; row++) {
         if (py > PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING)) && py < (PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING))) + PLANET_H 
@@ -347,17 +344,17 @@ void PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
             planetButSelPos = row;
             planetsScreen.mapPlanetIndex(row);
             planetButDetected = true;
-            return;
+            return true;
         }
     }
 
     // RETURN page button - reuse BACK button box size
     if (py > P_RETURN_Y && py < (P_RETURN_Y + BACK_H) && px > P_RETURN_X && px < (P_RETURN_X + P_RETURN_W)) {
       DD_CLICK;
-        screenTouched = false;
         moreScreen.draw();
-        return;
+        return true;
     }
+    return false;
 }
 
 PlanetsScreen planetsScreen;

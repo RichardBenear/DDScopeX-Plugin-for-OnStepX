@@ -96,7 +96,9 @@ void AlignSMWrapper() {alignScreen.stateMachine(); }
 
 // Draw Alignment Page
 void AlignScreen::draw() { 
-  currentScreen = ALIGN_SCREEN;
+  setCurrentScreen(ALIGN_SCREEN);
+  setNightMode(getNightMode());
+  
   homeBut = false;
   catalogBut = false;
   gotoBut = false;
@@ -107,16 +109,17 @@ void AlignScreen::draw() {
   startAlignBut = false;
   firstLabel = false;
   
-  setDayNight();
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
   drawTitle(100, TITLE_TEXT_Y, "Alignment");
+  tft.setFont(&Inconsolata_Bold8pt7b);
   drawCommonStatusLabels();
+  updateCommonStatus();
   getAlignStatus();
   showCorrections();
+  updateAlignButtons();
   moreScreen.catSelected = 0; // star catalog
-  tft.setFont(&Inconsolata_Bold8pt7b);
 }
 
 void AlignScreen::getAlignStatus() {
@@ -210,106 +213,97 @@ void AlignScreen::showCorrections() {
 12) The [ABORT] button resets back to the Start 0) and shuts off motors
 ********************************************************/
 
-// *********** Update Align Page Status **************
-void AlignScreen::updateThisStatus() {
-  // **************************************************
-  // Update Buttons - only if the screen is touched
-  //          or first time here, or single refresh flash
-  // **************************************************
-  if (screenTouched || firstDraw || refreshScreen || aborted) { 
-    refreshScreen = false;
-    if (screenTouched) refreshScreen = true;
+// *********** Update Align Buttons **************
+void AlignScreen::updateAlignButtons() {
 
-    getAlignStatus();
+  getAlignStatus();
 
-    // Go to Home Position
-    if (homeBut) {
-      if (!lCmountStatus.isHome() || lCmountStatus.isSlewing()) {
-          drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_OFF, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");  
-      }
-    } else {
-      drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_ON, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");           
+  // Go to Home Position
+  if (homeBut) {
+    if (!lCmountStatus.isHome() || lCmountStatus.isSlewing()) {
+        drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_OFF, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");  
     }
-      
-    // Number of Stars for Alignment Buttons
-    // Alignment become active here
-    int x_offset = 0;
-    if (numAlignStars == 1) {   
-        drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 1 "); 
-    } else {
-        drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 1 ");
-    } 
-    x_offset += NUM_S_SPACING_X;
-    if (numAlignStars == 2) {  
-        drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 2 "); 
-    } else {
-        drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 2 ");
-    } 
-    x_offset += NUM_S_SPACING_X;
-    if (numAlignStars == 3) {  
-        drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 3 "); 
-    } else {
-        drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 3 ");
-    } 
-
-    // go to the Star Catalog
-    if (catalogBut) {
-        drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, BUTTON_ON, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");   
-    } else {
-        drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, BUTTON_OFF, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");            
-    }
-
-    // Go To Coordinates Button
-    if (gotoBut || lCmountStatus.isSlewing()) {
-        drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-2, GOTO_T_OFF_Y, "Going");
-    } else {
-        drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X, GOTO_T_OFF_Y, "GOTO"); 
-    }
-    
-    // Abort Alignment Button
-    if (abortBut) {
-      drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-5, GOTO_T_OFF_Y, "Abort'g");
-      setLocalCmd(":Q#"); // stops move
-      // How do you select which axis to power down???
-      motor1.power(false); // do this for safety reasons...mount may be colliding with something
-      motor2.power(false);
-      numAlignStars = 0;
-      alignCurStar = 0;
-      abortBut = false;
-      startAlignBut = false;
-      aborted = true;
-      catalogBut = false;
-      homeBut = false;
-      alignBut = false;
-      Next_State = Idle_State;
-    } else {
-      drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X-9, GOTO_T_OFF_Y, " ABORT "); 
-      aborted = false;
-    }
-
-    // ALIGN button; calculate alignment parameters
-    if (alignBut) {
-      drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_ON, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");    
-    } else {
-      drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_OFF, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");            
-    }
-
-    // save the alignment calculations to EEPROM
-    if (saveAlignBut) {
-      drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, BUTTON_ON, SA_T_OFF_X, SA_T_OFF_Y, "SAVEed");
-    } else {
-      drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, BUTTON_OFF, SA_T_OFF_X, SA_T_OFF_Y, "SAVE");
-    }
-
-    // start alignnment
-    if (startAlignBut) {
-      drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, BUTTON_ON, ST_T_OFF_X-10, ST_T_OFF_Y, "STARTed");
-    } else {
-      drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, BUTTON_OFF, ST_T_OFF_X, ST_T_OFF_Y, "START");
-    }
+  } else {
+    drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_ON, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");           
   }
-  screenTouched = false;
-} // end this status update
+    
+  // Number of Stars for Alignment Buttons
+  // Alignment become active here
+  int x_offset = 0;
+  if (numAlignStars == 1) {   
+      drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 1 "); 
+  } else {
+      drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 1 ");
+  } 
+  x_offset += NUM_S_SPACING_X;
+  if (numAlignStars == 2) {  
+      drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 2 "); 
+  } else {
+      drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 2 ");
+  } 
+  x_offset += NUM_S_SPACING_X;
+  if (numAlignStars == 3) {  
+      drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 3 "); 
+  } else {
+      drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 3 ");
+  } 
+
+  // go to the Star Catalog
+  if (catalogBut) {
+      drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, BUTTON_ON, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");   
+  } else {
+      drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, BUTTON_OFF, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");            
+  }
+
+  // Go To Coordinates Button
+  if (gotoBut || lCmountStatus.isSlewing()) {
+      drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-2, GOTO_T_OFF_Y, "Going");
+  } else {
+      drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X, GOTO_T_OFF_Y, "GOTO"); 
+  }
+  
+  // Abort Alignment Button
+  if (abortBut) {
+    drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-5, GOTO_T_OFF_Y, "Abort'g");
+    setLocalCmd(":Q#"); // stops move
+    // How do you select which axis to power down???
+    motor1.power(false); // do this for safety reasons...mount may be colliding with something
+    motor2.power(false);
+    numAlignStars = 0;
+    alignCurStar = 0;
+    abortBut = false;
+    startAlignBut = false;
+    aborted = true;
+    catalogBut = false;
+    homeBut = false;
+    alignBut = false;
+    Next_State = Idle_State;
+  } else {
+    drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X-9, GOTO_T_OFF_Y, " ABORT "); 
+    aborted = false;
+  }
+
+  // ALIGN button; calculate alignment parameters
+  if (alignBut) {
+    drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_ON, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");    
+  } else {
+    drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_OFF, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");            
+  }
+
+  // save the alignment calculations to EEPROM
+  if (saveAlignBut) {
+    drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, BUTTON_ON, SA_T_OFF_X, SA_T_OFF_Y, "SAVEed");
+  } else {
+    drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, BUTTON_OFF, SA_T_OFF_X, SA_T_OFF_Y, "SAVE");
+  }
+
+  // start alignnment
+  if (startAlignBut) {
+    drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, BUTTON_ON, ST_T_OFF_X-10, ST_T_OFF_Y, "STARTed");
+  } else {
+    drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, BUTTON_OFF, ST_T_OFF_X, ST_T_OFF_Y, "START");
+  }
+}
 
 void AlignScreen::stateMachine() {
   // Display Alignment Status
@@ -417,7 +411,7 @@ void AlignScreen::stateMachine() {
     }
         
     case Wait_Catalog_State: {
-      if (currentScreen == ALIGN_SCREEN) { // doesn't change state until Catalog points back to this page
+      if (display.currentScreen == ALIGN_SCREEN) { // doesn't change state until Catalog points back to this page
         if (moreScreen.objectSelected) { // a star has been selected from the catalog
           Next_State = Goto_State;
         } else {
@@ -500,20 +494,19 @@ void AlignScreen::stateMachine() {
     }
     default: Next_State = Idle_State; 
   } // end switch current state
-  if (Current_State != Next_State) refreshScreen=true; else refreshScreen=false;
-  screenTouched = false;
+  if (Current_State != Next_State) tasks.immediate(us_handle); 
 }
 
-// ========================================
-// === Manage Touching of Align Buttons ===
-// ========================================
-void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
+// === Check Align Buttons ===
+// return true if touched
+bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
   // Go to Home Telescope Requested
   if (px > HOME_X && px < HOME_X + HOME_BOXSIZE_W && py > HOME_Y  && py < HOME_Y + HOME_BOXSIZE_H) {
     DD_CLICK;
     if (Current_State==Home_State) {
       homeBut = true;
     }
+    return true;
   }
   
   // Number of Stars for alignment
@@ -522,16 +515,19 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     if (py > NUM_S_Y && py < (NUM_S_Y + NUM_S_BOXSIZE_H) && px > NUM_S_X+x_offset && px < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
       DD_CLICK;
       numAlignStars = 1;
+      return true;
     }
     x_offset += NUM_S_SPACING_X;
     if (py > NUM_S_Y && py < (NUM_S_Y + NUM_S_BOXSIZE_H) && px > NUM_S_X+x_offset && px < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
       DD_CLICK;
       numAlignStars = 2;
+      return true;
     }
     x_offset += NUM_S_SPACING_X;
     if (py > NUM_S_Y && py < (NUM_S_Y + NUM_S_BOXSIZE_H) && px > NUM_S_X+x_offset && px < (NUM_S_X+x_offset + NUM_S_BOXSIZE_W)) {
       DD_CLICK;
       numAlignStars = 3;
+      return true;
     }
   }
 
@@ -541,6 +537,7 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     if (Current_State==Select_Catalog_State ) {
       catalogBut = true;
     }
+    return true;
   }
 
   // Go To Target Coordinates
@@ -549,6 +546,7 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     if (Current_State==Goto_State) { 
       gotoBut = true;
     }
+    return true;
   }
 
   // ==== ABORT GOTO ====
@@ -556,6 +554,7 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     DD_CLICK;
     abortBut = true;
     tasks.setDurationComplete(tasks.getHandleByName("AlignStateMachine"));
+    return true;
   }
 
   // ALIGN / calculate alignment corrections Button
@@ -564,6 +563,7 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     if (Current_State==Align_State) {
       alignBut = true;
     }
+    return true;
   }
 
   // Write Alignment Button
@@ -572,6 +572,7 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     if (Current_State==Write_State) {
       saveAlignBut = true;
     }
+    return true;
   }  
 
   // START Alignment Button - clear the corrections, reset the state machine
@@ -601,7 +602,9 @@ void AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     VF("MSG: Setup, start screen update This screen status polling task (rate 3000 ms priority 7)... ");
     uint8_t alignSMhandle = tasks.add(500, 0, true, 7, AlignSMWrapper, "AlignStateMachine");
     if (alignSMhandle)  { VLF("success"); } else { VLF("FAILED!"); }
-  }  
+    return true;
+  } 
+  return false;
 }
 
 AlignScreen alignScreen;

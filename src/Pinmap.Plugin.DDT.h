@@ -23,8 +23,8 @@
 #define BATTERY_LOW_LED_PIN    22     // 24V battery LED output active low
 
 // SPI Display pins 
-// . these are assumed by Teensy driver as SPI port 1
-// ....therefore they are reserved
+// . these are assumed by TeensyArduino driver as SPI port 1
+// ....therefore they are reserved here
 #define TFT_DC                  9     // Data/Command
 #define TFT_CS                 10     // Chip Select active low
 #define TFT_MOSI               11     // Master out, Slave in

@@ -10,8 +10,8 @@
 class GotoScreen : public Display {
   public:
     void draw();
-    void touchPoll(uint16_t px, uint16_t py);
-    void updateThisStatus();
+    bool touchPoll(uint16_t px, uint16_t py);
+    void updateGotoButtons();
     
   private:
     void processNumPadButton();
@@ -35,6 +35,8 @@ class GotoScreen : public Display {
     bool numDetected;
     bool goToButton;
     bool abortPgBut;
+
+    Screen goCurScreen;
 };
 
 extern GotoScreen gotoScreen;

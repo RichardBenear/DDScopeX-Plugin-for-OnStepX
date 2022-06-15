@@ -19,7 +19,7 @@
 #define AZM_MOTOR 1
 #define ALT_MOTOR 0 
 
-#define TITLE_TEXT_Y       35
+#define TITLE_TEXT_Y       25
 
 // Screen Selection buttons
 #define MENU_X              3
@@ -113,6 +113,8 @@ class Display {
   public:
     void init();
     void sdInit();
+    void setCurrentScreen(Screen);
+    //Screen getCurrentScreen(void); // const {return curScreen; }
  
   // Local Command Channel support
     void setLocalCmd(char *command);
@@ -131,8 +133,6 @@ class Display {
     void drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint16_t HH);
 
     // Status and updates
-    Screen currentScreen = HOME_SCREEN;
-    Screen lastScreen = GUIDE_SCREEN; // must be different than current to force initial draw of HOME screen
     void updateSpecificScreen();
     void updateCommonStatus();  
     void updateOnStepCmdStatus();
@@ -141,10 +141,11 @@ class Display {
       void updateBatVoltage();
     #endif
   
-    void setDayNight();
+    void setNightMode(bool nightMode);
+    inline bool getNightMode() { return nightMode; };
 
     // frequency and duration adjustable tone
-    inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration);}
+    inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration); }
 
     // Color Theme
     uint16_t pgBackground = DEEP_MAROON; 
@@ -152,16 +153,15 @@ class Display {
     uint16_t butOnBackground = RED;
     uint16_t textColor = YELLOW; 
     uint16_t butOutline = YELLOW; 
-
-    bool firstDraw = true;
-    bool refreshScreen = false;
-    bool screenTouched = false;
+  
+    static Screen currentScreen;
     bool nightMode = false;
+    uint8_t us_handle;
 
+  private:
     float currentBatVoltage = 0.0;
     float lastBatVoltage = 0.0;
 
-  private:
     char ra_hms[10], dec_dms[11];
     char tra_hms[10], tdec_dms[11];
 
@@ -194,7 +194,6 @@ class Display {
     
     bool firstGPS = true;
 };
-
 
 // ============= Smart Hand Controller Class ======================
 // Leveraged the following from SHC with some modifications

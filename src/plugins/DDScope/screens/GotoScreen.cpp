@@ -7,6 +7,7 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include <Fonts/FreeSansBold9pt7b.h>
 #include "../../../telescope/mount/Mount.h"
+#include "../../../lib/tasks/OnTask.h"
 
 #define NUM_BUTTON_X         2
 #define NUM_BUTTON_Y         252
@@ -79,14 +80,18 @@ char numLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", 
 
 // Draw the Go To Page
 void GotoScreen::draw() {
-  setDayNight();
+  setCurrentScreen(GOTO_SCREEN);
+  setNightMode(getNightMode());
+
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
-  currentScreen = GOTO_SCREEN;
   drawTitle(115, TITLE_TEXT_Y, "Go To");
   drawMenuButtons();
-  drawCommonStatusLabels(); // status common to many pages
   tft.setFont(&Inconsolata_Bold8pt7b);
+
+  drawCommonStatusLabels();
+  updateCommonStatus();
+  updateGotoButtons();
 
   RAtextIndex = 0; 
   DECtextIndex = 0; 
@@ -140,112 +145,106 @@ void GotoScreen::processNumPadButton() {
 }
 
 // ==== Update any changing Status for GO TO Page ====
-void GotoScreen::updateThisStatus() {
-  
-  if (screenTouched || firstDraw || refreshScreen) { 
-        refreshScreen = false;
-        if (screenTouched) refreshScreen = true;
+void GotoScreen::updateGotoButtons() {
     
-    // Get button and print label
-    switch (buttonPosition) {
-      case 0:  processNumPadButton(); break;
-      case 1:  processNumPadButton(); break;
-      case 2:  processNumPadButton(); break;
-      case 3:  processNumPadButton(); break;
-      case 4:  processNumPadButton(); break;
-      case 5:  processNumPadButton(); break;
-      case 6:  processNumPadButton(); break;
-      case 7:  processNumPadButton(); break;
-      case 8:  processNumPadButton(); break;
-      case 9:  processNumPadButton(); break;
-      case 10: processNumPadButton(); break;
-      case 11: processNumPadButton(); break;
-      default: break;
-    }
-
-    // RA Select Button
-    if (RAselect) {
-      drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
-    } else {
-      drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
-    }
-
-    // RA Clear button
-    if (RAclear) {
-      drawButton(  RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
-      tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, butBackground);
-      memset(RAtext,0,sizeof(RAtext)); // clear RA buffer
-      tft.fillRect(RA_CMD_ERR_X, RA_CMD_ERR_Y+CUSTOM_FONT_OFFSET, CMD_ERR_W, CMD_ERR_H, pgBackground);
-      RAtextIndex = 0;
-      buttonPosition = 12;
-      RAclear = false;
-    } else {
-      drawButton(RA_CLEAR_X, RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
-    }
-    
-    // DEC Select button
-    if (DECselect) {
-      drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel");
-    } else {
-      drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel"); 
-    }
-
-    // DEC Clear Button
-    if (DECclear) {
-      drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
-      tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET+TEXT_FIELD_HEIGHT, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, butBackground);
-      memset(DECtext,0,sizeof(DECtext)); // clear DEC buffer
-      tft.fillRect(DEC_CMD_ERR_X, DEC_CMD_ERR_Y+CUSTOM_FONT_OFFSET, CMD_ERR_W, CMD_ERR_H, pgBackground);
-      DECtextIndex = 0;
-      buttonPosition = 12;
-      DECclear = false;
-    } else {
-      drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
-    }
-    
-    // Send Coordinates Button
-    if (sendOn) {
-      drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, BUTTON_ON, S_T_OFF_X, S_T_OFF_Y, "Sent");
-      sendOn = false; 
-    } else {
-      drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, BUTTON_OFF, S_T_OFF_X, S_T_OFF_Y, "Send"); 
-    }
-
-    // Quick Set Polaris Target Button
-    if (setPolOn) {
-      drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, BUTTON_ON, P_T_OFF_X, P_T_OFF_Y, "Setting");
-      setPolOn = false; 
-    } else {
-      drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, BUTTON_OFF, P_T_OFF_X, P_T_OFF_Y, "Polaris"); 
-    }
-
-    tft.setFont(&FreeSansBold9pt7b);    
-    // Go To Coordinates Button
-    if (goToButton) {
-      drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
-      goToButton = false;
-    } else {
-      if (!lCmountStatus.isSlewing()) { 
-        drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
-      } else {
-        refreshScreen = true;
-      }
-    }
-    
-    // Abort GoTo Button
-    if (abortPgBut) {
-      drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X-8, GTA_T_OFF_Y, "Aborting"); 
-      abortPgBut = false;
-    } else {
-      drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X, GTA_T_OFF_Y, "Abort"); 
-    }
-    tft.setFont(&Inconsolata_Bold8pt7b); 
-    screenTouched = false;
+  // Get button and print label
+  switch (buttonPosition) {
+    case 0:  processNumPadButton(); break;
+    case 1:  processNumPadButton(); break;
+    case 2:  processNumPadButton(); break;
+    case 3:  processNumPadButton(); break;
+    case 4:  processNumPadButton(); break;
+    case 5:  processNumPadButton(); break;
+    case 6:  processNumPadButton(); break;
+    case 7:  processNumPadButton(); break;
+    case 8:  processNumPadButton(); break;
+    case 9:  processNumPadButton(); break;
+    case 10: processNumPadButton(); break;
+    case 11: processNumPadButton(); break;
+    default: break;
   }
+
+  // RA Select Button
+  if (RAselect) {
+    drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
+  } else {
+    drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
+  }
+
+  // RA Clear button
+  if (RAclear) {
+    drawButton(  RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
+    tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, butBackground);
+    memset(RAtext,0,sizeof(RAtext)); // clear RA buffer
+    tft.fillRect(RA_CMD_ERR_X, RA_CMD_ERR_Y+CUSTOM_FONT_OFFSET, CMD_ERR_W, CMD_ERR_H, pgBackground);
+    RAtextIndex = 0;
+    buttonPosition = 12;
+    RAclear = false;
+  } else {
+    drawButton(RA_CLEAR_X, RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
+  }
+  
+  // DEC Select button
+  if (DECselect) {
+    drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel");
+  } else {
+    drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel"); 
+  }
+
+  // DEC Clear Button
+  if (DECclear) {
+    drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
+    tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET+TEXT_FIELD_HEIGHT, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, butBackground);
+    memset(DECtext,0,sizeof(DECtext)); // clear DEC buffer
+    tft.fillRect(DEC_CMD_ERR_X, DEC_CMD_ERR_Y+CUSTOM_FONT_OFFSET, CMD_ERR_W, CMD_ERR_H, pgBackground);
+    DECtextIndex = 0;
+    buttonPosition = 12;
+    DECclear = false;
+  } else {
+    drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
+  }
+  
+  // Send Coordinates Button
+  if (sendOn) {
+    drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, BUTTON_ON, S_T_OFF_X, S_T_OFF_Y, "Sent");
+    sendOn = false; 
+  } else {
+    drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, BUTTON_OFF, S_T_OFF_X, S_T_OFF_Y, "Send"); 
+  }
+
+  // Quick Set Polaris Target Button
+  if (setPolOn) {
+    drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, BUTTON_ON, P_T_OFF_X, P_T_OFF_Y, "Setting");
+    setPolOn = false; 
+  } else {
+    drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, BUTTON_OFF, P_T_OFF_X, P_T_OFF_Y, "Polaris"); 
+  }
+
+  tft.setFont(&FreeSansBold9pt7b);    
+  // Go To Coordinates Button
+  if (goToButton) {
+    drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
+    goToButton = false;
+  } else {
+    if (!lCmountStatus.isSlewing()) { 
+      drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
+    } else {
+      tasks.immediate(us_handle); 
+    }
+  }
+  
+  // Abort GoTo Button
+  if (abortPgBut) {
+    drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X-8, GTA_T_OFF_Y, "Aborting"); 
+    abortPgBut = false;
+  } else {
+    drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X, GTA_T_OFF_Y, "Abort"); 
+  }
+  tft.setFont(&Inconsolata_Bold8pt7b); 
 }
 
 // ==== TouchScreen was touched, determine which button ====
-void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
+bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
   //were number Pad buttons pressed?
   for(int i=0; i<4; i++) { 
     for(int j=0; j<3; j++) {
@@ -258,6 +257,7 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
         buttonPosition=row*3+col;
         //VF("buttonPosition="); VL(buttonPosition);
         numDetected = true;
+        return true;
       }
     }
   }
@@ -266,7 +266,8 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > RA_SELECT_Y && py < (RA_SELECT_Y + CO_BOXSIZE_Y) && px > RA_SELECT_X && px < (RA_SELECT_X + CO_BOXSIZE_X)) {
     DD_CLICK;
     RAselect = true; 
-    DECselect = false; 
+    DECselect = false;
+    return true;
   }
 
   // Clear RA field
@@ -274,7 +275,8 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     DD_CLICK;
     RAclear = true; 
     RAtextIndex = 0;
-    buttonPosition = 12; 
+    buttonPosition = 12;
+    return true; 
   }
 
   // Select DEC field
@@ -282,6 +284,7 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     DD_CLICK;
     DECselect = true;
     RAselect = false;
+    return true;
   }
 
   // Clear DEC field
@@ -289,7 +292,8 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     DD_CLICK;
     DECclear = true; 
     DECtextIndex = 0;
-    buttonPosition = 12; 
+    buttonPosition = 12;
+    return true; 
   }
 
   // SEND Coordinates
@@ -309,6 +313,7 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
       sprintf(cmd, ":Sd%c%c%c:%c%c:%c%c#", DECtext[0], DECtext[1], DECtext[2], DECtext[3], DECtext[4], DECtext[5], DECtext[6]);
       setLocalCmd(cmd);
     }
+    return true;
   }
 
   // Quick set Polaris Target
@@ -316,6 +321,7 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     DD_CLICK;
     setPolOn = true;
     gotoScreen.setTargPolaris(); 
+    return true;
   }
 
   // ==== Go To Target Coordinates ====
@@ -323,6 +329,7 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     DD_CLICK;
     goToButton = true;
     setLocalCmd(":MS#"); // move to
+    return true;
   }
 
   // ==== ABORT GOTO ====
@@ -332,7 +339,9 @@ void GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     setLocalCmd(":Q#"); // stops move
     motor1.power(false); // do this for safety reasons...mount may be colliding with something
     motor2.power(false);
+    return true;
   }
+  return false;
 }
 
  // Quick set the target to Polaris

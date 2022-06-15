@@ -9,9 +9,11 @@
 class TouchScreen : public Display {
   public:
     void init();
-    void touchScreenPoll();
+    void touchScreenPoll(Screen);
 
   private:
+    bool screenTouched = false;
+    Screen tCurScreen = HOME_SCREEN;
 };
 
 extern TouchScreen touchScreen;

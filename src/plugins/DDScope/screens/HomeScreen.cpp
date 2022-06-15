@@ -59,9 +59,7 @@
 #define COL_1_ROW_7_S_STR "Dew Point:"
 #define COL_1_ROW_8_S_STR "Altitude-:"
 
-static const char colOneStatusStr[COL_1_NUM_ROWS][12] = {
-  COL_1_ROW_1_S_STR, COL_1_ROW_2_S_STR, COL_1_ROW_3_S_STR, COL_1_ROW_4_S_STR,
-  COL_1_ROW_5_S_STR, COL_1_ROW_6_S_STR, COL_1_ROW_7_S_STR, COL_1_ROW_8_S_STR};
+
 
 // Column 2 Status strings
 #define COL_2_NUM_ROWS 6
@@ -73,9 +71,6 @@ static const char colOneStatusStr[COL_1_NUM_ROWS][12] = {
 #define COL_2_ROW_5_S_STR "AZM MotTemp:"
 #define COL_2_ROW_6_S_STR "ALT MotTemp:"
 
-static const char colTwoStatusStr[COL_2_NUM_ROWS][14] = {
-  COL_2_ROW_1_S_STR, COL_2_ROW_2_S_STR, COL_2_ROW_3_S_STR, COL_2_ROW_4_S_STR,
-  COL_2_ROW_5_S_STR, COL_2_ROW_6_S_STR};
 
 // Column 1 Command strings
 #define COL_1_ROW_1_C_STR ":GL#"
@@ -87,51 +82,64 @@ static const char colTwoStatusStr[COL_2_NUM_ROWS][14] = {
 #define COL_1_ROW_7_C_STR ":GX9E#"
 #define COL_1_ROW_8_C_STR ":GX9D#"
 
+ static const char colOneStatusStr[COL_1_NUM_ROWS][12] = {
+  COL_1_ROW_1_S_STR, COL_1_ROW_2_S_STR, COL_1_ROW_3_S_STR, COL_1_ROW_4_S_STR,
+  COL_1_ROW_5_S_STR, COL_1_ROW_6_S_STR, COL_1_ROW_7_S_STR, COL_1_ROW_8_S_STR};
+
+  static const char colTwoStatusStr[COL_2_NUM_ROWS][14] = {
+  COL_2_ROW_1_S_STR, COL_2_ROW_2_S_STR, COL_2_ROW_3_S_STR, COL_2_ROW_4_S_STR,
+  COL_2_ROW_5_S_STR, COL_2_ROW_6_S_STR};
+
 static const char colOneCmdStr[COL_1_NUM_ROWS][8] = {
   COL_1_ROW_1_C_STR, COL_1_ROW_2_C_STR, COL_1_ROW_3_C_STR, COL_1_ROW_4_C_STR,
   COL_1_ROW_5_C_STR, COL_1_ROW_6_C_STR, COL_1_ROW_7_C_STR, COL_1_ROW_8_C_STR};
-
 
 // ============================================
 // ======= Draw Base content of HOME PAGE =====
 // ============================================
 void HomeScreen::draw() {
-  currentScreen = HOME_SCREEN;
-  setDayNight();
+  setCurrentScreen(HOME_SCREEN);
+  setNightMode(getNightMode());
+  
   tft.setTextSize(1);
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
   drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
+  tft.setFont(&Inconsolata_Bold8pt7b);
+
   tft.drawFastVLine(165, 155, 165,textColor);
   drawCommonStatusLabels();
-  tft.setFont(&Inconsolata_Bold8pt7b);
+  updateCommonStatus();
+  updateHomeStatus();
+  updateHomeButtons();
   
   //========== Status Text ===========
-  // Draw Status Labels for Real Time data only here, no data displayed
+  // Draw Status Labels for Real Time data only here, no data displayed yet
   int y_offset = 0;
   for (int i=0; i<COL_1_NUM_ROWS; i++) {
     tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
     tft.print(colOneStatusStr[i]);
+    y_offset +=COL1_LABEL_SPACING;
   }
 
   y_offset = 0;
   for (int i=0; i<COL_2_NUM_ROWS; i++) {
     tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
     tft.print(colTwoStatusStr[i]);
+    y_offset +=COL1_LABEL_SPACING;
   }
 }
 
 // update multiple status items
-void HomeScreen::updateThisStatus() {
-  homeScreen.updateStatusCol1();
-  homeScreen.updateStatusCol2();
-  homeScreen.updateMountStatus();
-  homeScreen.updateHomeButtons();
+void HomeScreen::updateHomeStatus() {
+  updateStatusCol1();
+  updateStatusCol2();
+  updateMountStatus();
 }
 
 // =================================================
-// ============ Update HOME Screen Status ============
+// ========== Update HOME Screen Status ============
 // =================================================
 // Column 1 poll updates
 void HomeScreen::updateStatusCol1() {
@@ -140,7 +148,7 @@ void HomeScreen::updateStatusCol1() {
 
   for (int i=0; i<COL_1_NUM_ROWS; i++) {
     getLocalCmdTrim(colOneCmdStr[i], xchReply); 
-    if (strcmp(curCol1[i], xchReply) !=0 || firstDraw) {
+    if (strcmp(curCol1[i], xchReply) !=0 ) {
       canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
       strcpy(curCol1[i], xchReply);
     }
@@ -159,7 +167,7 @@ void HomeScreen::updateStatusCol2() {
   #elif
     currentAZEncPos = 0; // needs to be defined
   #endif
-  if ((currentAZEncPos != lastAZEncPos) || firstDraw) {
+  if ((currentAZEncPos != lastAZEncPos) ) {
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZEncPos);
     lastAZEncPos = currentAZEncPos;
   }
@@ -172,7 +180,7 @@ void HomeScreen::updateStatusCol2() {
   #elif
     currentALTEncPos = 0; // needs to be defined
   #endif
-  if ((currentALTEncPos != lastALTEncPos) || firstDraw) {
+  if ((currentALTEncPos != lastALTEncPos) ) {
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTEncPos);
     lastALTEncPos = currentALTEncPos;
   }
@@ -185,7 +193,7 @@ void HomeScreen::updateStatusCol2() {
   #elif
     currentAZMotorCur = 0; // needs to be defined
   #endif
-  if ((currentAZMotorCur != lastAZMotorCur) || firstDraw) {
+  if ((currentAZMotorCur != lastAZMotorCur) ) {
     if (lastAZMotorCur > MOTOR_CURRENT_WARNING) {
       canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur);
     } else {
@@ -202,7 +210,7 @@ void HomeScreen::updateStatusCol2() {
   #elif
     currentALTMotorCur = 0; // needs to be defined
   #endif
-  if ((currentALTMotorCur != lastALTMotorCur) || firstDraw) {
+  if ((currentALTMotorCur != lastALTMotorCur) ) {
     if (lastALTMotorCur > MOTOR_CURRENT_WARNING) {
       canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur);
     } else {
@@ -218,7 +226,7 @@ void HomeScreen::updateStatusCol2() {
   #elif
     currentAZMotorTemp = 0; // needs to be defined
   #endif
-  if ((currentAZMotorTemp != lastAZMotorTemp) || firstDraw) {
+  if ((currentAZMotorTemp != lastAZMotorTemp) ) {
     if (currentAZMotorTemp >= 120) { // make box red
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
     } else {
@@ -234,7 +242,7 @@ void HomeScreen::updateStatusCol2() {
     #elif
     currentALTMotorTemp = 0; // needs to be defined
   #endif
-  if ((currentALTMotorTemp != lastALTMotorTemp) || firstDraw) {
+  if ((currentALTMotorTemp != lastALTMotorTemp) ) {
     if (currentALTMotorTemp >= 120) { // make box red
       canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
     } else {
@@ -279,10 +287,6 @@ void HomeScreen::updateMountStatus() {
 // ============ Update Home Buttons ==============
 // ===============================================
 void HomeScreen::updateHomeButtons() {
-  if (screenTouched || firstDraw || refreshScreen) {
-    refreshScreen = false;
-    if (screenTouched) refreshScreen = true;
-
     int x_offset = 0;
     int y_offset = 0;
     tft.setTextColor(textColor);
@@ -321,7 +325,7 @@ void HomeScreen::updateHomeButtons() {
     
     // Night / Day Mode
     y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-    if (!nightMode) {
+    if (!getNightMode()) {
       drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "Night Mode");   
     } else {
       drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, " Day Mode");          
@@ -361,14 +365,12 @@ void HomeScreen::updateHomeButtons() {
     } else {
       drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,   "  Fan On  ");
     }
-    screenTouched = false;
-  }
 }
 
 // =================================================
-// ============== Update Touchscreen ===============
+// =========== Check for Button Press ==============
 // =================================================
-void HomeScreen::touchPoll(int16_t px, int16_t py) {
+bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   int x_offset = 0;
   int y_offset = 0;
   
@@ -385,7 +387,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
       oDriveExt.odriveAzmPwr = false;
       motor1.power(false);
     }
-    return;
+    return true;
   }
             
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
@@ -401,7 +403,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
       oDriveExt.odriveAltPwr = false;
       motor2.power(false); // Idle the ODrive motor
     }
-    return;
+    return true;
   }
 
   // STOP everthing requested
@@ -418,7 +420,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
       oDriveExt.odriveAltPwr = false;
       motor2.power(false);
     }
-    return;
+    return true;
   }
 
   // ======= COLUMN 2 of Buttons - Middle =========
@@ -433,22 +435,20 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
     } else {
       setLocalCmd(":Td#"); // Disable Tracking
     }
-    return; 
+    return true; 
   }
 
   // Set Night or Day Mode
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     DD_CLICK;
-    if (!nightMode) {
-      nightMode = true; // toggle on
+    if (!getNightMode()) {
+      setNightMode(true); // toggle on
     } else {
-      nightMode = false; // toggle off
+      setNightMode(false); // toggle off
     }
-    setDayNight();
-    firstDraw = true;
     homeScreen.draw(); 
-    return;
+    return true;
   }
   
   // Go to Home Telescope 
@@ -461,7 +461,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
     _oDriveDriver->SetPosition(1, 0.0);
     //setLocalCmd(":hC#"); // go HOME
     gotoHome = true;
-    return;
+    return true;
   }
   
   // ======== COLUMN 3 of Buttons - Leftmost ========
@@ -474,7 +474,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
     } else { // already parked
       setLocalCmd(":hR#"); // Un park position
     }
-    return;
+    return true;
   }
 
   // Set Park Position to Current
@@ -483,7 +483,7 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
     DD_CLICK;
     setLocalCmd(":hQ#"); // Set Park Position
     parkWasSet = true;
-    return;
+    return true;
   }
 
   // Fan Control Action Button
@@ -497,8 +497,9 @@ void HomeScreen::touchPoll(int16_t px, int16_t py) {
       digitalWrite(FAN_ON_PIN, LOW);
       fanOn = false;
     }
-    return;
+    return true;
   }
+  return false;
 }
 
 HomeScreen homeScreen;

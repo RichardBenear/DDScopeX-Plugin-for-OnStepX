@@ -17,8 +17,9 @@
 
 // ========== Draw the Extended Status Screen ==========
 void ExtStatusScreen::draw() {
-  currentScreen = XSTATUS_SCREEN;
-  setDayNight();
+  setCurrentScreen(XSTATUS_SCREEN);
+  setNightMode(getNightMode());
+  
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
@@ -28,14 +29,23 @@ void ExtStatusScreen::draw() {
   int y_spacer = STATUS_SPACING;
   char xchanReply[50];
 
-  tft.setCursor(STATUS_X, STATUS_Y); 
-  tft.fillRect(STATUS_X, STATUS_Y, 150, 200, pgBackground);
+  //tft.setCursor(STATUS_X, STATUS_Y); 
+  //tft.fillRect(STATUS_X, STATUS_Y, 150, 200, pgBackground);
   
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  
-  //char tempBuf[14]; sprintf(tempBuf,"FW ver:%i.%i%s", FirmwareVersionMajor, FirmwareVersionMinor, FirmwareVersionPatch);
-  //(FirmwareName, FirmwareVersionMajor, FirmwareVersionMinor, FirmwareVersionPatch, FirmwareVersionConfig);
-  //tft.print(tempBuf);
-
+  // :GVD#      Get OnStepX Firmware Date
+  //            Returns: MTH DD YYYY#
+  // :GVM#      General Message
+  //            Returns: s# (where s is a string up to 16 chars)
+  // :GVN#      Get OnStepX Firmware Number
+  //            Returns: M.mp#
+  // :GVP#      Get OnStepX Product Name
+  //            Returns: s#
+  // :GVT#      Get OnStepX Firmware Time
+  //            Returns: HH:MM:SS#
+  getLocalCmdTrim(":GVN#", xchanReply); // Get OnStep FW Version
+  tft.print("OnStep FW Version: "); tft.print(xchanReply);
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset); 
+  
   // Begin parsing :GU# status data by getting the status string via local command channel
   getLocalCmdTrim(":GU#", xchanReply); // Get telescope status
   tft.print("Return String: "); tft.print(xchanReply);
@@ -180,8 +190,6 @@ void ExtStatusScreen::draw() {
   tft.print("UTC Time and Date = "); tft.print(tempReply);
   getLocalCmdTrim(":GX81#", tempReply); 
   tft.print(" : "); tft.print(tempReply);
-
-  screenTouched = false;
 }
 
 ExtStatusScreen extStatusScreen;

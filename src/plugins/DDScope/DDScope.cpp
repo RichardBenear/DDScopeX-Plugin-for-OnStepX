@@ -21,23 +21,61 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+// Firmware version -------------------------------------------------------------------------
+#define PluginName                "DDScope"
+#define PluginFWVersionMajor        1
+#define PluginFWVersionMinor        00    // minor version 00 to 99
+
 #include <Arduino.h>
 #include "DDScope.h"
 #include "src/Common.h"
 #include "display/Display.h"
 #include "screens/TouchScreen.h"
+#include "screens/HomeScreen.h"
+#include "src/lib/tasks/OnTask.h"
+#include "src/libApp/commands/ProcessCmds.h"
 
 void DDScope::init() {
 
-  VLF("MSG: Plugins, starting: DDScope");
+  VF("MSG: Plugins, starting:"); VLF(PluginName);
 
-  // Initialize Touchscreen...must occur before display.init() since SPI.begin() is done here
+  // Initilize custom pins...may want to move some of these to Features in future
+  pinMode(ALT_THERMISTOR_PIN, INPUT); // Analog input
+  pinMode(AZ_THERMISTOR_PIN, INPUT); // Analog input
+
+  pinMode(AZ_ENABLED_LED_PIN, OUTPUT);
+  digitalWrite(AZ_ENABLED_LED_PIN,HIGH); // LED OFF, active low 
+  pinMode(ALT_ENABLED_LED_PIN, OUTPUT);
+  digitalWrite(ALT_ENABLED_LED_PIN,HIGH); // LED OFF, active low
+
+  pinMode(BATTERY_LOW_LED_PIN, OUTPUT); 
+  digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // LED OFF, active low
+
+  pinMode(FAN_ON_PIN, OUTPUT); 
+  digitalWrite(FAN_ON_PIN,LOW); // Fan is on active high
+
+  pinMode(FOCUSER_EN_PIN, OUTPUT); 
+  digitalWrite(FOCUSER_EN_PIN,HIGH); // Focuser enable is active low
+  pinMode(FOCUSER_STEP_PIN, OUTPUT); 
+  digitalWrite(FOCUSER_STEP_PIN,LOW); // Focuser Step is active high
+  pinMode(FOCUSER_DIR_PIN, OUTPUT); 
+  digitalWrite(FOCUSER_DIR_PIN,LOW); // Focuser Direction
+  pinMode(FOCUSER_SLEEP_PIN, OUTPUT); 
+  digitalWrite(FOCUSER_SLEEP_PIN,HIGH); // Focuser motor driver not sleeping
+
+  SerialLocal serialLocal; 
+
+  // Initialize Touchscreen *NOTE: must occur before display.init() since SPI.begin() is done here
   VLF("MSG: TouchScreen, Initializing");
   touchScreen.init();
 
   // Initialize TFT Display
   VLF("MSG: Display, Initializing");
   display.init();
+
+  VLF("MSG: Draw HomeScreen");
+  homeScreen.draw();
+  tasks.yield(50);
 }
 
 DDScope dDScope;

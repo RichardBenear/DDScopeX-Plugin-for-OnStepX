@@ -68,8 +68,10 @@ extern const char* Txt_Bayer[];
 //============ Draw the Initial Catalog Screen =====================
 //==================================================================
 void CatalogScreen::draw(int catSel) { 
-  returnToPage = currentScreen; // save page from where this function was called so we can return
-  currentScreen = CATALOG_SCREEN;
+  returnToPage = display.currentScreen; // save page from where this function was called so we can return
+  setCurrentScreen(CATALOG_SCREEN);
+  setNightMode(getNightMode());
+  
   moreScreen.objectSelected = false;
   moreScreen.catSelected = catSel;
   tCurrentPage = 0; 
@@ -81,7 +83,6 @@ void CatalogScreen::draw(int catSel) {
   cEndOfList = false;
   shcEndOfList = false;
   
-  setDayNight();
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 
@@ -154,10 +155,13 @@ void CatalogScreen::draw(int catSel) {
   }
 
   tft.setFont(&Inconsolata_Bold8pt7b);
+  updateCatalogButtons();
+  /*
   drawButton(BACK_X, BACK_Y, BACK_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "BACK");
   drawButton(NEXT_X, NEXT_Y, BACK_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "NEXT");
   drawButton(RETURN_X, RETURN_Y, RETURN_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "RETURN");
   drawButton(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, false, SAVE_LIB_T_X_OFF, SAVE_LIB_T_Y_OFF, "SAVE LIB");
+  */
 }
 
 // The Treasure catalog is a compilation of popular objects from :rDUINO Scope-http://www.rduinoscope.tk/index.html
@@ -613,19 +617,14 @@ void CatalogScreen::drawShcCat() {
 //======================================================
 // =====  Update Screen for buttons and text ===========
 //======================================================
-void CatalogScreen::updateThisStatus() { 
-  if (screenTouched || refreshScreen) { 
-    refreshScreen = false;
-    if (screenTouched) refreshScreen = true;
-    
-    tft.setFont(); // basic Arial
+void CatalogScreen::updateCatalogButtons() {   
+  tft.setFont(); // basic Arial
 
-    if (catButDetected) {
-      if (treasureCatalog) updateTreasureCat();
-        else if (customCatalog) updateCustomCat();
-        else if (shcCatalog) updateShcCat();
-        updateCatButtons();
-    }
+  if (catButDetected) {
+    if (treasureCatalog) updateTreasureCat();
+      else if (customCatalog) updateCustomCat();
+      else if (shcCatalog) updateShcCat();
+      updateCatButtons();
   }
 }
 
@@ -664,7 +663,6 @@ void CatalogScreen::updateTreasureCat() {
   curSelTIndex = tAbsIndex;
   tPrevPage = tCurrentPage;
   catButDetected = false;
-  screenTouched = false; // passed back to the touchscreen handler
 }
 
 // ====== CUSTOM USER catalog ... uses different row spacing =====
@@ -751,9 +749,8 @@ void CatalogScreen::updateCustomCat() {
       }
     }
   }
-  currentScreen = MORE_SCREEN; // tell the RETURN button where to return to
+  //setCurrentScreen(MORE_SCREEN); // tell the RETURN button where to return to
   catalogScreen.draw((cat_mgr.numCatalogs())+2);
-  screenTouched = false; // passed back to the touchscreen handler
 }
 
 // =============== SHC Catalogs ================
@@ -782,8 +779,6 @@ void CatalogScreen::updateShcCat() {
   pre_shcIndex = catButSelPos;
   curSelSIndex = catButSelPos;
   catButDetected = false;
-  
-  screenTouched = false; // passed back to the touchscreen handler
 }
 
 // ====== check buttons not part of catalog listings  ========
@@ -854,13 +849,12 @@ void CatalogScreen::updateCatButtons() {
     tft.setFont(&Inconsolata_Bold8pt7b);
     drawButton(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, false, SAVE_LIB_T_X_OFF, SAVE_LIB_T_Y_OFF, "SaveToCat");
   }
-  screenTouched = false; // passed back to the touchscreen handler
 }
 
 //=====================================================
 // **** Handle any buttons that have been selected ****
 //=====================================================
-void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
+bool CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
   tft.setFont(&Inconsolata_Bold8pt7b);
   // check the Catalog Buttons
   uint16_t i=0;
@@ -869,25 +863,25 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
       if (py > CAT_Y+(i*(CAT_H+CAT_Y_SPACING)) && py < (CAT_Y+(i*(CAT_H+CAT_Y_SPACING))) + CAT_H 
             && px > CAT_X && px < (CAT_X+CAT_W)) {
         DD_CLICK;
-        if (treasureCatalog && tAbsRow == MAX_TREASURE_ROWS+1) return; 
-        if (shcCatalog && shcLastPage && i >= shcRow)  return; 
+        if (treasureCatalog && tAbsRow == MAX_TREASURE_ROWS+1) return true; 
+        if (shcCatalog && shcLastPage && i >= shcRow)  return true; 
         catButSelPos = i;
         catButDetected = true;
-        return;
+        return true;
       }
     }
   }
 
   if (customCatalog) { 
     for (i=0; i<=cusRowEntries || i<NUM_CUS_ROWS_PER_SCREEN; i++) {
-      if (cAbsRow == cusRowEntries+2) return;
+      if (cAbsRow == cusRowEntries+2) return true;
       if (py > CUS_Y+(i*(CUS_H+CUS_Y_SPACING)) && py < (CUS_Y+(i*(CUS_H+CUS_Y_SPACING))) + CUS_H 
             && px > CUS_X && px < (CUS_X+CUS_W)) {
         DD_CLICK;
-        if (customCatalog && cLastPage==0 && i >= cRow) return; // take care of only one entry on the page
+        if (customCatalog && cLastPage==0 && i >= cRow) return true; // take care of only one entry on the page
         catButSelPos = i;
         catButDetected = true;
-        return;
+        return true;
       }
     }
   }
@@ -912,6 +906,7 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
       shcCurrentPage--;
       drawShcCat();
     }
+    return true;
   }
 
   // NEXT page button - reuse BACK button box size
@@ -931,19 +926,19 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
       shcCurrentPage++;
       drawShcCat();
     }
+    return true;
   }
 
   // RETURN page button - reuse BACK button box size
   if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
     DD_CLICK;
-    screenTouched = false;
     moreScreen.objectSelected = objSel; 
     if (returnToPage == ALIGN_SCREEN) {
       alignScreen.draw();
-      return;
+      return true;
     } else if (returnToPage == MORE_SCREEN) {
       moreScreen.draw();
-      return;
+      return true;
     }
   }
 
@@ -951,13 +946,16 @@ void CatalogScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > SAVE_LIB_Y && py < (SAVE_LIB_Y + SAVE_LIB_H) && px > SAVE_LIB_X && px < (SAVE_LIB_X + SAVE_LIB_W)) {
     DD_CLICK;
     saveTouched = true;
+    return true;
   }   
 
   // Delete custom library item that is selected 
   if (py > 3 && py < 42 && px > 282 && px < 317) {
     DD_CLICK;
     delSelected = true;
-  }   
+    return true;
+  }  
+  return false; 
 }
 
 // ======= write Target Coordinates to controller =========
