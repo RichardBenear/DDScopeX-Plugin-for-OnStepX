@@ -11,6 +11,7 @@ class MoreScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
+    void updateMoreStatus();
     void updateMoreButtons();
 
     bool objectSelected;
@@ -29,6 +30,7 @@ class MoreScreen : public Display {
     bool decTrackRate;
     bool rstTrackRate;
     bool filterBut;
+    
     bool yesBut; 
     bool cancelBut;
     bool yesCancelActive;

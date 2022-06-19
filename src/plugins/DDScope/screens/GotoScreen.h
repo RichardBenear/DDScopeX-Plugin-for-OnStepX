@@ -11,6 +11,7 @@ class GotoScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
+    void updateGotoStatus();
     void updateGotoButtons();
     
   private:

@@ -3,7 +3,7 @@
 // GuideScreen.cpp
 
 // Author: Richard Benear
-// 8/22/21 -- refactor 5/1/22
+// initial 8/22/21 -- refactor 5/22
 
 #include "GuideScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -27,7 +27,7 @@
 
 // Guide rates buttons
 #define GUIDE_R_X                3
-#define GUIDE_R_Y              162
+#define GUIDE_R_Y              165
 #define GUIDE_R_BOXSIZE_X       74 
 #define GUIDE_R_BOXSIZE_Y       28
 #define GUIDE_R_SPACER           6 
@@ -54,7 +54,6 @@
 void GuideScreen::draw() { 
   setCurrentScreen(GUIDE_SCREEN);
   setNightMode(getNightMode());
-  
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
@@ -62,8 +61,12 @@ void GuideScreen::draw() {
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   drawCommonStatusLabels();
-  updateCommonStatus();
   updateGuideButtons();
+}
+
+// task update for this screen
+void GuideScreen::updateGuideStatus() {
+  updateCommonStatus();
 }
 
 // ========== Update Guide Page Buttons ==========
@@ -167,7 +170,7 @@ void GuideScreen::updateGuideButtons() {
 bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     // SYNC Button 
     if (py > SYNC_OFFSET_Y && py < (SYNC_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > SYNC_OFFSET_X && px < (SYNC_OFFSET_X + GUIDE_BOXSIZE_X)) { 
-      DD_CLICK;           
+      BEEP;           
         setLocalCmd(":CS#"); // doesn't have reply
         syncOn = true;
         return true;  
@@ -175,7 +178,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
                     
     // EAST / RIGHT button
     if (py > RIGHT_OFFSET_Y && py < (RIGHT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > RIGHT_OFFSET_X && px < (RIGHT_OFFSET_X + GUIDE_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         if (!guidingEast) {
             setLocalCmd(":Mw#"); // east west is swapped for DDScope
             guidingEast = true;
@@ -188,7 +191,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
                     
     // WEST / LEFT button
     if (py > LEFT_OFFSET_Y && py < (LEFT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > LEFT_OFFSET_X && px < (LEFT_OFFSET_X + GUIDE_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         if (!guidingWest) {
             setLocalCmd(":Me#"); // east west is swapped for DDScope
             guidingWest = true;
@@ -201,7 +204,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
                     
     // NORTH / UP button
     if (py > UP_OFFSET_Y && py < (UP_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > UP_OFFSET_X && px < (UP_OFFSET_X + GUIDE_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         if (!guidingNorth) {
             setLocalCmd(":Mn#");
             guidingNorth = true;
@@ -214,7 +217,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
                     
     // SOUTH / DOWN button
     if (py > DOWN_OFFSET_Y && py < (DOWN_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > DOWN_OFFSET_X && px < (DOWN_OFFSET_X + GUIDE_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         if (!guidingSouth) {
             setLocalCmd(":Ms#");
             guidingSouth = true;
@@ -232,7 +235,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     
     // 1x Guide Rate 
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         setLocalCmd(":RG#");
         oneXisOn = true;
         eightXisOn = false;
@@ -244,7 +247,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     // 8x Rate for Centering
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         setLocalCmd(":RC#");
         oneXisOn = false;
         eightXisOn = true;
@@ -256,7 +259,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     // 24x Rate for Moving
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         setLocalCmd(":RM#");
         oneXisOn = false;
         eightXisOn = false;
@@ -268,7 +271,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     // Half Max Rate for Slewing
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         setLocalCmd(":RS#");
         oneXisOn = false;
         eightXisOn = false;
@@ -279,7 +282,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // Spiral Search
     if (py > SPIRAL_Y && py < (SPIRAL_Y + SPIRAL_BOXSIZE_Y) && px > SPIRAL_X && px < (SPIRAL_X + SPIRAL_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         if (!spiralOn) {
             setLocalCmd(":Mp#");
             spiralOn = true;
@@ -292,7 +295,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     
     // STOP moving
     if (py > STOP_Y && py < (STOP_Y + STOP_BOXSIZE_Y) && px > STOP_X && px < (STOP_X + STOP_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
         setLocalCmd(":Q#");
         stopPressed = true;
         spiralOn = false;

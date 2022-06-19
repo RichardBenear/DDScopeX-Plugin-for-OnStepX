@@ -23,7 +23,7 @@
 
 // Screen Selection buttons
 #define MENU_X              3
-#define MENU_Y             42
+#define MENU_Y             46
 #define MENU_Y_SPACING      0
 #define MENU_X_SPACING     80
 #define MENU_BOXSIZE_X     72
@@ -65,14 +65,9 @@
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
 #define BATTERY_LOW_VOLTAGE   21  
 
-// wait time to allow ODrive serial receive in milliseconds
-#ifdef ODRIVE_MOTOR_PRESENT
-  #define ODRIVE_SERIAL_WAIT    10
-#endif
-
 // sound control of both duration and frequency
-#define DD_CLICK tone(STATUS_BUZZER_PIN, 1000UL, 40ULL); // both in milliseconds
-#define DD_ALERT tone(STATUS_BUZZER_PIN, 700UL, 80ULL); // both in milliseconds
+#define BEEP tone(STATUS_BUZZER_PIN, 1000UL, 40ULL); // both in milliseconds
+#define ALERT tone(STATUS_BUZZER_PIN, 700UL, 80ULL); // both in milliseconds
 
 enum Screen
 {
@@ -125,9 +120,13 @@ class Display {
   // Colors, Buttons, BitMap printing
     void drawButton(int x_start, int y_start, int w, int h, bool butOn, int text_x_offset, int text_y_offset, const char* label);
     void drawTitle(int text_x_offset, int text_y_offset, const char* label);
+
     void canvPrint(int x, int y, int y_off, int width, int height, const char* label);
+    void canvPrint(int x, int y, int y_off, int width, int height, const char* label, uint16_t textColor, uint16_t butBackground);
     void canvPrint(int x, int y, int y_off, int width, int height, double label);
+    void canvPrint(int x, int y, int y_off, int width, int height, double label, uint16_t textColor, uint16_t butBackground);
     void canvPrint(int x, int y, int y_off, int width, int height, int label);
+
     void drawMenuButtons();
     void drawCommonStatusLabels();
     void drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint16_t HH);
@@ -142,7 +141,7 @@ class Display {
     #endif
   
     void setNightMode(bool nightMode);
-    inline bool getNightMode() { return nightMode; };
+    bool getNightMode();
 
     // frequency and duration adjustable tone
     inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration); }
@@ -155,43 +154,13 @@ class Display {
     uint16_t butOutline = YELLOW; 
   
     static Screen currentScreen;
-    bool nightMode = false;
-    uint8_t us_handle;
+    static bool _nightMode;
+    
+    bool screenTouched = false;
+    
+    //uint8_t us_handle;
 
   private:
-    float currentBatVoltage = 0.0;
-    float lastBatVoltage = 0.0;
-
-    char ra_hms[10], dec_dms[11];
-    char tra_hms[10], tdec_dms[11];
-
-    char currentRA[10] = "1.1";
-    char currentDEC[11] = "1.1"; 
-    char currentTargRA[10] = "1.1";
-    char currentTargDEC[11] = "1.1";
-    double currentTargRA_d = 1.1;
-    double currentTargDEC_d = 1.1;
-
-    char cAzmDMS[10] = "";
-    char cAltDMS[11] = "";
-    char tAzmDMS[10] = "";
-    char tAltDMS[11] = "";
-    double cAzm_d = 0.0;
-    double cAlt_d = 0.0;
-    double tAzm_d = 0.0;
-    double tAlt_d = 0.0;
-    
-    double current_cAzm = 1.1;
-    double current_cAlt = 1.1;
-    double current_tAzm = 1.1;
-    double current_tAlt = 1.1;
-    
-    double tra_d = 0.0;
-    double tra_dha = 0.0;
-    double tdec_d = 0.0;
-    
-    double altitudeFt = 0.0;
-    
     bool firstGPS = true;
 };
 

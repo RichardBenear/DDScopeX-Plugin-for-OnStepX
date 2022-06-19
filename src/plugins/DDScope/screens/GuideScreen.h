@@ -11,6 +11,7 @@ class GuideScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
+    void updateGuideStatus();
     void updateGuideButtons();
   
   private:

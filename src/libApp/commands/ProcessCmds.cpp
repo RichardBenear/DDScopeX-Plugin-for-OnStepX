@@ -94,7 +94,7 @@
 #endif
 #ifdef SERIAL_LOCAL
   CommandProcessor processCommandsLocal(9600,'L');
-  void processCmdsLocal() { processCommandsLocal.poll(); }
+  void processCmdsLocal() { ::yield(); processCommandsLocal.poll(); }
 #endif
 
 CommandProcessor::CommandProcessor(long baud, char channel) {

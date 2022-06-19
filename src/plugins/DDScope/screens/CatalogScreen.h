@@ -68,6 +68,7 @@ class CatalogScreen : public Display {
   public:
     void draw(int catSel);
     bool touchPoll(uint16_t px, uint16_t py);
+    void updateCatalogStatus();
     void updateCatalogButtons();
     
     char catSelectionStr1[26];

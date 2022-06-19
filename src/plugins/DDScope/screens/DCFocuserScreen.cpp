@@ -20,6 +20,7 @@
 #include "DCFocuserScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include <Fonts/FreeSansBold12pt7b.h>
+#include "../../../lib/tasks/OnTask.h"
 
 // For IN and OUT Buttons
 #define FOC_INOUT_X             206 
@@ -69,6 +70,7 @@
 
 // Draw the initial content for Focuser Page
 void DCFocuserScreen::draw() {
+  tasks.yield(10);
   setCurrentScreen(FOCUSER_SCREEN);
   setNightMode(getNightMode());
   tft.setTextColor(textColor);
@@ -79,8 +81,6 @@ void DCFocuserScreen::draw() {
 
   tft.setFont(&Inconsolata_Bold8pt7b);
   drawCommonStatusLabels();
-  updateCommonStatus();
-  updateFocuserStatus();
   updateFocuserButtons();
   
   int y_offset = 0;
@@ -115,51 +115,35 @@ void DCFocuserScreen::draw() {
   tft.print(" Target Delta:");
 }
 
-// Update the following on timer tick
+// task update for this screen
 void DCFocuserScreen::updateFocuserStatus() {
+  updateCommonStatus();
+
   int y_offset = 0;
-  if (current_focMaxPos != focMaxPosition ) {
-      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMaxPosition);
-      current_focMaxPos = focMaxPosition;
-  }
+  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMaxPosition);
 
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focMinPos != focMinPosition ) {
-      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMinPosition);
-      current_focMinPos = focMinPosition;
-  }
-
+  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMinPosition);
+     
   // Focuser Speed
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focMoveSpeed != focMoveSpeed ) {
-      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveSpeed);
-      current_focMoveSpeed = focMoveSpeed;
-  }
-
+  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveSpeed);
+   
   // Focuser move distance
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focMoveDistance != focMoveDistance ) {
-      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveDistance);
-      current_focMoveDistance = focMoveDistance;
-  }
-  
+  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveDistance);
+     
   // Update Current Focuser Position
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focPos != focPosition ) {
-      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focPosition);
-      current_focPos = focPosition;
-  }
+  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focPosition);
 
   // Update Delta Focuser Position
   y_offset +=FOC_LABEL_Y_SPACING;
-  if (current_focDeltaMove != focDeltaMove ) {
-      canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focDeltaMove);
-      current_focDeltaMove = focDeltaMove;
-  }
+  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focDeltaMove);
 }
 
 //***** Update Focuser Buttons ******
-void DCFocuserScreen::updateFocuserButtons() {      
+void DCFocuserScreen::updateFocuserButtons() {   
   // Update IN and OUT focuser status
   tft.setFont(&FreeSansBold12pt7b);
   if (focMovingIn) {
@@ -287,7 +271,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   // IN button
   if (py > FOC_INOUT_Y && py < (FOC_INOUT_Y + FOC_INOUT_BOXSIZE_Y) && px > FOC_INOUT_X && px < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
   {
-    DD_CLICK;
+    BEEP;
     soundFreq(2000, 400);
     if (!focMovingIn) { //was moving out, change direction
         focChangeDirection();
@@ -301,7 +285,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   // OUT button
   if (py > FOC_INOUT_Y + y_offset && py < (FOC_INOUT_Y + y_offset + FOC_INOUT_BOXSIZE_Y) && px > FOC_INOUT_X && px < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
   {
-    DD_CLICK;
+    BEEP;
     soundFreq(2100, 400);
     if (focMovingIn) { //was moving in, change direction
         focChangeDirection();
@@ -317,7 +301,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   // Increment Speed
   if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
   {
-    DD_CLICK;
+    BEEP;
     focMoveSpeed += FOC_SPEED_INC; // microseconds
     if (focMoveSpeed > 900) focMoveSpeed = 900;
     incSpeed = true;
@@ -328,7 +312,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
   {
-    DD_CLICK;
+    BEEP;
     focMoveSpeed -= FOC_SPEED_INC; // microseconds
     if (focMoveSpeed < 100) focMoveSpeed = 100;
     decSpeed = false;
@@ -340,7 +324,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
   {
-    DD_CLICK;
+    BEEP;
     setPointTarget = focPosition;
     setPoint = true;
     return true;
@@ -350,7 +334,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
   {
-    DD_CLICK;
+    BEEP;
     focTarget = setPointTarget;
     gotoSetpoint = true; 
     focGoToActive = true;
@@ -361,7 +345,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (py > SPEED_Y + y_offset && py < (SPEED_Y + y_offset + SPEED_BOXSIZE_Y) && px > SPEED_X && px < (SPEED_X + SPEED_BOXSIZE_X))
   {
-    DD_CLICK;
+    BEEP;
     focTarget = (focMaxPosition - focMinPosition) / 2;
     focGoToHalf = true;
     focGoToActive = true;
@@ -376,7 +360,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   // 4th button press stops outward move and sets as Maximum position
   if (py > CALIB_FOC_Y && py < (CALIB_FOC_Y + CALIB_FOC_BOXSIZE_Y) && px > CALIB_FOC_X && px < (CALIB_FOC_X + CALIB_FOC_BOXSIZE_X))
   {  
-    DD_CLICK;
+    BEEP;
     if (inwardCalState) {
       if (!focGoToActive) { // then we are starting calibration
         if (!focMovingIn) focChangeDirection(); // go inward

@@ -41,30 +41,21 @@
 #endif
 
 #define TITLE_BOXSIZE_X         313
-#define TITLE_BOXSIZE_Y          40
+#define TITLE_BOXSIZE_Y          43
 #define TITLE_BOX_X               3
 #define TITLE_BOX_Y               1 
 
 // Shared common Status 
-#define COM_LABEL_Y_SPACE        16
+#define COM_LABEL_Y_SPACE        17
 #define COM_COL1_LABELS_X         8
-#define COM_COL1_LABELS_Y        98
+#define COM_COL1_LABELS_Y       104
 #define COM_COL1_DATA_X          72
 #define COM_COL1_DATA_Y          COM_COL1_LABELS_Y
 #define COM_COL2_LABELS_X       179
-#define COM_COL2_DATA_X         245
-
-void updateScreenWrapper() { display.updateSpecificScreen(); }
-void updateCommonWrapper() { display.updateCommonStatus(); }
-void updateOnStepCmdWrapper() { display.updateOnStepCmdStatus(); }
-
-#ifdef ODRIVE_MOTOR_PRESENT
-  void updateODriveErrWrapper() { display.updateODriveErrBar(); }
-  void updateBatVoltWrapper() { display.updateBatVoltage(); }
-#endif
+#define COM_COL2_DATA_X         250
 
 Screen Display::currentScreen = HOME_SCREEN;
-
+bool Display::_nightMode = false;
 Adafruit_ILI9486_Teensy tft;
 
 // =========================================
@@ -74,42 +65,12 @@ void Display::init() {
   VLF("MSG: Display, started"); 
   tft.begin(); delay(1);
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
+  setNightMode(getNightMode()); 
   
   sdInit(); // initialize the SD card and draw start screen
   delay(1500); // let start screen show for 1.5 sec
 
-  // start common-most-screens status
-  VF("MSG: Setup, start Common screen status polling task (rate 900 ms priority 7)... ");
-  uint8_t com_handle = tasks.add(900, 0, true, 7, updateCommonWrapper, "UpdateCommonScreen");
-  if (com_handle)  { VLF("success"); } else { VLF("FAILED!"); }
-
-  // update the OnStep Cmd Error status 
-  VF("MSG: Setup, start OnStep CMD status polling task (rate 1000 ms priority 7)... ");
-  uint8_t cmd_handle = tasks.add(1000, 0, true, 7, updateOnStepCmdWrapper, "UpdateOnStepCmdScreen");
-  if (cmd_handle) { VLF("success"); } else { VLF("FAILED!"); }
-
-  // update this specific screen status
-  VF("MSG: Setup, start Screen-specific status polling task (rate 2000 ms priority 7)... ");
-  us_handle = tasks.add(2000, 0, true, 7, updateScreenWrapper, "UpdateSpecificScreen");
-  if (us_handle)  { VLF("success"); } else { VLF("FAILED!"); }
-
-  #ifdef ODRIVE_MOTOR_PRESENT
-    // update the ODrive Error status 
-    VF("MSG: Setup, start ODrive Errors polling task (rate 1000 ms priority 7)... ");
-    uint8_t od_handle = tasks.add(1000, 0, true, 7, updateODriveErrWrapper, "UpdateODriveErrors");
-    if (od_handle) { VLF("success"); } else { VLF("FAILED!"); }
-
-    // update battery voltage
-    VF("MSG: Setup, start Battery voltage polling task (rate 5000 ms priority 7)... ");
-    uint8_t bv_handle = tasks.add(5000, 0, true, 7, updateBatVoltWrapper, "UpdateBatVolt");
-    if (bv_handle)  { VLF("success"); } else { VLF("FAILED!"); }
-  
-    // make sure motor power starts OFF
-    oDriveExt.odriveAzmPwr = false;
-    oDriveExt.odriveAltPwr = false;
-  #endif
-
- // set some defaults
+  // set some defaults
   VLF("MSG: Setting up Limits, TZ, Site Name, Slew Speed");
   setLocalCmd(":SG+07:00#"); // Set Default Time Zone
   setLocalCmd(":Sh-01#"); //Set horizon limit -1 deg
@@ -155,20 +116,20 @@ currentScreen = curScreen;
 // select which screen to update
 void Display::updateSpecificScreen() {
   switch (currentScreen) {
-    case HOME_SCREEN:       homeScreen.updateHomeStatus();      break;
-    //case GUIDE_SCREEN:      guideScreen.updateGuideStatus();     break;
+    case HOME_SCREEN:       homeScreen.updateHomeStatus();         break;
+    case GUIDE_SCREEN:      guideScreen.updateGuideStatus();       break;
     case FOCUSER_SCREEN:    dCfocuserScreen.updateFocuserStatus(); break;
-    //case GOTO_SCREEN:       gotoScreen.updateGotoStatus();      break;
-    //case MORE_SCREEN:       moreScreen.updateMoreStatus();      break;
-    case SETTINGS_SCREEN:   settingsScreen.updateSettingsStatus();  break;
-    //case ALIGN_SCREEN:      alignScreen.updateAlignStatus();     break;
-    //case CATALOG_SCREEN:    catalogScreen.updateCatalogStatus();   break;
-    //case PLANETS_SCREEN:    planetsScreen.updatePlanetsStatus();   break;
-    //case CUST_CAT_SCREEN:   catalogScreen.updateCustStatus();   break;
-    case XSTATUS_SCREEN:                                        break;
+    case GOTO_SCREEN:       gotoScreen.updateGotoStatus();         break;
+    case MORE_SCREEN:       moreScreen.updateMoreStatus();         break;
+    case SETTINGS_SCREEN:   settingsScreen.updateSettingsStatus(); break;
+    case ALIGN_SCREEN:      alignScreen.updateAlignStatus();       break;
+    case CATALOG_SCREEN:    catalogScreen.updateCatalogStatus();   break;
+    case PLANETS_SCREEN:    planetsScreen.updatePlanetsStatus();   break;
+  //case XSTATUS_SCREEN:                                           break;
     #ifdef ODRIVE_MOTOR_PRESENT
-      //case ODRIVE_SCREEN:   oDriveScreen.updateOdriveStatus();    break;
+      case ODRIVE_SCREEN:   oDriveScreen.updateOdriveStatus();    break;
     #endif
+    default: break;
   }
 }
 
@@ -183,13 +144,13 @@ void Display::setLocalCmd(const char *command) {
 
 void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
-  tasks.yield(20);
+  tasks.yield(50);
   strcpy(reply, SERIAL_LOCAL.receive()); 
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command); 
-  tasks.yield(20);
+  tasks.yield(50);
   strcpy(reply, SERIAL_LOCAL.receive()); 
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
 }
@@ -217,9 +178,11 @@ void Display::drawTitle(int text_x_offset, int text_y_offset, const char* label)
   tft.setFont(&Inconsolata_Bold8pt7b);
 }
 
-// Update Data Field text using bitmap canvas
-void Display::canvPrint(int x, int y, int y_off, int width, int height, const char* label) {
-  char rjlabel[50];
+//---------------------------------------------------------
+// Update a Data Field text using bitmap canvas
+// const char* label 
+void Display::canvPrint(int x, int y, int y_off, int width, int height, const char* label, uint16_t textColor, uint16_t butBackground) {
+  char rjlabel[60];
   int y_box_offset = 10;
   GFXcanvas1 canvas(width, height);
 
@@ -230,19 +193,29 @@ void Display::canvPrint(int x, int y, int y_off, int width, int height, const ch
   tft.drawBitmap(x, y - y_box_offset + y_off, canvas.getBuffer(), width, height, textColor, butBackground);
 }
 
-void Display::canvPrint(int x, int y, int y_off, int width, int height, double label) {
-  char rjlabel[50];
+// type const char* overload without colors
+void Display::canvPrint(int x, int y, int y_off, int width, int height, const char* label) {
+  canvPrint(x, y, y_off, width, height, label, textColor, butBackground);
+}
+
+void Display::canvPrint(int x, int y, int y_off, int width, int height, double label, uint16_t textColor, uint16_t butBackground) {
+  char charlabel[60];
   int y_box_offset = 10;
-  int x_fontSize = 10; // pixels width of a character
   GFXcanvas1 canvas(width, height);
 
-  canvas.setFont(&Inconsolata_Bold8pt7b);
+  canvas.setFont(&Inconsolata_Bold8pt7b);  
   canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
-  dtostrf(label, width/x_fontSize, 1, rjlabel); // right justify text in the bitmap
-  canvas.print(rjlabel);
+  sprintf(charlabel, "%6.1f", label);
+  canvas.print(charlabel);
   tft.drawBitmap(x, y - y_box_offset + y_off, canvas.getBuffer(), width, height, textColor, butBackground);
 }
 
+// type double label, overload without colors
+void Display::canvPrint(int x, int y, int y_off, int width, int height, double label) {
+  canvPrint(x, y, y_off, width, height, label, textColor, butBackground);
+}
+
+// type int label overload
 void Display::canvPrint(int x, int y, int y_off, int width, int height, int label) {
   char rjlabel[50];
   int y_box_offset = 10;
@@ -255,10 +228,12 @@ void Display::canvPrint(int x, int y, int y_off, int width, int height, int labe
   canvas.print(rjlabel);
   tft.drawBitmap(x, y - y_box_offset + y_off, canvas.getBuffer(), width, height, textColor, butBackground);
 }
+//------------------------------------------------------
 
 // Color Themes (Day and Night)
 void Display::setNightMode(bool nightMode) {
-  if (!nightMode) {
+  _nightMode = nightMode;
+  if (!_nightMode) {
     // Day Color Theme
     pgBackground = DEEP_MAROON; 
     butBackground = BLACK;
@@ -273,6 +248,10 @@ void Display::setNightMode(bool nightMode) {
     textColor = ORANGE; 
     butOutline = ORANGE; 
   }
+}
+
+bool Display::getNightMode() {
+  return _nightMode;
 }
 
 // ============ OnStep Command Errors ===============
@@ -550,17 +529,13 @@ void Display::drawCommonStatusLabels() {
 
 // Update Battery Voltage
 void Display::updateBatVoltage() {
-  currentBatVoltage = oDriveExt.getODriveBusVoltage();
-  if (currentBatVoltage != lastBatVoltage) {
-    if (currentBatVoltage < BATTERY_LOW_VOLTAGE) {
-      tft.setCursor(140, 40);
-      tft.print(currentBatVoltage);
-    } else {
-      tft.setCursor(140, 40);
-      tft.print(currentBatVoltage);
-    }
-    lastBatVoltage = currentBatVoltage;
+  float currentBatVoltage = oDriveExt.getODriveBusVoltage();
+  if (oDriveExt.getODriveBusVoltage() < BATTERY_LOW_VOLTAGE) {
+    canvPrint(130, 39, 0, 50, 12, currentBatVoltage, textColor, butOnBackground);
+  } else {
+    canvPrint(130, 39, 0, 50, 12, currentBatVoltage, textColor, butBackground);
   }
+  //tft.setTextColor(textColor); // transparent background
 }
 
 // UpdateCommon Status - Real time data update for the particular labels printed above
@@ -570,100 +545,72 @@ void Display::updateCommonStatus() {
     Display::currentScreen == PLANETS_SCREEN ||
     Display::currentScreen == CUST_CAT_SCREEN) return;
 
+  char ra_hms[10]   = ""; 
+  char dec_dms[11]  = "";
+  char tra_hms[10]  = "";
+  char tdec_dms[11] = "";
+  char cAzmDMS[10]  = "";
+  char cAltDMS[11]  = "";
+  char tAzmDMS[10]  = "";
+  char tAltDMS[11]  = "";
+  double cAzm_d = 0.0;
+  double cAlt_d = 0.0;
+  double tAzm_d = 0.0;
+  double tAlt_d = 0.0;
+
+/*
   // One Time update the SHC LST and Latitude if GPS locked
   if (tls.isReady() && firstGPS) {
     cat_mgr.setLstT0(shc.getLstT0()); 
     cat_mgr.setLat(shc.getLat());
     firstGPS = false;
   }
+*/
 
   int y_offset = 0;
-  // Column 1
+  // ----- Column 1 -----
   // Current RA, Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
   getLocalCmdTrim(":GR#", ra_hms);
-  if ((strcmp(currentRA, ra_hms)) ) {
-   canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
-    strcpy(currentRA, ra_hms);
-  }
+  canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
 
 // Target RA, Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
   y_offset +=COM_LABEL_Y_SPACE; 
   getLocalCmdTrim(":Gr#", tra_hms);
-  if ((strcmp(currentTargRA, tra_hms)) ) {
-    canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tra_hms);
-    strcpy(currentTargRA, tra_hms);
-  }
+  canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tra_hms);
 
 // Current DEC
    y_offset +=COM_LABEL_Y_SPACE; 
   getLocalCmdTrim(":GD#", dec_dms);
-  if ((strcmp(currentDEC, dec_dms)) ) {
-    canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, dec_dms);
-    strcpy(currentDEC, dec_dms);
-  }
+  canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, dec_dms);
 
   // Target DEC
   y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":Gd#", tdec_dms); 
-  if ((strcmp(currentTargDEC, tdec_dms)) ) {
-    canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tdec_dms);
-    strcpy(currentTargDEC, tdec_dms);
-  }
-
-  // ============ Column 2 ==============
+  canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tdec_dms);
+  
+  // ----- Column 2 -----
   y_offset =0;
-
-  // === Show both Target and Current ALT and AZM ===
-
-  // Calculate Target AZM / ALT from Column 1 (:Gr#, :Gd#, target RA/DEC)
-  // first, convert them to Double
-  //shc.hmsToDouble(&currentTargRA_d, currentTargRA);
-  //shc.dmsToDouble(&currentTargDEC_d, currentTargDEC, true, true);
- 
-  // convert to Horizon
- // currentTargRA_d *= 15;
-  //cat_mgr.EquToHor(currentTargRA_d, currentTargDEC_d, &tAlt_d, &tAzm_d);
 
   // Get Current ALT and AZ and display them as Double
   getLocalCmdTrim(":GZ#", cAzmDMS); // DDD*MM'SS# 
   shc.dmsToDouble(&cAzm_d, cAzmDMS, false, true);
+  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAzm_d);
 
+  y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":GA#", cAltDMS);	// sDD*MM'SS#
   shc.dmsToDouble(&cAlt_d, cAltDMS, true, true);
+  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAzm_d);
 
   // Get Target ALT and AZ and display them as Double
+  y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
   shc.dmsToDouble(&tAzm_d, tAzmDMS, false, true);
+  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAlt_d);
 
+  y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
   shc.dmsToDouble(&tAlt_d, tAltDMS, true, true);
-
-  //--Current-- AZM float
-  if ((current_cAzm != cAzm_d) ) { 
-    canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAzm_d);
-    current_cAzm = cAzm_d;
-  }
-
-  // --Target-- AZM in degrees float
-  y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_tAzm != tAzm_d) ) {
-    canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAzm_d);
-    current_tAzm = tAzm_d;
-  }
-
-  // --Current-- ALT
-  y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_cAlt != cAlt_d) ) {
-    canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAlt_d);
-    current_cAlt = cAlt_d;
-  }
-  
-  // --Target-- ALT in degrees
-  y_offset +=COM_LABEL_Y_SPACE;
-  if ((current_tAlt != tAlt_d) ) {
-    canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAlt_d);
-    current_tAlt = tAlt_d;
-  }
+  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAlt_d);
 }
 
 // draw a picture -This member function is a copy from rDUINOScope but with 

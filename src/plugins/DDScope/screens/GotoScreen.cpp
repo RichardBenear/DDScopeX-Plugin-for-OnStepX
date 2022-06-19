@@ -82,7 +82,6 @@ char numLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", 
 void GotoScreen::draw() {
   setCurrentScreen(GOTO_SCREEN);
   setNightMode(getNightMode());
-
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawTitle(115, TITLE_TEXT_Y, "Go To");
@@ -90,7 +89,6 @@ void GotoScreen::draw() {
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   drawCommonStatusLabels();
-  updateCommonStatus();
   updateGotoButtons();
 
   RAtextIndex = 0; 
@@ -120,6 +118,11 @@ void GotoScreen::draw() {
   tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9,  butBackground);
   tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+TEXT_SPACING_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9,  butBackground);
 } // end initialize
+
+// task update for this screen
+void GotoScreen::updateGotoStatus() {
+  updateCommonStatus();
+}
 
 // assign label to pressed button field
 void GotoScreen::processNumPadButton() {
@@ -229,7 +232,7 @@ void GotoScreen::updateGotoButtons() {
     if (!lCmountStatus.isSlewing()) { 
       drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
     } else {
-      tasks.immediate(us_handle); 
+      //tasks.immediate(us_handle); 
     }
   }
   
@@ -253,7 +256,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
        && py <  (NUM_BUTTON_Y+row*(NUM_BUTTON_H+NUM_BUTTON_SPACING_Y)) + NUM_BUTTON_H 
        && px >   NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) 
        && px <  (NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X) + NUM_BUTTON_W)) {
-        DD_CLICK;
+        BEEP;
         buttonPosition=row*3+col;
         //VF("buttonPosition="); VL(buttonPosition);
         numDetected = true;
@@ -264,7 +267,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Select RA field
   if (py > RA_SELECT_Y && py < (RA_SELECT_Y + CO_BOXSIZE_Y) && px > RA_SELECT_X && px < (RA_SELECT_X + CO_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     RAselect = true; 
     DECselect = false;
     return true;
@@ -272,7 +275,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Clear RA field
   if (py > RA_CLEAR_Y && py < (RA_CLEAR_Y + CO_BOXSIZE_Y) && px > RA_CLEAR_X && px < (RA_CLEAR_X + CO_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     RAclear = true; 
     RAtextIndex = 0;
     buttonPosition = 12;
@@ -281,7 +284,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Select DEC field
   if (py > DEC_SELECT_Y && py < (DEC_SELECT_Y + CO_BOXSIZE_Y) && px > DEC_SELECT_X && px < (DEC_SELECT_X + CO_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     DECselect = true;
     RAselect = false;
     return true;
@@ -289,7 +292,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Clear DEC field
   if (py > DEC_CLEAR_Y && py < (DEC_CLEAR_Y + CO_BOXSIZE_Y) && px > DEC_CLEAR_X && px < (DEC_CLEAR_X + CO_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     DECclear = true; 
     DECtextIndex = 0;
     buttonPosition = 12;
@@ -298,7 +301,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // SEND Coordinates
   if (py > SEND_BUTTON_Y && py < (SEND_BUTTON_Y + SEND_BOXSIZE_Y) && px > SEND_BUTTON_X && px < (SEND_BUTTON_X + SEND_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     sendOn = true; 
     RAtextIndex = 0;
     DECtextIndex = 0;
@@ -318,7 +321,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Quick set Polaris Target
   if (py > POL_BUTTON_Y && py < (POL_BUTTON_Y + POL_BOXSIZE_Y) && px > POL_BUTTON_X && px < (POL_BUTTON_X + POL_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     setPolOn = true;
     gotoScreen.setTargPolaris(); 
     return true;
@@ -326,7 +329,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // ==== Go To Target Coordinates ====
   if (py > GOTO_BUTTON_Y && py < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && px > GOTO_BUTTON_X && px < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     goToButton = true;
     setLocalCmd(":MS#"); // move to
     return true;
@@ -334,7 +337,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // ==== ABORT GOTO ====
   if (py > ABORT_BUTTON_Y && py < (ABORT_BUTTON_Y + GOTO_BOXSIZE_Y) && px > ABORT_BUTTON_X && px < (ABORT_BUTTON_X + GOTO_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     abortPgBut = true;
     setLocalCmd(":Q#"); // stops move
     motor1.power(false); // do this for safety reasons...mount may be colliding with something

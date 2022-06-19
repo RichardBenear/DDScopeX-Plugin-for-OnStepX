@@ -26,7 +26,6 @@ class DCFocuserScreen : public Display {
     bool setPoint ;
     bool decSpeed ;
     bool incSpeed ;
-    bool stepPhasePressed ;
     bool incMoveCt ;
     bool decMoveCt ;
     bool setZero ;
@@ -39,12 +38,7 @@ class DCFocuserScreen : public Display {
     int focMoveSpeed; // pulse width in microsec
     int focMoveDistance; // probably need to start with 30 after powering up
     int moveDistance;
-    int current_focMoveDistance;
-    int current_focMoveSpeed;
-    int current_focMaxPos;
-    int current_focMinPos;
-    int current_focPos;
-    int current_focDeltaMove;
+
     int focPosition;
     int focTarget;
     int focDeltaMove;

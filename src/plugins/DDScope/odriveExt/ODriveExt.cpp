@@ -4,7 +4,7 @@
 // ============================================
 // Author: Richard Benear 2022
 // 
-// ODrive communication via Teensy 4.0
+// ODrive communication via Teensy 4.0 serial
 // Uses GitHub ODrive Arduino library
 
 #include "ODriveExt.h"
@@ -21,15 +21,15 @@ const char* ODriveComponentsStr[4] = {
 
 //=========================================================
 // Read ODrive bus voltage which is approx. the battery voltage
+// Battery Low LED is only on when battery is below low threashold
 float ODriveExt::getODriveBusVoltage() {
   ODRIVE_SERIAL << "r vbus_voltage\n";
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   float battery_voltage = _oDriveDriver->readFloat();
   
   if (battery_voltage < BATTERY_LOW_VOLTAGE && battery_voltage > 3) { // battery low
     digitalWrite(BATTERY_LOW_LED_PIN, LOW); // LED on
     batLowLED = true;
-    DD_ALERT;
+    ALERT;
   } else { // battery either above low voltage limit (ok) or in development mode  
     digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // LED off
     batLowLED = false;
@@ -40,7 +40,6 @@ float ODriveExt::getODriveBusVoltage() {
 // get absolute Encoder positions in degrees
 float ODriveExt::getEncoderPositionDeg(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   float turns = _oDriveDriver->readFloat();
   return turns*360;
 }  
@@ -48,37 +47,31 @@ float ODriveExt::getEncoderPositionDeg(int axis) {
 // get motor positions in turns
 float ODriveExt::getMotorPositionTurns(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; 
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDriveDriver->readFloat();
 }  
 
 // get motor position in counts
 int ODriveExt::getMotorPositionCounts(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate_counts\n";
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDriveDriver->readInt();
 } 
 
 // get Motor Current
 float ODriveExt::getMotorCurrent(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n";
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDriveDriver->readFloat();
 }  
 
-// read current requested state
-int ODriveExt::getODriveRequestedState() {
-  ODRIVE_SERIAL << "r axis0.requested_state\n";
-  tasks.yield(ODRIVE_SERIAL_WAIT);
+// read current state
+int ODriveExt::getODriveCurrentState(int axis) {
+  ODRIVE_SERIAL << "r axis" << axis << ".current_state\n";
   return _oDriveDriver->readInt();
 }
 
 float ODriveExt::getMotorPositionDelta(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   float reqPos = _oDriveDriver->readFloat();   
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n";
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   float posEst = _oDriveDriver->readFloat();   
   float deltaPos = abs(reqPos - posEst);
   return deltaPos;
@@ -146,19 +139,16 @@ void ODriveExt::setODrivePosGain(int axis, float level) {
 
 float ODriveExt::getODriveVelGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n";
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDriveDriver->readFloat();
 }
 
 float ODriveExt::getODriveVelIntGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n";
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDriveDriver->readFloat();
 }
 
 float ODriveExt::getODrivePosGain(int axis) {
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n";
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   return _oDriveDriver->readFloat();
 }
 
@@ -191,39 +181,30 @@ float ODriveExt::getMotorTemp(int axis) {
 uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
   if (axis == -1) { // ODrive top level error
     ODRIVE_SERIAL << "r odrive.error\n";
-    tasks.yield(ODRIVE_SERIAL_WAIT);
     return _oDriveDriver->readInt();
   }
 
   if (component == NONE) {
     ODRIVE_SERIAL << "r odrive.axis"<<axis<<".error\n";
-    tasks.yield(ODRIVE_SERIAL_WAIT);
     return _oDriveDriver->readInt();
   } else {
     ODRIVE_SERIAL << "r odrive.axis"<<axis<<"."<<ODriveComponentsStr[component]<<".error\n";
-    tasks.yield(ODRIVE_SERIAL_WAIT);
     return _oDriveDriver->readInt();
   }
 }
 
 void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
   ODRIVE_SERIAL << "r hw_version_major\n"; 
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.hwMajor = _oDriveDriver->readInt();
   ODRIVE_SERIAL << "r hw_version_minor\n"; 
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.hwMinor = _oDriveDriver->readInt();
   ODRIVE_SERIAL << "r hw_version_variant\n"; 
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.hwVar = _oDriveDriver->readInt();
   ODRIVE_SERIAL << "r fw_version_major\n"; 
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.fwMajor = _oDriveDriver->readInt();
   ODRIVE_SERIAL << "r fw_version_minor\n"; 
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.fwMinor = _oDriveDriver->readInt();
   ODRIVE_SERIAL << "r fw_version_revision\n"; 
-  tasks.yield(ODRIVE_SERIAL_WAIT);
   oDversion.fwRev = _oDriveDriver->readInt();
 }
 

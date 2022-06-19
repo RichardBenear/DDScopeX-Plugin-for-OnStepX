@@ -12,6 +12,7 @@ class ODriveScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
+    void updateOdriveStatus();
     void updateOdriveButtons();
     void decodeODriveErrors(int axis, Component, uint32_t errorCode);
     

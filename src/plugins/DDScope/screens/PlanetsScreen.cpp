@@ -41,7 +41,6 @@ const char PlanetNames[8][8] = {"Mercury", "Venus", "Mars", "Jupiter", "Saturn",
 void PlanetsScreen::draw() {
   setCurrentScreen(PLANETS_SCREEN);
   setNightMode(getNightMode());
-    
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawTitle(110, TITLE_TEXT_Y, "Planets");
@@ -60,12 +59,10 @@ void PlanetsScreen::draw() {
   
   getPlanet(planetButSelPos); // init screen
   updatePlanetsButtons();
-  /*
-  for(int row=0; row<PLANET_ROWS; row++) {
-      drawButton(PLANET_X, PLANET_Y+row*(PLANET_H+PLANET_Y_SPACING), PLANET_W, PLANET_H, false, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[row]);
-  }
-  drawButton(P_RETURN_X, P_RETURN_Y, P_RETURN_W, BACK_H, false, BACK_T_X_OFF, BACK_T_Y_OFF, "RETURN");
-  */
+}
+
+// task update for this screen
+void PlanetsScreen::updatePlanetsStatus() {
 }
 
 // Need to map the index used here for selected planets to the ones used for solar system index in the Ephermeris
@@ -332,6 +329,7 @@ void PlanetsScreen::updatePlanetsButtons() {
   }
 }
 
+
 // *****************************************************
 // **** Handle any buttons that have been pressed ****
 // *****************************************************
@@ -340,7 +338,7 @@ bool PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
     for (int row=0; row<PLANET_ROWS; row++) {
         if (py > PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING)) && py < (PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING))) + PLANET_H 
                 && px > PLANET_X && px < (PLANET_X+PLANET_W)) {
-            DD_CLICK;
+            BEEP;
             planetButSelPos = row;
             planetsScreen.mapPlanetIndex(row);
             planetButDetected = true;
@@ -350,7 +348,7 @@ bool PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // RETURN page button - reuse BACK button box size
     if (py > P_RETURN_Y && py < (P_RETURN_Y + BACK_H) && px > P_RETURN_X && px < (P_RETURN_X + P_RETURN_W)) {
-      DD_CLICK;
+      BEEP;
         moreScreen.draw();
         return true;
     }

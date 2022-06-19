@@ -34,17 +34,20 @@ template<>        inline Print& operator <<(Print& obj, float arg) { obj.print(a
 class ODriveExt : public Display {
   public:
     // getters
+    int   getMotorPositionCounts(int axis);
+    int   getODriveCurrentState(int axis);
+
     float getEncoderPositionDeg(int axis);
     float getMotorPositionTurns(int axis);
-    int   getMotorPositionCounts(int axis);
     float getMotorPositionDelta(int axis);
     float getMotorCurrent(int axis);
     float getMotorTemp(int axis);
     float getODriveVelGain(int axis);
     float getODriveVelIntGain(int axis);
     float getODrivePosGain(int axis);
-    void getODriveVersion(ODriveVersion oDversion);
     float getODriveBusVoltage();
+
+    void getODriveVersion(ODriveVersion oDversion);
     uint32_t getODriveErrors(int axis, Component component);
     void demoMode(bool onState);
     
@@ -58,8 +61,7 @@ class ODriveExt : public Display {
     
     // not currently used
     void clearAllODriveErrors();
-    int getODriveRequestedState();
-
+    
     bool odriveAzmPwr = false;
     bool odriveAltPwr = false;
 

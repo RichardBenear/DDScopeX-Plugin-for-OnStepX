@@ -74,33 +74,34 @@ extern const char *activeFilterStr[3];
 void MoreScreen::draw() {
   setCurrentScreen(MORE_SCREEN);
   setNightMode(getNightMode());
-
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 
-  tft.setCursor(TRACK_R_X+2, TRACK_R_Y-16);
-  tft.print("Tracking");
-  tft.setCursor(TRACK_R_X+5, TRACK_R_Y-4);
-  tft.print(" Rates");
+  tft.setCursor(TRACK_R_X-10, TRACK_R_Y-4);
+  tft.print("Track Rates");
+
+   tft.setCursor(30, TRACK_R_Y-4);
+  tft.print("Catalogs");
 
   drawMenuButtons();
   drawTitle(60, TITLE_TEXT_Y, "Catalogs & Misc");
-
-  tft.setCursor(30, 170);
-  tft.print("Catalogs");
 
   // Draw the HOME Icon bitmap
   uint8_t extern black_house_icon[];
   tft.drawBitmap(10, 5, black_house_icon, 39, 31,  butBackground, ORANGE);
 
   drawCommonStatusLabels();
-  updateCommonStatus();
   updateMoreButtons();
+}
+
+// task update for this screen
+void MoreScreen::updateMoreStatus() {
+  updateCommonStatus();
 }
 
 //================== Update the Buttons ======================
 void MoreScreen::updateMoreButtons() {
-
+  
   // Show any target object data selected from Catalog
   uint16_t x = 120; uint16_t y = 358; 
   tft.fillRect(x-2, y+3, 199, 5*16, butBackground);
@@ -205,13 +206,13 @@ void MoreScreen::updateMoreButtons() {
       yesBut = false;
       clrCustom = false;
       yesCancelActive = false;
-      tasks.immediate(us_handle); 
+      //tasks.immediate(us_handle); 
     }
     if (cancelBut) {
       cancelBut = false;
       clrCustom = false;
       yesCancelActive = false;
-      tasks.immediate(us_handle); 
+      //tasks.immediate(us_handle); 
       drawButton(MISC_X + x_offset, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, BUTTON_OFF, MISC_TEXT_X_OFFSET+5, MISC_TEXT_Y_OFFSET, "Clr Custom");
       if (objectSelected) tft.fillRect(x, y, 199, 5*16, pgBackground);
     }
@@ -238,7 +239,7 @@ void MoreScreen::updateMoreButtons() {
     if (!lCmountStatus.isSlewing()) { 
       drawButton( GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, BUTTON_OFF, GOTO_TXT_OFF_X+5, GOTO_TXT_OFF_Y, "GoTo"); 
     } else {
-      tasks.immediate(us_handle); 
+      //tasks.immediate(us_handle); 
     }
   }
   
@@ -278,10 +279,12 @@ void MoreScreen::updateMoreButtons() {
 // ===== TouchScreen Poll "MORE" page ==========
 //==============================================
 bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
+  char reply[5];
 
   // Home Page ICON Button
   if (px > 10 && px < 50 && py > 5 && py < 37) {
-    homeScreen.draw();
+    BEEP;
+    setCurrentScreen(HOME_SCREEN); homeScreen.draw();
     return true;
   }
 
@@ -291,7 +294,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Sidereal Rate 
   if (py > TRACK_R_Y+y_offset && py < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && px > TRACK_R_X && px < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
       setLocalCmd(":TQ#");
       sidereal = true;
       lunarRate = false;
@@ -301,7 +304,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Lunar Rate
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
   if (py > TRACK_R_Y+y_offset && py < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && px > TRACK_R_X && px < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
       setLocalCmd(":TL#");
       sidereal = false;
       lunarRate = true;
@@ -311,7 +314,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // King Rate
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
   if (py > TRACK_R_Y+y_offset && py < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && px > TRACK_R_X && px < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
       setLocalCmd(":TK#");
       sidereal = false;
       lunarRate = false;
@@ -321,7 +324,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Increment tracking rate
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_GROUP_SPACER ;
   if (py > TRACK_R_Y+y_offset && py < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && px > TRACK_R_X && px < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
       setLocalCmd(":T+#");
       incTrackRate = true;
       decTrackRate = false;
@@ -330,7 +333,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Decrement tracking rate
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
   if (py > TRACK_R_Y+y_offset && py < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && px > TRACK_R_X && px < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
       setLocalCmd(":T-#");
       incTrackRate = false;
       decTrackRate = true;
@@ -339,7 +342,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Reset tracking rate
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_GROUP_SPACER ;
   if (py > TRACK_R_Y+y_offset && py < (TRACK_R_Y+y_offset + TRACK_R_BOXSIZE_Y) && px > TRACK_R_X && px < (TRACK_R_X + TRACK_R_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
       setLocalCmd(":TR#");
       rstTrackRate = true;
       return true;
@@ -348,7 +351,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   y_offset = 0;
   // Filter Select Button
   if (px > FM_X + x_offset && px < FM_X + x_offset + FM_BOXSIZE_X && py > FM_Y + y_offset && py <  FM_Y + y_offset + FM_BOXSIZE_Y) {
-    DD_CLICK;
+    BEEP;
     filterBut = true;
     // circular selection
     if (activeFilter == FM_NONE) {
@@ -368,20 +371,20 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Clear Custom Button
   y_offset += FM_BOXSIZE_Y + FM_SPACER_Y;
   if (!yesCancelActive && px > MISC_X + x_offset && px < MISC_X + x_offset + MISC_BOXSIZE_X && py > MISC_Y + y_offset && py <  MISC_Y + y_offset + MISC_BOXSIZE_Y) {
-    DD_CLICK;
+    BEEP;
     clrCustom = true;
     return true;
   }
   // Clearing Custom Catalog "Yes"
   if (px > MISC_X && px < MISC_X + 30 && py > MISC_Y + y_offset && py <  MISC_Y + y_offset + MISC_BOXSIZE_Y) {
-    DD_CLICK;
+    BEEP;
     yesBut = true;
     clrCustom = true;
     return true;
   }
   // Clearing Custom catalog "Cancel"
   if (px > MISC_X + 40 && px < MISC_X + 120 && py > MISC_Y + y_offset && py <  MISC_Y + y_offset + MISC_BOXSIZE_Y) {
-    DD_CLICK;
+    BEEP;
     cancelBut = true;
     clrCustom = true;
     return true;
@@ -390,7 +393,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Buzzer Button
   y_offset += MISC_BOXSIZE_Y + MISC_SPACER_Y;
   if (px > MISC_X + x_offset && px < MISC_X + x_offset + MISC_BOXSIZE_X && py > MISC_Y + y_offset && py <  MISC_Y + y_offset + MISC_BOXSIZE_Y) {
-    DD_CLICK;
+    BEEP;
     if (!soundEnabled) {
       soundEnabled = true; // turn on
       setLocalCmd(":SX97,1#");
@@ -400,10 +403,10 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     }
     return true;
   }
-char reply[5];
+  
   // **** Go To Target Coordinates ****
   if (py > GOTO_BUT_Y && py < (GOTO_BUT_Y + GOTO_M_BOXSIZE_Y) && px > GOTO_BUT_X && px < (GOTO_BUT_X + GOTO_M_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     goToButton = true;
     getLocalCmdTrim(":MS#", reply);
     VF("reply="); VL(reply);
@@ -412,7 +415,7 @@ char reply[5];
 
   // **** ABORT GOTO ****
   if (py > ABORT_M_BUT_Y && py < (ABORT_M_BUT_Y + GOTO_M_BOXSIZE_Y) && px > ABORT_M_BUT_X && px < (ABORT_M_BUT_X + GOTO_M_BOXSIZE_X)) {
-    DD_CLICK;
+    BEEP;
     soundFreq(1500, 200);
     abortPgBut = true;
     setLocalCmd(":Q#"); // stops move
@@ -425,7 +428,7 @@ char reply[5];
   y_offset = 0;
   for (uint16_t i=1; i<=cat_mgr.numCatalogs(); i++) {
     if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-      DD_CLICK;
+      BEEP;
       
       // disable ALL_SKY filter if any DSO catalog...it's for STARS only
       if (i != 1 && activeFilter == FM_ALIGN_ALL_SKY) { // 1 is STARS
@@ -441,7 +444,7 @@ char reply[5];
 
   // Planet Catalog Select Button
   if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-    DD_CLICK;
+    BEEP;
     planetsScreen.draw();
     return true;
   }
@@ -449,7 +452,7 @@ char reply[5];
   // Treasure catalog select Button
   y_offset += CAT_SEL_SPACER;
   if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-    DD_CLICK;
+    BEEP;
     catalogScreen.draw(cat_mgr.numCatalogs()+1);
     return true;
   }
@@ -457,7 +460,7 @@ char reply[5];
     // User custom catalog select Button
   y_offset += CAT_SEL_SPACER;
   if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-    DD_CLICK;
+    BEEP;
     catalogScreen.draw(cat_mgr.numCatalogs()+2);
     return true;
   }

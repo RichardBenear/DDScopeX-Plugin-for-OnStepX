@@ -19,6 +19,7 @@
   #include "../screens/ODriveScreen.h"
 #endif
 
+unsigned char __task_postpone;
 void touchWrapper() { touchScreen.touchScreenPoll(display.currentScreen); }
 
 void TouchScreen::init() {
@@ -33,7 +34,7 @@ void TouchScreen::init() {
 
   // start touchscreen task
   VF("MSG: Setup, start TouchScreen polling task (rate 300 ms priority 7)... ");
-  uint8_t TShandle = tasks.add(300, 0, true, 7, touchWrapper, "TouchScreen");
+  uint8_t TShandle = tasks.add(300, 0, true, 6, touchWrapper, "TouchScreen");
   if (TShandle)  { VLF("success"); } else { VLF("FAILED!"); }
   tasks.setTimingMode(TShandle, TM_MINIMUM);
 }
@@ -41,7 +42,7 @@ void TouchScreen::init() {
 // Poll the TouchScreen
 void TouchScreen::touchScreenPoll(Screen tCurScreen) {
   if (ts.touched()) {
-    if (screenTouched) return; // effectively a debounce
+    //if (screenTouched) return; // effectively a debounce
 
     // tell other screens to process button states...they will clear this flag when done
     screenTouched = true;
@@ -53,6 +54,7 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
     p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
     // VF("x="); V(p.x); VF(", y="); V(p.y); VF(", z="); VL(p.z); //for calibration
     
+
     // *************** MENU MAP ****************
     // Current Screen |Cur |Col1|Col2|Col3|Col4|
     // Home-----------| Ho | Gu | Fo | GT | Mo |
@@ -65,7 +67,7 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
     //  More & (CATs)--| Mo | GT | Se | Od | Al |
     //  ODrive---------| Od | Ho | Se | Al | Xs |
     //  Extended Status| Xs | Ho | Se | Al | Od |
-    //  Settings-------| Se | Ho | Fo | Al | Od |
+    //  Settings-------| Se | Ho | Xs | Al | Od |
     //  Alignment------| Al | Ho | Fo | Gu | Od |
     //else if not ODRIVE_PRESENT use this menu structure
     //  More & (CATs)--| Mo | GT | Se | Gu | Al |
@@ -82,106 +84,104 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
     // Check for any Menu buttons pressed
     // == LeftMost Menu Button ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X                   ) && p.x < (MENU_X                    + MENU_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
       switch(tCurScreen) { 
-        case HOME_SCREEN:    guideScreen.draw(); break;
-        case GUIDE_SCREEN:    homeScreen.draw(); break;
-        case FOCUSER_SCREEN:  homeScreen.draw(); break;
-        case GOTO_SCREEN:     homeScreen.draw(); break;
+        case HOME_SCREEN:     setCurrentScreen(GUIDE_SCREEN); guideScreen.draw(); break;
+        case GUIDE_SCREEN:    setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
+        case FOCUSER_SCREEN:  setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
+        case GOTO_SCREEN:     setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
         //==============================================
       #ifdef ODRIVE_MOTOR_PRESENT
-        case MORE_SCREEN:     gotoScreen.draw(); break;
-        case ODRIVE_SCREEN:   homeScreen.draw(); break;
-        case XSTATUS_SCREEN:  homeScreen.draw(); break;
-        case SETTINGS_SCREEN: homeScreen.draw(); break;
-        case ALIGN_SCREEN:    homeScreen.draw(); break;
+        case MORE_SCREEN:     setCurrentScreen(GOTO_SCREEN);  gotoScreen.draw();  break;
+        case ODRIVE_SCREEN:   setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
+        case XSTATUS_SCREEN:  setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
+        case SETTINGS_SCREEN: setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
+        case ALIGN_SCREEN:    setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
       #else
-        case MORE_SCREEN:     gotoScreen.draw(); break;
-        case XSTATUS_SCREEN:  homeScreen.draw(); break;
-        case SETTINGS_SCREEN: homeScreen.draw(); break;
-        case ALIGN_SCREEN:    homeScreen.draw(); break;
+        case MORE_SCREEN:     setCurrentScreen(GOTO_SCREEN);  gotoScreen.draw();  break;
+        case XSTATUS_SCREEN:  setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
+        case SETTINGS_SCREEN: setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
+        case ALIGN_SCREEN:    setCurrentScreen(HOME_SCREEN);  homeScreen.draw();  break;
       #endif
-         default: homeScreen.draw();
+        default: setCurrentScreen(HOME_SCREEN); homeScreen.draw();
       }
       screenTouched = false;
       return;
     }
     // == Center Left Menu - Column 2 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X +   MENU_X_SPACING) && p.x < (MENU_X +   MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
       switch(tCurScreen) {
-        case HOME_SCREEN:     dCfocuserScreen.draw(); break;
-        case GUIDE_SCREEN:    dCfocuserScreen.draw(); break;
-        case FOCUSER_SCREEN:      guideScreen.draw(); break;
-        case GOTO_SCREEN:     dCfocuserScreen.draw(); break;
+        case HOME_SCREEN:     setCurrentScreen(FOCUSER_SCREEN); dCfocuserScreen.draw();  break;
+        case GUIDE_SCREEN:    setCurrentScreen(FOCUSER_SCREEN); dCfocuserScreen.draw();  break;
+        case FOCUSER_SCREEN:  setCurrentScreen(GUIDE_SCREEN);   guideScreen.draw();      break;
+        case GOTO_SCREEN:     setCurrentScreen(FOCUSER_SCREEN); dCfocuserScreen.draw();  break;
         //==================================================
-        #ifdef ODRIVE_MOTOR_PRESENT
-        case MORE_SCREEN:      settingsScreen.draw(); break;
-        case XSTATUS_SCREEN:   settingsScreen.draw(); break;
-        case SETTINGS_SCREEN: dCfocuserScreen.draw(); break;
-        case ALIGN_SCREEN:    dCfocuserScreen.draw(); break;
-        case CUST_CAT_SCREEN:                         break;
+      #ifdef ODRIVE_MOTOR_PRESENT
+        case MORE_SCREEN:     setCurrentScreen(SETTINGS_SCREEN); settingsScreen.draw();  break;
+        case ODRIVE_SCREEN:   setCurrentScreen(SETTINGS_SCREEN); settingsScreen.draw();  break;
+        case XSTATUS_SCREEN:  setCurrentScreen(SETTINGS_SCREEN); settingsScreen.draw();  break;
+        case SETTINGS_SCREEN: setCurrentScreen(XSTATUS_SCREEN);  extStatusScreen.draw(); break;
+        case ALIGN_SCREEN:    setCurrentScreen(FOCUSER_SCREEN);  dCfocuserScreen.draw(); break;
       #else
-        case MORE_SCREEN:      settingsScreen.draw(); break;
-        case ODRIVE_SCREEN:    settingsScreen.draw(); break;
-        case XSTATUS_SCREEN:   settingsScreen.draw(); break;
-        case SETTINGS_SCREEN: extStatusScreen.draw(); break;
-        case ALIGN_SCREEN:    dCfocuserScreen.draw(); break;
+        case MORE_SCREEN:     setCurrentScreen(SETTINGS_SCREEN); settingsScreen.draw();  break;
+        case XSTATUS_SCREEN:  setCurrentScreen(SETTINGS_SCREEN); settingsScreen.draw();  break;
+        case SETTINGS_SCREEN: setCurrentScreen(XSTATUS_SCREEN);  extStatusScreen.draw(); break;
+        case ALIGN_SCREEN:    setCurrentScreen(FOCUSER_SCREEN);  dCfocuserScreen.draw(); break;
       #endif
-         default: homeScreen.draw();
+        default: setCurrentScreen(HOME_SCREEN); homeScreen.draw();
       }
       screenTouched = false;
       return;
     }
     // == Center Right Menu - Column 3 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 2*MENU_X_SPACING) && p.x < (MENU_X + 2*MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      DD_CLICK;
+      BEEP;
       switch(tCurScreen) {
-        case HOME_SCREEN:        gotoScreen.draw(); break;
-        case GUIDE_SCREEN:      alignScreen.draw(); break;
-        case FOCUSER_SCREEN:     gotoScreen.draw(); break;
-        case GOTO_SCREEN:       guideScreen.draw(); break;
-         //==============================================
+        case HOME_SCREEN:      setCurrentScreen(GOTO_SCREEN);   gotoScreen.draw();   break;
+        case GUIDE_SCREEN:     setCurrentScreen(ALIGN_SCREEN);  alignScreen.draw();  break;
+        case FOCUSER_SCREEN:   setCurrentScreen(GOTO_SCREEN);   gotoScreen.draw();   break;
+        case GOTO_SCREEN:      setCurrentScreen(GUIDE_SCREEN);  guideScreen.draw();  break;
+        //==============================================
       #ifdef ODRIVE_MOTOR_PRESENT
-        case MORE_SCREEN:      oDriveScreen.draw(); break;
-        case ODRIVE_SCREEN: extStatusScreen.draw(); break;
-        case XSTATUS_SCREEN:    alignScreen.draw(); break;
-        case SETTINGS_SCREEN:   alignScreen.draw(); break;
-        case ALIGN_SCREEN:      guideScreen.draw(); break;
-        case CUST_CAT_SCREEN:                       break;
+        case MORE_SCREEN:      setCurrentScreen(ODRIVE_SCREEN); oDriveScreen.draw(); break;
+        case ODRIVE_SCREEN:    setCurrentScreen(ALIGN_SCREEN);  alignScreen.draw();  break;
+        case XSTATUS_SCREEN:   setCurrentScreen(ALIGN_SCREEN);  alignScreen.draw();  break;
+        case SETTINGS_SCREEN:  setCurrentScreen(ALIGN_SCREEN);  alignScreen.draw();  break;
+        case ALIGN_SCREEN:     setCurrentScreen(GUIDE_SCREEN);  guideScreen.draw();  break;
       #else
-        case MORE_SCREEN:       guideScreen.draw(); break;
-        case XSTATUS_SCREEN:    alignScreen.draw(); break;
-        case SETTINGS_SCREEN:   alignScreen.draw(); break;
-        case ALIGN_SCREEN:      guideScreen.draw(); break;
+        case MORE_SCREEN:      setCurrentScreen(GUIDE_SCREEN);  guideScreen.draw();  break;
+        case XSTATUS_SCREEN:   setCurrentScreen(ALIGN_SCREEN);  alignScreen.draw();  break;
+        case SETTINGS_SCREEN:  setCurrentScreen(ALIGN_SCREEN);  alignScreen.draw();  break;
+        case ALIGN_SCREEN:     setCurrentScreen(GUIDE_SCREEN);  guideScreen.draw();  break;
       #endif
-         default: homeScreen.draw();
+        default: setCurrentScreen(HOME_SCREEN); homeScreen.draw();
       }
       screenTouched = false;
       return;
     }
     // == Right Menu - Column 4 ==
     if (p.y > MENU_Y && p.y < (MENU_Y + MENU_BOXSIZE_Y) && p.x > (MENU_X + 3*MENU_X_SPACING) && p.x < (MENU_X + 3*MENU_X_SPACING + MENU_BOXSIZE_X)) {
-      DD_CLICK;   
+      BEEP;   
       switch(tCurScreen) {
-        case HOME_SCREEN:       moreScreen.draw(); break;
-        case GUIDE_SCREEN:      moreScreen.draw(); break;
-        case FOCUSER_SCREEN:    moreScreen.draw(); break;
-        case GOTO_SCREEN:       moreScreen.draw(); break;
-         //==============================================
+        case HOME_SCREEN:     setCurrentScreen(MORE_SCREEN);    moreScreen.draw();     break;
+        case GUIDE_SCREEN:    setCurrentScreen(MORE_SCREEN);    moreScreen.draw();     break;
+        case FOCUSER_SCREEN:  setCurrentScreen(MORE_SCREEN);    moreScreen.draw();     break;
+        case GOTO_SCREEN:     setCurrentScreen(MORE_SCREEN);    moreScreen.draw();     break;
+        //==============================================
       #ifdef ODRIVE_MOTOR_PRESENT
-        case MORE_SCREEN:      alignScreen.draw(); break;
-        case ODRIVE_SCREEN:     moreScreen.draw(); break;
-        case XSTATUS_SCREEN:  oDriveScreen.draw(); break;
-        case SETTINGS_SCREEN: oDriveScreen.draw(); break;
-        case ALIGN_SCREEN:    oDriveScreen.draw(); break;
+        case MORE_SCREEN:     setCurrentScreen(ALIGN_SCREEN);   alignScreen.draw();     break;
+        case ODRIVE_SCREEN:   setCurrentScreen(XSTATUS_SCREEN); extStatusScreen.draw(); break;
+        case XSTATUS_SCREEN:  setCurrentScreen(ODRIVE_SCREEN);  oDriveScreen.draw();    break;
+        case SETTINGS_SCREEN: setCurrentScreen(ODRIVE_SCREEN);  oDriveScreen.draw();    break;
+        case ALIGN_SCREEN:    setCurrentScreen(ODRIVE_SCREEN);  oDriveScreen.draw();    break;
       #else 
-        case MORE_SCREEN:      alignScreen.draw(); break;
-        case XSTATUS_SCREEN:    moreScreen.draw(); break;
-        case SETTINGS_SCREEN:   moreScreen.draw(); break;
-        case ALIGN_SCREEN:      moreScreen.draw(); break;
+        case MORE_SCREEN:     setCurrentScreen(ALIGN_SCREEN);   alignScreen.draw();     break;
+        case XSTATUS_SCREEN:  setCurrentScreen(MORE_SCREEN);    moreScreen.draw();      break;
+        case SETTINGS_SCREEN: setCurrentScreen(MORE_SCREEN);    moreScreen.draw();      break;
+        case ALIGN_SCREEN:    setCurrentScreen(MORE_SCREEN);    moreScreen.draw();      break;
       #endif
-        default: homeScreen.draw();
+        default: setCurrentScreen(HOME_SCREEN); homeScreen.draw();
       }
       screenTouched = false;
       return;
@@ -192,26 +192,26 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
     switch (tCurScreen) {
       case HOME_SCREEN:     
         if (homeScreen.touchPoll(p.x, p.y)) homeScreen.updateHomeButtons();             break;       
-      case GUIDE_SCREEN:    guideScreen.touchPoll(p.x, p.y);     
+      case GUIDE_SCREEN:       
         if (guideScreen.touchPoll(p.x, p.y)) guideScreen.updateGuideButtons();          break;        
-      case FOCUSER_SCREEN:  dCfocuserScreen.touchPoll(p.x, p.y); 
+      case FOCUSER_SCREEN:  
         if (dCfocuserScreen.touchPoll(p.x, p.y)) dCfocuserScreen.updateFocuserButtons(); break; 
-      case GOTO_SCREEN:     gotoScreen.touchPoll(p.x, p.y);      
+      case GOTO_SCREEN:      
         if (gotoScreen.touchPoll(p.x, p.y)) gotoScreen.updateGotoButtons();             break;          
-      case MORE_SCREEN:     moreScreen.touchPoll(p.x, p.y);      
+      case MORE_SCREEN:       
         if (moreScreen.touchPoll(p.x, p.y)) moreScreen.updateMoreButtons();             break;          
-      case SETTINGS_SCREEN: settingsScreen.touchPoll(p.x, p.y);  
+      case SETTINGS_SCREEN:  
         if (settingsScreen.touchPoll(p.x, p.y)) settingsScreen.updateSettingsButtons(); break;
-      case ALIGN_SCREEN:    alignScreen.touchPoll(p.x, p.y);     
+      case ALIGN_SCREEN:     
         if (alignScreen.touchPoll(p.x, p.y)) alignScreen.updateAlignButtons();          break;     
-      case CATALOG_SCREEN:  catalogScreen.touchPoll(p.x, p.y);    
+      case CATALOG_SCREEN:   
         if (catalogScreen.touchPoll(p.x, p.y)) catalogScreen.updateCatalogButtons();    break; 
-      case PLANETS_SCREEN:  planetsScreen.touchPoll(p.x, p.y);   
+      case PLANETS_SCREEN:   
         if (planetsScreen.touchPoll(p.x, p.y)) planetsScreen.updatePlanetsButtons();    break;
       case XSTATUS_SCREEN: break;
 
       #ifdef ODRIVE_MOTOR_PRESENT
-        case ODRIVE_SCREEN:   oDriveScreen.touchPoll(p.x, p.y);
+        case ODRIVE_SCREEN:  
           if (oDriveScreen.touchPoll(p.x, p.y)) oDriveScreen.updateOdriveButtons();     break;
       #endif
 

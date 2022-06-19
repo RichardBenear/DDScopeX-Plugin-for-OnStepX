@@ -57,7 +57,7 @@
 #define ODRIVE_ABSOLUTE                ON  // using absolute encoder
 #define ODRIVE_SYNC_LIMIT            1300  // in arc seconds..encoder resolution=2^14=16380=16380/360=45.5/deg=45.5/60=0.7583/arc-min
                                            //         or 1/0.7583 = 1.32 arc-min/encoder tick
-#define ODRIVE_UPDATE_MS             1000  // 10 HZ position update rate
+#define ODRIVE_UPDATE_MS              500  // 0.50 HZ position update rate
 
 // =================================================================================================================================
 // MOUNT ===========================================================================================================================
