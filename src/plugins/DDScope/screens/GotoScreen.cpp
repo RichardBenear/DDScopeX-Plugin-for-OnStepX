@@ -6,8 +6,8 @@
 #include "GotoScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include <Fonts/FreeSansBold9pt7b.h>
-#include "../../../telescope/mount/Mount.h"
-#include "../../../lib/tasks/OnTask.h"
+#include "src/telescope/mount/Mount.h"
+#include "src/lib/tasks/OnTask.h"
 
 #define NUM_BUTTON_X         2
 #define NUM_BUTTON_Y         252
@@ -84,7 +84,7 @@ void GotoScreen::draw() {
   setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
-  drawTitle(115, TITLE_TEXT_Y, "Go To");
+  drawTitle(120, TITLE_TEXT_Y, "Go To");
   drawMenuButtons();
   tft.setFont(&Inconsolata_Bold8pt7b);
 
@@ -228,12 +228,10 @@ void GotoScreen::updateGotoButtons() {
   if (goToButton) {
     drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
     goToButton = false;
+  } else if (mount.isSlewing()) { 
+    drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
   } else {
-    if (!lCmountStatus.isSlewing()) { 
-      drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
-    } else {
-      //tasks.immediate(us_handle); 
-    }
+    drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
   }
   
   // Abort GoTo Button
@@ -248,6 +246,8 @@ void GotoScreen::updateGotoButtons() {
 
 // ==== TouchScreen was touched, determine which button ====
 bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
+  char cmd[10] = "";
+
   //were number Pad buttons pressed?
   for(int i=0; i<4; i++) { 
     for(int j=0; j<3; j++) {

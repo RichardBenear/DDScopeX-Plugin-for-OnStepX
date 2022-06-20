@@ -8,6 +8,7 @@
 #include "GuideScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include <Fonts/FreeSansBold9pt7b.h>
+#include "src/telescope/mount/Mount.h"
 
 // Guide buttons
 #define GUIDE_BOXSIZE_X          85
@@ -73,25 +74,25 @@ void GuideScreen::updateGuideStatus() {
 void GuideScreen::updateGuideButtons() {
   tft.setFont(&FreeSansBold9pt7b);
 
-  if (guidingEast || lCmountStatus.isSlewing()) { 
+  if (guidingEast || mount.isSlewing()) { 
       drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " EAST");
   } else {
       drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " EAST");
   }
 
-  if (guidingWest || lCmountStatus.isSlewing()) { 
+  if (guidingWest || mount.isSlewing()) { 
       drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " WEST");
   } else {
       drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " WEST");
   }
 
-  if (guidingNorth || lCmountStatus.isSlewing()) {
+  if (guidingNorth || mount.isSlewing()) {
       drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET+13, GUIDE_TEXT_Y_OFFSET, "  UP ");
   } else {
       drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+13, GUIDE_TEXT_Y_OFFSET, "  UP ");
   }
 
-  if (guidingSouth || lCmountStatus.isSlewing()) {
+  if (guidingSouth || mount.isSlewing()) {
       drawButton(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " DOWN");
   } else {
       drawButton(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " DOWN");

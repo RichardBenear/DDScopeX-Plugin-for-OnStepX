@@ -34,7 +34,7 @@ void TouchScreen::init() {
 
   // start touchscreen task
   VF("MSG: Setup, start TouchScreen polling task (rate 300 ms priority 7)... ");
-  uint8_t TShandle = tasks.add(300, 0, true, 6, touchWrapper, "TouchScreen");
+  uint8_t TShandle = tasks.add(400, 0, true, 7, touchWrapper, "TouchScreen");
   if (TShandle)  { VLF("success"); } else { VLF("FAILED!"); }
   tasks.setTimingMode(TShandle, TM_MINIMUM);
 }

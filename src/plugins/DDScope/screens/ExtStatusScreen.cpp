@@ -13,7 +13,7 @@
 #define STATUS_BOX_Y            150 
 #define STATUS_X                  3 
 #define STATUS_Y                101 
-#define STATUS_SPACING           16 
+#define STATUS_SPACING           14 
 
 // ========== Draw the Extended Status Screen ==========
 void ExtStatusScreen::draw() {
@@ -22,7 +22,7 @@ void ExtStatusScreen::draw() {
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
-  drawTitle(48, 30, "Extended Status");
+  drawTitle(68, TITLE_TEXT_Y, "Extended Status");
 
   int y_offset = STATUS_Y;
   int y_spacer = STATUS_SPACING;
@@ -41,14 +41,11 @@ void ExtStatusScreen::draw() {
   //            Returns: s#
   // :GVT#      Get OnStepX Firmware Time
   //            Returns: HH:MM:SS#
+  tft.setCursor(STATUS_X, y_offset); 
   getLocalCmdTrim(":GVN#", xchanReply); // Get OnStep FW Version
   tft.print("OnStep FW Version: "); tft.print(xchanReply);
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset); 
   
   // Begin parsing :GU# status data by getting the status string via local command channel
-  getLocalCmdTrim(":GU#", xchanReply); // Get telescope status
-  tft.print("Return String: "); tft.print(xchanReply);
-
   // process the status string
   int i = 0;
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset); 
@@ -83,6 +80,7 @@ void ExtStatusScreen::draw() {
   if (strstr(xchanReply,"rs")) tft.print("Refraction Enabled Single Axis");
   if (strstr(xchanReply,"t")) tft.print("OnTrack Enabled Dual Axis");
   if (strstr(xchanReply,"ts")) tft.print("OnTrack Enabled Single Axis");
+  else tft.print("Rate Compensation None");
 
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
   tft.print("Tracking Rate = "); 
@@ -101,7 +99,7 @@ void ExtStatusScreen::draw() {
   if (strstr(xchanReply,"z")) tft.print("Buzzer Enabled "); else tft.print("Buzzer Disabled");
 
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
-  if (strstr(xchanReply,"a")) tft.print("Auto Meridian Flip: "); else tft.print("Enabled");
+  if (strstr(xchanReply,"a")) tft.print("Auto Meridian Flip: Enabled"); else tft.print("Auto Meridian Flip: Disabled");
 
   #if AXIS1_PEC == ON
     y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
@@ -125,7 +123,8 @@ void ExtStatusScreen::draw() {
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
   if (strstr(xchanReply,"o")) tft.print("pier side NONE"); 
   else if (strstr(xchanReply,"T")) tft.print("pier side EAST"); 
-  else if (strstr(xchanReply,"W")) tft.print("pier side WEST"); 
+  else if (strstr(xchanReply,"W")) tft.print("pier side WEST");
+  else tft.print("pier side N/A") ;
 
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
   tft.print("Pulse Guide Rate = "); tft.print(xchanReply[i] - '0');

@@ -135,11 +135,19 @@ class Display {
     void updateSpecificScreen();
     void updateCommonStatus();  
     void updateOnStepCmdStatus();
+
     #ifdef ODRIVE_MOTOR_PRESENT
       void updateODriveErrBar();
       void updateBatVoltage();
     #endif
   
+    // mount support
+    double getLstT0();
+    double getLat();
+    bool isParked();
+    bool isHome();
+    bool isTracking();
+
     void setNightMode(bool nightMode);
     bool getNightMode();
 
@@ -164,37 +172,6 @@ class Display {
     bool firstGPS = true;
 };
 
-// ============= Smart Hand Controller Class ======================
-// Leveraged the following from SHC with some modifications
-class SHC {
-  public:
-    bool atoi2(char *a, int *i);
-    bool dmsToDouble(double *f, char *dms, bool sign_present, bool highPrecision);
-    bool hmsToDouble(double *f, char *hms);
-    double getLstT0();
-    double getLat();
-    void EquToHor(double RA, double Dec, double *Alt, double *Azm);
-
-  private:
-    char locCmdReply[16];
-};
-
-
-// ================ Local Serial Mount status =====================
-// Local command channel mount status
-class LCmountStatus {
-  public:
-    bool isSlewing();
-    bool isParked();
-    bool isHome();
-    bool isTracking();
-
-  private:
-    char xchReply[10];
-};
-
 extern Display display;
-extern SHC shc;
-extern LCmountStatus lCmountStatus;
 
 #endif

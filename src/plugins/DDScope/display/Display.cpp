@@ -558,15 +558,6 @@ void Display::updateCommonStatus() {
   double tAzm_d = 0.0;
   double tAlt_d = 0.0;
 
-/*
-  // One Time update the SHC LST and Latitude if GPS locked
-  if (tls.isReady() && firstGPS) {
-    cat_mgr.setLstT0(shc.getLstT0()); 
-    cat_mgr.setLat(shc.getLat());
-    firstGPS = false;
-  }
-*/
-
   int y_offset = 0;
   // ----- Column 1 -----
   // Current RA, Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
@@ -593,23 +584,23 @@ void Display::updateCommonStatus() {
 
   // Get Current ALT and AZ and display them as Double
   getLocalCmdTrim(":GZ#", cAzmDMS); // DDD*MM'SS# 
-  shc.dmsToDouble(&cAzm_d, cAzmDMS, false, true);
+  convert.dmsToDouble(&cAzm_d, cAzmDMS, false, PM_HIGH);
   canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAzm_d);
 
   y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":GA#", cAltDMS);	// sDD*MM'SS#
-  shc.dmsToDouble(&cAlt_d, cAltDMS, true, true);
+  convert.dmsToDouble(&cAlt_d, cAltDMS, true, PM_HIGH);
   canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAzm_d);
 
   // Get Target ALT and AZ and display them as Double
   y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
-  shc.dmsToDouble(&tAzm_d, tAzmDMS, false, true);
+  convert.dmsToDouble(&tAzm_d, tAzmDMS, false, PM_HIGH);
   canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAlt_d);
 
   y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
-  shc.dmsToDouble(&tAlt_d, tAltDMS, true, true);
+  convert.dmsToDouble(&tAlt_d, tAltDMS, true, PM_HIGH);
   canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAlt_d);
 }
 
@@ -701,143 +692,41 @@ void Display::drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint1
   }
 }
 
-//================ SHC routines ====================
-// Copied from SHC
-// integer numeric conversion with error checking
-bool SHC::atoi2(char *a, int *i) {
-  char *conv_end;
-  long l = strtol(a, &conv_end, 10);
-
-  if (l < -32767 || l > 32768 || &a[0] == conv_end) return false;
-  *i = l;
-  return true;
-}
-
-// Copied this from Smart Hand Controller LX200.cpp and renamed it
-// convert string in format HH:MM:SS to floating point
-// (also handles)           HH:MM.M
-bool SHC::hmsToDouble(double *f, char *hms) {
-  char h[3],m[5],s[3];
-  int  h1,m1,m2=0,s1=0;
-  bool highPrecision=true;
-  
-  while (*hms==' ') hms++; // strip prefix white-space
-
-  if (highPrecision) { if (strlen(hms)!= 8) return false; } else if (strlen(hms)!= 7) return false;
-
-  h[0]=*hms++; h[1]=*hms++; h[2]=0; shc.atoi2(h,&h1);
-  if (highPrecision) {
-    if (*hms++!=':') return false; m[0]=*hms++; m[1]=*hms++; m[2]=0; shc.atoi2(m,&m1);
-    if (*hms++!=':') return false; s[0]=*hms++; s[1]=*hms++; s[2]=0; shc.atoi2(s,&s1);
-  } else {
-    if (*hms++!=':') return false; m[0]=*hms++; m[1]=*hms++; m[2]=0; shc.atoi2(m,&m1);
-    if (*hms++!='.') return false; m2=(*hms++)-'0';
-  }
-  if ((h1<0) || (h1>23) || (m1<0) || (m1>59) || (m2<0) || (m2>9) || (s1<0) || (s1>59)) return false;
-  
-  *f=h1+m1/60.0+m2/600.0+s1/3600.0;
-  return true;
-}
-
-// DegreesMinutesSeconds to double
-// Copied this from Smart Hand Controller LX200.cpp and renamed it
-// dmsToDouble - convert string in format sDD:MM:SS to floating point
-// (also handles)           DDD:MM:SS
-//                          sDD:MM
-//                          DDD:MM
-//                          sDD*MM
-//                          DDD*MM
-bool SHC::dmsToDouble(double *f, char *dms, bool sign_present, bool highPrecision) {
-  char d[4],m[5],s[3];
-  int d1, m1, s1=0;
-  int lowLimit=0, highLimit=360;
-  int checkLen,checkLen1;
-  double sign = 1.0;
-  bool secondsOff = false;
-
-  while (*dms==' ') dms++; // strip prefix white-space
-
-  checkLen1=strlen(dms);
-
-  // determine if the seconds field was used and accept it if so
-  if (highPrecision) { 
-    checkLen=9;
-    if (checkLen1 != checkLen) return false;
-  } else {
-    checkLen=6;
-    if (checkLen1 != checkLen) {
-      if (checkLen1==9) { secondsOff=false; checkLen=9; } else return false;
-    } else secondsOff = true;
-  }
-
-  // determine if the sign was used and accept it if so
-  if (sign_present) {
-    if (*dms=='-') sign=-1.0; else if (*dms=='+') sign=1.0; else return false; 
-    dms++; d[0]=*dms++; d[1]=*dms++; d[2]=0; if (!shc.atoi2(d,&d1)) return false;
-  } else {
-    d[0]=*dms++; d[1]=*dms++; d[2]=*dms++; d[3]=0; if (!shc.atoi2(d,&d1)) return false;
-  }
-
-  // make sure the seperator is an allowed character
-  if ((*dms!=':') && (*dms!='*') && (*dms!=char(223))) return false; else dms++;
-
-  m[0]=*dms++; m[1]=*dms++; m[2]=0; if (!shc.atoi2(m,&m1)) return false;
-
-  if ((highPrecision) && (!secondsOff)) {
-    // make sure the seperator is an allowed character
-    if (*dms++!=':') return false; 
-    s[0]=*dms++; s[1]=*dms++; s[2]=0; shc.atoi2(s,&s1);
-  }
-
-  if (sign_present) { lowLimit=-90; highLimit=90; }
-  if ((d1<lowLimit) || (d1>highLimit) || (m1<0) || (m1>59) || (s1<0) || (s1>59)) return false;
-  
-  *f=sign*(d1+m1/60.0+s1/3600.0);
-  return true;
-}
-
-// modified this for xChan format from SHC
-double SHC::getLstT0() {
-  double f=0;
-  display.getLocalCmdTrim(":GS#", locCmdReply);
-  hmsToDouble(&f, locCmdReply);
-  return f;
-};
-
-// modified this for xChan format from SHC
-double SHC::getLat() {
-  display.getLocalCmdTrim(":Gt#", locCmdReply);
-  double f=-10000;
-  dmsToDouble(&f, locCmdReply, true, false);
-  return f;
-};
-
-// =============== Mount Status ===============
+//=============== Mount Status ===============
 // Use local command channel to get mount status
-bool LCmountStatus::isHome() {
-  char reply[20];
+double Display::getLstT0() {
+  double f=0;
+  char reply[12];
+  display.getLocalCmdTrim(":GS#", reply);
+  convert.hmsToDouble(&f, reply, PM_HIGH);
+  return f;
+}
+
+// modified this for xChan format from SHC
+double Display::getLat() {
+  char reply[12];
+  display.getLocalCmdTrim(":Gt#", reply);
+  double f=-10000;
+  convert.dmsToDouble(&f, reply, true, PM_HIGH);
+  return f;
+}
+
+bool Display::isHome() {
+  char reply[12];
   display.getLocalCmdTrim(":GU#", reply); 
   if (strstr(reply,"H")) return true; else return false;
 }
 
-bool LCmountStatus::isSlewing() {
-  char reply[20];
-  display.getLocalCmdTrim(":GU#", reply); 
-  if (strstr(reply,"N")) return false; else return true;
-}
-
-bool LCmountStatus::isParked() {
-  char reply[20];
+bool Display::isParked() {
+  char reply[12];
   display.getLocalCmdTrim(":GU#", reply); 
   if (strstr(reply,"P")) return true; else return false;
 }
 
-bool LCmountStatus::isTracking() {
-  char reply[20];
+bool Display::isTracking() {
+  char reply[12];
   display.getLocalCmdTrim(":GU#", reply);
   if (strstr(reply,"n")) return false; else return true;
 }
 
 Display display;
-SHC shc;
-LCmountStatus lCmountStatus;

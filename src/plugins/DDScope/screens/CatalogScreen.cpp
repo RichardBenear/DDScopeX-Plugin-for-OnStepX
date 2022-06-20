@@ -8,6 +8,7 @@
 #include "../catalog/Catalog.h"
 #include "../catalog/CatalogTypes.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
+#include "src/telescope/mount/Mount.h"
 
 #define CAT_X               1
 #define CAT_Y               43
@@ -339,8 +340,8 @@ void CatalogScreen::drawTreasureCat() {
     snprintf(tDecSrCmd[tAbsRow], 14, ":Sd%+03d*%02d:%02d#", (int)decD, decM, decS);
 
     // to get Altitude, first convert RAh and DEC to double
-    shc.hmsToDouble(&tRAdouble, tRAhhmmss[tAbsRow]);
-    shc.dmsToDouble(&tDECdouble, tDECsddmmss[tAbsRow], true, true);
+    convert.hmsToDouble(&tRAdouble, tRAhhmmss[tAbsRow], PM_HIGH);
+    convert.dmsToDouble(&tDECdouble, tDECsddmmss[tAbsRow], true, PM_HIGH);
 
     // dtAlt[tAbsRow] is used by filter to check if above Horizon
     cat_mgr.EquToHor(tRAdouble*15, tDECdouble, &dtAlt[tAbsRow], &dtAzm[tAbsRow]);
@@ -439,8 +440,8 @@ void CatalogScreen::drawCustomCat() {
     snprintf(cDecSrCmd[cAbsRow], 17, ":Sd%12s#", _cArray[cAbsRow].cDECsddmmss);
 
     // to get Altitude, first convert RAh and DEC to double
-    shc.hmsToDouble(&cRAdouble, _cArray[cAbsRow].cRAhhmmss);
-    shc.dmsToDouble(&cDECdouble, _cArray[cAbsRow].cDECsddmmss, true, true);
+    convert.hmsToDouble(&cRAdouble, _cArray[cAbsRow].cRAhhmmss, PM_HIGH);
+    convert.dmsToDouble(&cDECdouble, _cArray[cAbsRow].cDECsddmmss, true, PM_HIGH);
     
     //double cHAdouble=haRange(LST()*15.0-cRAdouble);
     cat_mgr.EquToHor(cRAdouble*15, cDECdouble, &dcAlt[cAbsRow], &dcAzm[cAbsRow]);
@@ -1015,14 +1016,10 @@ void CatalogScreen::showTargetCoords() {
 
   // Get Target ALT and AZ and display them as Double
   getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
-  shc.dmsToDouble(&tAzm_d, tAzmDMS, false, true);
+  convert.dmsToDouble(&tAzm_d, tAzmDMS, false, PM_HIGH);
 
   getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
-  shc.dmsToDouble(&tAlt_d, tAltDMS, true, true);
-
-  //shc.hmsToDouble(&RA_d, raTargReply);
-  //shc.dmsToDouble(&DEC_d, decTargReply, true, true);
-  //cat_mgr.EquToHor(RA_d*15, DEC_d, &_catAlt, &_catAzm);
+  convert.dmsToDouble(&tAlt_d, tAltDMS, true, PM_HIGH);
 
   tft.fillRect(altazm_x, ra_y, 70, 11, pgBackground);
   tft.setCursor(altazm_x, ra_y); tft.print("| AZ:");

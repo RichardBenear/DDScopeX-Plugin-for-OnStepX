@@ -42,14 +42,14 @@ class AlignScreen : public Display {
     char curAlign[30];
     char lastAlign[30];
 
-    bool homeBut;
-    bool catalogBut;
-    bool gotoBut;
-    bool aborted;
-    bool abortBut;
-    bool alignBut;
-    bool saveAlignBut;
-    bool startAlignBut;
+    bool homeBut = false;
+    bool catalogBut = false;
+    bool gotoBut = false;
+    bool aborted = false;
+    bool abortBut = false;
+    bool syncBut = false;
+    bool saveAlignBut = false;
+    bool startAlignBut = false;
     bool firstLabel = false;
 };
 

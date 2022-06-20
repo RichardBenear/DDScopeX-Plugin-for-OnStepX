@@ -14,7 +14,7 @@
 
 // Column 1 Home Screen
 #define COL1_LABELS_X            3
-#define COL1_LABELS_Y            176
+#define COL1_LABELS_Y            180
 #define COL1_LABEL_SPACING       21
 #define COL1_DATA_BOXSIZE_X      70
 #define COL1_DATA_X              84
@@ -274,7 +274,7 @@ void HomeScreen::updateHomeButtons() {
   // ============== Column 2 ===============
   y_offset = 0;
   // Start / Stop Tracking
-  if (!lCmountStatus.isTracking()) { 
+  if (!isTracking()) { 
     drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "Start Track");
   } else { 
     drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,    " Tracking  ");
@@ -290,9 +290,9 @@ void HomeScreen::updateHomeButtons() {
   
   // Home Telescope
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (lCmountStatus.isSlewing()) {
+  if (mount.isSlewing()) {
     drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Slewing ");
-  } else if (lCmountStatus.isHome()) {
+  } else if (isHome()) {
     drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,  "  Homed  ");
     //gotoHome = false;             
   } else {
@@ -302,7 +302,7 @@ void HomeScreen::updateHomeButtons() {
   // ============== Column 3 ===============
   // Park / unPark Telescope
   y_offset = 0;
-  if (lCmountStatus.isParked()) { 
+  if (isParked()) { 
     drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, " Parked ");
   } else { 
     drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Un Park ");
@@ -387,7 +387,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset = 0;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    if (!lCmountStatus.isTracking()) {
+    if (!isTracking()) {
       setLocalCmd(":Te#"); // Enable Tracking
       // set motor flags to true since tracking command enables motor power
       oDriveExt.odriveAltPwr = true;
@@ -428,7 +428,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset = 0;
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    if (!lCmountStatus.isParked()) { 
+    if (!isParked()) { 
       setLocalCmd(":hP#"); // go Park
     } else { // already parked
       setLocalCmd(":hR#"); // Un park position

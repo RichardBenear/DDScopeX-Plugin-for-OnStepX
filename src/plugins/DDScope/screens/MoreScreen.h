@@ -14,26 +14,26 @@ class MoreScreen : public Display {
     void updateMoreStatus();
     void updateMoreButtons();
 
-    bool objectSelected;
-    uint8_t catSelected;
-    uint16_t activeFilter;
+    bool objectSelected = false;
+    uint8_t catSelected = 0;
+    uint16_t activeFilter = 0;
     
   private:
     bool soundEnabled = true;
     bool goToButton = false;
     bool abortPgBut = false;
-    bool clrCustom;
+    bool clrCustom = false;
     bool sidereal = true;
     bool lunarRate = false;
     bool kingRate = false;
-    bool incTrackRate;
-    bool decTrackRate;
-    bool rstTrackRate;
-    bool filterBut;
+    bool incTrackRate = false;
+    bool decTrackRate = false;
+    bool rstTrackRate = false;
+    bool filterBut = true;
     
-    bool yesBut; 
-    bool cancelBut;
-    bool yesCancelActive;
+    bool yesBut = false; 
+    bool cancelBut =false;
+    bool yesCancelActive = false;
 };
 
 extern MoreScreen moreScreen;

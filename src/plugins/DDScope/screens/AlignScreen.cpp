@@ -5,10 +5,10 @@
 #include "MoreScreen.h"
 #include "CatalogScreen.h"
 #include "../catalog/Catalog.h"
-#include "../../../telescope/mount/Mount.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
+#include "src/telescope/mount/Mount.h"
 #include "src/telescope/mount/goto/Goto.h"
 #include "src/lib/tasks/OnTask.h"
-#include "../fonts/Inconsolata_Bold8pt7b.h"
 
 #define BIG_BOX_W           80
 #define BIG_BOX_H           40
@@ -23,14 +23,14 @@
 #define STATE_LABEL_X       105
 #define STATE_LABEL_Y       218
 #define STATUS_LABEL_X      STATE_LABEL_X
-#define STATUS_LABEL_Y      180
+#define STATUS_LABEL_Y      195
 #define ERROR_LABEL_X       STATE_LABEL_X
-#define ERROR_LABEL_Y       199
+#define ERROR_LABEL_Y       STATUS_LABEL_Y+20
 #define LABEL_SPACING_Y     2
 
 // Go to Home position button
 #define HOME_X              7
-#define HOME_Y              170
+#define HOME_Y              180
 #define HOME_BOXSIZE_W      BIG_BOX_W
 #define HOME_BOXSIZE_H      BIG_BOX_H 
 #define HOME_T_OFF_X        BIG_BOX_W/2-BIG_BOX_T_OFF_W
@@ -89,10 +89,8 @@
 #define ST_T_OFF_X          BIG_BOX_W/2-BIG_BOX_T_OFF_W
 #define ST_T_OFF_Y          BIG_BOX_H/2+BIG_BOX_T_OFF_H
 
-
 AlignStates Current_State = Idle_State;
 AlignStates Next_State = Idle_State;
-void AlignSMWrapper() {alignScreen.stateMachine(); }
 
 // Draw Alignment Page
 void AlignScreen::draw() { 
@@ -101,42 +99,42 @@ void AlignScreen::draw() {
   homeBut = false;
   catalogBut = false;
   gotoBut = false;
-  aborted = false;
   abortBut = false;
-  alignBut = false;
+  syncBut = false;
   saveAlignBut = false;
   startAlignBut = false;
-  firstLabel = false;
-  //firstDraw = true; // first entry to screen flag
+  moreScreen.catSelected = 0; // using star catalog
   
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
   drawTitle(100, TITLE_TEXT_Y, "Alignment");
   tft.setFont(&Inconsolata_Bold8pt7b);
-  drawCommonStatusLabels();
   updateAlignButtons();
-  getAlignStatus();
+  drawCommonStatusLabels();
   showCorrections();
-  moreScreen.catSelected = 0; // star catalog
+  getAlignStatus();
 }
 
 // task update for this screen
 void AlignScreen::updateAlignStatus() {
   updateCommonStatus();
+  stateMachine();
 }
 
 void AlignScreen::getAlignStatus() {
   char _reply[4];
+  int start_y = 176;
+  int start_x = 2;
   getLocalCmdTrim(":GU#", _reply); 
-  tft.setCursor(2, 165); 
-  tft.fillRect(2, 154, 315, 15, butBackground);
+  tft.setCursor(start_x, start_y); 
+  tft.fillRect(start_x, start_y - 11, 315, 15, butBackground);
   if (_reply[0] == 'A') tft.printf("AltAzm |");
   if (_reply[0] == 'K') tft.printf(" Fork  |");
   if (_reply[0] == 'E') tft.printf(" GEM   |");
-  tft.setCursor(70, 165);
+  tft.setCursor(70, start_y);
   if (_reply[1] == 'n') tft.printf("Not Tracking|"); else tft.printf("  Tracking  |");
-  tft.setCursor(175, 165);
+  tft.setCursor(175, start_y);
   if (!goTo.alignDone()) tft.printf("  Needs aligned");
 }
 
@@ -219,20 +217,21 @@ void AlignScreen::showCorrections() {
 
 // *********** Update Align Buttons **************
 void AlignScreen::updateAlignButtons() {
-  getAlignStatus();
-
+  int x_offset = 0;
+  
   // Go to Home Position
   if (homeBut) {
-    if (!lCmountStatus.isHome() || lCmountStatus.isSlewing()) {
-        drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_OFF, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");  
+    if (!mount.isHome() || mount.isSlewing()) {
+        drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_OFF, HOME_T_OFF_X-8, HOME_T_OFF_Y, "Not HOME");  
     }
+  } else if (mount.isHome()) {
+    drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_ON, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");   
   } else {
-    drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_ON, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");           
+    drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_OFF, HOME_T_OFF_X-8, HOME_T_OFF_Y, "Not HOME");          
   }
     
   // Number of Stars for Alignment Buttons
   // Alignment become active here
-  int x_offset = 0;
   if (numAlignStars == 1) {   
       drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 1 "); 
   } else {
@@ -259,38 +258,17 @@ void AlignScreen::updateAlignButtons() {
   }
 
   // Go To Coordinates Button
-  if (gotoBut || lCmountStatus.isSlewing()) {
-      drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-2, GOTO_T_OFF_Y, "Going");
+  if (gotoBut || mount.isSlewing()) {
+      drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-4, GOTO_T_OFF_Y, "Going");
   } else {
       drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X, GOTO_T_OFF_Y, "GOTO"); 
   }
   
-  // Abort Alignment Button
-  if (abortBut) {
-    drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-5, GOTO_T_OFF_Y, "Abort'g");
-    setLocalCmd(":Q#"); // stops move
-    // How do you select which axis to power down???
-    motor1.power(false); // do this for safety reasons...mount may be colliding with something
-    motor2.power(false);
-    numAlignStars = 0;
-    alignCurStar = 0;
-    abortBut = false;
-    startAlignBut = false;
-    aborted = true;
-    catalogBut = false;
-    homeBut = false;
-    alignBut = false;
-    Next_State = Idle_State;
+  // SYNC button; calculate alignment parameters
+  if (syncBut) {
+    drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_ON, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "SYNC");    
   } else {
-    drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X-9, GOTO_T_OFF_Y, " ABORT "); 
-    aborted = false;
-  }
-
-  // ALIGN button; calculate alignment parameters
-  if (alignBut) {
-    drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_ON, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");    
-  } else {
-    drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_OFF, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "ALIGN");            
+    drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_OFF, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "SYNC");            
   }
 
   // save the alignment calculations to EEPROM
@@ -306,8 +284,17 @@ void AlignScreen::updateAlignButtons() {
   } else {
     drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, BUTTON_OFF, ST_T_OFF_X, ST_T_OFF_Y, "START");
   }
+  
+  // Abort Alignment Button
+  if (abortBut) {
+    drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-5, GOTO_T_OFF_Y, "Abort'd");
+    abortBut = false;
+  } else {
+    drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X-9, GOTO_T_OFF_Y, " ABORT "); 
+  }
 }
 
+// ----- Alignment State Machine -----
 void AlignScreen::stateMachine() {
   // Display Alignment Status
   if (startAlignBut) { 
@@ -328,18 +315,20 @@ void AlignScreen::stateMachine() {
   // =======================================================================
   // ==== Align State Machine .. updates at the update-timer-thread rate ===
   // =======================================================================
+  /*
   switch(Current_State) {
-    case 0:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_For_Start"); break;
-    case 1:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Home"); break;
-    case 2:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Num_Stars"); break;
-    case 3:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Select_Catalog"); break;
-    case 4:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_Catalog"); break;
-    case 5:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = GoTo"); break;
+    case 0:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_For_Start");   break;
+    case 1:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Home");             break;
+    case 2:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Num_Stars");        break;
+    case 3:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Select_Catalog");   break;
+    case 4:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_Catalog");     break;
+    case 5:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = GoTo");             break;
     case 6:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_For_Slewing"); break;
-    case 7:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Align"); break;
-    case 8:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Write"); break;
-    default: canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_Start"); break;
+    case 7:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Align");            break;
+    case 8:  canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Write");            break;
+    default: canvPrint(STATE_LABEL_X, STATE_LABEL_Y, 0, UPDATE_W, UPDATE_H,  "State = Wait_Start");       break;
   }
+  */
   firstLabel=true;    // creates a one-time text update in a state to reduce screen flicker
                       // this is necessary in states that looping in their state and are also printing something
   
@@ -363,7 +352,7 @@ void AlignScreen::stateMachine() {
       if (homeBut) {
         homeBut = false;
   
-        if (!lCmountStatus.isHome()) {
+        if (!isHome()) {
           setLocalCmd(":hC#"); // go HOME
 
           if (firstLabel) { // print only the 1st time, no flicker
@@ -442,7 +431,7 @@ void AlignScreen::stateMachine() {
     }
 
     case Wait_For_Slewing_State: {
-      if (lCmountStatus.isSlewing()) { //|| trackingSyncInProgress()) {
+      if (mount.isSlewing()) { //|| trackingSyncInProgress()) {
         if (firstLabel) {
           canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Slewing");
           firstLabel=false;
@@ -456,7 +445,7 @@ void AlignScreen::stateMachine() {
     }
 
     case Align_State: {
-      if (!alignBut) {
+      if (!syncBut) {
         if (firstLabel) {
           canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Press Align");
           firstLabel=false;
@@ -464,7 +453,7 @@ void AlignScreen::stateMachine() {
         Next_State = Align_State;
       } else {  // align this star
         setLocalCmd(":A+#"); // add star to alignment
-        alignBut = false;
+        syncBut = false;
       
         if (alignCurStar <= numAlignStars) { // more stars to align? (alignCurStar was incremented by cmd A+)
           Next_State = Select_Catalog_State;
@@ -500,7 +489,7 @@ void AlignScreen::stateMachine() {
   //if (Current_State != Next_State) tasks.immediate(us_handle); 
 } // end State Machine
 
-// === Check Align Buttons ===
+// ===== Check Align Buttons =====
 // return true if touched
 bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
   // Go to Home Telescope Requested
@@ -556,7 +545,22 @@ bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > ABORT_Y && py < (ABORT_Y + GOTO_BOXSIZE_H) && px > ABORT_X && px < (ABORT_X + GOTO_BOXSIZE_W)) {
     BEEP;
     abortBut = true;
-    tasks.setDurationComplete(tasks.getHandleByName("AlignStateMachine"));
+   
+    setLocalCmd(":Q#"); // stops move
+    motor1.power(false); // do this for safety reasons...mount may be colliding with something
+    motor2.power(false);
+
+    numAlignStars = 0;
+    alignCurStar = 0;
+
+    // clear all button states
+    homeBut = false;
+    catalogBut = false;
+    gotoBut = false;
+    syncBut = false;
+    saveAlignBut = false;
+    startAlignBut = false;
+    Next_State = Idle_State;
     return true;
   }
 
@@ -564,7 +568,7 @@ bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > ALIGN_Y && py < (ALIGN_Y + ALIGN_BOXSIZE_H) && px > ALIGN_X && px < (ALIGN_X + ALIGN_BOXSIZE_W)) {
     BEEP; 
     if (Current_State==Align_State) {
-      alignBut = true;
+      syncBut = true;
     }
     return true;
   }
@@ -582,13 +586,6 @@ bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > START_ALIGN_Y && py < (START_ALIGN_Y + ST_BOXSIZE_H) && px > START_ALIGN_X && px < (START_ALIGN_X + ST_BOXSIZE_W)) { 
     BEEP;
     startAlignBut = true;
-    setLocalCmd(":SX02#");
-    setLocalCmd(":SX03#");
-    setLocalCmd(":SX04#");
-    setLocalCmd(":SX05#");
-    setLocalCmd(":SX06#");
-    setLocalCmd(":SX07#");
-    setLocalCmd(":SX08#");
     alignCurStar = 0;
     numAlignStars = 0; // number of selected align stars from buttons
     Current_State = Idle_State;
@@ -600,11 +597,6 @@ bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     
     digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
     motor2.power(true); // ALT motor on
-
-    // start Align State Machine task
-    VF("MSG: Setup, start screen update This screen status polling task (rate 3000 ms priority 7)... ");
-    uint8_t alignSMhandle = tasks.add(500, 0, true, 6, AlignSMWrapper, "AlignStateMachine");
-    if (alignSMhandle)  { VLF("success"); } else { VLF("FAILED!"); }
     return true;
   } 
   return false;

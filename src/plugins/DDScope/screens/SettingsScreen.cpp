@@ -7,6 +7,7 @@
 #include "../display/display.h"
 #include "../catalog/Catalog.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
+#include "src/telescope/mount/Mount.h"
 
 #define PAD_BUTTON_X         2
 #define PAD_BUTTON_Y         280
@@ -18,53 +19,53 @@
 #define PAD_T_OFF_Y          PAD_BUTTON_H/2 + 3
 
 #define TXT_LABEL_X         5
-#define TXT_LABEL_Y         171
+#define TXT_LABEL_Y         181
 #define TXT_FIELD_X         135
-#define TXT_FIELD_Y         TXT_LABEL_Y
+#define TXT_FIELD_Y         TXT_LABEL_Y+2
 #define TXT_FIELD_WIDTH     65
-#define TXT_FIELD_HEIGHT    26
+#define TXT_FIELD_HEIGHT    24
 #define TXT_SPACING_X       10
 #define TXT_SPACING_Y       TXT_FIELD_HEIGHT
 
 #define T_SELECT_X           205
-#define T_SELECT_Y           155
+#define T_SELECT_Y           167
 #define T_CLEAR_X            265
 #define T_CLEAR_Y            T_SELECT_Y
 #define T_T_OFF_X            6
 #define T_T_OFF_Y            15
 #define CO_BOXSIZE_X         50
-#define CO_BOXSIZE_Y         24
+#define CO_BOXSIZE_Y         23
 
 #define D_SELECT_X           T_SELECT_X
-#define D_SELECT_Y           181
+#define D_SELECT_Y           T_SELECT_Y+CO_BOXSIZE_Y
 #define D_CLEAR_X            T_CLEAR_X
 #define D_CLEAR_Y            D_SELECT_Y
 #define D_T_OFF_X            T_T_OFF_X
 #define D_T_OFF_Y            T_T_OFF_Y
 
 #define U_SELECT_X           T_SELECT_X
-#define U_SELECT_Y           207
+#define U_SELECT_Y           T_SELECT_Y+2*CO_BOXSIZE_Y
 #define U_CLEAR_X            T_CLEAR_X
 #define U_CLEAR_Y            U_SELECT_Y
 #define U_T_OFF_X            T_T_OFF_X
 #define U_T_OFF_Y            T_T_OFF_Y
 
 #define LA_SELECT_X          T_SELECT_X
-#define LA_SELECT_Y          233
+#define LA_SELECT_Y          T_SELECT_Y+3*CO_BOXSIZE_Y
 #define LA_CLEAR_X           T_CLEAR_X
 #define LA_CLEAR_Y           LA_SELECT_Y
 #define LA_T_OFF_X           T_T_OFF_X
 #define LA_T_OFF_Y           T_T_OFF_Y
 
 #define LO_SELECT_X          T_SELECT_X
-#define LO_SELECT_Y          259
+#define LO_SELECT_Y          T_SELECT_Y+4*CO_BOXSIZE_Y
 #define LO_CLEAR_X           T_CLEAR_X
 #define LO_CLEAR_Y           LO_SELECT_Y
 #define LO_T_OFF_X           T_T_OFF_X
 #define LO_T_OFF_Y           T_T_OFF_Y
 
 #define S_SEND_BUTTON_X      215
-#define S_SEND_BUTTON_Y      285
+#define S_SEND_BUTTON_Y      292
 #define S_SEND_T_OFF_X       23
 #define S_SEND_T_OFF_Y       20
 #define S_SEND_BOXSIZE_X     80
@@ -87,9 +88,9 @@
 #define TDU_OFFSET_X         80
 #define TDU_OFFSET_Y         20
 
-#define CUSTOM_FONT_OFFSET  -15
+#define CUSTOM_FONT_OFFSET  -14
 
-// Draw the SETTINGS Page
+// ===== Draw the SETTINGS Page =====
 void SettingsScreen::draw() {
   setCurrentScreen(SETTINGS_SCREEN);
   setNightMode(getNightMode());
@@ -497,58 +498,22 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
       // Set Local Time :SL[HH:MM:SS]# 24Hr format
       sprintf(sCmd, ":SL%c%c:%c%c:%c%c#", Ttext[0], Ttext[1], Ttext[2], Ttext[3], Ttext[4], Ttext[5]);
       setLocalCmd(sCmd);
-      //if (commandError == 1) {
-      //    tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
-      //    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);
-      //    tft.print("Time String Accepted");
-      //} else {
-        cat_mgr.setLstT0(shc.getLstT0());
-     // }
     } else if (Dselect) { // :SC[MM/DD/YY]# 
       sprintf(sCmd, ":SC%c%c/%c%c/%c%c#", Dtext[0], Dtext[1], Dtext[2], Dtext[3], Dtext[4], Dtext[5]);
       setLocalCmd(sCmd);
-      //if (commandError == 1) {
-     //     tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
-     //     tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);
-      //    tft.print("Date String Accepted");
-      //} else {
-      cat_mgr.setLstT0(shc.getLstT0());
-     // }
     } else if (Tzselect) { // :SG[sHH]#
       sprintf(sCmd, ":SG%c%c%c#", Tztext[0], Tztext[1], Tztext[2]);
       setLocalCmd(sCmd);
-     // if (commandError == 1) {
-     //     tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
-      //    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);
-       //   tft.print("TZ String Accepted ");
-      //} else {
-      cat_mgr.setLstT0(shc.getLstT0());
-      //}
     } else if (LaSelect) { // :St[sDD*MM]#
       uint8_t laMin = LaText[4] - '0';  //digit after decimal point
       sprintf(sLaMin, "%02d\n", laMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":St%c%c%c*%2s#", LaText[0], LaText[1], LaText[2], sLaMin);
       setLocalCmd(sCmd);
-     // if (commandError == 1) {
-     //     tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
-      //    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);
-       //   tft.print("Lat String Accepted ");
-    //  } else {
-        cat_mgr.setLat(shc.getLat());
-        cat_mgr.setLstT0(shc.getLstT0());
-     // }
     } else if (LoSelect) { // :Sg[(s)DDD*MM]#
       uint8_t loMin = LoText[5] - '0'; //digit after decimal point
       sprintf(sLoMin, "%02d\n", loMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":Sg%c%c%c%c*%2s#", LoText[0], LoText[1], LoText[2], LoText[3], sLoMin);
       setLocalCmd(sCmd);
-    //  if (commandError == 1) {
-    //      tft.setCursor(S_CMD_ERR_X, S_CMD_ERR_Y);
-    //      tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y-16, 150, 20, pgBackground);
-    //      tft.print("Long String Accepted ");
-    //  } else {
-      cat_mgr.setLstT0(shc.getLstT0());
-    //  }
     }
     return true;
   }

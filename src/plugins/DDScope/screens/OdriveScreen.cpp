@@ -12,7 +12,7 @@
 #include <HardwareSerial.h>
 
 #define OD_ERR_OFFSET_X           4 
-#define OD_ERR_OFFSET_Y         184 
+#define OD_ERR_OFFSET_Y         188
 #define OD_ERR_SPACING           15 
 #define OD_BUTTONS_OFFSET        45 
 
@@ -26,7 +26,7 @@
 #define OD_ACT_COL_3_X           OD_ACT_COL_2_X+OD_ACT_BOXSIZE_X+4
 #define OD_ACT_COL_3_Y           OD_ACT_COL_1_Y
 #define OD_ACT_X_SPACING         7
-#define OD_ACT_Y_SPACING         4
+#define OD_ACT_Y_SPACING         3
 #define OD_ACT_TEXT_X_OFFSET     10
 #define OD_ACT_TEXT_Y_OFFSET     20
 
@@ -52,9 +52,9 @@ void ODriveScreen::draw() {
 
   oDriveExt.getODriveVersion(oDversion);
 
-  tft.setCursor(12, 165);
+  tft.setCursor(42, 165);
   tft.print("*HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
-  tft.setCursor(12, 177);
+  tft.setCursor(42, 177);
   tft.print("*FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
 
   demoActive = false;
@@ -266,7 +266,7 @@ void ODriveScreen::updateOdriveButtons() {
   }
 
   // ----- 3rd Column -----
-  y_offset = -165;
+  y_offset = -160;
   
   // AZ Gains High
   if (!AZgainHigh) {

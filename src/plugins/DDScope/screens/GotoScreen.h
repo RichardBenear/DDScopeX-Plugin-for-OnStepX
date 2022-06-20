@@ -18,26 +18,22 @@ class GotoScreen : public Display {
     void processNumPadButton();
     void setTargPolaris();
     
-    char RAtext[8];
-    char DECtext[8];
-    char cmd[10];
+    char RAtext[8] = "";
+    char DECtext[8] = "";
 
-    int buttonPosition;
-    uint8_t RAtextIndex;
-    uint8_t DECtextIndex;
+    int buttonPosition = 0;
+    uint8_t RAtextIndex = 0;
+    uint8_t DECtextIndex = 0;
 
-    bool RAselect;
-    bool RAclear;
-    bool DECselect;
-    bool DECclear;
-    bool sendOn;
-    bool setPolOn;
-    bool timeOn;
-    bool numDetected;
-    bool goToButton;
-    bool abortPgBut;
-
-    Screen goCurScreen;
+    bool RAselect = false;
+    bool RAclear = false;
+    bool DECselect = false;
+    bool DECclear = false;
+    bool sendOn = false;
+    bool setPolOn = false;
+    bool numDetected = false;
+    bool goToButton = false;
+    bool abortPgBut = false;
 };
 
 extern GotoScreen gotoScreen;

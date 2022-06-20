@@ -23,10 +23,10 @@
 
 // Catalog Selection buttons
 #define CAT_SEL_X               5
-#define CAT_SEL_Y              175
+#define CAT_SEL_Y              179
 #define CAT_SEL_BOXSIZE_X      110 
 #define CAT_SEL_BOXSIZE_Y       28
-#define CAT_SEL_SPACER          CAT_SEL_BOXSIZE_Y + 6
+#define CAT_SEL_SPACER          CAT_SEL_BOXSIZE_Y + 5
 #define CAT_SEL_TEXT_X_OFFSET    7 
 #define CAT_SEL_TEXT_Y_OFFSET   17
 
@@ -42,7 +42,7 @@
 
 // Misc Buttons
 #define MISC_X                 212
-#define MISC_Y                 160
+#define MISC_Y                 162
 #define MISC_BOXSIZE_X         100 
 #define MISC_BOXSIZE_Y          28
 #define MISC_SPACER_Y            8 
@@ -51,7 +51,7 @@
 
 // Filter Button
 #define FM_X                   200
-#define FM_Y                   157
+#define FM_Y                   163
 #define FM_BOXSIZE_X           120 
 #define FM_BOXSIZE_Y            28
 #define FM_SPACER_Y              2 
@@ -59,7 +59,7 @@
 #define FM_TEXT_Y_OFFSET        18
 
 #define GOTO_BUT_X             217
-#define GOTO_BUT_Y             260
+#define GOTO_BUT_Y             264
 #define GOTO_TXT_OFF_X          15
 #define GOTO_TXT_OFF_Y          25
 #define GOTO_M_BOXSIZE_X        90
@@ -77,14 +77,14 @@ void MoreScreen::draw() {
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 
-  tft.setCursor(TRACK_R_X-10, TRACK_R_Y-4);
-  tft.print("Track Rates");
+  tft.setCursor(TRACK_R_X+12, TRACK_R_Y-7);
+  tft.print("Rates");
 
-   tft.setCursor(30, TRACK_R_Y-4);
+   tft.setCursor(30, TRACK_R_Y-7);
   tft.print("Catalogs");
 
   drawMenuButtons();
-  drawTitle(60, TITLE_TEXT_Y, "Catalogs & Misc");
+  drawTitle(70, TITLE_TEXT_Y, "Catalogs & Misc");
 
   // Draw the HOME Icon bitmap
   uint8_t extern black_house_icon[];
@@ -236,7 +236,7 @@ void MoreScreen::updateMoreButtons() {
     drawButton( GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, BUTTON_ON, GOTO_TXT_OFF_X-2, GOTO_TXT_OFF_Y, "Going");
     goToButton = false;
   } else {
-    if (!lCmountStatus.isSlewing()) { 
+    if (!mount.isSlewing()) { 
       drawButton( GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, BUTTON_OFF, GOTO_TXT_OFF_X+5, GOTO_TXT_OFF_Y, "GoTo"); 
     } else {
       //tasks.immediate(us_handle); 
