@@ -108,8 +108,8 @@ class Display {
   public:
     void init();
     void sdInit();
+    void refreshButtons();
     void setCurrentScreen(Screen);
-    //Screen getCurrentScreen(void); // const {return curScreen; }
  
   // Local Command Channel support
     void setLocalCmd(char *command);
@@ -140,15 +140,8 @@ class Display {
       void updateODriveErrBar();
       void updateBatVoltage();
     #endif
-  
-    // mount support
-    double getLstT0();
-    double getLat();
-    bool isParked();
-    bool isHome();
-    bool isTracking();
 
-    void setNightMode(bool nightMode);
+    void setNightMode(bool);
     bool getNightMode();
 
     // frequency and duration adjustable tone
@@ -163,12 +156,9 @@ class Display {
   
     static Screen currentScreen;
     static bool _nightMode;
-    
-    bool screenTouched = false;
-    
-    //uint8_t us_handle;
 
   private:
+  CommandError commandError      = CE_NONE;
     bool firstGPS = true;
 };
 

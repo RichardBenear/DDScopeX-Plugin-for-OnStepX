@@ -19,7 +19,6 @@
   #include "../screens/ODriveScreen.h"
 #endif
 
-unsigned char __task_postpone;
 void touchWrapper() { touchScreen.touchScreenPoll(display.currentScreen); }
 
 void TouchScreen::init() {
@@ -33,8 +32,8 @@ void TouchScreen::init() {
   }
 
   // start touchscreen task
-  VF("MSG: Setup, start TouchScreen polling task (rate 300 ms priority 7)... ");
-  uint8_t TShandle = tasks.add(400, 0, true, 7, touchWrapper, "TouchScreen");
+  VF("MSG: Setup, start TouchScreen polling task (rate 400 ms priority 6)... ");
+  uint8_t TShandle = tasks.add(400, 0, true, 6, touchWrapper, "TouchScreen");
   if (TShandle)  { VLF("success"); } else { VLF("FAILED!"); }
   tasks.setTimingMode(TShandle, TM_MINIMUM);
 }
@@ -42,10 +41,7 @@ void TouchScreen::init() {
 // Poll the TouchScreen
 void TouchScreen::touchScreenPoll(Screen tCurScreen) {
   if (ts.touched()) {
-    //if (screenTouched) return; // effectively a debounce
 
-    // tell other screens to process button states...they will clear this flag when done
-    screenTouched = true;
     p = ts.getPoint();      
 
     // Scale from ~0->4000 to tft.width using the calibration #'s
@@ -105,7 +101,6 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
       #endif
         default: setCurrentScreen(HOME_SCREEN); homeScreen.draw();
       }
-      screenTouched = false;
       return;
     }
     // == Center Left Menu - Column 2 ==
@@ -131,7 +126,6 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
       #endif
         default: setCurrentScreen(HOME_SCREEN); homeScreen.draw();
       }
-      screenTouched = false;
       return;
     }
     // == Center Right Menu - Column 3 ==
@@ -157,7 +151,6 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
       #endif
         default: setCurrentScreen(HOME_SCREEN); homeScreen.draw();
       }
-      screenTouched = false;
       return;
     }
     // == Right Menu - Column 4 ==
@@ -183,7 +176,6 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
       #endif
         default: setCurrentScreen(HOME_SCREEN); homeScreen.draw();
       }
-      screenTouched = false;
       return;
     }
 
@@ -215,9 +207,8 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
           if (oDriveScreen.touchPoll(p.x, p.y)) oDriveScreen.updateOdriveButtons();     break;
       #endif
 
-      default: VLF("touchscreen error");
+      default: VLF("MFG: touchscreen error");
     }
-    screenTouched = false;
   } 
 }
 

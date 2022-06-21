@@ -352,7 +352,7 @@ void AlignScreen::stateMachine() {
       if (homeBut) {
         homeBut = false;
   
-        if (!isHome()) {
+        if (!mount.isHome()) {
           setLocalCmd(":hC#"); // go HOME
 
           if (firstLabel) { // print only the 1st time, no flicker

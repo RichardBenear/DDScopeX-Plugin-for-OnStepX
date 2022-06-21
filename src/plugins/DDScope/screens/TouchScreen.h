@@ -12,7 +12,6 @@ class TouchScreen : public Display {
     void touchScreenPoll(Screen);
 
   private:
-    
     Screen tCurScreen = HOME_SCREEN;
 };
 

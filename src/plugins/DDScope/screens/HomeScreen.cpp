@@ -5,8 +5,9 @@
 
 #include "HomeScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
-#include "../../../telescope/mount/Mount.h"
-#include "../../../lib/tasks/OnTask.h"
+#include "src/telescope/mount/Mount.h"
+#include "src/lib/tasks/OnTask.h"
+#include "src/telescope/mount/park/Park.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "../odriveExt/ODriveExt.h"
@@ -14,7 +15,7 @@
 
 // Column 1 Home Screen
 #define COL1_LABELS_X            3
-#define COL1_LABELS_Y            180
+#define COL1_LABELS_Y            186
 #define COL1_LABEL_SPACING       21
 #define COL1_DATA_BOXSIZE_X      70
 #define COL1_DATA_X              84
@@ -274,7 +275,7 @@ void HomeScreen::updateHomeButtons() {
   // ============== Column 2 ===============
   y_offset = 0;
   // Start / Stop Tracking
-  if (!isTracking()) { 
+  if (!mount.isTracking()) { 
     drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "Start Track");
   } else { 
     drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,    " Tracking  ");
@@ -292,9 +293,9 @@ void HomeScreen::updateHomeButtons() {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (mount.isSlewing()) {
     drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Slewing ");
-  } else if (isHome()) {
-    drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,  "  Homed  ");
-    //gotoHome = false;             
+  } else if (mount.isHome()) {
+    drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,  " At Home ");
+    gotoHome = false;             
   } else {
     drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,  " Go Home ");
   }  
@@ -302,10 +303,17 @@ void HomeScreen::updateHomeButtons() {
   // ============== Column 3 ===============
   // Park / unPark Telescope
   y_offset = 0;
-  if (isParked()) { 
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, " Parked ");
-  } else { 
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Un Park ");
+  // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING}
+  if (park.state == PS_PARKED) { 
+    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,  " Parked ");
+  } else if (park.state == PS_UNPARKED) { 
+    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "Un Parked");
+  } else if (park.state == PS_PARKING) { 
+    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Parking ");
+  } else if (park.state == PS_UNPARKING) { 
+    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "Un Parking");
+  } else {
+    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "Park Fail ");
   }
 
   // Set Park Position
@@ -383,11 +391,11 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   }
 
   // ======= COLUMN 2 of Buttons - Middle =========
-  // Start/Stop Tracking
+  // Start/Stop Tracking Toggle
   y_offset = 0;
   if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    if (!isTracking()) {
+    if (!mount.isTracking()) {
       setLocalCmd(":Te#"); // Enable Tracking
       // set motor flags to true since tracking command enables motor power
       oDriveExt.odriveAltPwr = true;
@@ -428,7 +436,8 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset = 0;
   if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    if (!isParked()) { 
+    // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING}
+    if (park.state == PS_UNPARKED) {
       setLocalCmd(":hP#"); // go Park
     } else { // already parked
       setLocalCmd(":hR#"); // Un park position

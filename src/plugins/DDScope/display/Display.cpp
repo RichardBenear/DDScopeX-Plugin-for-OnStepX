@@ -4,7 +4,7 @@
 // Common Display functions
 // 3.5" RPi Touchscreen and Display
 // SPI Interface
-// Author: Richard Benear 3/30/2021
+// Author: Richard Benear 3/30/2021 - refactor 6/22
 // **************************************************
 
 #include <Arduino.h>
@@ -12,9 +12,10 @@
 #include <Adafruit_SPITFT.h>
 #include <gfxfont.h>
 
-#include "../../../telescope/mount/Mount.h"
-//#include "src/lib/commands/CommandErrors.h"
-#include "../../../lib/tasks/OnTask.h"
+#include "src/telescope/mount/Mount.h"
+#include "src/lib/commands/CommandErrors.h"
+#include "src/libApp/commands/ProcessCmds.h"
+#include "src/lib/tasks/OnTask.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
@@ -53,6 +54,41 @@
 #define COM_COL1_DATA_Y          COM_COL1_LABELS_Y
 #define COM_COL2_LABELS_X       179
 #define COM_COL2_DATA_X         250
+
+#define L_CE_NONE                    "No Errors"
+  #define L_CE_0                       "reply 0"
+  #define L_CE_CMD_UNKNOWN             "command unknown"
+  #define L_CE_REPLY_UNKNOWN           "invalid reply"
+  #define L_CE_PARAM_RANGE             "parameter out of range"
+  #define L_CE_PARAM_FORM              "bad parameter format"
+  #define L_CE_ALIGN_FAIL              "align failed"
+  #define L_CE_ALIGN_NOT_ACTIVE        "align not active"
+  #define L_CE_NOT_PARKED_OR_AT_HOME   "not parked or at home"
+  #define L_CE_PARKED                  "already parked"
+  #define L_CE_PARK_FAILED             "park failed"
+  #define L_CE_NOT_PARKED              "not parked"
+  #define L_CE_NO_PARK_POSITION_SET    "no park position set"
+  #define L_CE_GOTO_FAIL               "goto failed"
+  #define L_CE_LIBRARY_FULL            "library full"
+  #define L_CE_GOTO_ERR_BELOW_HORIZON  "goto below horizon"
+  #define L_CE_GOTO_ERR_ABOVE_OVERHEAD "goto above overhead"
+  #define L_CE_SLEW_ERR_IN_STANDBY     "slew in standby"
+  #define L_CE_SLEW_ERR_IN_PARK        "slew in park"
+  #define L_CE_GOTO_ERR_GOTO           "already in goto"
+  #define L_CE_SLEW_ERR_OUTSIDE_LIMITS "outside limits"
+  #define L_CE_SLEW_ERR_HARDWARE_FAULT "hardware fault"
+  #define L_CE_MOUNT_IN_MOTION         "mount in motion"
+  #define L_CE_GOTO_ERR_UNSPECIFIED    "other"
+  #define L_CE_UNK                     "unknown"
+
+  static const char commandErrorStr[30][25] = {
+  L_CE_NONE, L_CE_0, L_CE_CMD_UNKNOWN, L_CE_REPLY_UNKNOWN, L_CE_PARAM_RANGE,
+  L_CE_PARAM_FORM, L_CE_ALIGN_FAIL, L_CE_ALIGN_NOT_ACTIVE, L_CE_NOT_PARKED_OR_AT_HOME,
+  L_CE_PARKED, L_CE_PARK_FAILED, L_CE_NOT_PARKED, L_CE_NO_PARK_POSITION_SET, L_CE_GOTO_FAIL,
+  L_CE_LIBRARY_FULL, L_CE_GOTO_ERR_BELOW_HORIZON, L_CE_GOTO_ERR_ABOVE_OVERHEAD,
+  L_CE_SLEW_ERR_IN_STANDBY, L_CE_SLEW_ERR_IN_PARK, L_CE_GOTO_ERR_GOTO, L_CE_SLEW_ERR_OUTSIDE_LIMITS,
+  L_CE_SLEW_ERR_HARDWARE_FAULT, L_CE_MOUNT_IN_MOTION, L_CE_GOTO_ERR_UNSPECIFIED, L_CE_UNK};
+
 
 Screen Display::currentScreen = HOME_SCREEN;
 bool Display::_nightMode = false;
@@ -108,6 +144,29 @@ void Display::sdInit() {
   tft.printf("NGC 1566");
 }
 
+// Refresh/draw buttons on the selected Screen due to state change
+// This does not include the Menu Buttons
+void Display::refreshButtons() {
+  switch (currentScreen) {
+    case HOME_SCREEN:      homeScreen.updateHomeButtons();         break;       
+    case GUIDE_SCREEN:     guideScreen.updateGuideButtons();       break;        
+    case FOCUSER_SCREEN:   dCfocuserScreen.updateFocuserButtons(); break; 
+    case GOTO_SCREEN:      gotoScreen.updateGotoButtons();         break;          
+    case MORE_SCREEN:      moreScreen.updateMoreButtons();         break;          
+    case SETTINGS_SCREEN:  settingsScreen.updateSettingsButtons(); break;
+    case ALIGN_SCREEN:     alignScreen.updateAlignButtons();       break;     
+    case CATALOG_SCREEN:   catalogScreen.updateCatalogButtons();   break; 
+    case PLANETS_SCREEN:   planetsScreen.updatePlanetsButtons();   break;
+  //case XSTATUS_SCREEN:                                           break;
+
+    #ifdef ODRIVE_MOTOR_PRESENT
+      case ODRIVE_SCREEN:  oDriveScreen.updateOdriveButtons();     break;
+    #endif
+
+    default: VLF("touchscreen error");
+  }
+};
+
 // screen selection
 void Display::setCurrentScreen(Screen curScreen) {
 currentScreen = curScreen;
@@ -146,6 +205,7 @@ void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
   tasks.yield(50);
   strcpy(reply, SERIAL_LOCAL.receive()); 
+  updateOnStepCmdStatus();
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
@@ -153,6 +213,7 @@ void Display::getLocalCmdTrim(const char *command, char *reply) {
   tasks.yield(50);
   strcpy(reply, SERIAL_LOCAL.receive()); 
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
+  updateOnStepCmdStatus();
 }
 
 // Draw a single button
@@ -254,18 +315,28 @@ bool Display::getNightMode() {
   return _nightMode;
 }
 
+// Update Battery Voltage
+void Display::updateBatVoltage() {
+  float currentBatVoltage = oDriveExt.getODriveBusVoltage();
+  char bvolts[8]="0 volts";
+  if (oDriveExt.getODriveBusVoltage() < BATTERY_LOW_VOLTAGE) {
+    sprintf(bvolts, "%6.1f volts", currentBatVoltage);
+    canvPrint(130, 39, 0, 50, 12, bvolts, textColor, butOnBackground);
+  } else {
+    canvPrint(130, 39, 0, 50, 12, bvolts, textColor, butBackground);
+  }
+}
+
 // ============ OnStep Command Errors ===============
 void Display::updateOnStepCmdStatus() {
   if (Display::currentScreen == CATALOG_SCREEN || 
     Display::currentScreen == PLANETS_SCREEN ||
     Display::currentScreen == CUST_CAT_SCREEN) return;
-  char cmd[40];
-  //NEEDS WORK: sprintf(cmd, "OnStep Err: %s", commandErrorStr[commandError]);
   if (!tls.isReady()) {
     canvPrint(2, 454, 0, 319, C_HEIGHT, " Time and/or Date Not Set");
   } else {
-    canvPrint(2, 454, 0, 319, C_HEIGHT, cmd);
-  }
+    canvPrint(2, 454, 0, 319, C_HEIGHT, commandErrorStr[commandError]);
+  } 
 }
 
 // ODrive AZ and ALT CONTROLLER (only) Error Status
@@ -527,17 +598,6 @@ void Display::drawCommonStatusLabels() {
   tft.drawFastHLine(1, COM_COL1_LABELS_Y+y_offset+6, TFTWIDTH-1,textColor);
 }
 
-// Update Battery Voltage
-void Display::updateBatVoltage() {
-  float currentBatVoltage = oDriveExt.getODriveBusVoltage();
-  if (oDriveExt.getODriveBusVoltage() < BATTERY_LOW_VOLTAGE) {
-    canvPrint(130, 39, 0, 50, 12, currentBatVoltage, textColor, butOnBackground);
-  } else {
-    canvPrint(130, 39, 0, 50, 12, currentBatVoltage, textColor, butBackground);
-  }
-  //tft.setTextColor(textColor); // transparent background
-}
-
 // UpdateCommon Status - Real time data update for the particular labels printed above
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
@@ -690,43 +750,6 @@ void Display::drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint1
       }
     }
   }
-}
-
-//=============== Mount Status ===============
-// Use local command channel to get mount status
-double Display::getLstT0() {
-  double f=0;
-  char reply[12];
-  display.getLocalCmdTrim(":GS#", reply);
-  convert.hmsToDouble(&f, reply, PM_HIGH);
-  return f;
-}
-
-// modified this for xChan format from SHC
-double Display::getLat() {
-  char reply[12];
-  display.getLocalCmdTrim(":Gt#", reply);
-  double f=-10000;
-  convert.dmsToDouble(&f, reply, true, PM_HIGH);
-  return f;
-}
-
-bool Display::isHome() {
-  char reply[12];
-  display.getLocalCmdTrim(":GU#", reply); 
-  if (strstr(reply,"H")) return true; else return false;
-}
-
-bool Display::isParked() {
-  char reply[12];
-  display.getLocalCmdTrim(":GU#", reply); 
-  if (strstr(reply,"P")) return true; else return false;
-}
-
-bool Display::isTracking() {
-  char reply[12];
-  display.getLocalCmdTrim(":GU#", reply);
-  if (strstr(reply,"n")) return false; else return true;
 }
 
 Display display;

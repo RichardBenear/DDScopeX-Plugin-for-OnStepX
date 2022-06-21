@@ -58,6 +58,7 @@ class ODriveExt : public Display {
     void updateODriveMotorPositions();
     void MotorEncoderDelta();
     void clearODriveErrors(int axis, int comp);
+    void setHigherBaud();
     
     // not currently used
     void clearAllODriveErrors();

@@ -39,10 +39,9 @@
 #endif
 
 void updateScreenWrapper() { display.updateSpecificScreen(); }
-void updateOnStepCmdWrapper() { display.updateOnStepCmdStatus(); }
+void refreshButtonsWrapper() { display.refreshButtons(); }
 
 #ifdef ODRIVE_MOTOR_PRESENT
-  void updateODriveErrWrapper() { display.updateODriveErrBar(); }
   void updateBatVoltWrapper() { display.updateBatVoltage(); }
 #endif
 
@@ -88,34 +87,22 @@ void DDScope::init() {
   homeScreen.draw();
 
   // update currently selected screen status
-  VF("MSG: Setup, start Screen-specific status polling task (rate 2000 ms priority 7)... ");
+  VF("MSG: Setup, start Screen status polling task (rate 1100 ms priority 6)... ");
   uint8_t us_handle = tasks.add(1100, 0, true, 6, updateScreenWrapper, "UpdateSpecificScreen");
   if (us_handle)  { VLF("success"); } else { VLF("FAILED!"); }
-  
-  // update the OnStep Cmd Error status 
-  VF("MSG: Setup, start OnStep CMD status polling task (rate 1000 ms priority 7)... ");
-  uint8_t cmd_handle = tasks.add(1700, 0, true, 6, updateOnStepCmdWrapper, "UpdateOnStepCmdScreen");
-  if (cmd_handle) { VLF("success"); } else { VLF("FAILED!"); }
+
+  // refresh Buttons
+  VF("MSG: Setup, refresh Buttons (rate 2000 ms priority 6)... ");
+  uint8_t rs_handle = tasks.add(2000, 0, true, 6, refreshButtonsWrapper, "RefreshButtons");
+  if (rs_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   #ifdef ODRIVE_MOTOR_PRESENT
-    
-
-    // update the ODrive Error status 
-    VF("MSG: Setup, start ODrive Errors polling task (rate 1000 ms priority 7)... ");
-    uint8_t od_handle = tasks.add(1600, 0, true, 6, updateODriveErrWrapper, "UpdateODriveErrors");
-    if (od_handle) { VLF("success"); } else { VLF("FAILED!"); }
-
     // update battery voltage
-    VF("MSG: Setup, start Battery voltage polling task (rate 5000 ms priority 7)... ");
-    uint8_t bv_handle = tasks.add(1000, 0, true, 6, updateBatVoltWrapper, "UpdateBatVolt");
+    VF("MSG: Setup, start Battery voltage polling task (rate 10000 ms priority 7)... ");
+    uint8_t bv_handle = tasks.add(10000, 0, true, 7, updateBatVoltWrapper, "UpdateBatVolt");
     if (bv_handle)  { VLF("success"); } else { VLF("FAILED!"); }
   
     VF("MSG: ODrive, ODRIVE_SWAP_AXES = "); if(ODRIVE_SWAP_AXES) VLF("ON"); else VLF("OFF");
-
-    // make sure motor power starts OFF
-    oDriveExt.odriveAzmPwr = false;
-    oDriveExt.odriveAltPwr = false;
-
   #endif
 }
 
