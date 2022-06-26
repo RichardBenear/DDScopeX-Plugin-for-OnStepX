@@ -8,6 +8,7 @@
 #include "src/telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
 #include "src/telescope/mount/park/Park.h"
+#include "../display/UIelements.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "../odriveExt/ODriveExt.h"
@@ -78,23 +79,25 @@
 #define COL_1_ROW_7_C_STR ":GX9E#" // dew point deg C
 //#define COL_1_ROW_8_C_STR ":GX9D#" // altitiude
 
- static const char colOneStatusStr[COL_1_NUM_ROWS][12] = {
+// Column One Status strings
+static const char colOneStatusStr[COL_1_NUM_ROWS][12] = {
   COL_1_ROW_1_S_STR, COL_1_ROW_2_S_STR, COL_1_ROW_3_S_STR, COL_1_ROW_4_S_STR,
   COL_1_ROW_5_S_STR, COL_1_ROW_6_S_STR, COL_1_ROW_7_S_STR};
 
-  static const char colTwoStatusStr[COL_2_NUM_ROWS][14] = {
+// Column Two Status strings
+static const char colTwoStatusStr[COL_2_NUM_ROWS][14] = {
   COL_2_ROW_1_S_STR, COL_2_ROW_2_S_STR, COL_2_ROW_3_S_STR, COL_2_ROW_4_S_STR,
   COL_2_ROW_5_S_STR, COL_2_ROW_6_S_STR};
 
+// Column One Status commands
 static const char colOneCmdStr[COL_1_NUM_ROWS][8] = {
   COL_1_ROW_1_C_STR, COL_1_ROW_2_C_STR, COL_1_ROW_3_C_STR, COL_1_ROW_4_C_STR,
   COL_1_ROW_5_C_STR, COL_1_ROW_6_C_STR, COL_1_ROW_7_C_STR};
 
-//void updateHomeScreenWrapper() { display.updateOnStepCmdStatus(); }
 
-// ============================================
-// ======= Draw Base content of HOME PAGE =====
-// ============================================
+// ===============================================
+// ======= Draw Initial content of HOME PAGE =====
+// ===============================================
 void HomeScreen::draw() {
   setCurrentScreen(HOME_SCREEN);
   tft.setTextSize(1);
@@ -107,6 +110,7 @@ void HomeScreen::draw() {
 
   // ======Draw Status Text ===========
   // Labels for Real Time data only here, no data displayed yet
+  // ---- Column 1 ----
   int y_offset = 0;
   for (int i=0; i<COL_1_NUM_ROWS; i++) {
     tft.setCursor(COL1_LABELS_X, COL1_LABELS_Y + y_offset);
@@ -114,6 +118,7 @@ void HomeScreen::draw() {
     y_offset +=COL1_LABEL_SPACING;
   }
 
+  // ---- Column 2 ----
   y_offset = 0;
   for (int i=0; i<COL_2_NUM_ROWS; i++) {
     tft.setCursor(COL2_LABELS_X, COL2_LABELS_Y + y_offset);
@@ -121,16 +126,16 @@ void HomeScreen::draw() {
     y_offset +=COL1_LABEL_SPACING;
   }
 
+  // draw and initialize buttons, labels, and status upon entry to this screen
   drawCommonStatusLabels();
   updateHomeStatus(); 
   updateCommonStatus(); 
-  updateHomeButtons();
+  updateHomeButtons(true);
 }
 
 // =================================================
 // ========== Update HOME Screen Status ============
 // =================================================
-
 void HomeScreen::updateHomeStatus() {
   float currentAZEncPos     = 00.0;
   float currentALTEncPos    = 00.0;
@@ -140,12 +145,13 @@ void HomeScreen::updateHomeStatus() {
   float currentAZMotorTemp  = 00.0;
   char curCol1[11][8];
 
+  // update the common status block that is on most screens
   updateCommonStatus(); 
 
   char xchReply[10]="";
   int y_offset = 0;
 
-  // Column 1 poll updates
+  // Loop through Column 1 poll updates
   for (int i=0; i<COL_1_NUM_ROWS; i++) {
     getLocalCmdTrim(colOneCmdStr[i], xchReply); 
     if (strcmp(curCol1[i], xchReply) != 0) {
@@ -163,7 +169,7 @@ void HomeScreen::updateHomeStatus() {
     // Show ODrive AZM encoder positions
     currentAZEncPos = oDriveExt.getEncoderPositionDeg(AZM_MOTOR);
   #elif
-    currentAZEncPos = 0; // needs to be defined
+    currentAZEncPos = 0; // define this for non ODrive implementations
   #endif
 
   canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZEncPos);
@@ -175,9 +181,8 @@ void HomeScreen::updateHomeStatus() {
     // Show ODrive ALT encoder positions
     currentALTEncPos = oDriveExt.getEncoderPositionDeg(ALT_MOTOR);
   #elif
-    currentALTEncPos = 0; // needs to be defined
+    currentALTEncPos = 0; // define this for non ODrive implementations
   #endif
-
   canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTEncPos);
  
 
@@ -187,11 +192,11 @@ void HomeScreen::updateHomeStatus() {
     // Show ODrive AZM motor current
     currentAZMotorCur = oDriveExt.getMotorCurrent(AZM_MOTOR);
   #elif
-    currentAZMotorCur = 0; // needs to be defined
+    currentAZMotorCur = 0; // define this for non ODrive implementations
   #endif
   
-  if (currentAZMotorCur > MOTOR_CURRENT_WARNING) {
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur);
+  if (currentAZMotorCur > MOTOR_CURRENT_WARNING) { // change background color...Warning!
+    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur, textColor, butOnBackground);
   } else {
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur);
   }
@@ -203,11 +208,11 @@ void HomeScreen::updateHomeStatus() {
     // Show ODrive ALT motor current
     currentALTMotorCur = oDriveExt.getMotorCurrent(ALT_MOTOR);
   #elif
-    currentALTMotorCur = 0; // needs to be defined
+    currentALTMotorCur = 0; // define this for non ODrive implementations
   #endif
 
   if (currentALTMotorCur > MOTOR_CURRENT_WARNING) {
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur);
+    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur, textColor, butOnBackground);
   } else {
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur);
   }
@@ -217,11 +222,11 @@ void HomeScreen::updateHomeStatus() {
   #ifdef ODRIVE_MOTOR_PRESENT
     currentAZMotorTemp = oDriveExt.getMotorTemp(AZM_MOTOR);
   #elif
-    currentAZMotorTemp = 0; // needs to be defined
+    currentAZMotorTemp = 0; // define this for non ODrive implementations
   #endif
   
   if (currentAZMotorTemp >= 120) { // make box red
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
+    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp, textColor, butOnBackground);
   } else {
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
   }
@@ -231,106 +236,129 @@ void HomeScreen::updateHomeStatus() {
   #ifdef ODRIVE_MOTOR_PRESENT
     currentALTMotorTemp = oDriveExt.getMotorTemp(ALT_MOTOR);
     #elif
-    currentALTMotorTemp = 0; // needs to be defined
+    currentALTMotorTemp = 0; // define this for non ODrive implementations
   #endif
 
   if (currentALTMotorTemp >= 120) { // make box red
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
+    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp, textColor, butOnBackground);
   } else {
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
   }
 }
 
+// Toggle button object
+Button homeToggleButton(ACTION_COL_1_X, ACTION_COL_1_Y, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, 
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.mainFontWidth, 
+                display.mainFontHeight, 
+                "", 
+                false);
+
+// State button object
+Button homeStateButton(ACTION_COL_1_X, ACTION_COL_1_Y, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, 
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.mainFontWidth, 
+                display.mainFontHeight, 
+                "", 
+                true);
+
 // ===============================================
 // ============ Update Home Buttons ==============
 // ===============================================
-void HomeScreen::updateHomeButtons() {
-  int x_offset = 0;
+void HomeScreen::updateHomeButtons(bool state) {
+
   int y_offset = 0;
   tft.setTextColor(textColor);
-  
+  bool hButState = state;
+
   // ============== Column 1 ===============
   // Enable / Disable Azimuth Motor
-  if (oDriveExt.odriveAzmPwr || oDriveExt.getODriveCurrentState(AZM_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
-     drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "AZM Enabled");
-  } else { //motor on
-    drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN AZM   ");
+  if (oDriveExt.getODriveCurrentState(AZM_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
+    homeStateButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "AZM Enabled", true, hButState);
+  } else { //motor off
+    homeStateButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN AZM", false, hButState);
   }
+
   // Enable / Disable Altitude Motor
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (oDriveExt.odriveAltPwr || oDriveExt.getODriveCurrentState(ALT_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
-    drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "ALT Enabled");
-  } else { //motor on
-    drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "  EN ALT   ");
+  if (oDriveExt.getODriveCurrentState(ALT_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
+    homeStateButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "ALT Enabled", true, hButState);
+  } else { //motor off
+    homeStateButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN ALT", false, hButState);
   }
+
   // Stop all movement
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (stopButton) {
-    drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,  "All Stopped");
+    homeToggleButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "All Stopped", true, hButState);
     stopButton = false;
   } else { 
-    drawButton(ACTION_COL_1_X + x_offset, ACTION_COL_1_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET+5, ACTION_TEXT_Y_OFFSET, "  STOP!  ");
+    homeToggleButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "STOP!", false, hButState);
   }
 
   // ============== Column 2 ===============
   y_offset = 0;
   // Start / Stop Tracking
   if (!mount.isTracking()) { 
-    drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "Start Track");
+    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Start Track", false, hButState);
   } else { 
-    drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,    " Tracking  ");
+    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Tracking", true, hButState);
   }
   
   // Night / Day Mode
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (display.getNightMode()) {
-    drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET, "Night Mode");   
+  if (getNightMode()) {
+    homeToggleButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Night Mode", false, hButState);  
   } else { // Day mode
-    drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,  " Day Mode");          
+    homeToggleButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Day Mode", false, hButState);     
   }
   
   // Home Telescope
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (mount.isSlewing()) {
-    drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Slewing ");
+    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Slewing", false, hButState);
   } else if (mount.isHome()) {
-    drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,  " At Home ");
+    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "At Home", false, hButState);
     gotoHome = false;             
   } else {
-    drawButton(ACTION_COL_2_X + x_offset, ACTION_COL_2_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,  " Go Home ");
+    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Go Home", false, hButState);
   }  
 
   // ============== Column 3 ===============
   // Park / unPark Telescope
   y_offset = 0;
-  // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING}
-  if (park.state == PS_PARKED) { 
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,  " Parked ");
+  // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING
+  if (park.state == PS_PARKED) {
+    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Parked", true, hButState); 
   } else if (park.state == PS_UNPARKED) { 
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "Un Parked");
-  } else if (park.state == PS_PARKING) { 
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   " Parking ");
+    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "UnParked", false, hButState);
+  } else if (park.state == PS_PARKING) {
+    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Parking", false, hButState); 
   } else if (park.state == PS_UNPARKING) { 
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "Un Parking");
+    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "UnParking", false, hButState);
   } else {
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,   "Park Fail ");
+    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "ParkFail", false, hButState);
   }
 
   // Set Park Position
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (parkWasSet) {
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET, ACTION_TEXT_Y_OFFSET,     "Park Is Set");
+    homeToggleButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "ParkIsSet", true, hButState);
     parkWasSet = false;
   } else {
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-7, ACTION_TEXT_Y_OFFSET, "  Set Park ");
+    homeToggleButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Set Park", false, hButState);
   }
 
   // Turn ON / OFF Fan
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (!fanOn) {
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_OFF, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET, "  Fan Off ");
+    homeToggleButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Fan Off", false, hButState);
   } else {
-    drawButton(ACTION_COL_3_X + x_offset, ACTION_COL_3_Y + y_offset, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, BUTTON_ON, ACTION_TEXT_X_OFFSET-2, ACTION_TEXT_Y_OFFSET,   "  Fan On  ");
+    homeToggleButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Fan On", true, hButState);
   }
 }
 
@@ -338,12 +366,11 @@ void HomeScreen::updateHomeButtons() {
 // =========== Check for Button Press ==============
 // =================================================
 bool HomeScreen::touchPoll(int16_t px, int16_t py) {
-  int x_offset = 0;
   int y_offset = 0;
   
   // ======= Column 1 - Leftmost =======
   // Enable Azimuth motor
-  if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
+  if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!oDriveExt.odriveAzmPwr) { // if not On, toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
@@ -359,7 +386,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
             
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   // Enable Altitude motor
-  if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
+  if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!oDriveExt.odriveAltPwr) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
@@ -375,7 +402,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
 
   // STOP everthing requested
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (px > ACTION_COL_1_X + x_offset && px < ACTION_COL_1_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
+  if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!stopButton) {
       stopButton = true;
@@ -393,7 +420,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   // ======= COLUMN 2 of Buttons - Middle =========
   // Start/Stop Tracking Toggle
   y_offset = 0;
-  if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
+  if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!mount.isTracking()) {
       setLocalCmd(":Te#"); // Enable Tracking
@@ -408,7 +435,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
 
   // Set Night or Day Mode
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
+  if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!getNightMode()) {
       setNightMode(true); // toggle on
@@ -421,7 +448,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   
   // Go to Home Telescope 
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (px > ACTION_COL_2_X + x_offset && px < ACTION_COL_2_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
+  if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     //setLocalCmd(":hF#"); // reset Home position
     _oDriveDriver->SetPosition(0, 0.0);
@@ -434,7 +461,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   // ======== COLUMN 3 of Buttons - Leftmost ========
   // Park and UnPark Telescope
   y_offset = 0;
-  if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
+  if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING}
     if (park.state == PS_UNPARKED) {
@@ -447,7 +474,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
 
   // Set Park Position to Current
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
+  if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     setLocalCmd(":hQ#"); // Set Park Position
     parkWasSet = true;
@@ -456,7 +483,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
 
   // Fan Control Action Button
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (px > ACTION_COL_3_X + x_offset && px < ACTION_COL_3_X + x_offset + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
+  if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!fanOn) {
       digitalWrite(FAN_ON_PIN, HIGH);

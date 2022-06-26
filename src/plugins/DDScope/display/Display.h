@@ -24,8 +24,8 @@
 // Screen Selection buttons
 #define MENU_X              3
 #define MENU_Y             46
-#define MENU_Y_SPACING      0
 #define MENU_X_SPACING     80
+#define MENU_Y_SPACING      0
 #define MENU_BOXSIZE_X     72
 #define MENU_BOXSIZE_Y     45
 #define MENU_TEXT_X_OFFSET  8
@@ -97,7 +97,27 @@ enum SelectedCatalog
   CUSTOM,
 };
 
-// Display object
+//----------------------------------------------
+// Structure storing Button object
+//----------------------------------------------
+typedef struct 
+{
+  bool                  initialized    = false;
+  uint16_t              x              = 0;
+  uint16_t              y              = 0;
+  uint8_t               width          = 0;
+  uint8_t               height         = 0;
+  bool                  pressed        = false;
+  uint16_t              colorActive    = 0xF800;
+  uint16_t              colorNotActive = 0x0000;
+  uint16_t              colorBorder    = 0xFFE0;
+  const char*           label          = "";
+  bool                  monitorOn      = false;
+  int                   fontCharWidth  = 8;
+  int                   fontCharHeight = 16;
+} ButObject;
+
+// Display objects
 extern Adafruit_ILI9486_Teensy tft;
 
 static XPT2046_Touchscreen ts(TS_CS, TS_IRQ); // Use Interrupts for touchscreen
@@ -108,7 +128,7 @@ class Display {
   public:
     void init();
     void sdInit();
-    void refreshButtons();
+    void refreshButtons(bool);
     void setCurrentScreen(Screen);
  
   // Local Command Channel support
@@ -118,13 +138,15 @@ class Display {
     void getLocalCmdTrim(const char *command, char *reply);
 
   // Colors, Buttons, BitMap printing
+    
     void drawButton(int x_start, int y_start, int w, int h, bool butOn, int text_x_offset, int text_y_offset, const char* label);
+    
     void drawTitle(int text_x_offset, int text_y_offset, const char* label);
 
     void canvPrint(int x, int y, int y_off, int width, int height, const char* label);
-    void canvPrint(int x, int y, int y_off, int width, int height, const char* label, uint16_t textColor, uint16_t butBackground);
+    void canvPrint(int x, int y, int y_off, int width, int height, const char* label, uint16_t textColor, uint16_t butBackgnd);
     void canvPrint(int x, int y, int y_off, int width, int height, double label);
-    void canvPrint(int x, int y, int y_off, int width, int height, double label, uint16_t textColor, uint16_t butBackground);
+    void canvPrint(int x, int y, int y_off, int width, int height, double label, uint16_t textColor, uint16_t butBackgnd);
     void canvPrint(int x, int y, int y_off, int width, int height, int label);
 
     void drawMenuButtons();
@@ -144,21 +166,25 @@ class Display {
     void setNightMode(bool);
     bool getNightMode();
 
-    // frequency and duration adjustable tone
-    inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration); }
-
     // Color Theme
     uint16_t pgBackground = DEEP_MAROON; 
     uint16_t butBackground = BLACK;
     uint16_t butOnBackground = RED;
     uint16_t textColor = YELLOW; 
     uint16_t butOutline = YELLOW; 
-  
+    uint8_t  mainFontWidth = 9; // 8pt
+    uint8_t  mainFontHeight = 16; // 8pt
+    uint8_t  largeFontWidth = 11; // 11pt
+    uint8_t  largeFontHeight = 22; // 11pt
+
+    // frequency and duration adjustable tone
+    inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration); }
+
     static Screen currentScreen;
     static bool _nightMode;
 
   private:
-  CommandError commandError      = CE_NONE;
+    CommandError commandError = CE_NONE;
     bool firstGPS = true;
 };
 
