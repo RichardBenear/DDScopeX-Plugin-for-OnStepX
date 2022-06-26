@@ -19,14 +19,6 @@ const char* ODriveComponentsStr[4] = {
             "Encoder"        
 };
 
-//odrv0.config.uart_a_baudrate
-void ODriveExt::setHigherBaud() {
-  ODRIVE_SERIAL << "w config.uart_a_baudrate 230400\n";
-  ODRIVE_SERIAL.end();
-  delay(10);
-  ODRIVE_SERIAL.begin(230400);
-}
-
 //=========================================================
 // Read ODrive bus voltage which is approx. the battery voltage
 // Battery Low LED is only on when battery is below low threashold

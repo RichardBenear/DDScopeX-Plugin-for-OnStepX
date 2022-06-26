@@ -287,7 +287,7 @@ void CatalogScreen::drawTreasureCat() {
   pre_tAbsIndex=0;
   
   tft.setFont(); //revert to basic Arial font
-  tft.fillRect(0,60,319,358,pgBackground);
+  tft.fillRect(0,60,319,358, pgBackground);
   
   tAbsRow = (tPagingArrayIndex[tCurrentPage]); // array of page 1st row indexes
   tLastPage = ((MAX_TREASURE_ROWS / NUM_CAT_ROWS_PER_SCREEN)+1);
@@ -412,7 +412,7 @@ void CatalogScreen::drawCustomCat() {
   tft.print(activeFilterStr[moreScreen.activeFilter]);
 
   tft.setFont(); //revert to basic Arial font
-  tft.fillRect(0,60,319,358,pgBackground);
+  tft.fillRect(0,60,319,358, pgBackground);
 
   cAbsRow = (cPagingArrayIndex[cCurrentPage]); // array of page 1st row indexes
   cLastPage = (cusRowEntries / NUM_CUS_ROWS_PER_SCREEN)+1;
@@ -422,7 +422,7 @@ void CatalogScreen::drawCustomCat() {
   //VF("cCurPage="); VL(cCurrentPage);
 
   // Show Page number and total Pages
-  tft.fillRect(6, 9, 70, 12,  butBackground);
+  tft.fillRect(6, 9, 70, 12, butBackground);
   tft.setCursor(6, 9); tft.printf("Page "); tft.print(cCurrentPage+1);
   tft.printf(" of "); if (moreScreen.activeFilter == FM_ABOVE_HORIZON) tft.print("??"); else tft.print(cLastPage+1);
   tft.setCursor(6, 25); tft.print(activeFilterStr[moreScreen.activeFilter]);
@@ -503,7 +503,7 @@ void CatalogScreen::drawShcCat() {
   tft.print(activeFilterStr[moreScreen.activeFilter]);
 
   tft.setFont(); //revert to basic Arial font
-  tft.fillRect(0,60,319,358,pgBackground);
+  tft.fillRect(0,60,319,358, pgBackground);
 
   cat_mgr.setIndex(shcPagingArrayIndex[shcCurrentPage]); // array of page 1st row indexes
   if (cat_mgr.hasActiveFilter()) {
@@ -522,7 +522,7 @@ void CatalogScreen::drawShcCat() {
 
     // erase any previous data
     tft.setCursor(CAT_X+CAT_W+2, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING));
-    tft.fillRect(CAT_X+CAT_W+2, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), 215, 17,  butBackground);
+    tft.fillRect(CAT_X+CAT_W+2, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), 215, 17, butBackground);
 
     //fill the button with some identifying text which varies depending on catalog chosen
     memset(shcObjName[shcRow], '\0', 20); //NULL out row first

@@ -2,6 +2,7 @@
 // TouchScreen.cpp
 // Author: Richard Benear 2022
 
+#include "../display/Display.h"
 #include "TouchScreen.h"
 #include "../../../lib/tasks/OnTask.h"
 #include "../screens/AlignScreen.h"
@@ -14,6 +15,7 @@
 #include "../screens/PlanetsScreen.h"
 #include "../screens/SettingsScreen.h"
 #include "../screens/ExtStatusScreen.h"
+
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "../screens/ODriveScreen.h"
@@ -179,11 +181,12 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
       return;
     }
 
-    // Check for touchscreen button action on the selected Screen
+    // Check for touchscreen button "action" on the selected Screen
+    // If any button touched then update button once to show button pressed
     // This does not include the Menu Buttons
     switch (tCurScreen) {
       case HOME_SCREEN:     
-        if (homeScreen.touchPoll(p.x, p.y)) homeScreen.updateHomeButtons();             break;       
+        if (homeScreen.touchPoll(p.x, p.y)) homeScreen.updateHomeButtons(false);        break;       
       case GUIDE_SCREEN:       
         if (guideScreen.touchPoll(p.x, p.y)) guideScreen.updateGuideButtons();          break;        
       case FOCUSER_SCREEN:  

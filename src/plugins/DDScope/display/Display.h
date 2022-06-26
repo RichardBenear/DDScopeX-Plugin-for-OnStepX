@@ -172,7 +172,7 @@ class Display {
     uint16_t butOnBackground = RED;
     uint16_t textColor = YELLOW; 
     uint16_t butOutline = YELLOW; 
-    uint8_t  mainFontWidth = 9; // 8pt
+    uint8_t  mainFontWidth = 8; // 8pt
     uint8_t  mainFontHeight = 16; // 8pt
     uint8_t  largeFontWidth = 11; // 11pt
     uint8_t  largeFontHeight = 22; // 11pt

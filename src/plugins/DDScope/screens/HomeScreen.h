@@ -11,7 +11,7 @@ class HomeScreen : public Display {
   public:
     void draw();
     void updateHomeStatus();
-    void updateHomeButtons();
+    void updateHomeButtons(bool state);
     bool touchPoll(int16_t px, int16_t py);
 
   private:

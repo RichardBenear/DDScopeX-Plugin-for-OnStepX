@@ -29,7 +29,7 @@
 #include <Arduino.h>
 #include "DDScope.h"
 #include "src/Common.h"
-#include "display/Display.h"
+//#include "display/Display.h"
 #include "screens/TouchScreen.h"
 #include "screens/HomeScreen.h"
 #include "src/lib/tasks/OnTask.h"
@@ -39,7 +39,7 @@
 #endif
 
 void updateScreenWrapper() { display.updateSpecificScreen(); }
-void refreshButtonsWrapper() { display.refreshButtons(); }
+void refreshButtonsWrapper() { display.refreshButtons(true); }
 
 #ifdef ODRIVE_MOTOR_PRESENT
   void updateBatVoltWrapper() { display.updateBatVoltage(); }

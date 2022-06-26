@@ -21,7 +21,7 @@
 
 // SERIAL PORT COMMAND CHANNELS ------------------------------------ see https://onstep.groups.io/g/main/wiki/6-Configuration#SERIAL
 #define SERIAL_A_BAUD_DEFAULT      460800 //   9600, n. Where n=9600,19200,57600,115200,230400,460800 (common baud rates.)    Infreq
-#define SERIAL_B_BAUD_DEFAULT       57600 //   9600, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Option
+#define SERIAL_B_BAUD_DEFAULT      230400 //   9600, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Option
 #define SERIAL_B_ESP_FLASHING         OFF //    OFF, ON Upload ESP8266 WiFi firmware through SERIAL_B with :ESPFLASH# cmd.    Option
 // SERIAL PORT COMMAND CHANNELS --------------------- see https://onstep.groups.io/g/main/wiki/Configuration_Controller#SERIAL_PORTS
 #define SERIAL_C_BAUD_DEFAULT         OFF //    OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
@@ -52,7 +52,7 @@
 #define ODRIVE_SWAP_AXES               ON  // ODrive axis 0 = OnStep axis 2 = ALT
                                            // ODrive axis 1 = OnStep axis 1 = AZM
 #define ODRIVE_SERIAL             Serial3  // Teensy HW serial
-#define ODRIVE_SERIAL_BAUD          19200
+#define ODRIVE_SERIAL_BAUD         230400  // 19200
 #define ODRIVE_SLEW_DIRECT             ON  // using ODrive trapezoidal move profile
 #define ODRIVE_ABSOLUTE                ON  // using absolute encoder
 #define ODRIVE_SYNC_LIMIT            1300  // in arc seconds..encoder resolution=2^14=16380=16380/360=45.5/deg=45.5/60=0.7583/arc-min
