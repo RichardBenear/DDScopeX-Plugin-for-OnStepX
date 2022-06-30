@@ -12,7 +12,6 @@
 // Author: Howard Dutton, http://www.stellarjourney.com, hjd1964@gmail.com
 
 #include "PlanetsScreen.h"
-#include "CatalogScreen.h"
 #include "MoreScreen.h"
 #include "../../../telescope/mount/site/Site.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -24,18 +23,24 @@
 #define PLANET_W           80
 #define PLANET_H           31
 #define PLANET_Y_SPACING    6
-#define PLANET_TEXT_X_OFF  15
-#define PLANET_TEXT_Y_OFF  19
 
 #define P_RETURN_X         165
 #define P_RETURN_Y         445
 #define P_RETURN_W         80
 #define BACK_H             35
-#define BACK_T_X_OFF       15
-#define BACK_T_Y_OFF       20
 
 // Planet name index used here eliminates Sun and Earth that are used in the Ephemeris Solar System Index
 const char PlanetNames[8][8] = {"Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Moon"};
+
+// Planets Screen Button object
+Button planetsButton(
+                0,0,0,0,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.mainFontWidth, 
+                display.mainFontHeight, 
+                "");
 
 // Initialize the PLANETS page
 void PlanetsScreen::draw() {
@@ -58,7 +63,7 @@ void PlanetsScreen::draw() {
   utc = (atoi(utcOffset) -1) * -1; // adjust Onstep UTC to Ephemeris expected UT
   
   getPlanet(planetButSelPos); // init screen
-  updatePlanetsButtons();
+  updatePlanetsButtons(false);
 }
 
 // task update for this screen
@@ -296,31 +301,37 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     setLocalCmd(cmd);
     
     // the following 5 lines are displayed on the Catalog/More page
-   // CatalogScreen cs;
-    //snprintf(cs.catSelectionStr1, 16, "Name-:%-16s", PlanetNames[planetButSelPos]);
-    //snprintf(cs.catSelectionStr2, 12, "AZM--:%-12f", obj.horiCoordinates.azi);
-    //snprintf(cs.catSelectionStr3, 12, "ALT--:%-12f", obj.horiCoordinates.alt);
-   // snprintf(cs.catSelectionStr4, 16, "RA---:%-16s", raPrint);
-    //snprintf(cs.catSelectionStr5, 16, "DEC--:%-16s", decPrint);
+    snprintf(moreScreen.catSelectionStr1, 16, "Name-:%-16s", PlanetNames[planetButSelPos]);
+    snprintf(moreScreen.catSelectionStr2, 12, "AZM--:%-12f", obj.horiCoordinates.azi);
+    snprintf(moreScreen.catSelectionStr3, 12, "ALT--:%-12f", obj.horiCoordinates.alt);
+    snprintf(moreScreen.catSelectionStr4, 16, "RA---:%-16s", raPrint);
+    snprintf(moreScreen.catSelectionStr5, 16, "DEC--:%-16s", decPrint);
 
     moreScreen.objectSelected = true;
+}
+
+bool PlanetsScreen::planetsButStateChange() {
+  if (display._redrawBut) {
+    display._redrawBut = false;
+    return true;
+  } else { 
+    return false;
+  }
 }
 
 // ******************************************************
 // Update for buttons 
 // ******************************************************
-void PlanetsScreen::updatePlanetsButtons() {
-  //VF("planetButSelPos="); VL(planetButSelPos);
-  //VF("planetName=");  VL(PlanetNames[planetButSelPos]);
-  // Detect which Planet selected
+void PlanetsScreen::updatePlanetsButtons(bool redrawBut) {
+  _redrawBut = redrawBut;
   if (planetButDetected) {
     // ERASE old: set background back to unselected and replace the previous name field
-    drawButton(PLANET_X, PLANET_Y+planetPrevSel*(PLANET_H+PLANET_Y_SPACING), 
-            PLANET_W, PLANET_H, false, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[planetPrevSel]);  
+    planetsButton.draw(PLANET_X, PLANET_Y+planetPrevSel*(PLANET_H+PLANET_Y_SPACING), 
+            PLANET_W, PLANET_H, PlanetNames[planetPrevSel], BUT_OFF);  
     
     // DRAW new: highlight by settting background ON color for button selected
-    drawButton(PLANET_X, PLANET_Y+planetButSelPos*(PLANET_H+PLANET_Y_SPACING), 
-            PLANET_W, PLANET_H, true, PLANET_TEXT_X_OFF, PLANET_TEXT_Y_OFF, PlanetNames[planetButSelPos]);
+    planetsButton.draw(PLANET_X, PLANET_Y+planetButSelPos*(PLANET_H+PLANET_Y_SPACING), 
+            PLANET_W, PLANET_H, PlanetNames[planetButSelPos], BUT_ON);
     
     getPlanet(planetButSelPos);
 

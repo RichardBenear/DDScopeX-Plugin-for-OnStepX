@@ -1,56 +1,58 @@
 // =====================================================
 // UIelements.h
+// User Interface elements (Button, CanvasPrint)
+//
+// Author: Richard Benear 6/22
 
 #ifndef UI_ELEMENTS_H
 #define UI_ELEMENTS_H
 
 #include <Arduino.h>
 
-//----------------------------------------------------------
-// Class for the boundry dimensions of a UI element
-//----------------------------------------------------------
-class Boundry{
-	public : 
-		uint16_t   x      = 0;
-    uint16_t   y      = 0;
-    uint8_t    width  = 0;
-    uint8_t    height = 0;
+#define BUTTON_RADIUS 7
 
-  private:
-};
+typedef struct Boundry{
+  int x;
+  int y;
+  uint16_t width;
+  uint16_t height;
+} Boundry;
 
 //----------------------------------------------------------
 // Button element
 //----------------------------------------------------------
 class Button{
-  uint16_t b_x;
-  uint16_t b_y;
-  uint8_t b_width;
-  uint8_t b_height;
-  uint16_t b_colorActive;
-  uint16_t b_colorNotActive;
-  uint16_t b_colorBorder;
-  uint8_t b_fontCharWidth;
-  uint8_t b_fontCharHeight;      
-  const char* b_label;
-  bool b_stateMonitor;
+  Boundry       boundry;
+  int           b_x;
+  int           b_y;
+  uint16_t      b_width; 
+  uint16_t      b_height;
+  uint16_t      colorActive;
+  uint16_t      b_colorActive;
+  uint16_t      b_colorNotActive;
+  uint16_t      b_colorBorder;
+  uint8_t       b_fontCharWidth;
+  uint8_t       b_fontCharHeight;      
+  const char*   b_label;
 
 	public:
     // constructor
-    Button(uint16_t     x, 
-          uint16_t      y, 
-          uint8_t       width, 
-          uint8_t       height,
-          uint16_t      colorActive,
-          uint16_t      colorNotActive,
-          uint16_t      colorBorder,
-          uint8_t       fontCharWidth,
-          uint8_t       fontCharHeight,
-          const char*   label,
-          bool          stateMonitor);
+    Button(
+      int           x,
+      int           y,
+      uint16_t      width,
+      uint16_t      height,
+      uint16_t      colorActive,
+      uint16_t      colorNotActive,
+      uint16_t      colorBorder,
+      uint8_t       fontCharWidth,
+      uint8_t       fontCharHeight,
+      const char*   label);
 
-    void draw(uint16_t x, uint16_t y, const char* label, bool active, bool stateUpdate);
-    void draw(uint16_t y, const char* label, bool active, bool stateChange);
+  
+    void draw(int x, int y, uint16_t width, uint16_t height, const char* label, bool active);
+    void draw(int x, int y,                                  const char* label, bool active);
+    void draw(       int y,                                  const char* label, bool active);
 
   private:
 };
@@ -60,19 +62,26 @@ class Button{
 //----------------------------------------------------------
 class CanvasPrint{
 	public:
-    CanvasPrint(uint16_t x, uint16_t y, uint8_t width, uint8_t height);
-    Boundry boundry;
-    uint16_t      colorActive    = 0xF800;
-    uint16_t      colorNotActive = 0x0000;
-    uint16_t      colorBorder    = 0xFFE0;
-    int           fontCharWidth  = 8;
-    int           fontCharHeight = 16;
-    const char*   label          = "";
-    void cPrint();
+    // constructor
+    CanvasPrint(
+      int           x, 
+      int           y, 
+      uint16_t      width, 
+      uint16_t      height,
+      uint16_t      colorActive,
+      uint16_t      colorNotActive,
+      uint16_t      colorBorder,
+      int           fontCharWidth,
+      int           fontCharHeight,
+      const char*   label);
 
+    void canvPrint(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning);
+    void canvPrint(int x, int y,                                  const char* label, bool warning);
+    void canvPrint(       int y,                                  const char* label, bool warning);
 
   private:
 };
 
+extern Button button;
 
 #endif

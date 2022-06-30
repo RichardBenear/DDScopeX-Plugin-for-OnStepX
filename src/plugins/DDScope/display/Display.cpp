@@ -27,7 +27,9 @@
 #include "UIelements.h"
 #include "../catalog/Catalog.h"
 #include "../screens/AlignScreen.h"
-#include "../screens/CatalogScreen.h"
+#include "../screens/TreasureCatScreen.h"
+#include "../screens/CustomCatScreen.h"
+#include "../screens/SHCCatScreen.h"
 #include "../screens/DCFocuserScreen.h"
 #include "../screens/GotoScreen.h"
 #include "../screens/GuideScreen.h"
@@ -91,17 +93,18 @@
   L_CE_SLEW_ERR_HARDWARE_FAULT, L_CE_MOUNT_IN_MOTION, L_CE_GOTO_ERR_UNSPECIFIED, L_CE_UNK};
 
 // Menu button object
-Button menuButton(MENU_X, MENU_Y, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, 
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.largeFontWidth, 
-                display.largeFontHeight, 
-                "", 
-                false);
-
+Button menuButton( 
+        MENU_X, MENU_Y, MENU_BOXSIZE_X, MENU_BOXSIZE_Y,
+        display.butOnBackground, 
+        display.butBackground, 
+        display.butOutline, 
+        display.largeFontWidth, 
+        display.largeFontHeight, 
+        "");
+                
 Screen Display::currentScreen = HOME_SCREEN;
 bool Display::_nightMode = false;
+bool Display::_redrawBut = false;
 Adafruit_ILI9486_Teensy tft;
 
 // =========================================
@@ -156,21 +159,35 @@ void Display::sdInit() {
 
 // Monitor any button that is waiting for a state change (other than being pressed)
 // This does not include the Menu Buttons
-void Display::refreshButtons(bool stateChange) {
+void Display::refreshButtons() {
   switch (currentScreen) {
-    case HOME_SCREEN:      homeScreen.updateHomeButtons(false);    break;       
-    case GUIDE_SCREEN:     guideScreen.updateGuideButtons();       break;        
-    case FOCUSER_SCREEN:   dCfocuserScreen.updateFocuserButtons(); break; 
-    case GOTO_SCREEN:      gotoScreen.updateGotoButtons();         break;          
-    case MORE_SCREEN:      moreScreen.updateMoreButtons();         break;          
-    case SETTINGS_SCREEN:  settingsScreen.updateSettingsButtons(); break;
-    case ALIGN_SCREEN:     alignScreen.updateAlignButtons();       break;     
-    case CATALOG_SCREEN:   catalogScreen.updateCatalogButtons();   break; 
-    case PLANETS_SCREEN:   planetsScreen.updatePlanetsButtons();   break;
-  //case XSTATUS_SCREEN:                                           break;
+    case HOME_SCREEN:      
+      if (homeScreen.homeButStateChange())         homeScreen.updateHomeButtons(false);         break;       
+    case GUIDE_SCREEN:   
+      if (guideScreen.guideButStateChange())       guideScreen.updateGuideButtons(false);       break;        
+    case FOCUSER_SCREEN:  
+      if (dCfocuserScreen.focuserButStateChange()) dCfocuserScreen.updateFocuserButtons(false); break; 
+    case GOTO_SCREEN:     
+      if (gotoScreen.gotoButStateChange())         gotoScreen.updateGotoButtons(false);         break;          
+    case MORE_SCREEN:     
+      if (moreScreen.moreButStateChange())         moreScreen.updateMoreButtons(false);         break;          
+    case SETTINGS_SCREEN:  
+      if (settingsScreen.settingsButStateChange()) settingsScreen.updateSettingsButtons(false); break;
+    case ALIGN_SCREEN:     
+      if (moreScreen.moreButStateChange())         alignScreen.updateAlignButtons(false);       break;     
+    case PLANETS_SCREEN:   
+      if (planetsScreen.planetsButStateChange())   planetsScreen.updatePlanetsButtons(false);   break;
+    case TREASURE_SCREEN:   
+      if (treasureCatScreen.catalogButStateChange()) treasureCatScreen.updateTreasureButtons(false); break; 
+    case CUSTOM_SCREEN:   
+      if (customCatScreen.catalogButStateChange()) customCatScreen.updateCustomButtons(false);  break; 
+    case SHC_CAT_SCREEN:   
+      if (shcCatScreen.catalogButStateChange()) shcCatScreen.updateShcButtons(false);           break; 
+  //case XSTATUS_SCREEN:                                           break; // no buttons here yet
 
     #ifdef ODRIVE_MOTOR_PRESENT
-      case ODRIVE_SCREEN:  oDriveScreen.updateOdriveButtons();     break;
+      case ODRIVE_SCREEN: 
+        if (oDriveScreen.odriveButStateChange())   oDriveScreen.updateOdriveButtons(false);     break;
     #endif
 
     default: VLF("touchscreen error");
@@ -185,18 +202,20 @@ currentScreen = curScreen;
 // select which screen to update
 void Display::updateSpecificScreen() {
   switch (currentScreen) {
-    case HOME_SCREEN:       homeScreen.updateHomeStatus();         break;
-    case GUIDE_SCREEN:      guideScreen.updateGuideStatus();       break;
-    case FOCUSER_SCREEN:    dCfocuserScreen.updateFocuserStatus(); break;
-    case GOTO_SCREEN:       gotoScreen.updateGotoStatus();         break;
-    case MORE_SCREEN:       moreScreen.updateMoreStatus();         break;
-    case SETTINGS_SCREEN:   settingsScreen.updateSettingsStatus(); break;
-    case ALIGN_SCREEN:      alignScreen.updateAlignStatus();       break;
-    case CATALOG_SCREEN:    catalogScreen.updateCatalogStatus();   break;
-    case PLANETS_SCREEN:    planetsScreen.updatePlanetsStatus();   break;
-  //case XSTATUS_SCREEN:                                           break;
+    case HOME_SCREEN:       homeScreen.updateHomeStatus();            break;
+    case GUIDE_SCREEN:      guideScreen.updateGuideStatus();          break;
+    case FOCUSER_SCREEN:    dCfocuserScreen.updateFocuserStatus();    break;
+    case GOTO_SCREEN:       gotoScreen.updateGotoStatus();            break;
+    case MORE_SCREEN:       moreScreen.updateMoreStatus();            break;
+    case SETTINGS_SCREEN:   settingsScreen.updateSettingsStatus();    break;
+    case ALIGN_SCREEN:      alignScreen.updateAlignStatus();          break;
+    case TREASURE_SCREEN:   treasureCatScreen.updateTreasureStatus(); break;
+    case CUSTOM_SCREEN:     customCatScreen.updateCustomStatus();     break;
+    case SHC_CAT_SCREEN:    shcCatScreen.updateShcStatus();           break;
+    case PLANETS_SCREEN:    planetsScreen.updatePlanetsStatus();      break;
+  //case XSTATUS_SCREEN:                                              break;
     #ifdef ODRIVE_MOTOR_PRESENT
-      case ODRIVE_SCREEN:   oDriveScreen.updateOdriveStatus();    break;
+      case ODRIVE_SCREEN:   oDriveScreen.updateOdriveStatus();        break;
     #endif
     default: break;
   }
@@ -224,19 +243,6 @@ void Display::getLocalCmdTrim(const char *command, char *reply) {
   strcpy(reply, SERIAL_LOCAL.receive()); 
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
   updateOnStepCmdStatus();
-}
-
-// Draw a single button
-void Display::drawButton(int x_start, int y_start, int w, int h, bool butOn, int text_x_offset, int text_y_offset, const char* label) {
-  int buttonRadius = 7;
-  if (butOn) {
-    tft.fillRoundRect(x_start, y_start, w, h, buttonRadius, butOnBackground);
-  } else {
-    tft.fillRoundRect(x_start, y_start, w, h, buttonRadius, butBackground);
-  }
-  tft.drawRoundRect(x_start, y_start, w, h, buttonRadius, butOutline);
-  tft.setCursor(x_start + text_x_offset, y_start + text_y_offset);
-  tft.print(label);
 }
 
 // Draw the Title block
@@ -328,9 +334,9 @@ bool Display::getNightMode() {
 // Update Battery Voltage
 void Display::updateBatVoltage() {
   float currentBatVoltage = oDriveExt.getODriveBusVoltage();
-  char bvolts[8]="0 volts";
-  if (oDriveExt.getODriveBusVoltage() < BATTERY_LOW_VOLTAGE) {
-    sprintf(bvolts, "%6.1f volts", currentBatVoltage);
+  char bvolts[8]="-- v";
+  if (currentBatVoltage < BATTERY_LOW_VOLTAGE) {
+    sprintf(bvolts, "%5.1f v", currentBatVoltage);
     canvPrint(130, 39, 0, 70, 12, bvolts, textColor, butOnBackground);
   } else {
     canvPrint(130, 39, 0, 70, 12, bvolts, textColor, butBackground);
@@ -339,9 +345,10 @@ void Display::updateBatVoltage() {
 
 // ============ OnStep Command Errors ===============
 void Display::updateOnStepCmdStatus() {
-  if (Display::currentScreen == CATALOG_SCREEN || 
-    Display::currentScreen == PLANETS_SCREEN ||
-    Display::currentScreen == CUST_CAT_SCREEN) return;
+  if (currentScreen == CUSTOM_SCREEN || 
+      currentScreen == SHC_CAT_SCREEN ||
+      currentScreen == PLANETS_SCREEN ||
+      currentScreen == TREASURE_SCREEN) return;
   if (!tls.isReady()) {
     canvPrint(2, 454, 0, 319, C_HEIGHT, " Time and/or Date Not Set");
   } else {
@@ -351,9 +358,10 @@ void Display::updateOnStepCmdStatus() {
 
 // ODrive AZ and ALT CONTROLLER (only) Error Status
 void Display::updateODriveErrBar() {
-if (Display::currentScreen == CATALOG_SCREEN || 
-    Display::currentScreen == PLANETS_SCREEN ||
-    Display::currentScreen == CUST_CAT_SCREEN) return;
+  if (currentScreen == CUSTOM_SCREEN || 
+      currentScreen == SHC_CAT_SCREEN ||
+      currentScreen == PLANETS_SCREEN ||
+      currentScreen == TREASURE_SCREEN) return;
   int x = 2;
   int y = 473;
   int label_x = 160;
@@ -375,6 +383,7 @@ if (Display::currentScreen == CATALOG_SCREEN ||
 void Display::drawMenuButtons() {
   int y_offset = 0;
   int x_offset = 0;
+
   tft.setTextColor(textColor);
   tft.setFont(&UbuntuMono_Bold11pt7b); 
   
@@ -397,51 +406,50 @@ void Display::drawMenuButtons() {
   //  Settings-------| Se | Ho | Xs | Al | Mo |
   //  Alignment------| Al | Ho | Fo | Gu | Mo |
 
-  
   switch(Display::currentScreen) {
     case HOME_SCREEN: 
       x_offset = 0;
       y_offset = 0;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
       break;
 
    case GUIDE_SCREEN:
       x_offset = 0;
       y_offset = 0;
-       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", false, false);
+       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
       break;
 
    case FOCUSER_SCREEN:
       x_offset = 0;
       y_offset = 0;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
       break;
@@ -449,111 +457,111 @@ void Display::drawMenuButtons() {
    case GOTO_SCREEN:
       x_offset = 0;
       y_offset = 0;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
       break;
       
    case MORE_SCREEN:
       x_offset = 0;
       y_offset = 0;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "SETng", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "SETng", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
 
       #ifdef ODRIVE_MOTOR_PRESENT
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", BUT_OFF);
       #elif
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", BUT_OFF);
       #endif
 
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", BUT_OFF);
       break;
 
     #ifdef ODRIVE_MOTOR_PRESENT
     case ODRIVE_SCREEN: 
       x_offset = 0;
       y_offset = 0;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "SETng", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "SETng", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "xSTAT", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "xSTAT", BUT_OFF);
       break;
     #endif
     
     case SETTINGS_SCREEN: 
       x_offset = 0;
       y_offset = 0;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "xSTAT", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "xSTAT", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
        
       #ifdef ODRIVE_MOTOR_PRESENT
-        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", false, false);
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", BUT_OFF);
       #elif
-        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", false, false);
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
       #endif  
       break;
 
     case ALIGN_SCREEN: 
       x_offset = 0;
       y_offset = 0;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
       #ifdef ODRIVE_MOTOR_PRESENT
-        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", false, false);
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", BUT_OFF);
       #elif
-        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", false, false);
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
       #endif  
       break;
 
    default: // HOME Screen
       x_offset = 0;
       y_offset = 0;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", BUT_OFF);
        
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "FOCUS", BUT_OFF);
     
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", BUT_OFF);
      
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", false, false);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
      
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
@@ -616,9 +624,10 @@ void Display::drawCommonStatusLabels() {
 // UpdateCommon Status - Real time data update for the particular labels printed above
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
-  if (Display::currentScreen == CATALOG_SCREEN || 
-    Display::currentScreen == PLANETS_SCREEN ||
-    Display::currentScreen == CUST_CAT_SCREEN) return;
+  if (currentScreen == CUSTOM_SCREEN || 
+      currentScreen == SHC_CAT_SCREEN ||
+      currentScreen == PLANETS_SCREEN ||
+      currentScreen == TREASURE_SCREEN) return;
 
   char ra_hms[10]   = ""; 
   char dec_dms[11]  = "";

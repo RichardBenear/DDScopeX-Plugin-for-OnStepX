@@ -11,8 +11,9 @@ class DCFocuserScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
-    void updateFocuserButtons();
+    void updateFocuserButtons(bool);
     void updateFocuserStatus();
+    static bool focuserButStateChange();
     
   private:
     void focInit();
@@ -20,6 +21,7 @@ class DCFocuserScreen : public Display {
     void focMove(int numPulses, int pulseWidth);
     void updateFocPosition();
 
+    bool redrawBut = false;
     bool focMovingIn;
     bool gotoSetpoint;
     bool focGoToHalf ;

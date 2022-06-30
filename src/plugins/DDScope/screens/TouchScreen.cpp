@@ -6,7 +6,6 @@
 #include "TouchScreen.h"
 #include "../../../lib/tasks/OnTask.h"
 #include "../screens/AlignScreen.h"
-#include "../screens/CatalogScreen.h"
 #include "../screens/DCFocuserScreen.h"
 #include "../screens/GotoScreen.h"
 #include "../screens/GuideScreen.h"
@@ -15,7 +14,9 @@
 #include "../screens/PlanetsScreen.h"
 #include "../screens/SettingsScreen.h"
 #include "../screens/ExtStatusScreen.h"
-
+#include "../screens/TreasureCatScreen.h"
+#include "../screens/CustomCatScreen.h"
+#include "../screens/SHCCatScreen.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "../screens/ODriveScreen.h"
@@ -23,6 +24,7 @@
 
 void touchWrapper() { touchScreen.touchScreenPoll(display.currentScreen); }
 
+// Initialize Touchscreen
 void TouchScreen::init() {
 // Start TouchScreen
   if (!ts.begin()) {
@@ -52,6 +54,40 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
     p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
     // VF("x="); V(p.x); VF(", y="); V(p.y); VF(", z="); VL(p.z); //for calibration
     
+    // Check for touchscreen button "action" on the selected Screen
+    // If any button touched then update button once to show button pressed
+    // This does not include the Menu Buttons
+    switch (tCurScreen) {
+      case HOME_SCREEN:     
+        if (homeScreen.touchPoll(p.x, p.y))       homeScreen.updateHomeButtons(true);           break;       
+      case GUIDE_SCREEN:       
+        if (guideScreen.touchPoll(p.x, p.y))      guideScreen.updateGuideButtons(true);         break;        
+      case FOCUSER_SCREEN:  
+        if (dCfocuserScreen.touchPoll(p.x, p.y))  dCfocuserScreen.updateFocuserButtons(true);   break; 
+      case GOTO_SCREEN:      
+        if (gotoScreen.touchPoll(p.x, p.y))       gotoScreen.updateGotoButtons(true);           break;          
+      case MORE_SCREEN:       
+        if (moreScreen.touchPoll(p.x, p.y))       moreScreen.updateMoreButtons(true);           break;          
+      case SETTINGS_SCREEN:  
+        if (settingsScreen.touchPoll(p.x, p.y))   settingsScreen.updateSettingsButtons(true);   break;
+      case ALIGN_SCREEN:     
+        if (alignScreen.touchPoll(p.x, p.y))      alignScreen.updateAlignButtons(true);         break;     
+      case PLANETS_SCREEN:   
+        if (planetsScreen.touchPoll(p.x, p.y))    planetsScreen.updatePlanetsButtons(true);     break;
+      case TREASURE_SCREEN: 
+        if (treasureCatScreen.touchPoll(p.x, p.y)) treasureCatScreen.updateTreasureButtons(false); break;
+      case CUSTOM_SCREEN:   
+        if (customCatScreen.touchPoll(p.x, p.y))  customCatScreen.updateCustomButtons(false);    break;
+      case SHC_CAT_SCREEN:   
+        if (shcCatScreen.touchPoll(p.x, p.y))     shcCatScreen.updateShcButtons(false);          break;
+      case XSTATUS_SCREEN:                                                                       break;
+
+      #ifdef ODRIVE_MOTOR_PRESENT
+        case ODRIVE_SCREEN:  
+          if (oDriveScreen.touchPoll(p.x, p.y)) oDriveScreen.updateOdriveButtons(true);          break;
+      #endif
+    }
+
 
     // *************** MENU MAP ****************
     // Current Screen |Cur |Col1|Col2|Col3|Col4|
@@ -75,9 +111,10 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
 
     // Detect which Menu Screen is requested
     // skip checking these page menus since they don't have this menu setup
-    if ((tCurScreen == CATALOG_SCREEN) || 
-        (tCurScreen == PLANETS_SCREEN) ||  
-        (tCurScreen == CUST_CAT_SCREEN)) return; 
+    if ((tCurScreen == TREASURE_SCREEN) || 
+        (tCurScreen == CUSTOM_SCREEN) ||
+        (tCurScreen == SHC_CAT_SCREEN) ||
+        (tCurScreen == PLANETS_SCREEN)) return; 
     
     // Check for any Menu buttons pressed
     // == LeftMost Menu Button ==
@@ -180,39 +217,7 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
       }
       return;
     }
-
-    // Check for touchscreen button "action" on the selected Screen
-    // If any button touched then update button once to show button pressed
-    // This does not include the Menu Buttons
-    switch (tCurScreen) {
-      case HOME_SCREEN:     
-        if (homeScreen.touchPoll(p.x, p.y)) homeScreen.updateHomeButtons(false);        break;       
-      case GUIDE_SCREEN:       
-        if (guideScreen.touchPoll(p.x, p.y)) guideScreen.updateGuideButtons();          break;        
-      case FOCUSER_SCREEN:  
-        if (dCfocuserScreen.touchPoll(p.x, p.y)) dCfocuserScreen.updateFocuserButtons(); break; 
-      case GOTO_SCREEN:      
-        if (gotoScreen.touchPoll(p.x, p.y)) gotoScreen.updateGotoButtons();             break;          
-      case MORE_SCREEN:       
-        if (moreScreen.touchPoll(p.x, p.y)) moreScreen.updateMoreButtons();             break;          
-      case SETTINGS_SCREEN:  
-        if (settingsScreen.touchPoll(p.x, p.y)) settingsScreen.updateSettingsButtons(); break;
-      case ALIGN_SCREEN:     
-        if (alignScreen.touchPoll(p.x, p.y)) alignScreen.updateAlignButtons();          break;     
-      case CATALOG_SCREEN:   
-        if (catalogScreen.touchPoll(p.x, p.y)) catalogScreen.updateCatalogButtons();    break; 
-      case PLANETS_SCREEN:   
-        if (planetsScreen.touchPoll(p.x, p.y)) planetsScreen.updatePlanetsButtons();    break;
-      case XSTATUS_SCREEN: break;
-
-      #ifdef ODRIVE_MOTOR_PRESENT
-        case ODRIVE_SCREEN:  
-          if (oDriveScreen.touchPoll(p.x, p.y)) oDriveScreen.updateOdriveButtons();     break;
-      #endif
-
-      default: VLF("MFG: touchscreen error");
-    }
-  } 
+  }
 }
 
 TouchScreen touchScreen;

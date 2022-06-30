@@ -13,7 +13,8 @@ class PlanetsScreen : public Display {
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
     void updatePlanetsStatus();
-    void updatePlanetsButtons();
+    void updatePlanetsButtons(bool);
+    bool planetsButStateChange();
 
   private:
     uint8_t mapPlanetIndex(uint8_t planetIndex);

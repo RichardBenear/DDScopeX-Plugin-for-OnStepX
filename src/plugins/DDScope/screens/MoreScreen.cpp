@@ -10,16 +10,18 @@
 // Author: Charles Lemaire, https://pixelstelescopes.wordpress.com/teenastro/
 // Author: Howard Dutton, http://www.stellarjourney.com, hjd1964@gmail.com
 
-//#include "../display/display.h"
+#include "../display/display.h"
+#include "../display/UIelements.h"
 #include "MoreScreen.h"
-#include "CatalogScreen.h"
+#include "TreasureCatScreen.h"
+#include "CustomCatScreen.h"
+#include "SHCCatScreen.h"
 #include "PlanetsScreen.h"
 #include "HomeScreen.h"
 #include "../catalog/Catalog.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include <Fonts/FreeSansBold9pt7b.h>
 #include "../../../telescope/mount/Mount.h"
-#include "src/lib/tasks/OnTask.h"
 
 // Catalog Selection buttons
 #define CAT_SEL_X               5
@@ -27,8 +29,6 @@
 #define CAT_SEL_BOXSIZE_X      110 
 #define CAT_SEL_BOXSIZE_Y       28
 #define CAT_SEL_SPACER          CAT_SEL_BOXSIZE_Y + 5
-#define CAT_SEL_TEXT_X_OFFSET    7 
-#define CAT_SEL_TEXT_Y_OFFSET   17
 
 // Tracking rate buttons
 #define TRACK_R_X              125
@@ -37,8 +37,6 @@
 #define TRACK_R_BOXSIZE_Y       24
 #define TRACK_R_SPACER           1 
 #define TRACK_R_GROUP_SPACER     5 
-#define TRACK_R_TEXT_X_OFFSET    4 
-#define TRACK_R_TEXT_Y_OFFSET   16 
 
 // Misc Buttons
 #define MISC_X                 212
@@ -46,8 +44,6 @@
 #define MISC_BOXSIZE_X         100 
 #define MISC_BOXSIZE_Y          28
 #define MISC_SPACER_Y            8 
-#define MISC_TEXT_X_OFFSET       2 
-#define MISC_TEXT_Y_OFFSET      18
 
 // Filter Button
 #define FM_X                   200
@@ -55,20 +51,36 @@
 #define FM_BOXSIZE_X           120 
 #define FM_BOXSIZE_Y            28
 #define FM_SPACER_Y              2 
-#define FM_TEXT_X_OFFSET         0 
-#define FM_TEXT_Y_OFFSET        18
 
 #define GOTO_BUT_X             217
 #define GOTO_BUT_Y             264
-#define GOTO_TXT_OFF_X          15
-#define GOTO_TXT_OFF_Y          25
 #define GOTO_M_BOXSIZE_X        90
 #define GOTO_M_BOXSIZE_Y        40
 
 #define ABORT_M_BUT_X          218
 #define ABORT_M_BUT_Y          310
 
-extern const char *activeFilterStr[3];
+const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
+
+// More Screen Button object with standard Font size
+Button moreButton(
+                TRACK_R_X, TRACK_R_Y, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.mainFontWidth, 
+                display.mainFontHeight, 
+                "");
+
+// More Screen Button object with large Font size
+Button moreLargeButton(
+                0, 0, 0, 0,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.largeFontWidth, 
+                display.largeFontHeight, 
+                "");
 
 // ============= Initialize the Catalog & More page ==================
 void MoreScreen::draw() {
@@ -89,9 +101,9 @@ void MoreScreen::draw() {
   // Draw the HOME Icon bitmap
   uint8_t extern black_house_icon[];
   tft.drawBitmap(10, 5, black_house_icon, 39, 31,  butBackground, ORANGE);
-
+  tft.setFont(&Inconsolata_Bold8pt7b);      
   drawCommonStatusLabels();
-  updateMoreButtons();
+  updateMoreButtons(false); // false=no redraw
 }
 
 // task update for this screen
@@ -99,69 +111,92 @@ void MoreScreen::updateMoreStatus() {
   updateCommonStatus();
 }
 
+bool MoreScreen::moreButStateChange() {
+  if (preSlewState != mount.isSlewing()) {
+    preSlewState = mount.isSlewing(); 
+    return true;
+   } else if (strcmp(preFilterState, activeFilterStr[activeFilter])) {
+     strcpy(preFilterState, activeFilterStr[activeFilter]);
+     return true;
+  } else if (display._redrawBut) {
+    display._redrawBut = false;
+    return true;
+  } else { 
+    return false;
+  }
+}
+
 //================== Update the Buttons ======================
-void MoreScreen::updateMoreButtons() {
-  
-  // Show any target object data selected from Catalog
+void MoreScreen::updateMoreButtons(bool redrawBut) {
+  _redrawBut = redrawBut;
+    
+  // Show any target object data that was selected from Catalog Screens
   uint16_t x = 120; uint16_t y = 358; 
   tft.fillRect(x-2, y+3, 199, 5*16, butBackground);
   
-  tft.setCursor(x,y+16  ); tft.print(catalogScreen.catSelectionStr1);
-  tft.setCursor(x,y+16*2); tft.print(catalogScreen.catSelectionStr2);
-  tft.setCursor(x,y+16*3); tft.print(catalogScreen.catSelectionStr3);
-  tft.setCursor(x,y+16*4); tft.print(catalogScreen.catSelectionStr4); 
-  tft.setCursor(x,y+16*5); tft.print(catalogScreen.catSelectionStr5); 
+  tft.setCursor(x,y+16  ); tft.print(moreScreen.catSelectionStr1);
+  tft.setCursor(x,y+16*2); tft.print(moreScreen.catSelectionStr2);
+  tft.setCursor(x,y+16*3); tft.print(moreScreen.catSelectionStr3);
+  tft.setCursor(x,y+16*4); tft.print(moreScreen.catSelectionStr4); 
+  tft.setCursor(x,y+16*5); tft.print(moreScreen.catSelectionStr5); 
 
   int y_offset = 0;
-  int x_offset = 0;
   // Manage Tracking Rate buttons
-  if (sidereal) {
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_ON, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET,   "Sidereal");
+  if (sidereal) { 
+    moreButton.draw(TRACK_R_Y+y_offset, "Sidereal", BUT_ON);
+    
       y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_OFF, TRACK_R_TEXT_X_OFFSET-2, TRACK_R_TEXT_Y_OFFSET, "  Lunar "); 
+      moreButton.draw(TRACK_R_Y+y_offset, "Lunar", BUT_OFF);
+
       y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_OFF, TRACK_R_TEXT_X_OFFSET-2, TRACK_R_TEXT_Y_OFFSET, "  King  ");
+      moreButton.draw(TRACK_R_Y+y_offset, "King", BUT_OFF);
+    
   }
   if (lunarRate) {
       y_offset = 0;
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_OFF, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET,   "Sidereal");
+      moreButton.draw(TRACK_R_Y+y_offset, "Sidereal", BUT_OFF);
+
       y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_ON, TRACK_R_TEXT_X_OFFSET-2, TRACK_R_TEXT_Y_OFFSET, "  Lunar "); 
+      moreButton.draw(TRACK_R_Y+y_offset, "Lunar", BUT_ON);
+    
       y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_OFF, TRACK_R_TEXT_X_OFFSET-2, TRACK_R_TEXT_Y_OFFSET, "  King  ");
+      moreButton.draw(TRACK_R_Y+y_offset, "King", BUT_OFF);
   }
   if (kingRate) {
       y_offset = 0;
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_OFF, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET,   "Sidereal");
+      moreButton.draw(TRACK_R_Y+y_offset, "Sidereal", BUT_OFF);
+
       y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_OFF, TRACK_R_TEXT_X_OFFSET-2, TRACK_R_TEXT_Y_OFFSET, "  Lunar "); 
+      moreButton.draw(TRACK_R_Y+y_offset, "Lunar", BUT_OFF);
+  
       y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_ON, TRACK_R_TEXT_X_OFFSET-2, TRACK_R_TEXT_Y_OFFSET, "  King  ");
-  }   
+      moreButton.draw(TRACK_R_Y+y_offset, "King", BUT_ON);
+  }
+
   // increment tracking rate by 0.02 Hz
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER+TRACK_R_GROUP_SPACER ; // space between tracking setting fields
   if (incTrackRate) {
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_ON, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET, "IncTrack");
-      incTrackRate = false;
+    moreButton.draw(TRACK_R_Y+y_offset, "IncTrack", BUT_ON);
+    incTrackRate = false;
   } else {
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_OFF, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET, "IncTrack"); 
+    moreButton.draw(TRACK_R_Y+y_offset, "IncTrack", BUT_OFF);
   }   
   // decrement tracking rate by 0.02 Hz
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER; 
   if (decTrackRate) {
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_ON, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET, "DecTrack");
-      decTrackRate = false;
+    moreButton.draw(TRACK_R_Y+y_offset, "DecTrack", BUT_ON);
+    decTrackRate = false;
   } else {
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_OFF, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET, "DecTrack"); 
+    moreButton.draw(TRACK_R_Y+y_offset, "DecTrack", BUT_OFF);
   }   
 
   // Reset Tracking Rate Sidereal
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER+TRACK_R_GROUP_SPACER ; 
   if (rstTrackRate) {
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_ON, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET, "Reseting");
-      rstTrackRate = false;
+    moreButton.draw(TRACK_R_Y+y_offset, "RstTrack", BUT_ON);
+    rstTrackRate = false;
   } else {
-      drawButton(TRACK_R_X+x_offset, TRACK_R_Y+y_offset, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y, BUTTON_OFF, TRACK_R_TEXT_X_OFFSET, TRACK_R_TEXT_Y_OFFSET, "RstTrack"); 
+    moreButton.draw(TRACK_R_Y+y_offset, "RstTrack", BUT_OFF);
   }   
 
   // Show current Tracking Rate
@@ -173,12 +208,10 @@ void MoreScreen::updateMoreButtons() {
   sprintf(_sideRate, "TR=%s", sideRate);
   canvPrint(TRACK_R_X-6, TRACK_R_Y+y_offset, 0, 90, 16, _sideRate);
 
-  x_offset = 0;
   y_offset = 0;
-
   // Filter Selection Button - circular selection of 3 values
   if (filterBut) {
-    drawButton(FM_X + x_offset, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, BUTTON_OFF, FM_TEXT_X_OFFSET+8, FM_TEXT_Y_OFFSET,  activeFilterStr[activeFilter]);
+    moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_OFF);
     if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) {
     canvPrint(120, 382, 0, 199, 16, "All Sky For STARS only");
     }
@@ -186,16 +219,16 @@ void MoreScreen::updateMoreButtons() {
   }
 
   // Clear Custom Catalog
-    y_offset += FM_BOXSIZE_Y + FM_SPACER_Y;
+  y_offset += FM_BOXSIZE_Y + FM_SPACER_Y;
   if (clrCustom) {
     if (!yesCancelActive) {
       yesCancelActive = true;
-      drawButton(MISC_X + x_offset, MISC_Y + y_offset, 30, MISC_BOXSIZE_Y, BUTTON_ON, MISC_TEXT_X_OFFSET, MISC_TEXT_Y_OFFSET,   "Yes");
-      drawButton(MISC_X + 40, MISC_Y + y_offset, 60, MISC_BOXSIZE_Y, BUTTON_ON, MISC_TEXT_X_OFFSET, MISC_TEXT_Y_OFFSET,   "Cancel");
+      moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Yes", BUT_OFF);
+      moreButton.draw(MISC_X+40, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Cancel", BUT_OFF);
       if (!objectSelected) canvPrint(120, 382, 0, 199, 16, "Delete Custom Catalog?!");
     }
     if (yesBut) { // go ahead and clear
-      drawButton(MISC_X + x_offset, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, BUTTON_ON, MISC_TEXT_X_OFFSET+8, MISC_TEXT_Y_OFFSET,   " Clearing ");
+    moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clearing", BUT_ON);
       
       File rmFile = SD.open("/custom.csv");
         if (rmFile) {
@@ -206,26 +239,24 @@ void MoreScreen::updateMoreButtons() {
       yesBut = false;
       clrCustom = false;
       yesCancelActive = false;
-      //tasks.immediate(us_handle); 
     }
     if (cancelBut) {
       cancelBut = false;
       clrCustom = false;
       yesCancelActive = false;
-      //tasks.immediate(us_handle); 
-      drawButton(MISC_X + x_offset, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, BUTTON_OFF, MISC_TEXT_X_OFFSET+5, MISC_TEXT_Y_OFFSET, "Clr Custom");
+      moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clr Custom", BUT_OFF);
       if (objectSelected) tft.fillRect(x, y, 199, 5*16, pgBackground);
     }
   } else {
-    drawButton(MISC_X + x_offset, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, BUTTON_OFF, MISC_TEXT_X_OFFSET+5, MISC_TEXT_Y_OFFSET, "Clr Custom");
+    moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clr Custom", BUT_OFF);
   }
 
   // Buzzer Enable Button
   y_offset += MISC_BOXSIZE_Y + MISC_SPACER_Y;
   if (soundEnabled) {
-    drawButton(MISC_X + x_offset, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, BUTTON_ON, MISC_TEXT_X_OFFSET+12, MISC_TEXT_Y_OFFSET, "Buzzer On ");
+    moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Buzzer On", BUT_ON);
   } else { //off
-    drawButton(MISC_X + x_offset, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, BUTTON_OFF, MISC_TEXT_X_OFFSET+12, MISC_TEXT_Y_OFFSET, "Buzzer Off");
+    moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Buzzer Off", BUT_OFF);
   }
 
   // Larger Button Text for GoTo and Abort
@@ -233,22 +264,20 @@ void MoreScreen::updateMoreButtons() {
 
   // Go To Coordinates Button
   if (goToButton) {
-    drawButton( GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, BUTTON_ON, GOTO_TXT_OFF_X-2, GOTO_TXT_OFF_Y, "Going");
+    moreLargeButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Going", BUT_ON);
     goToButton = false;
   } else {
     if (!mount.isSlewing()) { 
-      drawButton( GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, BUTTON_OFF, GOTO_TXT_OFF_X+5, GOTO_TXT_OFF_Y, "GoTo"); 
-    } else {
-      //tasks.immediate(us_handle); 
+      moreLargeButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "GoTo", BUT_OFF);
     }
   }
   
   // Abort GoTo Button
   if (abortPgBut) {
-    drawButton(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, BUTTON_ON, GOTO_TXT_OFF_X-5, GOTO_TXT_OFF_Y, "Aborting"); 
+    moreLargeButton.draw(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Aborting", BUT_ON);
     abortPgBut = false;
   } else {
-    drawButton(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, BUTTON_OFF, GOTO_TXT_OFF_X, GOTO_TXT_OFF_Y, " Abort"); 
+    moreLargeButton.draw(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Abort", BUT_OFF);
   }
 
   tft.setFont(&Inconsolata_Bold8pt7b); // Text back to default
@@ -259,20 +288,20 @@ void MoreScreen::updateMoreButtons() {
   for (uint16_t i=1; i<=cat_mgr.numCatalogs(); i++) {
     cat_mgr.select(i-1);
     strcpy(title,cat_mgr.catalogTitle());
-    drawButton(CAT_SEL_X, CAT_SEL_Y+y_offset, CAT_SEL_BOXSIZE_X, CAT_SEL_BOXSIZE_Y, BUTTON_OFF, CAT_SEL_TEXT_X_OFFSET, CAT_SEL_TEXT_Y_OFFSET, title);
+    moreButton.draw(CAT_SEL_X, CAT_SEL_Y+y_offset, CAT_SEL_BOXSIZE_X, CAT_SEL_BOXSIZE_Y, title, BUT_OFF);
     y_offset += CAT_SEL_SPACER;
   }
 
   // Planet Catalog Button
-  drawButton(CAT_SEL_X, CAT_SEL_Y+y_offset, CAT_SEL_BOXSIZE_X, CAT_SEL_BOXSIZE_Y, BUTTON_OFF, CAT_SEL_TEXT_X_OFFSET, CAT_SEL_TEXT_Y_OFFSET, "Planets");
+  moreButton.draw(CAT_SEL_X, CAT_SEL_Y+y_offset, CAT_SEL_BOXSIZE_X, CAT_SEL_BOXSIZE_Y, "Planets", BUT_OFF);
 
   y_offset += CAT_SEL_SPACER;
   // Treasure Catalog
-  drawButton(CAT_SEL_X, CAT_SEL_Y+y_offset, CAT_SEL_BOXSIZE_X, CAT_SEL_BOXSIZE_Y, BUTTON_OFF, CAT_SEL_TEXT_X_OFFSET, CAT_SEL_TEXT_Y_OFFSET, "Treasure");
+  moreButton.draw(CAT_SEL_X, CAT_SEL_Y+y_offset, CAT_SEL_BOXSIZE_X, CAT_SEL_BOXSIZE_Y, "Treasure", BUT_OFF);
 
   y_offset += CAT_SEL_SPACER;
   // Custom User Catalog Button
-  drawButton(CAT_SEL_X, CAT_SEL_Y+y_offset, CAT_SEL_BOXSIZE_X, CAT_SEL_BOXSIZE_Y, BUTTON_OFF, CAT_SEL_TEXT_X_OFFSET, CAT_SEL_TEXT_Y_OFFSET, "Custom Cat");
+  moreButton.draw(CAT_SEL_X, CAT_SEL_Y+y_offset, CAT_SEL_BOXSIZE_X, CAT_SEL_BOXSIZE_Y, "Custom Cat", BUT_OFF);
 }
 
 //==============================================
@@ -424,7 +453,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     return true;
   }
 
-  // CATALOG Array Selection Buttons 
+  // SHC Catalog Selection Buttons 
   y_offset = 0;
   for (uint16_t i=1; i<=cat_mgr.numCatalogs(); i++) {
     if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
@@ -434,37 +463,42 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
       if (i != 1 && activeFilter == FM_ALIGN_ALL_SKY) { // 1 is STARS
         cat_mgr.filtersClear();
         activeFilter = FM_NONE;
+        catalogsActive = true;
         return true;
       } 
-      catalogScreen.draw(i-1);
+      shcCatScreen.init(i-1);
+      catalogsActive = true;
       return true;
     }
     y_offset += CAT_SEL_SPACER;
-  }
-
-  // Planet Catalog Select Button
-  if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-    BEEP;
-    planetsScreen.draw();
-    return true;
   }
 
   // Treasure catalog select Button
   y_offset += CAT_SEL_SPACER;
   if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
     BEEP;
-    catalogScreen.draw(cat_mgr.numCatalogs()+1);
+    treasureCatScreen.init();
+    catalogsActive = true;
     return true;
   }
 
-    // User custom catalog select Button
+  // User custom catalog select Button
   y_offset += CAT_SEL_SPACER;
   if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
     BEEP;
-    catalogScreen.draw(cat_mgr.numCatalogs()+2);
+    customCatScreen.init();
+    catalogsActive = true;
     return true;
   }
-  return false;
+  return false; // screen touched but not on a button
+
+  // Planet Catalog Select Button
+  if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
+    BEEP;
+    planetsScreen.draw();
+    catalogsActive = true;
+    return true;
+  }
 }
 
 MoreScreen moreScreen;

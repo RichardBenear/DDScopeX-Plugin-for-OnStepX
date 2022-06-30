@@ -7,14 +7,12 @@
 
 #include "GuideScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
-#include <Fonts/FreeSansBold9pt7b.h>
+#include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "src/telescope/mount/Mount.h"
 
 // Guide buttons
 #define GUIDE_BOXSIZE_X          85
 #define GUIDE_BOXSIZE_Y          65 
-#define GUIDE_TEXT_X_OFFSET       8
-#define GUIDE_TEXT_Y_OFFSET      38 
 #define SYNC_OFFSET_X           113 
 #define SYNC_OFFSET_Y           280 
 #define LEFT_OFFSET_X             7 
@@ -32,24 +30,38 @@
 #define GUIDE_R_BOXSIZE_X       74 
 #define GUIDE_R_BOXSIZE_Y       28
 #define GUIDE_R_SPACER           6 
-#define GUIDE_R_TEXT_X_OFFSET    2 
-#define GUIDE_R_TEXT_Y_OFFSET   17
 
 // Stop guide button
 #define STOP_X                    7
 #define STOP_Y                  385 
 #define STOP_BOXSIZE_X           86 
 #define STOP_BOXSIZE_Y           40 
-#define STOP_TEXT_X_OFFSET        4
-#define STOP_TEXT_Y_OFFSET       25
 
 // Spiral Search button
 #define SPIRAL_X                220
 #define SPIRAL_Y                385 
 #define SPIRAL_BOXSIZE_X         86 
 #define SPIRAL_BOXSIZE_Y         40 
-#define SPIRAL_TEXT_X_OFFSET      2
-#define SPIRAL_TEXT_Y_OFFSET     25
+
+// Guide Screen Button object
+Button guideButton(
+                GUIDE_R_X, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.mainFontWidth, 
+                display.mainFontHeight, 
+                "");
+                
+// Guide Screen Large Button object
+Button guideLargeButton(
+                GUIDE_R_X, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.largeFontWidth, 
+                display.largeFontHeight, 
+                "");
 
 // Draw the GUIDE Page
 void GuideScreen::draw() { 
@@ -62,108 +74,117 @@ void GuideScreen::draw() {
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   drawCommonStatusLabels();
-  updateGuideButtons();
+  updateGuideButtons(false);
 }
 
 // task update for this screen
 void GuideScreen::updateGuideStatus() {
-  updateCommonStatus();
+  updateCommonStatus(); // only this update for now
+}
+
+bool GuideScreen::guideButStateChange() {
+  if (preSlewState != mount.isSlewing()) {
+    preSlewState = mount.isSlewing(); 
+    return true;
+  } else if (display._redrawBut) {
+    display._redrawBut = false;
+    return true;
+  } else { 
+    return false;
+  }
 }
 
 // ========== Update Guide Page Buttons ==========
-void GuideScreen::updateGuideButtons() {
-  tft.setFont(&FreeSansBold9pt7b);
+void GuideScreen::updateGuideButtons(bool redrawBut) {
+  _redrawBut = redrawBut;
+   tft.setFont(&UbuntuMono_Bold11pt7b); 
 
-  if (guidingEast || mount.isSlewing()) { 
-      drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " EAST");
+  if (guidingEast && mount.isSlewing()) { 
+    guideLargeButton.draw(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "EAST", BUT_ON);
   } else {
-      drawButton(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " EAST");
+    guideLargeButton.draw(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "EAST", BUT_OFF);
   }
 
-  if (guidingWest || mount.isSlewing()) { 
-      drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " WEST");
+  if (guidingWest && mount.isSlewing()) { 
+    guideLargeButton.draw(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "WEST", BUT_ON);
   } else {
-      drawButton(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " WEST");
+    guideLargeButton.draw(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "WEST", BUT_OFF);
   }
 
-  if (guidingNorth || mount.isSlewing()) {
-      drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET+13, GUIDE_TEXT_Y_OFFSET, "  UP ");
+ if (guidingNorth && mount.isSlewing()) { 
+    guideLargeButton.draw(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "NORTH", BUT_ON);
   } else {
-      drawButton(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+13, GUIDE_TEXT_Y_OFFSET, "  UP ");
+    guideLargeButton.draw(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "NORTH", BUT_OFF);
   }
 
-  if (guidingSouth || mount.isSlewing()) {
-      drawButton(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " DOWN");
+  if (guidingSouth && mount.isSlewing()) { 
+    guideLargeButton.draw(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "SOUTH", BUT_ON);
   } else {
-      drawButton(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, " DOWN");
+    guideLargeButton.draw(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "SOUTH", BUT_OFF);
   }
   
   if (!syncOn) {
-      drawButton(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_OFF, GUIDE_TEXT_X_OFFSET+5, GUIDE_TEXT_Y_OFFSET, " SYNC  ");
+    guideLargeButton.draw(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "SYNC", BUT_OFF);
   } else {
-      drawButton(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, BUTTON_ON, GUIDE_TEXT_X_OFFSET, GUIDE_TEXT_Y_OFFSET, "SYNCng");
-      syncOn = false;
+    guideLargeButton.draw(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "SYNCng", BUT_ON);
+    syncOn = false;
   }
   tft.setFont(&Inconsolata_Bold8pt7b); 
 
   // Draw Guide Rates Buttons
-  int y_offset = 0;
   int x_offset = 0;
   int spacer = GUIDE_R_SPACER;
   if (oneXisOn) {   
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_ON, GUIDE_R_TEXT_X_OFFSET+4, GUIDE_R_TEXT_Y_OFFSET,     " Guide  ");
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET+2, GUIDE_R_TEXT_Y_OFFSET, " Center "); 
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET, GUIDE_R_TEXT_Y_OFFSET,   "  Find  ");
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET, GUIDE_R_TEXT_Y_OFFSET,   "Half Max"); 
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_ON);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Center", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_OFF); 
   } 
 
   if (eightXisOn) {   
-      x_offset = 0;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET+4, GUIDE_R_TEXT_Y_OFFSET, " Guide  ");
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_ON, GUIDE_R_TEXT_X_OFFSET+2, GUIDE_R_TEXT_Y_OFFSET,     " Center "); 
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET, GUIDE_R_TEXT_Y_OFFSET,   "  Find  ");
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET, GUIDE_R_TEXT_Y_OFFSET,   "Half Max");
+      guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Center", BUT_ON);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_OFF); 
   }   
 
   if (twentyXisOn) {
-      x_offset = 0;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET+4, GUIDE_R_TEXT_Y_OFFSET, " Guide  ");
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET+2, GUIDE_R_TEXT_Y_OFFSET, " Center "); 
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_ON, GUIDE_R_TEXT_X_OFFSET, GUIDE_R_TEXT_Y_OFFSET,       "  Find  ");
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer; 
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET, GUIDE_R_TEXT_Y_OFFSET,   "Half Max");
+      guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Center", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_ON);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_OFF); 
   }
 
   if (HalfMaxisOn) {
-      x_offset = 0;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET+4, GUIDE_R_TEXT_Y_OFFSET, " Guide  ");
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET+2, GUIDE_R_TEXT_Y_OFFSET, " Center "); 
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_OFF, GUIDE_R_TEXT_X_OFFSET, GUIDE_R_TEXT_Y_OFFSET,   "  Find  ");
-      x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer; 
-      drawButton(GUIDE_R_X+x_offset, GUIDE_R_Y+y_offset, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, BUTTON_ON, GUIDE_R_TEXT_X_OFFSET, GUIDE_R_TEXT_Y_OFFSET,       "Half Max");
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Center", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_ON); 
   }        
 
   if (spiralOn) {  
-      drawButton(SPIRAL_X, SPIRAL_Y, SPIRAL_BOXSIZE_X, SPIRAL_BOXSIZE_Y, BUTTON_ON, SPIRAL_TEXT_X_OFFSET+2, SPIRAL_TEXT_Y_OFFSET, "Spiral On");    
+    guideButton.draw(SPIRAL_X, SPIRAL_Y, SPIRAL_BOXSIZE_X, SPIRAL_BOXSIZE_Y, "Spiral On", BUT_ON);    
   } else {
-      drawButton(SPIRAL_X, SPIRAL_Y, SPIRAL_BOXSIZE_X, SPIRAL_BOXSIZE_Y, BUTTON_OFF, SPIRAL_TEXT_X_OFFSET, SPIRAL_TEXT_Y_OFFSET, "Spiral Off");
+    guideButton.draw(SPIRAL_X, SPIRAL_Y, SPIRAL_BOXSIZE_X, SPIRAL_BOXSIZE_Y, "Spiral Off", BUT_OFF); 
   }    
 
   if (stopPressed) {  
-      drawButton(STOP_X, STOP_Y, STOP_BOXSIZE_X, STOP_BOXSIZE_Y, BUTTON_ON, STOP_TEXT_X_OFFSET, STOP_TEXT_Y_OFFSET,   "Stopping"); 
-      stopPressed = false;
+    guideButton.draw(STOP_X, STOP_Y, STOP_BOXSIZE_X, STOP_BOXSIZE_Y, "Stoppped", BUT_ON); 
+    stopPressed = false;
   } else {
-      drawButton(STOP_X, STOP_Y, STOP_BOXSIZE_X, STOP_BOXSIZE_Y, BUTTON_OFF, STOP_TEXT_X_OFFSET+4, STOP_TEXT_Y_OFFSET, "  STOP  ");
+    guideButton.draw(STOP_X, STOP_Y, STOP_BOXSIZE_X, STOP_BOXSIZE_Y, "STOP", BUT_OFF);
   } 
 }
 

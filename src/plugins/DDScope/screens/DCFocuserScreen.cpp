@@ -29,8 +29,6 @@
 #define FOC_INOUT_BOXSIZE_Y      75 
 #define FOC_INOUT_X_SPACING       0 
 #define FOC_INOUT_Y_SPACING      85 
-#define FOC_INOUT_TEXT_X_OFFSET  25 
-#define FOC_INOUT_TEXT_Y_OFFSET  45
 
 // For Focuser Status
 #define FOC_LABEL_X               3 
@@ -44,24 +42,18 @@
 #define SPEED_Y                  270 
 #define SPEED_BOXSIZE_X          104 
 #define SPEED_BOXSIZE_Y           30 
-#define SPEED_TEXT_X_OFFSET        8
-#define SPEED_TEXT_Y_OFFSET       17 
 
 // Stop Focuser position
 #define CALIB_FOC_X              215 
 #define CALIB_FOC_Y              390 
 #define CALIB_FOC_BOXSIZE_X       90 
 #define CALIB_FOC_BOXSIZE_Y       45 
-#define CALIB_FOC_TEXT_X_OFFSET    8 
-#define CALIB_FOC_TEXT_Y_OFFSET   26 
 
 // For Focuser Middle Buttons Selection
 #define MID_X                    116 
 #define MID_Y                   SPEED_Y 
 #define MID_BOXSIZE_X             80 
 #define MID_BOXSIZE_Y             30 
-#define MID_TEXT_X_OFFSET          6 
-#define MID_TEXT_Y_OFFSET         17 
 
 #define MTR_PWR_INC_SIZE           5
 #define FOC_MOVE_DISTANCE 5 // default to 5 pulses
@@ -81,7 +73,7 @@ void DCFocuserScreen::draw() {
 
   tft.setFont(&Inconsolata_Bold8pt7b);
   drawCommonStatusLabels();
-  updateFocuserButtons();
+  updateFocuserButtons(false);
   
   int y_offset = 0;
 
@@ -142,20 +134,50 @@ void DCFocuserScreen::updateFocuserStatus() {
   canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focDeltaMove);
 }
 
+bool DCFocuserScreen::focuserButStateChange() {
+  if (display._redrawBut) {
+    display._redrawBut = false;
+    return true;
+  } else { 
+    return false;
+  }
+}
+
+// Focuser Screen Main Button object
+Button focuserButton(
+                0, 0, 0, 0,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.mainFontWidth, 
+                display.mainFontHeight, 
+                "");
+
+// Focuser Screen Large Button object
+Button focuserXLargeButton(
+                0, 0, 0, 0,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.xlargeFontWidth, 
+                display.xlargeFontHeight, 
+                "");
+
 //***** Update Focuser Buttons ******
-void DCFocuserScreen::updateFocuserButtons() {   
-  // Update IN and OUT focuser status
+void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {  
+  _redrawBut = redrawBut;
+  
   tft.setFont(&FreeSansBold12pt7b);
-  if (focMovingIn) {
-      drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_ON, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
+  if (focMovingIn && focGoToActive) {
+    focuserXLargeButton.draw(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, "IN", BUT_ON);
   } else {
-      drawButton(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_OFF, FOC_INOUT_TEXT_X_OFFSET+5, FOC_INOUT_TEXT_Y_OFFSET, " IN ");
+    focuserXLargeButton.draw(FOC_INOUT_X, FOC_INOUT_Y, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, "IN", BUT_OFF);
   }
 
-  if (!focMovingIn) {
-      drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_ON, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
+  if (!focMovingIn && focGoToActive) {
+    focuserXLargeButton.draw(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, "OUT", BUT_ON);
   } else {
-      drawButton(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, BUTTON_OFF, FOC_INOUT_TEXT_X_OFFSET, FOC_INOUT_TEXT_Y_OFFSET, " OUT ");
+    focuserXLargeButton.draw(FOC_INOUT_X, FOC_INOUT_Y + FOC_INOUT_Y_SPACING, FOC_INOUT_BOXSIZE_X, FOC_INOUT_BOXSIZE_Y, "OUT", BUT_OFF);
   }
   tft.setFont(&Inconsolata_Bold8pt7b);
   
@@ -164,57 +186,57 @@ void DCFocuserScreen::updateFocuserButtons() {
   int y_offset = 0;
   // Increment Speed
   if (incSpeed) {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Inc'ing ");
-      incSpeed = false;
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Inc'ing", BUT_ON);
+    incSpeed = false;
   } else {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Inc Speed");
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Inc Speed", BUT_OFF);
   }
 
   // Decrement Speed
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (decSpeed) {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET,   "  Dec'ing ");
-      decSpeed = false;
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Dec'ing", BUT_ON);
+    decSpeed = false;
   } else {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " Dec Speed");
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Dec Speed", BUT_OFF);
   }
 
   // Set a GoTo setpoint
   y_offset +=SPEED_BOXSIZE_Y + 2; 
   if (setPoint) {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "  Setting ");
-      setPoint = false;
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Setting..", BUT_ON);
+    setPoint = false;
   } else {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Set Goto Pt");
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Set Goto Pt", BUT_OFF);
   }
 
   // Goto the setpoint
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (gotoSetpoint) {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Going to SP");
-      gotoSetpoint = false;
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Going to SP", BUT_ON);
+    gotoSetpoint = false;
   } else {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "Goto Set Pt");
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Goto the SP", BUT_OFF);
   }
 
   // Goto Halfway point
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (focGoToHalf) {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_ON, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, "GoingTo Half");
-      focGoToHalf = false;
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "GoingTo Half", BUT_ON);
+    focGoToHalf = false;
   } else {
-      drawButton(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, BUTTON_OFF, SPEED_TEXT_X_OFFSET, SPEED_TEXT_Y_OFFSET, " GoTo Half  ");
+    focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "GoTo Half", BUT_OFF);
   }
 
   // Calibrate Min And Max
   y_offset = 0;
   if (!calibActive) {
-      drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_OFF, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, "Calibrate");
+    focuserButton.draw(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, "Calibrate", BUT_OFF);
   } else {
       if (inwardCalState && calibActive) {
-          drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_ON, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Min Calib");
+        focuserButton.draw(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, "Min Calib", BUT_ON);
       } else if (!inwardCalState && calibActive) {
-          drawButton(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, BUTTON_ON, CALIB_FOC_TEXT_X_OFFSET, CALIB_FOC_TEXT_Y_OFFSET, " Max Calib");
+        focuserButton.draw(CALIB_FOC_X, CALIB_FOC_Y, CALIB_FOC_BOXSIZE_X, CALIB_FOC_BOXSIZE_Y, "Max Calib", BUT_ON);
       }
   }
 
@@ -222,50 +244,50 @@ void DCFocuserScreen::updateFocuserButtons() {
   y_offset = 0;
   // Increment Motor Power
   if (incMoveCt) {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, " Inc'ing ");
-      incMoveCt = false;
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Inc'ing", BUT_ON);
+    incMoveCt = false;
   } else {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Inc Cnt");
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Inc Cnt", BUT_OFF);
   }
 
   y_offset +=SPEED_BOXSIZE_Y + 2;
   // Decrement Motor Power
   if (decMoveCt) {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec'ing ");
-      decMoveCt = false;
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Dec'ing", BUT_ON);
+    decMoveCt = false;
   } else {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Dec Cnt");
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Dec Cnt", BUT_OFF);
   }
 
   y_offset +=SPEED_BOXSIZE_Y + 2;
   // Set Zero Position
   if (setZero) {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
-      setZero = false;
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Setting..", BUT_ON);
+    setZero = false;
   } else {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Zero");
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Set Zero", BUT_OFF);
   }
 
   y_offset +=SPEED_BOXSIZE_Y + 2;
   // Set Maximum position
   if (setMax) {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Setting");
-      setMax = false;
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Setting..", BUT_ON);
+    setMax = false;
   } else {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET, "Set Max ");
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Set Max", BUT_OFF);
   }
 
   y_offset +=SPEED_BOXSIZE_Y + 2;
   // Reset focuser
   if (focReset) {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_ON, MID_TEXT_X_OFFSET, MID_TEXT_Y_OFFSET,   "Reseting");
-      focReset = false;
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Reseting", BUT_ON);
+    focReset = false;
   } else {
-      drawButton(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, BUTTON_OFF, MID_TEXT_X_OFFSET+5, MID_TEXT_Y_OFFSET, " RESET  ");
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "RESET", BUT_OFF);
   }
 }
 
-// Update buttons when touched
+// ----- Update buttons when touched -----
 bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
 {   
   // IN button
@@ -395,6 +417,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   // move distance increment
   if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
   {
+    BEEP;
     focMoveDistance += MTR_PWR_INC_SIZE;
     if (focMoveDistance >= 100) focMoveDistance = 100;
     incMoveCt = true;
@@ -406,6 +429,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
   {
+    BEEP;
     focMoveDistance -= MTR_PWR_INC_SIZE;
     if (focMoveDistance <= 0) focMoveDistance = 5;
     incMoveCt = false;
@@ -417,6 +441,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
   {
+    BEEP;
     focMinPosition = 0;
     focPosition = 0;
     setZero = true;
@@ -427,6 +452,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
   {
+    BEEP;
     focMaxPosition = focPosition;
     setMax = true;
     return true;
@@ -436,6 +462,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   y_offset +=SPEED_BOXSIZE_Y + 2;
   if (py > MID_Y + y_offset && py < (MID_Y + y_offset + MID_BOXSIZE_Y) && px > MID_X && px < (MID_X + MID_BOXSIZE_X))
   {
+    BEEP;
     digitalWrite(FOCUSER_SLEEP_PIN,LOW); 
     delay(2);
     digitalWrite(FOCUSER_SLEEP_PIN,HIGH); 

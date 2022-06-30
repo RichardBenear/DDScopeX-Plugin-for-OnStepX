@@ -12,7 +12,8 @@ class GuideScreen : public Display {
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
     void updateGuideStatus();
-    void updateGuideButtons();
+    void updateGuideButtons(bool);
+    bool guideButStateChange();
   
   private:
     Screen gCurScreen;
@@ -26,7 +27,8 @@ class GuideScreen : public Display {
     bool HalfMaxisOn;
     bool syncOn;
     bool spiralOn;
-    bool stopPressed;
+    bool stopPressed = false;
+    bool preSlewState = false;
 };
 
 extern GuideScreen guideScreen;

@@ -8,12 +8,13 @@
 #include "src/Common.h"
 #include <XPT2046_Touchscreen.h>
 #include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
+#include "UIelements.h"
 
 #define C_WIDTH  80
 #define C_HEIGHT 14
 
-#define BUTTON_ON  true
-#define BUTTON_OFF false
+#define BUT_ON  true
+#define BUT_OFF false
 
 // ODrive hardwired motor numbers
 #define AZM_MOTOR 1
@@ -79,10 +80,11 @@ enum Screen
   ODRIVE_SCREEN,   // 5 
   SETTINGS_SCREEN, // 6
   ALIGN_SCREEN,    // 7
-  CATALOG_SCREEN,  // 8
-  PLANETS_SCREEN,  // 9
-  CUST_CAT_SCREEN, // 10
-  XSTATUS_SCREEN   // 11
+  PLANETS_SCREEN,  // 8
+  XSTATUS_SCREEN,  // 9
+  TREASURE_SCREEN, // 10
+  CUSTOM_SCREEN,   // 11
+  SHC_CAT_SCREEN   // 12
 }; 
 
 enum SelectedCatalog
@@ -128,7 +130,7 @@ class Display {
   public:
     void init();
     void sdInit();
-    void refreshButtons(bool);
+    void refreshButtons();
     void setCurrentScreen(Screen);
  
   // Local Command Channel support
@@ -163,6 +165,7 @@ class Display {
       void updateBatVoltage();
     #endif
 
+    // Day or Night Modes
     void setNightMode(bool);
     bool getNightMode();
 
@@ -172,16 +175,23 @@ class Display {
     uint16_t butOnBackground = RED;
     uint16_t textColor = YELLOW; 
     uint16_t butOutline = YELLOW; 
-    uint8_t  mainFontWidth = 8; // 8pt
-    uint8_t  mainFontHeight = 16; // 8pt
-    uint8_t  largeFontWidth = 11; // 11pt
-    uint8_t  largeFontHeight = 22; // 11pt
+
+    // Fonts
+    const uint8_t  mainFontWidth = 8; // 8pt
+    const uint8_t  mainFontHeight = 16; // 8pt
+    const uint8_t  largeFontWidth = 11; // 11pt
+    const uint8_t  largeFontHeight = 22; // 11pt
+    const uint8_t  xlargeFontWidth = 17; // 12pt
+    const uint8_t  xlargeFontHeight = 29; // 12pt
+
+    
 
     // frequency and duration adjustable tone
     inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration); }
 
     static Screen currentScreen;
     static bool _nightMode;
+    static bool _redrawBut;
 
   private:
     CommandError commandError = CE_NONE;

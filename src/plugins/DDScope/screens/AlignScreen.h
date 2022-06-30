@@ -24,8 +24,9 @@ class AlignScreen : public Display {
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
     void updateAlignStatus();
-    void updateAlignButtons();
+    void updateAlignButtons(bool);
     void stateMachine();
+    bool alignButStateChange();
    
   private:
     void getAlignStatus();
@@ -51,6 +52,8 @@ class AlignScreen : public Display {
     bool saveAlignBut = false;
     bool startAlignBut = false;
     bool firstLabel = false;
+    bool preHomeState = false;
+    bool preSlewState = false;
 };
 
 extern AlignScreen alignScreen;

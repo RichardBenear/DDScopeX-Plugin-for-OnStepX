@@ -7,7 +7,6 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
-#include "src/telescope/mount/park/Park.h"
 #include "../display/UIelements.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
@@ -42,8 +41,6 @@
 #define ACTION_COL_3_Y           ACTION_COL_1_Y
 #define ACTION_X_SPACING         7
 #define ACTION_Y_SPACING         4
-#define ACTION_TEXT_X_OFFSET     10
-#define ACTION_TEXT_Y_OFFSET     20
 
 #define MOTOR_CURRENT_WARNING    2.0  // Warning when over 2 amps....coil heating occuring
 
@@ -94,6 +91,15 @@ static const char colOneCmdStr[COL_1_NUM_ROWS][8] = {
   COL_1_ROW_1_C_STR, COL_1_ROW_2_C_STR, COL_1_ROW_3_C_STR, COL_1_ROW_4_C_STR,
   COL_1_ROW_5_C_STR, COL_1_ROW_6_C_STR, COL_1_ROW_7_C_STR};
 
+// Home Screen Button object
+Button homeButton(
+                ACTION_COL_1_X, ACTION_COL_1_Y, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.mainFontWidth, 
+                display.mainFontHeight, 
+                "");
 
 // ===============================================
 // ======= Draw Initial content of HOME PAGE =====
@@ -130,7 +136,7 @@ void HomeScreen::draw() {
   drawCommonStatusLabels();
   updateHomeStatus(); 
   updateCommonStatus(); 
-  updateHomeButtons(true);
+  updateHomeButtons(false);
 }
 
 // =================================================
@@ -246,86 +252,93 @@ void HomeScreen::updateHomeStatus() {
   }
 }
 
-// Toggle button object
-Button homeToggleButton(ACTION_COL_1_X, ACTION_COL_1_Y, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, 
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
-                "", 
-                false);
-
-// State button object
-Button homeStateButton(ACTION_COL_1_X, ACTION_COL_1_Y, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y, 
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
-                "", 
-                true);
+bool HomeScreen::homeButStateChange() {
+  if (preAzmState != oDriveExt.getODriveCurrentState(AZM_MOTOR)) {
+    preAzmState = oDriveExt.getODriveCurrentState(AZM_MOTOR); 
+    return true; 
+  } else if (preAltState != oDriveExt.getODriveCurrentState(ALT_MOTOR)) {
+    preAltState = preAltState != oDriveExt.getODriveCurrentState(ALT_MOTOR); 
+    return true; 
+  } else if (preTrackState != mount.isTracking()) {
+    preTrackState = mount.isTracking(); 
+    return true;
+  } else if (preSlewState != mount.isSlewing()) {
+    preSlewState = mount.isSlewing(); 
+    return true;
+  } else if (preHomeState != mount.isHome()) {
+    preHomeState = mount.isHome(); 
+    return true;
+  } else if (preParkState != park.state) {
+    preParkState = park.state; 
+    return true;
+  } else if (display._redrawBut) {
+    display._redrawBut = false;
+    return true;
+  } else {
+    return false;
+  }
+}
 
 // ===============================================
 // ============ Update Home Buttons ==============
 // ===============================================
-void HomeScreen::updateHomeButtons(bool state) {
+void HomeScreen::updateHomeButtons(bool redrawBut) {
+  _redrawBut = redrawBut;
 
   int y_offset = 0;
   tft.setTextColor(textColor);
-  bool hButState = state;
 
   // ============== Column 1 ===============
   // Enable / Disable Azimuth Motor
   if (oDriveExt.getODriveCurrentState(AZM_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
-    homeStateButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "AZM Enabled", true, hButState);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "AZM Enabled", BUT_ON);
   } else { //motor off
-    homeStateButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN AZM", false, hButState);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN AZM", BUT_OFF);
   }
 
   // Enable / Disable Altitude Motor
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (oDriveExt.getODriveCurrentState(ALT_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
-    homeStateButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "ALT Enabled", true, hButState);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "ALT Enabled", BUT_ON);
   } else { //motor off
-    homeStateButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN ALT", false, hButState);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN ALT", BUT_OFF);
   }
 
   // Stop all movement
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (stopButton) {
-    homeToggleButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "All Stopped", true, hButState);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "All Stopped", BUT_ON);
     stopButton = false;
   } else { 
-    homeToggleButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "STOP!", false, hButState);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "STOP!", BUT_OFF);
   }
 
   // ============== Column 2 ===============
   y_offset = 0;
   // Start / Stop Tracking
   if (!mount.isTracking()) { 
-    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Start Track", false, hButState);
-  } else { 
-    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Tracking", true, hButState);
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Start Track", BUT_OFF);
+  } else if(mount.isTracking()) { 
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Tracking", BUT_ON);
   }
-  
+
   // Night / Day Mode
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (getNightMode()) {
-    homeToggleButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Night Mode", false, hButState);  
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Night Mode", BUT_OFF);  
   } else { // Day mode
-    homeToggleButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Day Mode", false, hButState);     
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Day Mode", BUT_OFF);     
   }
   
   // Home Telescope
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (mount.isSlewing()) {
-    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Slewing", false, hButState);
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Slewing", BUT_ON);
   } else if (mount.isHome()) {
-    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "At Home", false, hButState);
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "At Home", BUT_OFF);
     gotoHome = false;             
   } else {
-    homeStateButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Go Home", false, hButState);
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Go Home", BUT_OFF);
   }  
 
   // ============== Column 3 ===============
@@ -333,32 +346,32 @@ void HomeScreen::updateHomeButtons(bool state) {
   y_offset = 0;
   // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING
   if (park.state == PS_PARKED) {
-    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Parked", true, hButState); 
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Parked", BUT_ON); 
   } else if (park.state == PS_UNPARKED) { 
-    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "UnParked", false, hButState);
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "UnParked", BUT_OFF);
   } else if (park.state == PS_PARKING) {
-    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Parking", false, hButState); 
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Parking", BUT_OFF); 
   } else if (park.state == PS_UNPARKING) { 
-    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "UnParking", false, hButState);
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "UnParking", BUT_OFF);
   } else {
-    homeStateButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "ParkFail", false, hButState);
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "ParkFail", BUT_OFF);
   }
 
   // Set Park Position
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (parkWasSet) {
-    homeToggleButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "ParkIsSet", true, hButState);
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "ParkIsSet", true);
     parkWasSet = false;
   } else {
-    homeToggleButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Set Park", false, hButState);
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Set Park", BUT_OFF);
   }
 
   // Turn ON / OFF Fan
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (!fanOn) {
-    homeToggleButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Fan Off", false, hButState);
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Fan Off", BUT_OFF);
   } else {
-    homeToggleButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Fan On", true, hButState);
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Fan On", true);
   }
 }
 

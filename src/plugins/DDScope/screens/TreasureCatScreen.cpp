@@ -1,0 +1,471 @@
+// =====================================================
+// TreasureCat.cpp
+// "Treasure" Catalog Screen
+//
+// Author: Richard Benear 6/22
+//
+// The Treasure catalog is a compilation of popular objects from :rDUINO Scope-http://www.rduinoscope.tk/index.html
+// Load the treasure.csv file from SD to an array of text lines
+// success = 1, fail = 0
+
+#include "MoreScreen.h"
+#include "TreasureCatScreen.h"
+//#include "../display/Display.h"
+#include "../catalog/Catalog.h"
+#include "../catalog/CatalogTypes.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
+#include "src/telescope/mount/Mount.h"
+
+#define BACK_X              5
+#define BACK_Y              445
+#define BACK_W              60
+#define BACK_H              35
+
+#define NEXT_X              255
+#define NEXT_Y              BACK_Y
+
+#define RETURN_X            165
+#define RETURN_Y            BACK_Y
+#define RETURN_W            80
+
+#define SAVE_LIB_X          75
+#define SAVE_LIB_Y          BACK_Y
+#define SAVE_LIB_W          80
+#define SAVE_LIB_H          BACK_H
+
+#define STATUS_STR_X        3
+#define STATUS_STR_Y        430
+#define STATUS_STR_W        150
+#define STATUS_STR_H        16
+
+#define CAT_X               1
+#define CAT_Y               43
+#define CAT_W               112
+#define CAT_H               22
+#define CAT_Y_SPACING       1
+
+#define WIDTH_OFF           40 // negative width offset
+#define SUB_STR_X_OFF       2
+#define FONT_Y_OFF          7
+
+// Catalog Button object
+Button treasureCatButton(
+  0,0,0,0,
+  display.butOnBackground, 
+  display.butBackground, 
+  display.butOutline, 
+  display.mainFontWidth, 
+  display.mainFontHeight, 
+  "");
+
+//==================================================================
+void TreasureCatScreen::init() { 
+  returnToPage = display.currentScreen; // save page from where this function was called so we can return
+  setCurrentScreen(TREASURE_SCREEN);
+  setNightMode(getNightMode());
+  tft.setTextColor(textColor);
+  tft.fillScreen(pgBackground);
+  moreScreen.objectSelected = false;
+  tCurrentPage = 0; 
+  tPrevPage = 0;
+  tEndOfList = false;
+  
+  tft.setTextColor(textColor);
+  tft.fillScreen(pgBackground);
+
+  drawTitle(90, TITLE_TEXT_Y, "Treasure");
+  if (!loadTreasureArray()) {
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Treasure");
+      moreScreen.draw();
+      return;
+  } else { 
+      parseTcatIntoArray();
+  }
+  tAbsRow = 0; // initialize the absolute index pointer into total array
+
+  drawTreasureCat(); // draw first page of the selected catalog
+
+  tft.setFont(&Inconsolata_Bold8pt7b);
+  //updateCatalogButtons(false); // initial draw of buttons
+  treasureCatButton.draw(BACK_X, BACK_Y, BACK_W, BACK_H, "BACK", BUT_OFF);
+  treasureCatButton.draw(NEXT_X, NEXT_Y, BACK_W, BACK_H, "NEXT", BUT_OFF);
+  treasureCatButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
+  treasureCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, "SAVE LIB", BUT_OFF);
+}
+
+bool TreasureCatScreen::loadTreasureArray() {
+  //============== Begin Load from File ==========================
+  // Load RAM array from SD catalog file
+  char rdChar;
+  char rowString[SD_CARD_LINE_LEN]=""; // temp row buffer
+  int rowNum=0;
+  int charNum=0;
+  File rdFile = SD.open("mod1_treasure.csv");
+
+  if (rdFile) {
+    // load data from SD into array
+    while (rdFile.available()) {
+      rdChar = rdFile.read();
+      rowString[charNum] = rdChar;
+      charNum++;
+      
+      if (rdChar == '\n') {
+        strcpy(Treasure_Array[rowNum], rowString);
+        rowNum++;
+        memset(&rowString, 0, SD_CARD_LINE_LEN);
+        charNum = 0;
+      }
+    }
+    treRowEntries = rowNum-1;
+    //VF("treEntries="); VL(treRowEntries);
+  } else {
+    //VLF("SD Treas read error");
+    return false;
+  }
+  rdFile.close();
+  //VLF("SD Tres read done");
+  return true;
+}
+
+// Parse the treasure.csv line data into individual fields in an array
+// mod1_treasure.csv file format = ObjName;RAhRAm;SignDECdDECm;Cons;ObjType;Mag;Size;SubId\n
+// mod1_treasure.csv field spacing: 7;8;7;4;9;4;9;18 = 66 total w/out semicolons, 73 with
+// 7 - objName
+// 8 - RA
+// 7 - DEC
+// 4 - Cons
+// 9 - ObjType
+// 4 - Mag
+// 9 - Size
+// 18 - SubId
+void TreasureCatScreen::parseTcatIntoArray() {
+  for (int i=0; i<MAX_TREASURE_ROWS; i++) {
+    _tArray[i].tObjName      = strtok(Treasure_Array[i], ";"); //VL(_tArray[i].tObjName);
+    _tArray[i].tRAhRAm       = strtok(NULL, ";");              //VL(_tArray[i].tRAhRAm);
+    _tArray[i].tsDECdDECm    = strtok(NULL, ";");              //VL(_tArray[i].tsDECdDECm);
+    _tArray[i].tCons         = strtok(NULL, ";");              //VL(_tArray[i].tCons);
+    _tArray[i].tObjType      = strtok(NULL, ";");              //VL(_tArray[i].tObjType);
+    _tArray[i].tMag          = strtok(NULL, ";");              //VL(_tArray[i].tMag);
+    _tArray[i].tSize         = strtok(NULL, ";");              //VL(_tArray[i].tSize);
+    _tArray[i].tSubId        = strtok(NULL, "\r");             //VL(_tArray[i].tSubId);
+  }
+  //VLF("finished parsing treasure");
+}
+
+// ========== draw TREASURE page of catalog data ========
+// TREASURE Catalog takes different processing than SmartHandController Catalogs
+// since it is stored on the SD card in a different format
+void TreasureCatScreen::drawTreasureCat() {
+  char catLine[47]=""; //hold the string that is displayed beside the button on each page
+  tRow = 0;
+  pre_tAbsIndex=0;
+  
+  tft.setFont(); //revert to basic Arial font
+  tft.fillRect(0,60,319,358, pgBackground);
+  
+  tAbsRow = (tPagingArrayIndex[tCurrentPage]); // array of page 1st row indexes
+  tLastPage = ((MAX_TREASURE_ROWS / NUM_CAT_ROWS_PER_SCREEN)+1);
+  
+  // Show Page number and total Pages
+  tft.fillRect(6, 9, 70, 12,  display.butBackground);
+  tft.setTextSize(1);
+  tft.setCursor(6, 9); 
+  tft.printf("Page "); 
+  tft.print(tCurrentPage+1);
+  tft.printf(" of "); 
+  if (moreScreen.activeFilter == FM_ABOVE_HORIZON) tft.print("??"); else tft.print(tLastPage); 
+  tft.setCursor(6, 25); 
+  tft.print(activeFilterStr[moreScreen.activeFilter]);
+  
+  while ((tRow < NUM_CAT_ROWS_PER_SCREEN) && (tAbsRow != MAX_TREASURE_ROWS)) {  
+    // ======== convert RA/DEC ===========
+    char  *_end;
+    char  *nextStr;
+    double raH  = 0.0;
+    int    raM  = 0;
+    int    raS  = 0;
+    double decD = 0.0;
+    int    decM = 0;
+    int    decS = 0;
+    double tRAdouble;
+    double tDECdouble;
+
+    // Format RA in Hrs:Min:Sec and form string to be sent as target
+    raH = strtod(_tArray[tAbsRow].tRAhRAm, &_end); // convert first hour chars
+    nextStr = strchr(_tArray[tAbsRow].tRAhRAm,'h'); // get ptr to minute chars
+    if (nextStr != NULL) {
+        raM = atoi(nextStr+1);
+    } else {
+      //VLF("found RA==NULL in treasure");
+    }
+    snprintf(tRAhhmmss[tAbsRow], 9, "%02d:%02d:00", (int)raH, raM);
+    snprintf(tRaSrCmd[tAbsRow], 13, ":Sr%02d:%02d:%02d#", (int)raH, raM, raS); //Note: this is in HOURS
+
+    // Format DEC in Deg:Min:Sec and form string to be sent as target
+    decD = strtod(_tArray[tAbsRow].tsDECdDECm, &_end);
+    nextStr = strchr(_tArray[tAbsRow].tsDECdDECm, 'd');
+    if (nextStr != NULL) {
+        decM = atoi(nextStr+1);
+    } else {
+      //VLF("found DEC==NULL in treasure");
+    }
+    snprintf(tDECsddmmss[tAbsRow], 10, "%+03d*%02d:00", (int)decD, decM);
+    snprintf(tDecSrCmd[tAbsRow], 14, ":Sd%+03d*%02d:%02d#", (int)decD, decM, decS);
+
+    // to get Altitude, first convert RAh and DEC to double
+    convert.hmsToDouble(&tRAdouble, tRAhhmmss[tAbsRow], PM_HIGH);
+    convert.dmsToDouble(&tDECdouble, tDECsddmmss[tAbsRow], true, PM_HIGH);
+
+    // dtAlt[tAbsRow] is used by filter to check if above Horizon
+    cat_mgr.EquToHor(tRAdouble*15, tDECdouble, &dtAlt[tAbsRow], &dtAzm[tAbsRow]);
+    //VF("dtAlt="); VL(dtAlt[tAbsRow]);
+    // filter out elements below 10 deg if filter enabled
+    if (((moreScreen.activeFilter == FM_ABOVE_HORIZON) && (dtAlt[tAbsRow] > 10.0)) || moreScreen.activeFilter == FM_NONE) { 
+    
+      // Erase text background
+      tft.setCursor(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING));
+      tft.fillRect(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), 215+WIDTH_OFF, 17,  display.butBackground);
+
+      // get object names and put them on the buttons
+      treasureCatButton.draw(CAT_X, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), CAT_W-WIDTH_OFF, CAT_H, _tArray[tAbsRow].tObjName, BUT_OFF);
+                  
+      // format and print the text field for this row next to the button
+      // FYI: mod1_treasure.csv file field order and spacing: 7;8;7;4;9;4;9;18 = 66 total w/out semicolons, 73 with ;'s
+      // 7 - objName
+      // 8 - RA
+      // 7 - DEC
+      // 4 - Cons
+      // 9 - ObjType
+      // 4 - Mag
+      // 9 - Size ( Not used )
+      // 18 - SubId
+      // select some Treasure fields to show beside button
+      snprintf(catLine, 42, "%-4s |%-4s |%-9s |%-18s",  //35 + 6 + NULL = 42
+                                          _tArray[tAbsRow].tMag, 
+                                          _tArray[tAbsRow].tCons, 
+                                          _tArray[tAbsRow].tObjType, 
+                                          _tArray[tAbsRow].tSubId);
+      tft.setCursor(CAT_X+CAT_W+SUB_STR_X_OFF-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING)+FONT_Y_OFF); 
+      tft.print(catLine);
+      tFiltArray[tRow] = tAbsRow;
+      //VF("tFiltArray[tRow]="); VL(tFiltArray[tRow]);
+      tRow++; // increments only through the number of lines displayed on screen per page
+      //VF("tRow="); VL(tRow);
+    } 
+    tPrevRowIndex = tAbsRow;
+    tAbsRow++; // increments through all lines in the catalog
+    
+    // stop printing data if last row on the last page
+    if (tAbsRow == MAX_TREASURE_ROWS) {
+      tEndOfList = true; 
+      if (tRow == 0) {canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "None above 10 deg");}
+      return; 
+    }
+  }
+  tPagingArrayIndex[tCurrentPage+1] = tAbsRow; // tPagingArrayIndex holds index of first element of page to help with NEXT and BACK paging
+  //VF("tPagingArrayIndex+1="); VL(tPagingArrayIndex[tCurrentPage+1]);
+}
+
+// show status changes on tasks timer
+void TreasureCatScreen::updateTreasureStatus() {
+  // do nothing currently
+}
+
+// redraw screen to show state change
+bool TreasureCatScreen::catalogButStateChange() {
+  if (display._redrawBut) {
+    display._redrawBut = false;
+    return true;
+  } else { 
+    return false;
+  }
+}
+
+//======================================================
+// =====  Update Screen buttons and text ===========
+//======================================================
+void TreasureCatScreen::updateTreasureButtons(bool redrawBut) { 
+  display._redrawBut = redrawBut;  
+  tft.setFont(); // basic Arial
+
+  if (catButDetected) updateScreen();
+
+  if (saveTouched) {
+    treasureCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, " Saving", BUT_ON);
+  } else { 
+    treasureCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, "SaveToCat", BUT_OFF);
+  }
+}
+
+// ====== update TREASURE Catalog buttons =========
+void TreasureCatScreen::updateScreen() {
+  uint16_t tRelIndex = catButSelPos; // save the relative-to-this-screen-index of button pressed
+  uint16_t tAbsIndex = tFiltArray[catButSelPos]; // this is absolute full array index
+
+  if (tPrevPage == tCurrentPage) { //erase previous selection
+    treasureCatButton.draw(CAT_X, CAT_Y+pre_tRelIndex*(CAT_H+CAT_Y_SPACING), 
+      CAT_W-WIDTH_OFF, CAT_H, _tArray[pre_tAbsIndex].tObjName, BUT_OFF); 
+  }
+  // highlight selected by settting background ON color 
+  treasureCatButton.draw(CAT_X, CAT_Y+tRelIndex*(CAT_H+CAT_Y_SPACING), 
+      CAT_W-WIDTH_OFF, CAT_H, _tArray[tAbsIndex].tObjName, BUT_ON); 
+  
+  // the following 5 lines are displayed on the Catalog/More page
+  // Note: ObjName and SubId are swapped here relative to other catalogs since the Treasure catalog is formatted differently
+  snprintf(moreScreen.catSelectionStr1, 26, "Name:%-19s", _tArray[tAbsIndex].tSubId);   //VF("t_subID=");   VL(_tArray[tAbsIndex].tSubId);
+  snprintf(moreScreen.catSelectionStr2, 11, "Mag-:%-4s",  _tArray[tAbsIndex].tMag);     //VF("t_mag=");     VL(_tArray[tAbsIndex].tMag);
+  snprintf(moreScreen.catSelectionStr3, 11, "Cons:%-4s",  _tArray[tAbsIndex].tCons);    //VF("t_constel="); VL(_tArray[tAbsIndex].tCons);
+  snprintf(moreScreen.catSelectionStr4, 16, "Type:%-9s",  _tArray[tAbsIndex].tObjType); //VF("t_objType="); VL(_tArray[tAbsIndex].tObjType);
+  snprintf(moreScreen.catSelectionStr5, 15, "Id--:%-7s",  _tArray[tAbsIndex].tObjName); //VF("t_objName="); VL(_tArray[tAbsIndex].tObjName);
+  
+  // show if we are above and below visible limits
+  if (dtAlt[tAbsIndex] > 10.0) {   // show minimum 10 degrees altitude, use dtAlt[tAbsIndex] previously calculated 
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+  } else {
+      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+  }
+  writeTreasureTarget(tAbsIndex); // write RA and DEC as target for GoTo
+  showTargetCoords(); // display the target coordinates that were just written
+
+  pre_tRelIndex = tRelIndex;
+  pre_tAbsIndex = tAbsIndex;
+  curSelTIndex = tAbsIndex;
+  tPrevPage = tCurrentPage;
+  catButDetected = false;
+}
+
+// Save selected object data to custom catalog
+void TreasureCatScreen::saveTreasure() {
+// Custom Catalog Format: SubID or ObjName, Mag, Cons, ObjType, ObjName or SubID, RA, DEC
+  snprintf(treaCustWrSD, 81, "%-19s;%-4s;%-4s;%-9s;%-18s;%8s;%9s\n", 
+                                                  _tArray[curSelTIndex].tSubId,
+                                                  _tArray[curSelTIndex].tMag, 
+                                                  _tArray[curSelTIndex].tCons, 
+                                                  _tArray[curSelTIndex].tObjType,
+                                                  _tArray[curSelTIndex].tObjName, 
+                                                  tRAhhmmss[curSelTIndex],
+                                                  tDECsddmmss[curSelTIndex]);
+  // write string to the SD card
+  File wrFile = SD.open("custom.csv", FILE_WRITE);
+  if (wrFile) {
+    wrFile.print(treaCustWrSD);
+    }
+    //VF("twrFileSize="); VL(wrFile.size());
+  wrFile.close();
+  }
+
+// ======= write Target Coordinates to controller =========
+void TreasureCatScreen::writeTreasureTarget(uint16_t index) {
+  //:Sr[HH:MM.T]# or :Sr[HH:MM:SS]# 
+  setLocalCmd(tRaSrCmd[index]);
+ 
+  //:Sd[sDD*MM]# or :Sd[sDD*MM:SS]#
+  setLocalCmd(tDecSrCmd[index]);
+  objSel = true;
+}
+
+  // check the Catalog Buttons if pressed
+bool TreasureCatScreen::touchPoll(uint16_t px, uint16_t py) {
+  uint16_t i=0;
+  for (i=0; i<(NUM_CAT_ROWS_PER_SCREEN); i++) {
+    if (py > CAT_Y+(i*(CAT_H+CAT_Y_SPACING)) && py < (CAT_Y+(i*(CAT_H+CAT_Y_SPACING))) + CAT_H 
+          && px > CAT_X && px < (CAT_X+CAT_W)) {
+      BEEP;
+      if (tAbsRow == MAX_TREASURE_ROWS+1) return true; 
+      catButSelPos = i;
+      catButDetected = true;
+      return true;
+    }
+  }
+ 
+  // BACK button
+  if (py > BACK_Y && py < (BACK_Y + BACK_H) && px > BACK_X && px < (BACK_X + BACK_W)) {
+    BEEP;
+     if (tCurrentPage > 0) {
+      tPrevPage = tCurrentPage;
+      tEndOfList = false;
+      tCurrentPage--;
+      drawTreasureCat();
+    }
+    return true;
+  }
+
+  // NEXT page button - reuse BACK button box size
+  if (py > NEXT_Y && py < (NEXT_Y + BACK_H) && px > NEXT_X && px < (NEXT_X + BACK_W)) {
+    BEEP;
+    if (!tEndOfList) {
+      tPrevPage = tCurrentPage;
+      tCurrentPage++;
+      drawTreasureCat();
+    }
+    return true;
+  }
+
+  // RETURN page button - reuse BACK button box size
+  if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
+    BEEP;
+    moreScreen.objectSelected = objSel; 
+    moreScreen.draw();
+    return true;
+  }
+
+  // SAVE page to custom library button
+  if (py > SAVE_LIB_Y && py < (SAVE_LIB_Y + SAVE_LIB_H) && px > SAVE_LIB_X && px < (SAVE_LIB_X + SAVE_LIB_W)) {
+    BEEP;
+    saveTreasure();
+    saveTouched = true;
+    return true;
+  }   
+  return false; 
+}
+
+// Show target coordinates RA/DEC and ALT/AZM
+void TreasureCatScreen::showTargetCoords() {
+  char raTargReply[15];
+  char decTargReply[15];
+  //double _catAzm, _catAlt;
+  uint16_t radec_x = 160;
+  uint16_t ra_y = 420;
+  uint16_t dec_y = 433;
+  uint16_t altazm_x = 240;
+  char tAzmDMS[10] = "";
+  char tAltDMS[11] = "";
+  double tAzm_d = 0.0;
+  double tAlt_d = 0.0;
+  tft.setFont();
+
+  // Get Target RA: Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
+  getLocalCmdTrim(":Gr#", raTargReply);  
+  raTargReply[8] = 0; // clear # character
+  
+  tft.fillRect(radec_x, ra_y, 75, 11, pgBackground);
+  tft.setCursor(radec_x, ra_y); tft.print(" RA:");
+  tft.setCursor(radec_x+24, ra_y); tft.print(raTargReply);    
+  
+  // Get Target DEC: sDD*MM# or sDD*MM:SS# (based on precision setting)
+  getLocalCmdTrim(":Gd#", decTargReply); 
+  decTargReply[9] = 0; // clear # character
+
+  tft.fillRect(radec_x, dec_y, 75, 11, pgBackground);
+  tft.setCursor(radec_x, dec_y); tft.print("DEC:");
+  tft.setCursor(radec_x+24, dec_y); tft.print(decTargReply);
+
+  // === Show ALT and AZM ===
+
+  // Get Target ALT and AZ and display them as Double
+  getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
+  convert.dmsToDouble(&tAzm_d, tAzmDMS, false, PM_HIGH);
+
+  getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
+  convert.dmsToDouble(&tAlt_d, tAltDMS, true, PM_HIGH);
+
+  tft.fillRect(altazm_x, ra_y, 70, 11, pgBackground);
+  tft.setCursor(altazm_x, ra_y); tft.print("| AZ:");
+  tft.setCursor(altazm_x+29, ra_y); tft.print(tAzm_d);      
+
+  tft.fillRect(altazm_x, dec_y, 70, 11, pgBackground);
+  tft.setCursor(altazm_x, dec_y); tft.print("| AL:");
+  tft.setCursor(altazm_x+29, dec_y); tft.print(tAlt_d);
+}
+
+TreasureCatScreen treasureCatScreen;

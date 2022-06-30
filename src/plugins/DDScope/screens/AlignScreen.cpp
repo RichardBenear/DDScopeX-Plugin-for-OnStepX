@@ -3,12 +3,11 @@
 
 #include "AlignScreen.h"
 #include "MoreScreen.h"
-#include "CatalogScreen.h"
+#include "SHCCatScreen.h"
 #include "../catalog/Catalog.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
 #include "src/telescope/mount/goto/Goto.h"
-#include "src/lib/tasks/OnTask.h"
 
 #define BIG_BOX_W           80
 #define BIG_BOX_H           40
@@ -41,8 +40,6 @@
 #define NUM_S_Y             HOME_Y+HOME_BOXSIZE_H+5
 #define NUM_S_BOXSIZE_W     30
 #define NUM_S_BOXSIZE_H     35
-#define NUM_S_T_OFF_X       2
-#define NUM_S_T_OFF_Y       19
 #define NUM_S_SPACING_X     NUM_S_BOXSIZE_W+3 
 
 // Go to Catalog Page Button
@@ -50,16 +47,12 @@
 #define ACAT_Y              NUM_S_Y+NUM_S_BOXSIZE_H+5
 #define CAT_BOXSIZE_W       BIG_BOX_W
 #define CAT_BOXSIZE_H       BIG_BOX_H 
-#define CAT_T_OFF_X         BIG_BOX_W/2-BIG_BOX_T_OFF_W-10
-#define CAT_T_OFF_Y         BIG_BOX_H/2+BIG_BOX_T_OFF_H
 
 // GO TO Target Button
 #define GOTO_X              HOME_X
 #define GOTO_Y              ACAT_Y+CAT_BOXSIZE_H+5
 #define GOTO_BOXSIZE_W      BIG_BOX_W
 #define GOTO_BOXSIZE_H      BIG_BOX_H 
-#define GOTO_T_OFF_X        BIG_BOX_W/2-BIG_BOX_T_OFF_W
-#define GOTO_T_OFF_Y        BIG_BOX_H/2+BIG_BOX_T_OFF_H
 
 // ABORT Button
 #define ABORT_X             110
@@ -70,29 +63,33 @@
 #define ALIGN_Y             GOTO_Y+GOTO_BOXSIZE_H+5
 #define ALIGN_BOXSIZE_W     BIG_BOX_W
 #define ALIGN_BOXSIZE_H     BIG_BOX_H 
-#define ALIGN_T_OFF_X       BIG_BOX_W/2-BIG_BOX_T_OFF_W
-#define ALIGN_T_OFF_Y       BIG_BOX_H/2+BIG_BOX_T_OFF_H
 
 // Write the Alignment Button
 #define WRITE_ALIGN_X       HOME_X
 #define WRITE_ALIGN_Y       ALIGN_Y+ALIGN_BOXSIZE_H+5
 #define SA_BOXSIZE_W        BIG_BOX_W
 #define SA_BOXSIZE_H        BIG_BOX_H 
-#define SA_T_OFF_X          BIG_BOX_W/2-BIG_BOX_T_OFF_W
-#define SA_T_OFF_Y          BIG_BOX_H/2+BIG_BOX_T_OFF_H
 
 // Start/Clear the Alignment Button
 #define START_ALIGN_X       225
 #define START_ALIGN_Y       WRITE_ALIGN_Y
 #define ST_BOXSIZE_W        BIG_BOX_W
 #define ST_BOXSIZE_H        BIG_BOX_H 
-#define ST_T_OFF_X          BIG_BOX_W/2-BIG_BOX_T_OFF_W
-#define ST_T_OFF_Y          BIG_BOX_H/2+BIG_BOX_T_OFF_H
 
 AlignStates Current_State = Idle_State;
 AlignStates Next_State = Idle_State;
 
-// Draw Alignment Page
+// Align Button object
+Button alignButton(
+  0,0,0,0,
+  display.butOnBackground, 
+  display.butBackground, 
+  display.butOutline, 
+  display.mainFontWidth, 
+  display.mainFontHeight, 
+  "");
+
+// ---- Draw Alignment Page ----
 void AlignScreen::draw() { 
   setCurrentScreen(ALIGN_SCREEN);
   setNightMode(getNightMode());
@@ -103,14 +100,13 @@ void AlignScreen::draw() {
   syncBut = false;
   saveAlignBut = false;
   startAlignBut = false;
-  moreScreen.catSelected = 0; // using star catalog
   
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
   drawTitle(100, TITLE_TEXT_Y, "Alignment");
   tft.setFont(&Inconsolata_Bold8pt7b);
-  updateAlignButtons();
+  updateAlignButtons(false);
   drawCommonStatusLabels();
   showCorrections();
   getAlignStatus();
@@ -199,6 +195,22 @@ void AlignScreen::showCorrections() {
   tft.setCursor(acorr_x+x_off, acorr_y+y_off); tft.print(acorr);
 }
 
+// state change detection
+bool AlignScreen::alignButStateChange() {
+  if (preSlewState != mount.isSlewing()) {
+    preSlewState = mount.isSlewing(); 
+    return true;
+  } else if (preHomeState != mount.isHome()) {
+    preHomeState = mount.isHome(); 
+    return true;
+  } else if (display._redrawBut) {
+    display._redrawBut = false;
+    return true;
+  } else {
+    return false;
+  }
+}
+
 /**************** Alignment Steps *********************
 0) Press the [START] Button to begin Alignment
 1) Home the Scope using [HOME] button
@@ -216,81 +228,82 @@ void AlignScreen::showCorrections() {
 ********************************************************/
 
 // *********** Update Align Buttons **************
-void AlignScreen::updateAlignButtons() {
+void AlignScreen::updateAlignButtons(bool redrawBut) {
+  _redrawBut = redrawBut;
   int x_offset = 0;
   
   // Go to Home Position
   if (homeBut) {
-    if (!mount.isHome() || mount.isSlewing()) {
-        drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_OFF, HOME_T_OFF_X-8, HOME_T_OFF_Y, "Not HOME");  
+    if (mount.isHome()) {
+      alignButton.draw(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, "is Home", BUT_ON); 
+    } else  if (mount.isSlewing()){
+      alignButton.draw(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, "is Slewing", BUT_ON);                  
+    } else {
+      alignButton.draw(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, "not Home", BUT_OFF);
     }
-  } else if (mount.isHome()) {
-    drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_ON, HOME_T_OFF_X, HOME_T_OFF_Y, "HOME");   
-  } else {
-    drawButton(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, BUTTON_OFF, HOME_T_OFF_X-8, HOME_T_OFF_Y, "Not HOME");          
   }
     
   // Number of Stars for Alignment Buttons
   // Alignment become active here
   if (numAlignStars == 1) {   
-      drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 1 "); 
+    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "1", BUT_ON);
   } else {
-      drawButton(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 1 ");
+    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "1", BUT_OFF);
   } 
   x_offset += NUM_S_SPACING_X;
-  if (numAlignStars == 2) {  
-      drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 2 "); 
+  if (numAlignStars == 1) {   
+    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "2", BUT_ON);
   } else {
-      drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 2 ");
+    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "2", BUT_OFF);
   } 
   x_offset += NUM_S_SPACING_X;
-  if (numAlignStars == 3) {  
-      drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_ON, NUM_S_T_OFF_X, NUM_S_T_OFF_Y,   " 3 "); 
+  if (numAlignStars == 1) {   
+    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "3", BUT_ON);
   } else {
-      drawButton(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, BUTTON_OFF, NUM_S_T_OFF_X, NUM_S_T_OFF_Y, " 3 ");
+    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "3", BUT_OFF);
   } 
 
   // go to the Star Catalog
   if (catalogBut) {
-      drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, BUTTON_ON, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");   
+    alignButton.draw(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, "CATALOG", BUT_ON);
   } else {
-      drawButton(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, BUTTON_OFF, CAT_T_OFF_X, CAT_T_OFF_Y, "CATALOG");            
+    alignButton.draw(ACAT_X, ACAT_Y, CAT_BOXSIZE_W, CAT_BOXSIZE_H, "CATALOG", BUT_OFF);         
   }
 
   // Go To Coordinates Button
   if (gotoBut || mount.isSlewing()) {
-      drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-4, GOTO_T_OFF_Y, "Going");
+    alignButton.draw(GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "Going", BUT_ON);
   } else {
-      drawButton( GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X, GOTO_T_OFF_Y, "GOTO"); 
+    alignButton.draw(GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "GOTO", BUT_OFF);
   }
   
   // SYNC button; calculate alignment parameters
   if (syncBut) {
-    drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_ON, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "SYNC");    
+    alignButton.draw(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, "SYNC'd", BUT_ON);
   } else {
-    drawButton(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, BUTTON_OFF, ALIGN_T_OFF_X, ALIGN_T_OFF_Y, "SYNC");            
+    alignButton.draw(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, "SYNC", BUT_OFF);         
   }
 
   // save the alignment calculations to EEPROM
   if (saveAlignBut) {
-    drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, BUTTON_ON, SA_T_OFF_X, SA_T_OFF_Y, "SAVEed");
+    alignButton.draw(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, "Saved", BUT_ON);
   } else {
-    drawButton(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, BUTTON_OFF, SA_T_OFF_X, SA_T_OFF_Y, "SAVE");
+    alignButton.draw(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, "SAVE", BUT_OFF);
   }
 
   // start alignnment
   if (startAlignBut) {
-    drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, BUTTON_ON, ST_T_OFF_X-10, ST_T_OFF_Y, "STARTed");
+    alignButton.draw(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, "STARTed", BUT_ON);
   } else {
-    drawButton(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, BUTTON_OFF, ST_T_OFF_X, ST_T_OFF_Y, "START");
+    alignButton.draw(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, "START", BUT_OFF);
   }
   
   // Abort Alignment Button
   if (abortBut) {
-    drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_ON, GOTO_T_OFF_X-5, GOTO_T_OFF_Y, "Abort'd");
+    alignButton.draw(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "Abort'd", BUT_ON);
     abortBut = false;
   } else {
-    drawButton(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, BUTTON_OFF, GOTO_T_OFF_X-9, GOTO_T_OFF_Y, " ABORT "); 
+    alignButton.draw(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "ABORT", BUT_OFF);
   }
 }
 
@@ -394,7 +407,7 @@ void AlignScreen::stateMachine() {
         Next_State = Wait_Catalog_State;
         moreScreen.activeFilter = FM_ALIGN_ALL_SKY;
         cat_mgr.filterAdd(moreScreen.activeFilter); 
-        catalogScreen.draw(STARS);
+        shcCatScreen.init(STARS);
         return;
       } else {
         Next_State = Select_Catalog_State;
@@ -471,7 +484,6 @@ void AlignScreen::stateMachine() {
 
         saveAlignBut = false;
         Next_State = Idle_State;
-        tasks.setDurationComplete(tasks.getHandleByName("AlignStateMachine"));
       } else {
         if (firstLabel) {
           canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Waiting for Write");
@@ -486,7 +498,6 @@ void AlignScreen::stateMachine() {
     }
     default: Next_State = Idle_State; 
   } // end switch current state
-  //if (Current_State != Next_State) tasks.immediate(us_handle); 
 } // end State Machine
 
 // ===== Check Align Buttons =====

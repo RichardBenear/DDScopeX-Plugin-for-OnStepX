@@ -15,8 +15,6 @@
 #define NUM_BUTTON_H         45
 #define NUM_BUTTON_SPACING_X 1
 #define NUM_BUTTON_SPACING_Y 1
-#define NUM_T_OFF_X          NUM_BUTTON_W/2 - 10/2
-#define NUM_T_OFF_Y          NUM_BUTTON_H/2 + 3
 
 #define TEXT_LABEL_X         5
 #define TEXT_LABEL_Y         185
@@ -31,8 +29,6 @@
 #define RA_SELECT_Y          166
 #define RA_CLEAR_X           265
 #define RA_CLEAR_Y           RA_SELECT_Y
-#define RA_T_OFF_X           6
-#define RA_T_OFF_Y           15
 #define CO_BOXSIZE_X         50
 #define CO_BOXSIZE_Y         24
 
@@ -40,27 +36,19 @@
 #define DEC_SELECT_Y         192
 #define DEC_CLEAR_X          RA_CLEAR_X
 #define DEC_CLEAR_Y          DEC_SELECT_Y
-#define DEC_T_OFF_X          RA_T_OFF_X
-#define DEC_T_OFF_Y          RA_T_OFF_Y
 
 #define SEND_BUTTON_X        215
 #define SEND_BUTTON_Y        220
-#define S_T_OFF_X            19
-#define S_T_OFF_Y            23
 #define SEND_BOXSIZE_X       70
 #define SEND_BOXSIZE_Y       40
 
 #define POL_BUTTON_X         40
 #define POL_BUTTON_Y         219
-#define P_T_OFF_X            6
-#define P_T_OFF_Y            18
 #define POL_BOXSIZE_X        70
 #define POL_BOXSIZE_Y        28
 
 #define GOTO_BUTTON_X        200
 #define GOTO_BUTTON_Y        300
-#define GTA_T_OFF_X          23
-#define GTA_T_OFF_Y          30
 #define GOTO_BOXSIZE_X       100
 #define GOTO_BOXSIZE_Y       50
 
@@ -76,6 +64,26 @@
 
 #define CUSTOM_FONT_OFFSET   -15
 
+// Go To Screen Button object
+Button gotoButton(
+                0, 0, 0, 0,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.mainFontWidth, 
+                display.mainFontHeight, 
+                "");
+
+                // Go To Screen Button object
+Button gotoLargeButton(
+                0, 0, 0, 0,
+                display.butOnBackground, 
+                display.butBackground, 
+                display.butOutline, 
+                display.largeFontWidth, 
+                display.largeFontHeight, 
+                "");
+
 char numLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", "+"};
 
 // Draw the Go To Page
@@ -89,7 +97,7 @@ void GotoScreen::draw() {
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   drawCommonStatusLabels();
-  updateGotoButtons();
+  updateGotoButtons(false);
 
   RAtextIndex = 0; 
   DECtextIndex = 0; 
@@ -107,9 +115,9 @@ void GotoScreen::draw() {
   for(int i=0; i<4; i++) { 
     for(int j=0; j<3; j++) {
       int row=i; int col=j; 
-      drawButton(NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X), 
+      gotoButton.draw(NUM_BUTTON_X+col*(NUM_BUTTON_W+NUM_BUTTON_SPACING_X), 
               NUM_BUTTON_Y+row*(NUM_BUTTON_H+NUM_BUTTON_SPACING_Y), 
-              NUM_BUTTON_W, NUM_BUTTON_H, false, NUM_T_OFF_X, NUM_T_OFF_Y, numLabels[z]);
+              NUM_BUTTON_W, NUM_BUTTON_H, numLabels[z], BUT_OFF);
       z++;
     }
   }
@@ -147,8 +155,21 @@ void GotoScreen::processNumPadButton() {
   }
 }
 
+bool GotoScreen::gotoButStateChange() {
+  if (preSlewState != mount.isSlewing()) {
+    preSlewState = mount.isSlewing(); 
+    return true;
+  } else if (display._redrawBut) {
+    display._redrawBut = false;
+    return true;
+  } else { 
+    return false;
+  }
+}
+
 // ==== Update any changing Status for GO TO Page ====
-void GotoScreen::updateGotoButtons() {
+void GotoScreen::updateGotoButtons(bool redrawBut) {
+  _redrawBut = redrawBut;
     
   // Get button and print label
   switch (buttonPosition) {
@@ -169,14 +190,14 @@ void GotoScreen::updateGotoButtons() {
 
   // RA Select Button
   if (RAselect) {
-    drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
+    gotoButton.draw(RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "RaSel", BUT_ON);
   } else {
-    drawButton( RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, RA_T_OFF_X,  RA_T_OFF_Y,  "RASel");
+    gotoButton.draw(RA_SELECT_X,  RA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "RaSel", BUT_OFF);
   }
 
   // RA Clear button
   if (RAclear) {
-    drawButton(  RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
+    gotoButton.draw(RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "RaClr", BUT_ON);
     tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, butBackground);
     memset(RAtext,0,sizeof(RAtext)); // clear RA buffer
     tft.fillRect(RA_CMD_ERR_X, RA_CMD_ERR_Y+CUSTOM_FONT_OFFSET, CMD_ERR_W, CMD_ERR_H, pgBackground);
@@ -184,19 +205,19 @@ void GotoScreen::updateGotoButtons() {
     buttonPosition = 12;
     RAclear = false;
   } else {
-    drawButton(RA_CLEAR_X, RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, RA_T_OFF_X,  RA_T_OFF_Y,  "RAClr");
+    gotoButton.draw(RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "RaClr", BUT_OFF);
   }
   
   // DEC Select button
   if (DECselect) {
-    drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel");
+    gotoButton.draw(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "DeSel", BUT_ON);
   } else {
-    drawButton(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, DEC_T_OFF_X, DEC_T_OFF_Y, "DESel"); 
+    gotoButton.draw(DEC_SELECT_X, DEC_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "DeSel", BUT_OFF); 
   }
 
   // DEC Clear Button
   if (DECclear) {
-    drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_ON, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
+    gotoButton.draw(DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "DeClr", BUT_ON);
     tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET+TEXT_FIELD_HEIGHT, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9, butBackground);
     memset(DECtext,0,sizeof(DECtext)); // clear DEC buffer
     tft.fillRect(DEC_CMD_ERR_X, DEC_CMD_ERR_Y+CUSTOM_FONT_OFFSET, CMD_ERR_W, CMD_ERR_H, pgBackground);
@@ -204,42 +225,42 @@ void GotoScreen::updateGotoButtons() {
     buttonPosition = 12;
     DECclear = false;
   } else {
-    drawButton( DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, BUTTON_OFF, DEC_T_OFF_X, DEC_T_OFF_Y, "DEClr"); 
+    gotoButton.draw(DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "DeClr", BUT_OFF);
   }
   
   // Send Coordinates Button
   if (sendOn) {
-    drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, BUTTON_ON, S_T_OFF_X, S_T_OFF_Y, "Sent");
+    gotoButton.draw(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, "Sent", BUT_ON);
     sendOn = false; 
   } else {
-    drawButton(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, BUTTON_OFF, S_T_OFF_X, S_T_OFF_Y, "Send"); 
+    gotoButton.draw(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, "Send", BUT_OFF);
   }
 
   // Quick Set Polaris Target Button
   if (setPolOn) {
-    drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, BUTTON_ON, P_T_OFF_X, P_T_OFF_Y, "Setting");
+    gotoButton.draw(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, "Setting", BUT_ON);
     setPolOn = false; 
   } else {
-    drawButton(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, BUTTON_OFF, P_T_OFF_X, P_T_OFF_Y, "Polaris"); 
+    gotoButton.draw(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, "Polaris", BUT_OFF);
   }
 
   tft.setFont(&FreeSansBold9pt7b);    
   // Go To Coordinates Button
   if (goToButton) {
-    drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
+    gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Going", BUT_ON);
     goToButton = false;
   } else if (mount.isSlewing()) { 
-    drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X, GTA_T_OFF_Y, "Going");
+    gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Going", BUT_ON);
   } else {
-    drawButton( GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X+2, GTA_T_OFF_Y, "GoTo"); 
+    gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Go To", BUT_OFF);
   }
   
   // Abort GoTo Button
   if (abortPgBut) {
-    drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_ON, GTA_T_OFF_X-8, GTA_T_OFF_Y, "Aborting"); 
+    gotoLargeButton.draw(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Aborting", BUT_ON);
     abortPgBut = false;
   } else {
-    drawButton(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, BUTTON_OFF, GTA_T_OFF_X, GTA_T_OFF_Y, "Abort"); 
+    gotoLargeButton.draw(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Abort", BUT_OFF);
   }
   tft.setFont(&Inconsolata_Bold8pt7b); 
 }

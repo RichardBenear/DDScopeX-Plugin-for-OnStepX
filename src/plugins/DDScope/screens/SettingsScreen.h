@@ -11,7 +11,8 @@ class SettingsScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
-    void updateSettingsButtons();
+    void updateSettingsButtons(bool);
+    bool settingsButStateChange();
     void updateSettingsStatus();
     
   private:

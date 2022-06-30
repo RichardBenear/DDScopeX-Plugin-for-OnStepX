@@ -12,7 +12,8 @@ class GotoScreen : public Display {
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
     void updateGotoStatus();
-    void updateGotoButtons();
+    void updateGotoButtons(bool);
+    bool gotoButStateChange();
     
   private:
     void processNumPadButton();
@@ -34,6 +35,7 @@ class GotoScreen : public Display {
     bool numDetected = false;
     bool goToButton = false;
     bool abortPgBut = false;
+    bool preSlewState = false;
 };
 
 extern GotoScreen gotoScreen;

@@ -12,13 +12,21 @@ class MoreScreen : public Display {
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
     void updateMoreStatus();
-    void updateMoreButtons();
+    void updateMoreButtons(bool);
+    bool moreButStateChange();
 
     bool objectSelected = false;
-    uint8_t catSelected = 0;
-    uint16_t activeFilter = 0;
+    volatile uint16_t activeFilter;
+    const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
     
+    char catSelectionStr1[26];
+    char catSelectionStr2[11];
+    char catSelectionStr3[11];
+    char catSelectionStr4[16];
+    char catSelectionStr5[15];
+
   private:
+    bool catalogsActive = false;
     bool soundEnabled = true;
     bool goToButton = false;
     bool abortPgBut = false;
@@ -34,6 +42,9 @@ class MoreScreen : public Display {
     bool yesBut = false; 
     bool cancelBut =false;
     bool yesCancelActive = false;
+
+    bool preSlewState = false;
+    char preFilterState[10]="";
 };
 
 extern MoreScreen moreScreen;
