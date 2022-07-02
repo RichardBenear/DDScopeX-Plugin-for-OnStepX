@@ -232,14 +232,14 @@ void Display::setLocalCmd(const char *command) {
 
 void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
-  tasks.yield(50);
+  tasks.yield(70);
   strcpy(reply, SERIAL_LOCAL.receive()); 
   updateOnStepCmdStatus();
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command); 
-  tasks.yield(50);
+  tasks.yield(70);
   strcpy(reply, SERIAL_LOCAL.receive()); 
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
   updateOnStepCmdStatus();

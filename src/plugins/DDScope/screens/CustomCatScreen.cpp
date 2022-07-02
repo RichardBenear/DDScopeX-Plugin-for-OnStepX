@@ -7,32 +7,29 @@
 
 #include "CustomCatScreen.h"
 #include "MoreScreen.h"
-//#include "../display/Display.h"
 #include "../catalog/Catalog.h"
 #include "../catalog/CatalogTypes.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
+#include "src/lib/tasks/OnTask.h"
 
 custom_t _cArray[MAX_CUSTOM_ROWS];
 
-// Catalog Button object
-Button customCatButton(
-  0,0,0,0,
-  display.butOnBackground, 
-  display.butBackground, 
-  display.butOutline, 
-  display.mainFontWidth, 
-  display.mainFontHeight, 
-  "");
+// Catalog Button object for default Arial font
+Button customDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.defFontWidth, display.defFontHeight, "");
+
+// Catalog Button object for custom font
+Button customCatButton(0, 0 ,0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
+
+// Canvas Print constructor
+CanvasPrint customDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
 
 // have a separate set of values for Custom Catalog for better spacing/visibility since it will be used more frequently
 #define CUS_X               1
-#define CUS_Y               43
+#define CUS_Y               50
 #define CUS_W               112
 #define CUS_H               24
 #define CUS_Y_SPACING       2
-#define CUS_TEXT_X_OFF      3
-#define CUS_TEXT_Y_OFF      12
 
 #define BACK_X              5
 #define BACK_Y              445
@@ -70,9 +67,7 @@ void CustomCatScreen::init() {
   cCurrentPage = 0;
   cPrevPage = 0;
   cEndOfList = false;
- 
-  tft.setTextColor(textColor);
-  tft.fillScreen(pgBackground);
+   cAbsRow = 0; // initialize the absolute index into total array
 
   drawTitle(83, TITLE_TEXT_Y, "User Catalog");
   customCatalog = true;
@@ -84,8 +79,7 @@ void CustomCatScreen::init() {
   } else {
       parseCcatIntoArray();
   }
-  cAbsRow = 0; // initialize the absolute index into total array
-  
+ 
   // Draw the Trash can/Delete Icon bitmap; used to delete an entry in only the CUSTOM USER catalog
   uint8_t extern trash_icon[];
   tft.drawBitmap(270, 5, trash_icon, 28, 32, butBackground, ORANGE);
@@ -93,7 +87,6 @@ void CustomCatScreen::init() {
   drawCustomCat(); // draw first page of the selected catalog
 
   tft.setFont(&Inconsolata_Bold8pt7b);
-  //updateCatalogButtons(false); // initial draw of buttons
   customCatButton.draw(BACK_X, BACK_Y, BACK_W, BACK_H, "BACK", BUT_OFF);
   customCatButton.draw(NEXT_X, NEXT_Y, BACK_W, BACK_H, "NEXT", BUT_OFF);
   customCatButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
@@ -130,11 +123,10 @@ bool CustomCatScreen::loadCustomArray() {
     }
     cusRowEntries = rowNum-1; // actual number since rowNum was already incremented; start at 0
   } else {
-    //VLF("SD Cust read error");
+    VLF("SD Cust read error");
     return false;
   }
   rdFile.close();
-  //VLF("SD Cust read done");
   return true;
 }
 
@@ -158,36 +150,25 @@ void CustomCatScreen::drawCustomCat() {
   pre_cAbsIndex=0;
   char catLine[47]=""; //hold the string that is displayed beside the button on each page
 
+  cAbsRow = (cPagingArrayIndex[cCurrentPage]); // array of page 1st row indexes
+  cLastPage = (cusRowEntries / NUM_CUS_ROWS_PER_SCREEN)+1;
+
   // Show Page number and total Pages
-  tft.fillRect(6, 9, 70, 12,  display.butBackground);
-  tft.setFont(); // basic Arial font default
-  tft.setTextSize(1);
+  tft.fillRect(6, 9, 70, 12,  butBackground); // erase page numbers
+  tft.fillRect(0,60,319,350, pgBackground); // clear lower screen
+  tft.setFont(); //revert to basic Arial font
   tft.setCursor(6, 9); 
   tft.printf("Page "); 
   tft.print(cCurrentPage+1);
   tft.printf(" of "); 
-  if (moreScreen.activeFilter == FM_ABOVE_HORIZON) tft.print("??"); else tft.print(cLastPage); 
+  if (moreScreen.activeFilter == FM_ABOVE_HORIZON) 
+    tft.print("??"); 
+  else 
+    tft.print(cLastPage); 
   tft.setCursor(6, 25); 
   tft.print(activeFilterStr[moreScreen.activeFilter]);
-  tft.fillRect(0,60,319,358, pgBackground);
 
-  cAbsRow = (cPagingArrayIndex[cCurrentPage]); // array of page 1st row indexes
-  cLastPage = (cusRowEntries / NUM_CUS_ROWS_PER_SCREEN)+1;
-  
-  //VF("cusRowEntries="); VL(cusRowEntries);
-  //VF("cLastPage="); VL(cLastPage);
-  //VF("cCurPage="); VL(cCurrentPage);
-
-  // Show Page number and total Pages
-  tft.fillRect(6, 9, 70, 12, display.butBackground);
-  tft.setCursor(6, 9); tft.printf("Page "); tft.print(cCurrentPage+1);
-  tft.printf(" of "); if (moreScreen.activeFilter == FM_ABOVE_HORIZON) tft.print("??"); else tft.print(cLastPage+1);
-  tft.setCursor(6, 25); tft.print(activeFilterStr[moreScreen.activeFilter]);
-
-  while ((cRow < NUM_CUS_ROWS_PER_SCREEN) && (cAbsRow != MAX_CUSTOM_ROWS)) {  
-    //VF("cAbsRow="); VL(cAbsRow);
-    //VF("cRow="); VL(cRow);
-    
+  while ((cRow < NUM_CUS_ROWS_PER_SCREEN) && (cAbsRow != MAX_CUSTOM_ROWS)) { 
     // ======== process RA/DEC ===========
     double cRAdouble;
     double cDECdouble;
@@ -211,9 +192,18 @@ void CustomCatScreen::drawCustomCat() {
       tft.fillRect(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), 215, 17,  display.butBackground);
 
       // get object names and put them on the buttons
-      customCatButton.draw(CUS_X, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[cAbsRow].cObjName, BUT_OFF);
+      customDefButton.draw(CUS_X, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[cAbsRow].cObjName, BUT_OFF);
                   
       // format and print the text field for this row next to the button
+      // 7 - objName
+      // 8 - RA
+      // 7 - DEC
+      // 4 - Cons
+      // 9 - ObjType
+      // 4 - Mag
+      // 9 - Size ( Not used )
+      // 18 - SubId
+      // select some data fields to show beside button
       snprintf(catLine, 42, "%-4s |%-4s |%-9s |%-18s",  // 35 + 6 + NULL = 42
                                               _cArray[cAbsRow].cMag, 
                                               _cArray[cAbsRow].cCons, 
@@ -241,7 +231,7 @@ void CustomCatScreen::drawCustomCat() {
   //VF("PagingArrayIndex+1="); VL(cPagingArrayIndex[cCurrentPage+1]);
 }
 
-// show status changes on tasks timer
+// show status changes on tasks timer tick
 void CustomCatScreen::updateCustomStatus() {
   // do nothing currently
 }
@@ -256,9 +246,7 @@ bool CustomCatScreen::catalogButStateChange() {
   }
 }
 
-//======================================================
-// =====  Update Screen buttons and text ===========
-//======================================================
+
 void CustomCatScreen::updateCustomButtons(bool redrawBut) { 
   _redrawBut = redrawBut;  
   tft.setFont(); // basic Arial
@@ -267,22 +255,25 @@ void CustomCatScreen::updateCustomButtons(bool redrawBut) {
 
   if (saveTouched) {
     customCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, " Saving", BUT_ON);
+    saveTouched = false;
   } else { 
     customCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, "SaveToCat", BUT_OFF);
   }
 }
 
-// ====== CUSTOM USER catalog ... uses different row spacing =====
+//==================================================
+// =====  Update Screen buttons and text ===========
+//==================================================
 void CustomCatScreen::updateScreen() {
-  tft.setFont(&Inconsolata_Bold8pt7b);
+  tft.setFont();
   uint16_t cRelIndex = catButSelPos; // save the "screen/page" index of button pressed
   uint16_t cAbsIndex = cFiltArray[catButSelPos];
 
   if (cPrevPage == cCurrentPage) { //erase previous selection
-    customCatButton.draw(CUS_X, CUS_Y+pre_cRelIndex*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[pre_cAbsIndex].cObjName, BUT_OFF); 
+    customDefButton.draw(CUS_X, CUS_Y+pre_cRelIndex*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[pre_cAbsIndex].cObjName, BUT_OFF); 
   }
   // highlight selected by settting background ON color 
-  customCatButton.draw(CUS_X, CUS_Y+cRelIndex*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[cAbsIndex].cObjName, BUT_ON); 
+  customDefButton.draw(CUS_X, CUS_Y+cRelIndex*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[cAbsIndex].cObjName, BUT_ON); 
 
   // the following 5 lines are displayed on the Catalog/More page
   snprintf(moreScreen.catSelectionStr1, 26, "Name-:%-19s", _cArray[cAbsIndex].cObjName);  //VF("c_objName="); //VL(_cArray[cAbsIndex].cObjName);
@@ -297,7 +288,9 @@ void CustomCatScreen::updateScreen() {
   } else {
       canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
   }
+
   writeCustomTarget(cAbsIndex); // write RA and DEC as target for GoTo
+  tasks.yield(10);
   showTargetCoords(); // display the target coordinates that were just written
 
   // Support for deleting a object row from the Custom library screen
@@ -358,15 +351,7 @@ void CustomCatScreen::updateScreen() {
   } // end Custom row delete
 }
 
-// ======= write Target Coordinates to controller =========
-void CustomCatScreen::writeCustomTarget(uint16_t index) {
-  //:Sr[HH:MM.T]# or :Sr[HH:MM:SS]# 
-  setLocalCmd(cRaSrCmd[index]);
-      
-  //:Sd[sDD*MM]# or :Sd[sDD*MM:SS]#
-  setLocalCmd(cDecSrCmd[index]);
-  objSel = true;
-}
+
 
 //=====================================================
 // **** Handle any buttons that have been selected ****
@@ -393,7 +378,7 @@ bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
       cCurrentPage--;
       drawCustomCat();
     }
-    return true;
+    return false;
   }
 
   // NEXT page button - reuse BACK button box size
@@ -404,7 +389,7 @@ bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
       cCurrentPage++;
       drawCustomCat();
     }
-    return true;
+    return false;
   }
 
   // RETURN page button - reuse BACK button box size
@@ -412,7 +397,7 @@ bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     moreScreen.objectSelected = objSel; 
     moreScreen.draw();
-    return true;
+    return false; // don't update this screen since returning to MORE
   }
 
   // SAVE page to custom library button
@@ -427,58 +412,57 @@ bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > 3 && py < 42 && px > 282 && px < 317) {
     BEEP;
     delSelected = true;
+    updateScreen();
     return true;
   }  
   return false; 
 }
 
+// ======= write Target Coordinates to controller =========
+void CustomCatScreen::writeCustomTarget(uint16_t index) {
+  //:Sr[HH:MM.T]# or :Sr[HH:MM:SS]# 
+  setLocalCmd(cRaSrCmd[index]);
+      
+  //:Sd[sDD*MM]# or :Sd[sDD*MM:SS]#
+  setLocalCmd(cDecSrCmd[index]);
+  objSel = true;
+}
+
 // Show target coordinates RA/DEC and ALT/AZM
 void CustomCatScreen::showTargetCoords() {
-  char raTargReply[15];
-  char decTargReply[15];
-  //double _catAzm, _catAlt;
-  uint16_t radec_x = 160;
-  uint16_t ra_y = 420;
-  uint16_t dec_y = 433;
-  uint16_t altazm_x = 240;
-  char tAzmDMS[10] = "";
-  char tAltDMS[11] = "";
-  double tAzm_d = 0.0;
-  double tAlt_d = 0.0;
-  tft.setFont();
+  char reply[15]    ="";
+  char _reply[15]   ="";
+  uint16_t radec_x  = 155;
+  uint16_t ra_y     = 405;
+  uint16_t dec_y    = 418;
+  uint16_t altazm_x = 250;
+  uint16_t width    = 85;
+  uint16_t height   = 12;
+  double tAzm_d     = 0.0;
+  double tAlt_d     = 0.0;
 
   // Get Target RA: Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
-  getLocalCmdTrim(":Gr#", raTargReply);  
-  raTargReply[8] = 0; // clear # character
-  
-  tft.fillRect(radec_x, ra_y, 75, 11, pgBackground);
-  tft.setCursor(radec_x, ra_y); tft.print(" RA:");
-  tft.setCursor(radec_x+24, ra_y); tft.print(raTargReply);    
+  getLocalCmdTrim(":Gr#", reply);
+  sprintf(_reply, "RA: %9s", reply);
+  customDefPrint.cPrint(radec_x, ra_y, width, height, _reply, false);
   
   // Get Target DEC: sDD*MM# or sDD*MM:SS# (based on precision setting)
-  getLocalCmdTrim(":Gd#", decTargReply); 
-  decTargReply[9] = 0; // clear # character
-
-  tft.fillRect(radec_x, dec_y, 75, 11, pgBackground);
-  tft.setCursor(radec_x, dec_y); tft.print("DEC:");
-  tft.setCursor(radec_x+24, dec_y); tft.print(decTargReply);
-
-  // === Show ALT and AZM ===
+  getLocalCmdTrim(":Gd#", reply); 
+  sprintf(_reply, "DEC: %9s", reply);
+  customDefPrint.cPrint(radec_x, dec_y, width, height, _reply, false);
 
   // Get Target ALT and AZ and display them as Double
-  getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
-  convert.dmsToDouble(&tAzm_d, tAzmDMS, false, PM_HIGH);
+  getLocalCmdTrim(":Gz#", reply); // DDD*MM'SS# 
+  convert.dmsToDouble(&tAzm_d, reply, false, PM_HIGH);
 
-  getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
-  convert.dmsToDouble(&tAlt_d, tAltDMS, true, PM_HIGH);
+  getLocalCmdTrim(":Gal#", reply);	// sDD*MM'SS#
+  convert.dmsToDouble(&tAlt_d, reply, true, PM_HIGH);
 
-  tft.fillRect(altazm_x, ra_y, 70, 11, pgBackground);
-  tft.setCursor(altazm_x, ra_y); tft.print("| AZ:");
-  tft.setCursor(altazm_x+29, ra_y); tft.print(tAzm_d);      
+  sprintf(_reply, "AZM: %6.1f", tAzm_d); 
+  customDefPrint.cPrint(altazm_x, ra_y, width-10, height, _reply, false);    
 
-  tft.fillRect(altazm_x, dec_y, 70, 11, pgBackground);
-  tft.setCursor(altazm_x, dec_y); tft.print("| AL:");
-  tft.setCursor(altazm_x+29, dec_y); tft.print(tAlt_d);
+  sprintf(_reply, "ALT: %6.1f", tAlt_d);
+  customDefPrint.cPrint(altazm_x, dec_y, width-10, height, _reply, false); 
 }
 
 CustomCatScreen customCatScreen;

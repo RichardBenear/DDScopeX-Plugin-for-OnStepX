@@ -24,9 +24,9 @@
 #define PLANET_H           31
 #define PLANET_Y_SPACING    6
 
-#define P_RETURN_X         165
-#define P_RETURN_Y         445
-#define P_RETURN_W         80
+#define RETURN_X          165
+#define RETURN_Y          445
+#define RETURN_W           80
 #define BACK_H             35
 
 // Planet name index used here eliminates Sun and Earth that are used in the Ephemeris Solar System Index
@@ -63,6 +63,11 @@ void PlanetsScreen::draw() {
   utc = (atoi(utcOffset) -1) * -1; // adjust Onstep UTC to Ephemeris expected UT
   
   getPlanet(planetButSelPos); // init screen
+  
+  for(int row=0; row<PLANET_ROWS; row++) {
+    planetsButton.draw(PLANET_X, PLANET_Y+row*(PLANET_H+PLANET_Y_SPACING), PLANET_W, PLANET_H, PlanetNames[row], false);
+  }
+  planetsButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
   updatePlanetsButtons(false);
 }
 
@@ -324,7 +329,7 @@ bool PlanetsScreen::planetsButStateChange() {
 // ******************************************************
 void PlanetsScreen::updatePlanetsButtons(bool redrawBut) {
   _redrawBut = redrawBut;
-  if (planetButDetected) {
+  //if (planetButDetected) {
     // ERASE old: set background back to unselected and replace the previous name field
     planetsButton.draw(PLANET_X, PLANET_Y+planetPrevSel*(PLANET_H+PLANET_Y_SPACING), 
             PLANET_W, PLANET_H, PlanetNames[planetPrevSel], BUT_OFF);  
@@ -337,33 +342,32 @@ void PlanetsScreen::updatePlanetsButtons(bool redrawBut) {
 
     planetButDetected = false;
     planetPrevSel = planetButSelPos;
-  }
+  //}
 }
-
 
 // *****************************************************
 // **** Handle any buttons that have been pressed ****
 // *****************************************************
 bool PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
-    // check the Planet Buttons
-    for (int row=0; row<PLANET_ROWS; row++) {
-        if (py > PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING)) && py < (PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING))) + PLANET_H 
-                && px > PLANET_X && px < (PLANET_X+PLANET_W)) {
-            BEEP;
-            planetButSelPos = row;
-            planetsScreen.mapPlanetIndex(row);
-            planetButDetected = true;
-            return true;
-        }
-    }
-
-    // RETURN page button - reuse BACK button box size
-    if (py > P_RETURN_Y && py < (P_RETURN_Y + BACK_H) && px > P_RETURN_X && px < (P_RETURN_X + P_RETURN_W)) {
+  // check the Planet Buttons
+  for (int row=0; row<PLANET_ROWS; row++) {
+    if (py > PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING)) && py < (PLANET_Y+(row*(PLANET_H+PLANET_Y_SPACING))) + PLANET_H 
+            && px > PLANET_X && px < (PLANET_X+PLANET_W)) {
       BEEP;
-        moreScreen.draw();
-        return true;
+      planetButSelPos = row;
+      planetsScreen.mapPlanetIndex(row);
+      planetButDetected = true;
+      return true;
     }
-    return false;
+  }
+
+  // RETURN page button - reuse BACK button box size
+  if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
+    BEEP;
+    moreScreen.draw();
+    return false; // don't update this screen since going back
+  }
+  return false;
 }
 
 PlanetsScreen planetsScreen;

@@ -75,11 +75,11 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
       case PLANETS_SCREEN:   
         if (planetsScreen.touchPoll(p.x, p.y))    planetsScreen.updatePlanetsButtons(true);     break;
       case TREASURE_SCREEN: 
-        if (treasureCatScreen.touchPoll(p.x, p.y)) treasureCatScreen.updateTreasureButtons(false); break;
+        if (treasureCatScreen.touchPoll(p.x, p.y)) treasureCatScreen.updateTreasureButtons(true); break;
       case CUSTOM_SCREEN:   
-        if (customCatScreen.touchPoll(p.x, p.y))  customCatScreen.updateCustomButtons(false);    break;
+        if (customCatScreen.touchPoll(p.x, p.y))  customCatScreen.updateCustomButtons(true);    break;
       case SHC_CAT_SCREEN:   
-        if (shcCatScreen.touchPoll(p.x, p.y))     shcCatScreen.updateShcButtons(false);          break;
+        if (shcCatScreen.touchPoll(p.x, p.y))     shcCatScreen.updateShcButtons(true);          break;
       case XSTATUS_SCREEN:                                                                       break;
 
       #ifdef ODRIVE_MOTOR_PRESENT

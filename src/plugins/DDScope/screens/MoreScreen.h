@@ -16,7 +16,7 @@ class MoreScreen : public Display {
     bool moreButStateChange();
 
     bool objectSelected = false;
-    volatile uint16_t activeFilter;
+    unsigned int activeFilter;
     const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
     
     char catSelectionStr1[26];
@@ -37,7 +37,7 @@ class MoreScreen : public Display {
     bool incTrackRate = false;
     bool decTrackRate = false;
     bool rstTrackRate = false;
-    bool filterBut = true;
+    bool filterBut = false;
     
     bool yesBut = false; 
     bool cancelBut =false;

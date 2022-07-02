@@ -67,7 +67,7 @@
 #define BATTERY_LOW_VOLTAGE   21  
 
 // sound control of both duration and frequency
-#define BEEP tone(STATUS_BUZZER_PIN, 1000UL, 40ULL); // both in milliseconds
+#define BEEP tone(STATUS_BUZZER_PIN, 1600UL, 20ULL); // both in milliseconds
 #define ALERT tone(STATUS_BUZZER_PIN, 700UL, 80ULL); // both in milliseconds
 
 enum Screen
@@ -177,14 +177,14 @@ class Display {
     uint16_t butOutline = YELLOW; 
 
     // Fonts
+    const uint8_t  defFontWidth = 8; // default Arial
+    const uint8_t  defFontHeight = 8; // default Arial
     const uint8_t  mainFontWidth = 8; // 8pt
     const uint8_t  mainFontHeight = 16; // 8pt
     const uint8_t  largeFontWidth = 11; // 11pt
     const uint8_t  largeFontHeight = 22; // 11pt
     const uint8_t  xlargeFontWidth = 17; // 12pt
     const uint8_t  xlargeFontHeight = 29; // 12pt
-
-    
 
     // frequency and duration adjustable tone
     inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration); }

@@ -25,15 +25,17 @@ class AlignScreen : public Display {
     bool touchPoll(uint16_t px, uint16_t py);
     void updateAlignStatus();
     void updateAlignButtons(bool);
-    void stateMachine();
+    
     bool alignButStateChange();
    
   private:
+    void stateMachine();
     void getAlignStatus();
     void showCorrections();
 
     uint8_t alignCurStar = 0; // current align star number
     uint8_t numAlignStars = 0; // number of "selected" align stars from buttons 
+
 
     char numStarsCmd[3];
     char acorr[10];

@@ -37,7 +37,7 @@ void Button::draw(int x, int y, uint16_t width, uint16_t height, const char* lab
   int buttonRadius = BUTTON_RADIUS;
   int len = strlen(label);
 
-  // font width is a value used for alphabetic characters only, no others
+  // font width is a value selected for alphabetic characters only, no others
   uint16_t xTextOffset = (width  - b_fontCharWidth*len)/2;
 
   // the y text offset is not an obvious calculation....explanation follows:
@@ -65,3 +65,49 @@ void Button::draw(int x, int y, const char* label, bool active) {
 void Button::draw(int y, const char* label, bool active) {
   draw(b_x, y, b_width, b_height, label, active);
 }
+
+// ======== Canvas print UI element =========
+// Canvas Print constructor
+CanvasPrint::CanvasPrint(
+      int           x,
+      int           y,
+      uint16_t      width,
+      uint16_t      height,
+      uint16_t      colorActive,
+      uint16_t      colorNotActive,
+      //GFXfont       *font,
+      const char*   label)
+  {                
+    p_x               = x;
+    p_y               = y;
+    p_width           = width;
+    p_height          = height;
+    p_colorActive     = colorActive;
+    p_colorNotActive  = colorNotActive;
+    //p_font            = font;      
+    p_label           = label;
+  }
+
+// Canvas print function using characters
+void CanvasPrint::cPrint(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
+  char _label[60] = "";
+  int y_box_offset = -6; // default font offset
+  GFXcanvas1 canvas(width, height);
+
+  canvas.setFont(); // default Arial 6x8 pt font
+  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
+  sprintf(_label, "%9s", label);
+  canvas.print(_label);
+  if (warning) { // show warning background
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorActive);
+  } else {
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorNotActive);
+  }
+}
+
+  // Overload for double
+void CanvasPrint::cPrint(int x, int y, uint16_t width, uint16_t height, double label, bool warning) {
+  char charlabel[60];
+  sprintf(charlabel, "%5.1f", label);
+  cPrint(p_x, p_y, p_width, p_height, charlabel, warning);
+ }

@@ -60,9 +60,9 @@ void ODriveScreen::draw() {
 
   oDriveExt.getODriveVersion(oDversion);
 
-  tft.setCursor(42, 165);
+  tft.setCursor(92, 164);
   tft.print("*HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
-  tft.setCursor(42, 177);
+  tft.setCursor(92, 176);
   tft.print("*FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
 
   demoActive = false;
@@ -277,7 +277,7 @@ void ODriveScreen::updateOdriveButtons(bool redrawBut) {
  y_offset = 0;
  y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   if (OdStopButton) {
-    odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "All Stopped", BUT_ON);
+    odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "All Stop'd", BUT_ON);
     OdStopButton = false;
   } else { 
     odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "STOP!", BUT_OFF);
@@ -286,9 +286,9 @@ void ODriveScreen::updateOdriveButtons(bool redrawBut) {
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   // Clear Errors
   if (!clearODriveErr) {
-    odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "Clear Errors", BUT_ON);
+    odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "Clr Errors", BUT_OFF);
   } else {
-    odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "Errs Cleared", BUT_OFF);
+    odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "Errs Cleared", BUT_ON);
     clearODriveErr = false;
   }
 
@@ -338,7 +338,7 @@ void ODriveScreen::updateOdriveButtons(bool redrawBut) {
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   // Reset ODrive Button
   if (!resetODriveFlag) {
-    odriveButton.draw(OD_ACT_COL_3_X, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, "Reset ODrive", BUT_OFF);
+    odriveButton.draw(OD_ACT_COL_3_X, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, "Rst ODrive", BUT_OFF);
   } else {
     odriveButton.draw(OD_ACT_COL_3_X, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, "Resetting", BUT_ON);
     resetODriveFlag = false;
@@ -347,9 +347,9 @@ void ODriveScreen::updateOdriveButtons(bool redrawBut) {
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   // Enable or Disable the ODrive position update via UART
   if (ODpositionUpdateEnabled) {
-    odriveButton.draw(OD_ACT_COL_3_X, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, "OD UpDates On", BUT_OFF);
+    odriveButton.draw(OD_ACT_COL_3_X, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, "Updates On", BUT_ON);
   } else {
-    odriveButton.draw(OD_ACT_COL_3_X, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, "OD UpDates Off", BUT_ON);
+    odriveButton.draw(OD_ACT_COL_3_X, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, "UpDates Off", BUT_OFF);
   }
 }
 

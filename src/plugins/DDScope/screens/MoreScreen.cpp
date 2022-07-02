@@ -40,7 +40,7 @@
 
 // Misc Buttons
 #define MISC_X                 212
-#define MISC_Y                 162
+#define MISC_Y                 164
 #define MISC_BOXSIZE_X         100 
 #define MISC_BOXSIZE_Y          28
 #define MISC_SPACER_Y            8 
@@ -89,21 +89,24 @@ void MoreScreen::draw() {
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 
-  tft.setCursor(TRACK_R_X+12, TRACK_R_Y-7);
-  tft.print("Rates");
-
-   tft.setCursor(30, TRACK_R_Y-7);
-  tft.print("Catalogs");
-
   drawMenuButtons();
   drawTitle(70, TITLE_TEXT_Y, "Catalogs & Misc");
 
   // Draw the HOME Icon bitmap
   uint8_t extern black_house_icon[];
   tft.drawBitmap(10, 5, black_house_icon, 39, 31,  butBackground, ORANGE);
-  tft.setFont(&Inconsolata_Bold8pt7b);      
-  drawCommonStatusLabels();
-  updateMoreButtons(false); // false=no redraw
+
+  // Draw the labels for columns
+  tft.setFont(&Inconsolata_Bold8pt7b);  
+  tft.setCursor(TRACK_R_X+12, TRACK_R_Y-7);
+  tft.print("Rates");
+
+  tft.setCursor(30, TRACK_R_Y-7);
+  tft.print("Catalogs"); 
+
+  activeFilter = FM_NONE;
+  drawCommonStatusLabels(); // Common status at top of most screens
+  updateMoreButtons(false); // Draw initial More Page Buttons; false=no redraw
 }
 
 // task update for this screen
@@ -208,14 +211,15 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
   sprintf(_sideRate, "TR=%s", sideRate);
   canvPrint(TRACK_R_X-6, TRACK_R_Y+y_offset, 0, 90, 16, _sideRate);
 
+  // ---- right hand column of buttons ----
   y_offset = 0;
   // Filter Selection Button - circular selection of 3 values
   if (filterBut) {
-    moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_OFF);
-    if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) {
-    canvPrint(120, 382, 0, 199, 16, "All Sky For STARS only");
-    }
+    moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_ON);
+    //if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) canvPrint(120, 382, 0, 199, 16, "All Sky For STARS only");
     filterBut = false;
+  } else {
+    moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_OFF);
   }
 
   // Clear Custom Catalog
@@ -280,7 +284,7 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
     moreLargeButton.draw(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Abort", BUT_OFF);
   }
 
-  tft.setFont(&Inconsolata_Bold8pt7b); // Text back to default
+  tft.setFont(&Inconsolata_Bold8pt7b); 
 
   // Draw the Catalog Buttons
   char title[16]="";
@@ -313,8 +317,9 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Home Page ICON Button
   if (px > 10 && px < 50 && py > 5 && py < 37) {
     BEEP;
-    setCurrentScreen(HOME_SCREEN); homeScreen.draw();
-    return true;
+    //setCurrentScreen(HOME_SCREEN); 
+    homeScreen.draw();
+    return false; // don't update this screen (MORE)
   }
 
   // Select Tracking Rates
@@ -381,19 +386,25 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Filter Select Button
   if (px > FM_X + x_offset && px < FM_X + x_offset + FM_BOXSIZE_X && py > FM_Y + y_offset && py <  FM_Y + y_offset + FM_BOXSIZE_Y) {
     BEEP;
-    filterBut = true;
+    filterBut = true; 
     // circular selection
     if (activeFilter == FM_NONE) {
       activeFilter = FM_ABOVE_HORIZON; // filter disallows alt < 10 deg
-      cat_mgr.filterAdd(activeFilter); 
-    } else if (activeFilter == FM_ABOVE_HORIZON) {
-      activeFilter = FM_ALIGN_ALL_SKY; // Used for stars only here: filter only allows Mag>=3; Alt>=10; Dec<=80
-      cat_mgr.filterAdd(activeFilter); 
-    } else if (activeFilter == FM_ALIGN_ALL_SKY) {
-      activeFilter = FM_NONE;  // no filter
-      cat_mgr.filtersClear();
+      //cat_mgr.filterAdd(activeFilter); 
+      return true;
     }
-    return true;
+
+    if (activeFilter == FM_ABOVE_HORIZON) {
+      activeFilter = FM_ALIGN_ALL_SKY; // Used for stars only here: filter only allows Mag>=3; Alt>=10; Dec<=80
+      //cat_mgr.filterAdd(activeFilter);
+      return true; 
+    }
+
+    if (activeFilter == FM_ALIGN_ALL_SKY) {
+      activeFilter = FM_NONE;  // no filter
+      //cat_mgr.filtersClear();
+      return true;
+    }
   }
 
   y_offset = 0;
@@ -438,7 +449,6 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     goToButton = true;
     getLocalCmdTrim(":MS#", reply);
-    VF("reply="); VL(reply);
   return true;
   }
 
@@ -458,47 +468,45 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   for (uint16_t i=1; i<=cat_mgr.numCatalogs(); i++) {
     if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
       BEEP;
-      
       // disable ALL_SKY filter if any DSO catalog...it's for STARS only
       if (i != 1 && activeFilter == FM_ALIGN_ALL_SKY) { // 1 is STARS
         cat_mgr.filtersClear();
         activeFilter = FM_NONE;
-        catalogsActive = true;
-        return true;
       } 
-      shcCatScreen.init(i-1);
+      shcCatScreen.init(i-1); // draws the selected SHC Catalog page
       catalogsActive = true;
-      return true;
+      return false; // shut off flag that draws More Page buttons
+
     }
     y_offset += CAT_SEL_SPACER;
+  }
+
+// Planet Catalog Select Button
+  if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
+    BEEP;
+    planetsScreen.draw(); // draws the Planets Catalog page
+    catalogsActive = true;
+    return false; // shut off flag that draws More Page buttons
   }
 
   // Treasure catalog select Button
   y_offset += CAT_SEL_SPACER;
   if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
     BEEP;
-    treasureCatScreen.init();
+    treasureCatScreen.init(); // draws the Treasure catalog page
     catalogsActive = true;
-    return true;
+    return false; // shut off flag that draws More Page buttons
   }
 
   // User custom catalog select Button
   y_offset += CAT_SEL_SPACER;
   if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
     BEEP;
-    customCatScreen.init();
+    customCatScreen.init(); // draws the Custom Catalog page
     catalogsActive = true;
-    return true;
+    return false; // shut off flag that draws More Page buttons
   }
   return false; // screen touched but not on a button
-
-  // Planet Catalog Select Button
-  if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
-    BEEP;
-    planetsScreen.draw();
-    catalogsActive = true;
-    return true;
-  }
 }
 
 MoreScreen moreScreen;

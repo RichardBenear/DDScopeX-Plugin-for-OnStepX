@@ -80,19 +80,31 @@ AlignStates Current_State = Idle_State;
 AlignStates Next_State = Idle_State;
 
 // Align Button object
-Button alignButton(
-  0,0,0,0,
-  display.butOnBackground, 
-  display.butBackground, 
-  display.butOutline, 
-  display.mainFontWidth, 
-  display.mainFontHeight, 
-  "");
+Button alignButton(0,0,0,0,display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
 
 // ---- Draw Alignment Page ----
 void AlignScreen::draw() { 
   setCurrentScreen(ALIGN_SCREEN);
   setNightMode(getNightMode());
+  tft.setTextColor(textColor);
+  tft.fillScreen(pgBackground);
+  drawTitle(100, TITLE_TEXT_Y, "Alignment");
+  drawMenuButtons();
+  tft.setFont(&Inconsolata_Bold8pt7b);
+  
+  //drawCommonStatusLabels();
+  //showCorrections();
+  //updateAlignButtons(false); // draw initial buttons
+  //getAlignStatus();
+}
+
+// task update for this screen
+void AlignScreen::updateAlignStatus() {
+  //updateCommonStatus();
+  //stateMachine();
+}
+
+void AlignScreen::getAlignStatus() {
   homeBut = false;
   catalogBut = false;
   gotoBut = false;
@@ -100,25 +112,7 @@ void AlignScreen::draw() {
   syncBut = false;
   saveAlignBut = false;
   startAlignBut = false;
-  
-  tft.setTextColor(textColor);
-  tft.fillScreen(pgBackground);
-  drawMenuButtons();
-  drawTitle(100, TITLE_TEXT_Y, "Alignment");
-  tft.setFont(&Inconsolata_Bold8pt7b);
-  updateAlignButtons(false);
-  drawCommonStatusLabels();
-  showCorrections();
-  getAlignStatus();
-}
 
-// task update for this screen
-void AlignScreen::updateAlignStatus() {
-  updateCommonStatus();
-  stateMachine();
-}
-
-void AlignScreen::getAlignStatus() {
   char _reply[4];
   int start_y = 176;
   int start_x = 2;
@@ -239,7 +233,7 @@ void AlignScreen::updateAlignButtons(bool redrawBut) {
     } else  if (mount.isSlewing()){
       alignButton.draw(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, "is Slewing", BUT_ON);                  
     } else {
-      alignButton.draw(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, "not Home", BUT_OFF);
+      alignButton.draw(HOME_X, HOME_Y, HOME_BOXSIZE_W, HOME_BOXSIZE_H, "Not Home", BUT_OFF);
     }
   }
     
@@ -252,15 +246,15 @@ void AlignScreen::updateAlignButtons(bool redrawBut) {
   } 
   x_offset += NUM_S_SPACING_X;
   if (numAlignStars == 1) {   
-    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "2", BUT_ON);
+    alignButton.draw(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "2", BUT_ON);
   } else {
-    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "2", BUT_OFF);
+    alignButton.draw(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "2", BUT_OFF);
   } 
   x_offset += NUM_S_SPACING_X;
   if (numAlignStars == 1) {   
-    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "3", BUT_ON);
+    alignButton.draw(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "3", BUT_ON);
   } else {
-    alignButton.draw(NUM_S_X, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "3", BUT_OFF);
+    alignButton.draw(NUM_S_X+x_offset, NUM_S_Y, NUM_S_BOXSIZE_W, NUM_S_BOXSIZE_H, "3", BUT_OFF);
   } 
 
   // go to the Star Catalog
@@ -364,10 +358,8 @@ void AlignScreen::stateMachine() {
     case Home_State: {
       if (homeBut) {
         homeBut = false;
-  
         if (!mount.isHome()) {
           setLocalCmd(":hC#"); // go HOME
-
           if (firstLabel) { // print only the 1st time, no flicker
             canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Slewing");
             firstLabel=false;  
@@ -405,8 +397,8 @@ void AlignScreen::stateMachine() {
       if (catalogBut) {
         catalogBut = false;
         Next_State = Wait_Catalog_State;
-        moreScreen.activeFilter = FM_ALIGN_ALL_SKY;
-        cat_mgr.filterAdd(moreScreen.activeFilter); 
+        //moreScreen.activeFilter = FM_ALIGN_ALL_SKY;
+        //cat_mgr.filterAdd(moreScreen.activeFilter); 
         shcCatScreen.init(STARS);
         return;
       } else {
@@ -416,7 +408,7 @@ void AlignScreen::stateMachine() {
     }
         
     case Wait_Catalog_State: {
-      if (display.currentScreen == ALIGN_SCREEN) { // doesn't change state until Catalog points back to this page
+      if (display.currentScreen == ALIGN_SCREEN) { // doesn't change state until Catalog returns back to this page
         if (moreScreen.objectSelected) { // a star has been selected from the catalog
           Next_State = Goto_State;
         } else {
@@ -430,7 +422,7 @@ void AlignScreen::stateMachine() {
 
     case Goto_State: {
       if (firstLabel) {
-        canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Press Go To");
+        canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Press GoTo");
         firstLabel=false;
       }
       if (gotoBut) {
@@ -451,7 +443,7 @@ void AlignScreen::stateMachine() {
         }
         Next_State = Wait_For_Slewing_State;
       } else { // not slewing
-        canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "GoTo Completed");
+        canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "GoTo Done");
         Next_State = Align_State;
       }
       break;
@@ -460,7 +452,7 @@ void AlignScreen::stateMachine() {
     case Align_State: {
       if (!syncBut) {
         if (firstLabel) {
-          canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Press Align");
+          canvPrint(STATUS_LABEL_X, STATUS_LABEL_Y, LABEL_SPACING_Y, UPDATE_W, UPDATE_H, "Sync");
           firstLabel=false;
         }
         Next_State = Align_State;

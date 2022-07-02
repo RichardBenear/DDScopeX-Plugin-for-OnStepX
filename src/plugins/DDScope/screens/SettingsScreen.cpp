@@ -21,7 +21,7 @@
 #define TXT_FIELD_X         135
 #define TXT_FIELD_Y         TXT_LABEL_Y+2
 #define TXT_FIELD_WIDTH     65
-#define TXT_FIELD_HEIGHT    24
+#define TXT_FIELD_HEIGHT    23
 #define TXT_SPACING_X       10
 #define TXT_SPACING_Y       TXT_FIELD_HEIGHT
 
