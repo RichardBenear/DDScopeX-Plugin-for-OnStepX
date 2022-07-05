@@ -110,10 +110,13 @@ void SHCCatScreen::init(uint8_t catSelected) {
   tft.print(title); 
 
   // show number of catalog entries and active filter
-  //tft.setCursor(235, 25); tft.printf("Entries="); 
-  //if (moreScreen.activeFilter) tft.print("?Filt"); else tft.print(cat_mgr.getMaxIndex());
-  //tft.setCursor(235, 9); tft.print(activeFilterStr[moreScreen.activeFilter]);
+  tft.fillRect(6, 9, 77, 32,  butBackground); // erase page numbers
+  tft.setCursor(235, 25); tft.printf("Entries="); 
+  if (moreScreen.activeFilter) tft.print("?Filt"); else tft.print(cat_mgr.getMaxIndex());
+  tft.setCursor(235, 9); 
+  tft.print(activeFilterStr[moreScreen.activeFilter]);
 
+  shcCurrentPage = 0;
   drawShcCat(); // draw first page of the selected catalog
 
   tft.setFont(&Inconsolata_Bold8pt7b);
@@ -132,7 +135,7 @@ void SHCCatScreen::drawShcCat() {
 
   // Show Page number and total Pages
   tft.fillRect(6, 9, 70, 12,  butBackground); // erase page numbers
-   tft.fillRect(0,60,319,350, pgBackground); // clear lower screen
+  tft.fillRect(0,60,319,353, pgBackground); // clear lower screen
   tft.setFont(); // basic Arial default
   tft.setCursor(6, 9); 
   tft.printf("Page "); 
@@ -177,7 +180,7 @@ void SHCCatScreen::drawShcCat() {
       strcpy(shcObjName[shcRow], "Unknown");
     }
   
-    shcCatDefButton.draw(CAT_X, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, shcObjName[shcRow], BUT_OFF);
+    shcCatDefButton.drawLJ(CAT_X, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, shcObjName[shcRow], BUT_OFF);
 
     // Object type e.g. Star, Galaxy, etc
     memset(objTypeStr[shcRow], '\0', sizeof(objTypeStr[shcRow]));
@@ -231,7 +234,6 @@ void SHCCatScreen::drawShcCat() {
 
     //save the Alt and Azm for use later
     cat_mgr.EquToHor(cat_mgr.ra(), cat_mgr.dec(), &shcAlt[shcRow], &shcAzm[shcRow]);
-    //equToHor(cat_mgr.ra(), cat_mgr.dec(), &osALT, &osAZM);
 
     // shcDECCustLine is used later by the "Save to custom catalog" feature
     snprintf(shcDECCustLine[shcRow], 10, "%+03d*%02u:%02u", (int)*shcDecDeg[shcRow], (unsigned int)*shcDecMin[shcRow], (unsigned int)*shcDecSec[shcRow]);
@@ -288,8 +290,8 @@ void SHCCatScreen::updateShcButtons(bool redrawBut) {
 void SHCCatScreen::updateScreen() {
   // Toggle off previous selected button and toggle on current selected button
   tft.setFont();
-  shcCatDefButton.draw(CAT_X, CAT_Y+pre_shcIndex*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, shcObjName[pre_shcIndex], BUT_OFF);
-  shcCatDefButton.draw(CAT_X, CAT_Y+catButSelPos*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, shcObjName[catButSelPos], BUT_ON);
+  shcCatDefButton.drawLJ(CAT_X, CAT_Y+pre_shcIndex*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, shcObjName[pre_shcIndex], BUT_OFF);
+  shcCatDefButton.drawLJ(CAT_X, CAT_Y+catButSelPos*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, shcObjName[catButSelPos], BUT_ON);
   pre_shcIndex = catButSelPos;
   curSelSIndex = catButSelPos;
   catButDetected = false;
@@ -310,7 +312,7 @@ void SHCCatScreen::updateScreen() {
   }
 
   writeSHCTarget(catButSelPos); // write RA and DEC as target for GoTo
-  tasks.yield(20); 
+  tasks.yield(70); 
   showTargetCoords(); // display the target coordinates that were just written            
 }
 

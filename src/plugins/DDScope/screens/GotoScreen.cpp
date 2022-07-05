@@ -44,7 +44,7 @@
 
 #define POL_BUTTON_X         40
 #define POL_BUTTON_Y         219
-#define POL_BOXSIZE_X        70
+#define POL_BOXSIZE_X        100
 #define POL_BOXSIZE_Y        28
 
 #define GOTO_BUTTON_X        200
@@ -92,7 +92,7 @@ void GotoScreen::draw() {
   setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
-  drawTitle(135, TITLE_TEXT_Y, "Go To");
+  drawTitle(130, TITLE_TEXT_Y, "Go To");
   drawMenuButtons();
   tft.setFont(&Inconsolata_Bold8pt7b);
 
@@ -241,7 +241,7 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
     gotoButton.draw(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, "Setting", BUT_ON);
     setPolOn = false; 
   } else {
-    gotoButton.draw(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, "Polaris", BUT_OFF);
+    gotoButton.draw(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, "Set Polaris", BUT_OFF);
   }
 
   tft.setFont(&FreeSansBold9pt7b);    

@@ -56,14 +56,6 @@ void Limits::constrainMeridianLimits() {
 
 // target coordinate check ahead of sync, goto, etc.
 CommandError Limits::validateCoords(Coordinate *coords) {
-  //VF("limitMin2="); VL(settings.altitude.min);
-  //VF("limitMax2="); VL(settings.altitude.max);
-  VF("coord="); VL(coords->a);
-
-  //VF("limitMin1="); VL(axis1.settings.limits.min);
-  //VF("limitMax1="); VL(axis1.settings.limits.max);
-  //VF("coord="); VL(coords->z);
-
   if (flt(coords->a, settings.altitude.min)) return CE_SLEW_ERR_BELOW_HORIZON;
   if (fgt(coords->a, settings.altitude.max)) return CE_SLEW_ERR_ABOVE_OVERHEAD;
   if (transform.mountType == ALTAZM) {

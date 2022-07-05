@@ -72,7 +72,7 @@ void TreasureCatScreen::init() {
   tAbsRow = 0; // initialize the absolute index pointer into total array
 
   // Show Page Title
-  drawTitle(100, TITLE_TEXT_Y, "Treasure");
+  drawTitle(110, TITLE_TEXT_Y, "Treasure");
   if (!loadTreasureArray()) {
       canvPrint(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Treasure");
   } else { 
@@ -155,10 +155,12 @@ void TreasureCatScreen::drawTreasureCat() {
   
   tAbsRow = (tPagingArrayIndex[tCurrentPage]); // array of page 1st row indexes
   tLastPage = ((MAX_TREASURE_ROWS / NUM_CAT_ROWS_PER_SCREEN)+1);
-  
+  tNumRowsLastPage = MAX_TREASURE_ROWS % NUM_CAT_ROWS_PER_SCREEN;
+  if (tCurrentPage+1 == tLastPage) isLastPage = tNumRowsLastPage <= NUM_CAT_ROWS_PER_SCREEN; else isLastPage = false;
+
   // Show Page number and total Pages
-  tft.fillRect(6, 9, 70, 12,  butBackground); // erase page numbers
-  tft.fillRect(0,60,319,350, pgBackground); // clear lower screen
+  tft.fillRect(6, 9, 77, 32,  butBackground); // erase page numbers
+  tft.fillRect(0,60,319,353, pgBackground); // clear lower screen
   tft.setFont(); // basic Arial font
   tft.setCursor(6, 9); 
   tft.printf("Page "); 
@@ -171,6 +173,7 @@ void TreasureCatScreen::drawTreasureCat() {
   tft.setCursor(6, 25); 
   tft.print(activeFilterStr[moreScreen.activeFilter]);
   
+  // TO DO: add code for case when filter enabled and screen contains fewer than NUM_CAT_ROWS_PER_SCREEN
   while ((tRow < NUM_CAT_ROWS_PER_SCREEN) && (tAbsRow != MAX_TREASURE_ROWS)) {  
     // ======== convert RA/DEC ===========
     char  *_end;
@@ -211,7 +214,14 @@ void TreasureCatScreen::drawTreasureCat() {
     convert.dmsToDouble(&tDECdouble, tDECsddmmss[tAbsRow], true, PM_HIGH);
 
     // dtAlt[tAbsRow] is used by filter to check if above Horizon
-    cat_mgr.EquToHor(tRAdouble*15, tDECdouble, &dtAlt[tAbsRow], &dtAzm[tAbsRow]);
+    Coordinate target;
+    target.r = tRAdouble*15;
+    target.d = tDECdouble;
+    transform.equToHor(&target);
+    dtAzm[tAbsRow] = target.z;
+    dtAlt[tAbsRow] = target.a;
+
+    //cat_mgr.EquToHor(tRAdouble*15, tDECdouble, &dtAlt[tAbsRow], &dtAzm[tAbsRow]);
     //VF("dtAlt="); VL(dtAlt[tAbsRow]);
     // filter out elements below 10 deg if filter enabled
     if (((moreScreen.activeFilter == FM_ABOVE_HORIZON) && (dtAlt[tAbsRow] > 10.0)) || moreScreen.activeFilter == FM_NONE) { 
@@ -221,7 +231,7 @@ void TreasureCatScreen::drawTreasureCat() {
       tft.fillRect(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), 215+WIDTH_OFF, 17,  display.butBackground);
 
       // get object names and put them on the buttons
-      treasureDefButton.draw(CAT_X, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), CAT_W-WIDTH_OFF, CAT_H, _tArray[tAbsRow].tObjName, BUT_OFF);
+      treasureDefButton.drawLJ(CAT_X, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), CAT_W-WIDTH_OFF, CAT_H, _tArray[tAbsRow].tObjName, BUT_OFF);
                   
       // format and print the text field for this row next to the button
       // FYI: mod1_treasure.csv file field order and spacing: 7;8;7;4;9;4;9;18 = 66 total w/out semicolons, 73 with ;'s
@@ -301,11 +311,11 @@ void TreasureCatScreen::updateScreen() {
 
   // Toggle off previous selected button and toggle on current selected button
   if (tPrevPage == tCurrentPage) { //erase previous selection
-    treasureDefButton.draw(CAT_X, CAT_Y+pre_tRelIndex*(CAT_H+CAT_Y_SPACING), 
+    treasureDefButton.drawLJ(CAT_X, CAT_Y+pre_tRelIndex*(CAT_H+CAT_Y_SPACING), 
       CAT_W-WIDTH_OFF, CAT_H, _tArray[pre_tAbsIndex].tObjName, BUT_OFF); 
   }
   // highlight selected by settting background ON color 
-  treasureDefButton.draw(CAT_X, CAT_Y+tRelIndex*(CAT_H+CAT_Y_SPACING), 
+  treasureDefButton.drawLJ(CAT_X, CAT_Y+tRelIndex*(CAT_H+CAT_Y_SPACING), 
       CAT_W-WIDTH_OFF, CAT_H, _tArray[tAbsIndex].tObjName, BUT_ON); 
   
   // the following 5 lines are displayed on the Catalog/More page
@@ -355,14 +365,17 @@ void TreasureCatScreen::saveTreasure() {
   wrFile.close();
   }
 
-// =============== check the Catalog Buttons if pressed ================
+//=====================================================
+// **** Handle any buttons that have been pressed *****
+//=====================================================
 bool TreasureCatScreen::touchPoll(uint16_t px, uint16_t py) {
-  uint16_t i=0;
-  for (i=0; i<(NUM_CAT_ROWS_PER_SCREEN); i++) {
+  // TO DO: add code for case when filter enabled and screen contains fewer than NUM_CAT_ROWS_PER_SCREEN
+  if (isLastPage) tRowsPerPage = tNumRowsLastPage; else tRowsPerPage = NUM_CAT_ROWS_PER_SCREEN;
+  for (int i=0; i < tRowsPerPage; i++) {
     if (py > CAT_Y+(i*(CAT_H+CAT_Y_SPACING)) && py < (CAT_Y+(i*(CAT_H+CAT_Y_SPACING))) + CAT_H 
           && px > CAT_X && px < (CAT_X+CAT_W)) {
       BEEP;
-      if (tAbsRow == MAX_TREASURE_ROWS+1) return true; 
+      if (tAbsRow <= 1 || (tAbsRow > MAX_TREASURE_ROWS+1)) return false; 
       catButSelPos = i;
       catButDetected = true;
       return true;
@@ -418,6 +431,13 @@ void TreasureCatScreen::writeTreasureTarget(uint16_t index) {
   //:Sd[sDD*MM]# or :Sd[sDD*MM:SS]#
   setLocalCmd(tDecSrCmd[index]);
   objSel = true;
+
+      Coordinate target;
+    target.r = tRAdouble*15;
+    target.d = tDECdouble;
+    transform.equToHor(&target);
+    dtAzm[tAbsRow] = target.z;
+    dtAlt[tAbsRow] = target.a;
 }
 
 // Show target coordinates RA/DEC and ALT/AZM

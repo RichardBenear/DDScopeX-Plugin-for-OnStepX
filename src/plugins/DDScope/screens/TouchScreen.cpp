@@ -37,7 +37,7 @@ void TouchScreen::init() {
 
   // start touchscreen task
   VF("MSG: Setup, start TouchScreen polling task (rate 400 ms priority 6)... ");
-  uint8_t TShandle = tasks.add(400, 0, true, 6, touchWrapper, "TouchScreen");
+  uint8_t TShandle = tasks.add(300, 0, true, 6, touchWrapper, "TouchScreen");
   if (TShandle)  { VLF("success"); } else { VLF("FAILED!"); }
   tasks.setTimingMode(TShandle, TM_MINIMUM);
 }
@@ -55,36 +55,37 @@ void TouchScreen::touchScreenPoll(Screen tCurScreen) {
     // VF("x="); V(p.x); VF(", y="); V(p.y); VF(", z="); VL(p.z); //for calibration
     
     // Check for touchscreen button "action" on the selected Screen
-    // If any button touched then update button once to show button pressed
-    // This does not include the Menu Buttons
+    // If any button touched then update button to show button pressed
+    // UpdateXXXXXButtons(bool): bool=true indicates to call this again to flash button on then off
+    // Does not include the Menu Buttons
     switch (tCurScreen) {
       case HOME_SCREEN:     
-        if (homeScreen.touchPoll(p.x, p.y))       homeScreen.updateHomeButtons(true);           break;       
+        if (homeScreen.touchPoll(p.x, p.y))       homeScreen.updateHomeButtons(true);             break;       
       case GUIDE_SCREEN:       
-        if (guideScreen.touchPoll(p.x, p.y))      guideScreen.updateGuideButtons(true);         break;        
+        if (guideScreen.touchPoll(p.x, p.y))      guideScreen.updateGuideButtons(true);           break;        
       case FOCUSER_SCREEN:  
-        if (dCfocuserScreen.touchPoll(p.x, p.y))  dCfocuserScreen.updateFocuserButtons(true);   break; 
+        if (dCfocuserScreen.touchPoll(p.x, p.y))  dCfocuserScreen.updateFocuserButtons(true);     break; 
       case GOTO_SCREEN:      
-        if (gotoScreen.touchPoll(p.x, p.y))       gotoScreen.updateGotoButtons(true);           break;          
+        if (gotoScreen.touchPoll(p.x, p.y))       gotoScreen.updateGotoButtons(true);             break;          
       case MORE_SCREEN:       
-        if (moreScreen.touchPoll(p.x, p.y))       moreScreen.updateMoreButtons(true);           break;          
+        if (moreScreen.touchPoll(p.x, p.y))       moreScreen.updateMoreButtons(true);             break;          
       case SETTINGS_SCREEN:  
-        if (settingsScreen.touchPoll(p.x, p.y))   settingsScreen.updateSettingsButtons(true);   break;
+        if (settingsScreen.touchPoll(p.x, p.y))   settingsScreen.updateSettingsButtons(true);     break;
       case ALIGN_SCREEN:     
-        if (alignScreen.touchPoll(p.x, p.y))      alignScreen.updateAlignButtons(true);         break;     
+        if (alignScreen.touchPoll(p.x, p.y))      alignScreen.updateAlignButtons(true);           break;     
       case PLANETS_SCREEN:   
-        if (planetsScreen.touchPoll(p.x, p.y))    planetsScreen.updatePlanetsButtons(true);     break;
+        if (planetsScreen.touchPoll(p.x, p.y))    planetsScreen.updatePlanetsButtons(true);       break;
       case TREASURE_SCREEN: 
         if (treasureCatScreen.touchPoll(p.x, p.y)) treasureCatScreen.updateTreasureButtons(true); break;
       case CUSTOM_SCREEN:   
-        if (customCatScreen.touchPoll(p.x, p.y))  customCatScreen.updateCustomButtons(true);    break;
+        if (customCatScreen.touchPoll(p.x, p.y))  customCatScreen.updateCustomButtons(false);     break;
       case SHC_CAT_SCREEN:   
-        if (shcCatScreen.touchPoll(p.x, p.y))     shcCatScreen.updateShcButtons(true);          break;
-      case XSTATUS_SCREEN:                                                                       break;
+        if (shcCatScreen.touchPoll(p.x, p.y))     shcCatScreen.updateShcButtons(true);            break;
+      case XSTATUS_SCREEN:                                                                        break;
 
       #ifdef ODRIVE_MOTOR_PRESENT
         case ODRIVE_SCREEN:  
-          if (oDriveScreen.touchPoll(p.x, p.y)) oDriveScreen.updateOdriveButtons(true);          break;
+          if (oDriveScreen.touchPoll(p.x, p.y)) oDriveScreen.updateOdriveButtons(true);           break;
       #endif
     }
 

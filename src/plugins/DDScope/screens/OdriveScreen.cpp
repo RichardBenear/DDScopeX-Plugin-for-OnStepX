@@ -38,9 +38,8 @@ Button odriveButton(
                 display.mainFontHeight, 
                 "");
 
+// Demo Mode Wrapper
 void demoWrapper() { oDriveExt.demoMode(true); }
-
-ODriveVersion oDversion;
 
 //****** Draw ODrive Screen ******
 void ODriveScreen::draw() {
@@ -50,7 +49,7 @@ void ODriveScreen::draw() {
   tft.fillScreen(pgBackground);
   
   drawMenuButtons();
-  drawTitle(105, TITLE_TEXT_Y, "ODrive");
+  drawTitle(120, TITLE_TEXT_Y, "ODrive");
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   drawCommonStatusLabels();
@@ -58,14 +57,13 @@ void ODriveScreen::draw() {
   showGains();
   showODriveErrors();
 
+  ODriveVersion oDversion;
   oDriveExt.getODriveVersion(oDversion);
 
-  tft.setCursor(92, 164);
+  tft.setCursor(85, 164);
   tft.print("*HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
   tft.setCursor(92, 176);
   tft.print("*FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
-
-  demoActive = false;
 }
 
 // task update for this screen
@@ -249,6 +247,8 @@ bool ODriveScreen::odriveButStateChange() {
 
 // ========  Update ODrive Page Buttons ========
 void ODriveScreen::updateOdriveButtons(bool redrawBut) {
+   // redrawBut when true forces a refresh of all buttons once more..used for a toggle effect on some buttons
+  
   _redrawBut = redrawBut;
   tft.setFont(&Inconsolata_Bold8pt7b);
 
@@ -483,13 +483,13 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     if (!demoActive) {
       VLF("MSG: Demo ODrive");
       demoActive = true;
-      //demoHandle = tasks.add(10000, 0, true, 6, oDriveExt.demoMode(true), "Demo On");
+      demoHandle = tasks.add(10000, 0, true, 6, demoWrapper, "Demo On");
     } else {
       demoActive = false;
       VLF("MSG: Demo OFF ODrive");
       //tasks.remove(demoHandle);
       oDriveExt.demoMode(false);
-      //tasks.setDurationComplete(tasks.getHandleByName("Demo On"));
+      tasks.setDurationComplete(tasks.getHandleByName("Demo On"));
     }
     return true;
   }
@@ -498,17 +498,14 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   // Reset ODRIVE
   if (px > OD_ACT_COL_3_X + x_offset && px < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_3_Y + y_offset && py <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     BEEP;
-    VLF("MSG: Reseting ODrive");
-    tasks.setDurationComplete(tasks.getHandleByName("Target_0")); // not sure about the name
-    tasks.setDurationComplete(tasks.getHandleByName("Target_1")); // not sure about the name
-    ODRIVE_SERIAL.end();
+    VLF("MSG: Resetting ODrive");
     delay(5);
     digitalWrite(ODRIVE_RST, LOW);
-    delay(1);
+    delay(2);
     digitalWrite(ODRIVE_RST, HIGH);
     delay(500);
-    axis1.init(&motor1); // start motor timers and serial
-    axis2.init(&motor2);
+    ODRIVE_SERIAL.flush();
+    oDriveExt.clearAllODriveErrors();
     resetODriveFlag = true;
     AZgainHigh = false;
     AZgainDefault = true;
@@ -518,7 +515,7 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   }
 
   // Disable / Enable ODrive motor position update - UART between ODrive and Teensy
-  // Disable-position-updates so that they don't override ODrive
+  // Disable-position-updates so that they don't override the ODrive
   // motor positions while tuning ODrive with ODrive USB channel
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   if (px > OD_ACT_COL_3_X + x_offset && px < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_3_Y + y_offset && py <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
@@ -528,9 +525,9 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     } else {
       ODpositionUpdateEnabled = true;
     }
-    return true;
+    return false;
   }  
-  return false;
+  return true;
 }    
 
 ODriveScreen oDriveScreen;

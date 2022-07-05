@@ -59,8 +59,6 @@ class ODriveExt : public Display {
     void MotorEncoderDelta();
     void clearODriveErrors(int axis, int comp);
     void setHigherBaud();
-    
-    // not currently used
     void clearAllODriveErrors();
     
     bool odriveAzmPwr = false;

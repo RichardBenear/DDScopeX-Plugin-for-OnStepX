@@ -7,6 +7,9 @@
 #include "Display.h"
 #include "UIelements.h"
 
+// =======================================================================
+// ======================= Button UI elements ============================
+// =======================================================================
 // Button constructor
 Button::Button(
       int           x,
@@ -32,7 +35,10 @@ Button::Button(
     b_label           = label;
   }
 
+// =====================================================================
+// Draw Button, Center Text, Custom Font
 // Draw a single button, assume constructor called to set colors and font size
+// Center text in button both x and y
 void Button::draw(int x, int y, uint16_t width, uint16_t height, const char* label, bool active) {
   int buttonRadius = BUTTON_RADIUS;
   int len = strlen(label);
@@ -45,7 +51,7 @@ void Button::draw(int x, int y, uint16_t width, uint16_t height, const char* lab
   // for Custom fonts, used here, the upper left is the origin
   // Adafruit_GFX::setFont(const GFXfont *f) does an offset of +/- 6 pixels based on default vs. custom font
   // hence, that is why this calculation looks weird, standards would be nice :-/
-  uint16_t yTextOffset = ((height - b_fontCharHeight)/2) + b_fontCharHeight-6;
+  uint16_t yTextOffset = ((height - b_fontCharHeight)/2) + b_fontCharHeight-4;
   if (active) { // show active background
     tft.fillRoundRect(x, y, width, height, buttonRadius, b_colorActive);
   } else {
@@ -66,7 +72,26 @@ void Button::draw(int y, const char* label, bool active) {
   draw(b_x, y, b_width, b_height, label, active);
 }
 
-// ======== Canvas print UI element =========
+// =====================================================================
+// Draw Button, Left Justify Text, Default GFX Font Arial
+// Draw a single button, assume constructor called to set colors and font size
+// Center y axis only, no centering for x axis
+void Button::drawLJ(int x, int y, uint16_t width, uint16_t height, const char* label, bool active) {
+  int buttonRadius = BUTTON_RADIUS;
+  uint16_t yTextOffset = ((height - b_fontCharHeight)/2) + b_fontCharHeight-6;
+  if (active) { // show active background
+    tft.fillRoundRect(x, y, width, height, buttonRadius, b_colorActive);
+  } else {
+    tft.fillRoundRect(x, y, width, height, buttonRadius, b_colorNotActive);
+  }
+  tft.drawRoundRect(x, y, width, height, buttonRadius, b_colorBorder);
+  tft.setCursor(x+2, y+yTextOffset);
+  tft.print(label);
+}
+
+// =======================================================================
+// ================= Canvas print UI elements ============================
+// =======================================================================
 // Canvas Print constructor
 CanvasPrint::CanvasPrint(
       int           x,
@@ -88,6 +113,7 @@ CanvasPrint::CanvasPrint(
     p_label           = label;
   }
 
+// =====================================================================
 // Canvas print function using characters
 void CanvasPrint::cPrint(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
   char _label[60] = "";
@@ -111,3 +137,4 @@ void CanvasPrint::cPrint(int x, int y, uint16_t width, uint16_t height, double l
   sprintf(charlabel, "%5.1f", label);
   cPrint(p_x, p_y, p_width, p_height, charlabel, warning);
  }
+

@@ -25,12 +25,14 @@ const char* ODriveComponentsStr[4] = {
 float ODriveExt::getODriveBusVoltage() {
   ODRIVE_SERIAL << "r vbus_voltage\n";
   float battery_voltage = _oDriveDriver->readFloat();
+  //VL(battery_voltage);
   
-  if (battery_voltage < BATTERY_LOW_VOLTAGE && battery_voltage > 3) { // battery low
+  // 3 volt qualification keeps ALERT from happening when under development without ODrive powered
+  if (battery_voltage < BATTERY_LOW_VOLTAGE && battery_voltage > 3) { 
     digitalWrite(BATTERY_LOW_LED_PIN, LOW); // LED on
     batLowLED = true;
     ALERT;
-  } else { // battery either above low voltage limit (ok) or in development mode  
+  } else { // battery ok
     digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // LED off
     batLowLED = false;
   }
@@ -211,7 +213,6 @@ void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
 // =================== Demo Mode ====================
 // Demo mode requires that the OnStep updates to the Axis be stopped but the Motor power is ON
 void ODriveExt::demoMode(bool onState) {
-  tasks.setDurationComplete(tasks.getHandleByName("Target_0")); // not sure about the name
   // choose some AZM and ALT positions in fractional "Turns"
   // ALT position should never be negative in actual use because of the position of the focuser but it "can" go negative in demo
   // ALT axis at Turn = 0.0 is telescope vertical

@@ -334,12 +334,12 @@ bool Display::getNightMode() {
 // Update Battery Voltage
 void Display::updateBatVoltage() {
   float currentBatVoltage = oDriveExt.getODriveBusVoltage();
-  char bvolts[8]="-- v";
-  if (currentBatVoltage < BATTERY_LOW_VOLTAGE) {
-    sprintf(bvolts, "%5.1f v", currentBatVoltage);
-    canvPrint(130, 39, 0, 70, 12, bvolts, textColor, butOnBackground);
+  char bvolts[12]="-- v";
+  sprintf(bvolts, "%4.1f v", currentBatVoltage);
+  if (currentBatVoltage < BATTERY_LOW_VOLTAGE) { 
+    canvPrint(120, 38, 0, 80, 15, bvolts, textColor, butOnBackground);
   } else {
-    canvPrint(130, 39, 0, 70, 12, bvolts, textColor, butBackground);
+    canvPrint(120, 38, 0, 80, 15, bvolts, textColor, butBackground);
   }
 }
 
@@ -680,6 +680,7 @@ void Display::updateCommonStatus() {
   y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
   convert.dmsToDouble(&tAzm_d, tAzmDMS, false, PM_HIGH);
+  VL(tAzm_d);
   canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAlt_d);
 
   y_offset +=COM_LABEL_Y_SPACE;  

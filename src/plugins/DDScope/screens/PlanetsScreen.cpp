@@ -203,14 +203,6 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     char raCoord[14];
     char decCoord[14];
 
-  /*// equToHor is from Onstep code...used here to check and debug the Ephemeris horz conversion
-    // A key learning from this exercise is that the "Hour" passed to Ephemeris must have UTC offset for your location
-    double eAlt, eAzm;
-    equToHor(haRange(LST()*15.0-Ra*15.0), Dec, &eAlt, &eAzm);
-    VF("obj.azm="); VL(obj.horiCoordinates.azi);
-    VF("obj.alt="); VL(obj.horiCoordinates.alt);
-  */
-
     Eph.floatingHoursToHoursMinutesSeconds(Ra, &ivr1, &ivr2, &fvr3); 
     Eph.floatingDegreesToDegreesMinutesSeconds(Dec, &ivd1, &ivd2, &fvd3);
     equatorialCoordinatesToString(obj.equaCoordinates, raCoord, decCoord);
@@ -305,6 +297,10 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     sprintf(cmd, ":Sd%c%02d:%02d:%02d#", sign, ivd1, ivd2, (int)fvd3);
     setLocalCmd(cmd);
     
+    //  :Sa[sDD*MM]# or :Sa[sDD*MM'SS]# or :Sa[sDD*MM'SS.SSS]#
+    //  :Sz[DDD*MM]# or :Sz[DDD*MM'SS]# or :Sz[DDD*MM'SS.SSS]#
+    
+
     // the following 5 lines are displayed on the Catalog/More page
     snprintf(moreScreen.catSelectionStr1, 16, "Name-:%-16s", PlanetNames[planetButSelPos]);
     snprintf(moreScreen.catSelectionStr2, 12, "AZM--:%-12f", obj.horiCoordinates.azi);

@@ -61,7 +61,8 @@ class TreasureCatScreen : public Display {
     uint16_t tPagingArrayIndex[MAX_TREASURE_PAGES];
     char   treaCustWrSD[SD_CARD_LINE_LEN];
 
-    bool tEndOfList;
+    bool tEndOfList = false;
+    bool isLastPage = false;
 
     uint16_t catButDetected;
     uint16_t catButSelPos = 0;
@@ -79,6 +80,9 @@ class TreasureCatScreen : public Display {
     uint16_t tLastPage;
     uint16_t tRow;
     uint16_t treRowEntries;
+    uint16_t tNumRowsLastPage;
+    uint16_t tRowsPerPage = 0;
+    
     const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
 };
 

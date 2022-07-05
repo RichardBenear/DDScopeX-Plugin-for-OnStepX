@@ -41,10 +41,10 @@ class CustomCatScreen : public Display {
 
     bool delSelected = false;
     bool objSel = false;
-    bool saveTouched = false;
 
     bool customCatalog;
     bool cEndOfList;
+    bool isLastPage = false;
     bool customItemSelected;
 
     uint16_t catButDetected;
@@ -63,6 +63,8 @@ class CustomCatScreen : public Display {
     uint16_t cAbsRow;
     uint16_t cRow;
     uint16_t cusRowEntries;
+    uint16_t cNumRowsLastPage;
+    uint16_t cRowsPerPage = 0;
 
     char          Custom_Array[MAX_CUSTOM_ROWS][SD_CARD_LINE_LEN];
     char     Copy_Custom_Array[MAX_CUSTOM_ROWS][SD_CARD_LINE_LEN]; // save a copy for row deletion purposes

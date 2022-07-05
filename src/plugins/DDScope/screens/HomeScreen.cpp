@@ -341,7 +341,7 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
   if (mount.isSlewing()) {
     homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Slewing", BUT_ON);
   } else if (mount.isHome()) {
-    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "At Home", BUT_OFF);
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "At Home", BUT_ON);
     gotoHome = false;             
   } else {
     homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Go Home", BUT_OFF);
@@ -467,12 +467,11 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     
-    //_oDriveDriver->SetPosition(0, 0.0);
-    //_oDriveDriver->SetPosition(1, 0.0);
-    //while (mount.isSlewing()); Y;
-    //setLocalCmd(":hF#"); // reset Home position
+    _oDriveDriver->SetPosition(0, 0.0);
+    _oDriveDriver->SetPosition(1, 0.0);
 
-    setLocalCmd(":hF#"); // home Reset
+    //setLocalCmd(":hF#"); // home Reset
+    //setLocalCmd(":hC#"); // home Reset
     gotoHome = true;
     return false;
   }

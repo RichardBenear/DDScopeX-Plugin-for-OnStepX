@@ -44,7 +44,7 @@ class MoreScreen : public Display {
     bool yesCancelActive = false;
 
     bool preSlewState = false;
-    char preFilterState[10]="";
+    char preFilterState[20]="";
 };
 
 extern MoreScreen moreScreen;

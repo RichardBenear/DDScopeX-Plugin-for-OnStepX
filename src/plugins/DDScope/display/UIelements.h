@@ -37,9 +37,10 @@ class Button{
       uint8_t       fontCharHeight,
       const char*   label);
 
-    void draw(int x, int y, uint16_t width, uint16_t height, const char* label, bool active);
-    void draw(int x, int y,                                  const char* label, bool active);
-    void draw(       int y,                                  const char* label, bool active);
+    void draw  (int x, int y, uint16_t width, uint16_t height, const char* label, bool active);
+    void draw  (int x, int y,                                  const char* label, bool active);
+    void draw  (       int y,                                  const char* label, bool active);
+    void drawLJ(int x, int y, uint16_t width, uint16_t height, const char* label, bool active);
 
   private:
     int           b_x;

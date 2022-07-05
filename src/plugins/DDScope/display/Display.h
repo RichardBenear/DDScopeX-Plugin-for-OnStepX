@@ -64,10 +64,10 @@
 #define DEEP_MAROON 0x4800		// 
 
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
-#define BATTERY_LOW_VOLTAGE   21  
+#define BATTERY_LOW_VOLTAGE   21.0  
 
 // sound control of both duration and frequency
-#define BEEP tone(STATUS_BUZZER_PIN, 1600UL, 20ULL); // both in milliseconds
+#define BEEP tone(STATUS_BUZZER_PIN, 1400UL, 30ULL); // both in milliseconds
 #define ALERT tone(STATUS_BUZZER_PIN, 700UL, 80ULL); // both in milliseconds
 
 enum Screen

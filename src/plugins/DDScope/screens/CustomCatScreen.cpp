@@ -13,18 +13,6 @@
 #include "src/telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
 
-custom_t _cArray[MAX_CUSTOM_ROWS];
-
-// Catalog Button object for default Arial font
-Button customDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.defFontWidth, display.defFontHeight, "");
-
-// Catalog Button object for custom font
-Button customCatButton(0, 0 ,0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
-
-// Canvas Print constructor
-CanvasPrint customDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
-
-// have a separate set of values for Custom Catalog for better spacing/visibility since it will be used more frequently
 #define CUS_X               1
 #define CUS_Y               50
 #define CUS_W               112
@@ -57,6 +45,18 @@ CanvasPrint customDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackg
 #define SUB_STR_X_OFF       2
 #define FONT_Y_OFF          7
 
+custom_t _cArray[MAX_CUSTOM_ROWS];
+
+// Catalog Button object for default Arial font
+Button customDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.defFontWidth, display.defFontHeight, "");
+
+// Catalog Button object for custom font
+Button customCatButton(0, 0 ,0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
+
+// Canvas Print constructor
+CanvasPrint customDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+
+// ========== Initialize and draw Custom Catalog ===============
 void CustomCatScreen::init() { 
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(CUSTOM_SCREEN);
@@ -67,9 +67,9 @@ void CustomCatScreen::init() {
   cCurrentPage = 0;
   cPrevPage = 0;
   cEndOfList = false;
-   cAbsRow = 0; // initialize the absolute index into total array
+  cAbsRow = 0; // initialize the absolute index into total array
 
-  drawTitle(83, TITLE_TEXT_Y, "User Catalog");
+  drawTitle(86, TITLE_TEXT_Y, "User Catalog");
   customCatalog = true;
 
   if (!loadCustomArray()) {
@@ -90,7 +90,6 @@ void CustomCatScreen::init() {
   customCatButton.draw(BACK_X, BACK_Y, BACK_W, BACK_H, "BACK", BUT_OFF);
   customCatButton.draw(NEXT_X, NEXT_Y, BACK_W, BACK_H, "NEXT", BUT_OFF);
   customCatButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
-  customCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, "SAVE LIB", BUT_OFF);
 }
 
 // The Custom catalog is a selection of User objects that have been saved on the SD card.
@@ -139,7 +138,7 @@ void CustomCatScreen::parseCcatIntoArray() {
     _cArray[i].cCons         = strtok(NULL, ";");            //VL(_cArray[i].cCons);
     _cArray[i].cObjType      = strtok(NULL, ";");            //VL(_cArray[i].cObjType);
     _cArray[i].cSubId        = strtok(NULL, ";");            //VL(_cArray[i].cSubId);
-    _cArray[i].cRAhhmmss     = strtok(NULL, ";");            //VL(_cArray[i].cRAhhmmss)
+    _cArray[i].cRAhhmmss     = strtok(NULL, ";");            //VL(_cArray[i].cRAhhmmss);
     _cArray[i].cDECsddmmss   = strtok(NULL, "\n");           //VL(_cArray[i].cDECsddmmss);
   }
 }
@@ -150,12 +149,15 @@ void CustomCatScreen::drawCustomCat() {
   pre_cAbsIndex=0;
   char catLine[47]=""; //hold the string that is displayed beside the button on each page
 
-  cAbsRow = (cPagingArrayIndex[cCurrentPage]); // array of page 1st row indexes
+  cAbsRow = (cPagingArrayIndex[cCurrentPage]); // array of indexes for 1st row of each page
   cLastPage = (cusRowEntries / NUM_CUS_ROWS_PER_SCREEN)+1;
+  VF("cusRowEntries="); VL(cusRowEntries);
+  cNumRowsLastPage = (cusRowEntries % NUM_CUS_ROWS_PER_SCREEN) +1;
+  if (cCurrentPage+1 == cLastPage) isLastPage = cNumRowsLastPage <= NUM_CUS_ROWS_PER_SCREEN; else isLastPage = false;
 
   // Show Page number and total Pages
-  tft.fillRect(6, 9, 70, 12,  butBackground); // erase page numbers
-  tft.fillRect(0,60,319,350, pgBackground); // clear lower screen
+  tft.fillRect(6, 9, 77, 32,  butBackground); // erase page numbers
+  tft.fillRect(0,60,319,353, pgBackground); // clear lower screen
   tft.setFont(); //revert to basic Arial font
   tft.setCursor(6, 9); 
   tft.printf("Page "); 
@@ -168,6 +170,7 @@ void CustomCatScreen::drawCustomCat() {
   tft.setCursor(6, 25); 
   tft.print(activeFilterStr[moreScreen.activeFilter]);
 
+  // TO DO: add code for case when filter enabled and screen contains fewer than NUM_CUS_ROWS_PER_SCREEN
   while ((cRow < NUM_CUS_ROWS_PER_SCREEN) && (cAbsRow != MAX_CUSTOM_ROWS)) { 
     // ======== process RA/DEC ===========
     double cRAdouble;
@@ -192,7 +195,7 @@ void CustomCatScreen::drawCustomCat() {
       tft.fillRect(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), 215, 17,  display.butBackground);
 
       // get object names and put them on the buttons
-      customDefButton.draw(CUS_X, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[cAbsRow].cObjName, BUT_OFF);
+      customDefButton.drawLJ(CUS_X, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[cAbsRow].cObjName, BUT_OFF);
                   
       // format and print the text field for this row next to the button
       // 7 - objName
@@ -203,7 +206,7 @@ void CustomCatScreen::drawCustomCat() {
       // 4 - Mag
       // 9 - Size ( Not used )
       // 18 - SubId
-      // select some data fields to show beside button
+      // select some data fields to show beside the button
       snprintf(catLine, 42, "%-4s |%-4s |%-9s |%-18s",  // 35 + 6 + NULL = 42
                                               _cArray[cAbsRow].cMag, 
                                               _cArray[cAbsRow].cCons, 
@@ -227,7 +230,8 @@ void CustomCatScreen::drawCustomCat() {
       return; 
     }
   }
-  cPagingArrayIndex[cCurrentPage+1] = cAbsRow; // cPagingArrayIndex holds index of first element of page to help with NEXT and BACK paging
+  // cPagingArrayIndex holds index of first element of page to help with NEXT and BACK paging
+  cPagingArrayIndex[cCurrentPage+1] = cAbsRow; 
   //VF("PagingArrayIndex+1="); VL(cPagingArrayIndex[cCurrentPage+1]);
 }
 
@@ -246,19 +250,12 @@ bool CustomCatScreen::catalogButStateChange() {
   }
 }
 
-
+// update buttons and rest of screen
 void CustomCatScreen::updateCustomButtons(bool redrawBut) { 
   _redrawBut = redrawBut;  
   tft.setFont(); // basic Arial
 
   if (catButDetected) updateScreen();  
-
-  if (saveTouched) {
-    customCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, " Saving", BUT_ON);
-    saveTouched = false;
-  } else { 
-    customCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, "SaveToCat", BUT_OFF);
-  }
 }
 
 //==================================================
@@ -266,14 +263,16 @@ void CustomCatScreen::updateCustomButtons(bool redrawBut) {
 //==================================================
 void CustomCatScreen::updateScreen() {
   tft.setFont();
-  uint16_t cRelIndex = catButSelPos; // save the "screen/page" index of button pressed
-  uint16_t cAbsIndex = cFiltArray[catButSelPos];
+  uint16_t cRelIndex = catButSelPos; // save the relative-to-this "screen/page" index of button pressed
+  uint16_t cAbsIndex = cFiltArray[catButSelPos]; // this is absolute full array index
 
   if (cPrevPage == cCurrentPage) { //erase previous selection
-    customDefButton.draw(CUS_X, CUS_Y+pre_cRelIndex*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[pre_cAbsIndex].cObjName, BUT_OFF); 
+    customDefButton.drawLJ(CUS_X, CUS_Y+pre_cRelIndex*(CUS_H+CUS_Y_SPACING), 
+      CUS_W, CUS_H, _cArray[pre_cAbsIndex].cObjName, BUT_OFF); 
   }
   // highlight selected by settting background ON color 
-  customDefButton.draw(CUS_X, CUS_Y+cRelIndex*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[cAbsIndex].cObjName, BUT_ON); 
+  customDefButton.drawLJ(CUS_X, CUS_Y+cRelIndex*(CUS_H+CUS_Y_SPACING), 
+    CUS_W, CUS_H, _cArray[cAbsIndex].cObjName, BUT_ON); 
 
   // the following 5 lines are displayed on the Catalog/More page
   snprintf(moreScreen.catSelectionStr1, 26, "Name-:%-19s", _cArray[cAbsIndex].cObjName);  //VF("c_objName="); //VL(_cArray[cAbsIndex].cObjName);
@@ -283,6 +282,7 @@ void CustomCatScreen::updateScreen() {
   snprintf(moreScreen.catSelectionStr5, 15, "Id---:%-7s",  _cArray[cAbsIndex].cSubId);    //VF("c_subID=");   //VL(_cArray[cAbsIndex].cSubId);
   
   // show if we are above and below visible limits
+  tft.setFont(&Inconsolata_Bold8pt7b); 
   if (dcAlt[cAbsIndex] > 10.0) {      // minimum 10 degrees altitude
       canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
   } else {
@@ -349,26 +349,29 @@ void CustomCatScreen::updateScreen() {
       }
     }
   } // end Custom row delete
-}
-
-
+} // end updateScreen
 
 //=====================================================
-// **** Handle any buttons that have been selected ****
+// **** Handle any buttons that have been pressed *****
 //=====================================================
 bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
-  for (int i=0; i<=cusRowEntries || i<NUM_CUS_ROWS_PER_SCREEN; i++) {
-    if (cAbsRow == cusRowEntries+2) return true;
+  // TO DO: add code for case when filter enabled and screen contains fewer than NUM_CUS_ROWS_PER_SCREEN
+  if (isLastPage) cRowsPerPage = cNumRowsLastPage; else cRowsPerPage = NUM_CUS_ROWS_PER_SCREEN;
+   VF("islastpage="); VL(isLastPage);
+   VF("cRowsPerpage="); VL(cRowsPerPage);
+    VF("cNumRowLastPage="); VL(cNumRowsLastPage);
+  for (int i=0; i < cRowsPerPage; i++) {
     if (py > CUS_Y+(i*(CUS_H+CUS_Y_SPACING)) && py < (CUS_Y+(i*(CUS_H+CUS_Y_SPACING))) + CUS_H 
           && px > CUS_X && px < (CUS_X+CUS_W)) {
       BEEP;
-      if (cLastPage==0 && i >= cRow) return true; // take care of only one entry on the page
+      if (cAbsRow <= 1 || (cAbsRow > cusRowEntries+1)) return false; 
       catButSelPos = i;
       catButDetected = true;
-      return true;
+      updateScreen();
+      return false; // update screen by redrawing buttons
     }
   }
- 
+
   // BACK button
   if (py > BACK_Y && py < (BACK_Y + BACK_H) && px > BACK_X && px < (BACK_X + BACK_W)) {
     BEEP;
@@ -378,7 +381,7 @@ bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
       cCurrentPage--;
       drawCustomCat();
     }
-    return false;
+    return false; // skip update since redrawing full screen again
   }
 
   // NEXT page button - reuse BACK button box size
@@ -389,7 +392,7 @@ bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
       cCurrentPage++;
       drawCustomCat();
     }
-    return false;
+    return false; // skip update since redrawing full screen again
   }
 
   // RETURN page button - reuse BACK button box size
@@ -400,20 +403,12 @@ bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
     return false; // don't update this screen since returning to MORE
   }
 
-  // SAVE page to custom library button
-  if (py > SAVE_LIB_Y && py < (SAVE_LIB_Y + SAVE_LIB_H) && px > SAVE_LIB_X && px < (SAVE_LIB_X + SAVE_LIB_W)) {
-    BEEP;
-    canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Can't Save Custom");
-    return true;
-    saveTouched = true;
-  }   
-
-  // Delete custom library item that is selected 
+  // Trash Can pressed, Delete custom library item that is selected 
   if (py > 3 && py < 42 && px > 282 && px < 317) {
     BEEP;
     delSelected = true;
-    updateScreen();
-    return true;
+    drawCustomCat(); 
+    return false; // no need to redraw, skip
   }  
   return false; 
 }

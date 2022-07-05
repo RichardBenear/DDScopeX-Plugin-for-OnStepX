@@ -388,6 +388,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
         sButtonPosition=row*3+col;
         //VF("sButtonPosition="); VL(sButtonPosition);
         sNumDetected = true;
+        BEEP;
         return true;
       }
     }
@@ -400,6 +401,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = false;
     LaSelect = false;
     LoSelect = false;
+    BEEP;
     return true;
   }
 
@@ -408,6 +410,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tclear = true; 
     TtextIndex = 0;
     sButtonPosition = 12; 
+    BEEP;
     return true;
   }
 
@@ -418,6 +421,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = false;
     LaSelect = false;
     LoSelect = false;
+    BEEP;
     return true;
   }
 
@@ -426,6 +430,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Dclear = true; 
     DtextIndex = 0;
     sButtonPosition = 12;
+    BEEP;
     return true; 
   }
 
@@ -436,6 +441,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = true;
     LaSelect = false;
     LoSelect = false;
+    BEEP;
     return true;
   }
 
@@ -444,6 +450,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzclear = true; 
     TztextIndex = 0;
     sButtonPosition = 12;
+    BEEP;
     return true; 
   }
 
@@ -454,6 +461,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = false;
     LaSelect = true;
     LoSelect = false;
+    BEEP;
     return true;
   }
 
@@ -462,6 +470,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     LaClear = true; 
     LaTextIndex = 0;
     sButtonPosition = 12;
+    BEEP;
     return true; 
   }
 
@@ -472,6 +481,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     Tzselect = false;
     LaSelect = false;
     LoSelect = true;
+    BEEP;
     return true;
   }
 
@@ -480,6 +490,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     LoClear = true; 
     LoTextIndex = 0;
     sButtonPosition = 12;
+    BEEP;
     return true; 
   }
 
@@ -494,6 +505,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     sButtonPosition = 12; 
     static char sLaMin[3] = "";
     static char sLoMin[3] = "";
+    BEEP;
     
     if (Tselect) {
       // Set Local Time :SL[HH:MM:SS]# 24Hr format

@@ -22,17 +22,17 @@ class ODriveScreen : public Display {
     void showGains();
 
     static const uint8_t box_height_adj = 10;
-    bool clearODriveErr;
-    bool resetODriveFlag;
-    bool AZgainHigh;
-    bool AZgainDefault;
-    bool ALTgainHigh;
-    bool ALTgainDefault;
-    bool OdStopButton;
-    bool demoActive;
-    bool ODpositionUpdateEnabled;
-    int preAzmState = 0;
-    int preAltState = 0;
+    bool clearODriveErr   = false;
+    bool resetODriveFlag  = false;
+    bool AZgainHigh       = false;
+    bool AZgainDefault    = true;
+    bool ALTgainHigh      = false;
+    bool ALTgainDefault   = true;
+    bool OdStopButton     = false;
+    bool demoActive       = false;
+    bool ODpositionUpdateEnabled = true;
+    int preAzmState       = 0;
+    int preAltState       = 0;
     int demoHandle;
 };
 

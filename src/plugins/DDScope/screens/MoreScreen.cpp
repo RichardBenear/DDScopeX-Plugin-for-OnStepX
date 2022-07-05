@@ -73,7 +73,7 @@ Button moreButton(
                 "");
 
 // More Screen Button object with large Font size
-Button moreLargeButton(
+Button moreLgButton(
                 0, 0, 0, 0,
                 display.butOnBackground, 
                 display.butBackground, 
@@ -104,7 +104,6 @@ void MoreScreen::draw() {
   tft.setCursor(30, TRACK_R_Y-7);
   tft.print("Catalogs"); 
 
-  activeFilter = FM_NONE;
   drawCommonStatusLabels(); // Common status at top of most screens
   updateMoreButtons(false); // Draw initial More Page Buttons; false=no redraw
 }
@@ -216,7 +215,7 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
   // Filter Selection Button - circular selection of 3 values
   if (filterBut) {
     moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_ON);
-    //if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) canvPrint(120, 382, 0, 199, 16, "All Sky For STARS only");
+    if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) canvPrint(120, 382, 0, 199, 16, "All Sky For STARS only");
     filterBut = false;
   } else {
     moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_OFF);
@@ -268,20 +267,20 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
 
   // Go To Coordinates Button
   if (goToButton) {
-    moreLargeButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Going", BUT_ON);
+    moreLgButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Going", BUT_ON);
     goToButton = false;
   } else {
     if (!mount.isSlewing()) { 
-      moreLargeButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "GoTo", BUT_OFF);
+      moreLgButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "GoTo", BUT_OFF);
     }
   }
   
   // Abort GoTo Button
   if (abortPgBut) {
-    moreLargeButton.draw(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Aborting", BUT_ON);
+    moreLgButton.draw(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Aborting", BUT_ON);
     abortPgBut = false;
   } else {
-    moreLargeButton.draw(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Abort", BUT_OFF);
+    moreLgButton.draw(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Abort", BUT_OFF);
   }
 
   tft.setFont(&Inconsolata_Bold8pt7b); 
@@ -317,7 +316,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   // Home Page ICON Button
   if (px > 10 && px < 50 && py > 5 && py < 37) {
     BEEP;
-    //setCurrentScreen(HOME_SCREEN); 
+    setCurrentScreen(HOME_SCREEN); 
     homeScreen.draw();
     return false; // don't update this screen (MORE)
   }
@@ -390,19 +389,19 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     // circular selection
     if (activeFilter == FM_NONE) {
       activeFilter = FM_ABOVE_HORIZON; // filter disallows alt < 10 deg
-      //cat_mgr.filterAdd(activeFilter); 
+      cat_mgr.filterAdd(activeFilter); 
       return true;
     }
 
     if (activeFilter == FM_ABOVE_HORIZON) {
       activeFilter = FM_ALIGN_ALL_SKY; // Used for stars only here: filter only allows Mag>=3; Alt>=10; Dec<=80
-      //cat_mgr.filterAdd(activeFilter);
+      cat_mgr.filterAdd(activeFilter);
       return true; 
     }
 
     if (activeFilter == FM_ALIGN_ALL_SKY) {
       activeFilter = FM_NONE;  // no filter
-      //cat_mgr.filtersClear();
+      cat_mgr.filtersClear();
       return true;
     }
   }
