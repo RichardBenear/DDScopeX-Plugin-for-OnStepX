@@ -42,7 +42,8 @@
 #define ACTION_X_SPACING         7
 #define ACTION_Y_SPACING         4
 
-#define MOTOR_CURRENT_WARNING    2.0  // Warning when over 2 amps....coil heating occuring
+#define MOTOR_CURRENT_WARNING    2.0 // Warning when over 2 amps....coil heating occuring
+#define MAX_MOTOR_TEMP           110 // Deg F
 
 // ------------ Page Drawing Support ----------------
 // Modify the following strings to customize the Home Screen
@@ -231,7 +232,7 @@ void HomeScreen::updateHomeStatus() {
     currentAZMotorTemp = 0; // define this for non ODrive implementations
   #endif
   
-  if (currentAZMotorTemp >= 120) { // make box red
+  if (currentAZMotorTemp >= MAX_MOTOR_TEMP) { // make box red
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp, textColor, butOnBackground);
   } else {
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
@@ -245,7 +246,7 @@ void HomeScreen::updateHomeStatus() {
     currentALTMotorTemp = 0; // define this for non ODrive implementations
   #endif
 
-  if (currentALTMotorTemp >= 120) { // make box red
+  if (currentALTMotorTemp >= MAX_MOTOR_TEMP) { // make box red
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp, textColor, butOnBackground);
   } else {
     canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
@@ -283,6 +284,7 @@ bool HomeScreen::homeButStateChange() {
 // ============ Update Home Buttons ==============
 // ===============================================
 void HomeScreen::updateHomeButtons(bool redrawBut) {
+  // redrawBut when true forces a refresh of all buttons once more..used for a toggle effect on some buttons
   _redrawBut = redrawBut;
 
   int y_offset = 0;
@@ -292,15 +294,19 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
   // Enable / Disable Azimuth Motor
   if (oDriveExt.getODriveCurrentState(AZM_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
     homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "AZM Enabled", BUT_ON);
+    digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
   } else { //motor off
+    digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
     homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN AZM", BUT_OFF);
   }
 
   // Enable / Disable Altitude Motor
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (oDriveExt.getODriveCurrentState(ALT_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
+    digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
     homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "ALT Enabled", BUT_ON);
   } else { //motor off
+    digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
     homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN ALT", BUT_OFF);
   }
 
@@ -379,6 +385,7 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
 // =========== Check for Button Press ==============
 // =================================================
 bool HomeScreen::touchPoll(int16_t px, int16_t py) {
+  // return true forces a refresh of all buttons
   int y_offset = 0;
   
   // ======= Column 1 - Leftmost =======
@@ -386,15 +393,13 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!oDriveExt.odriveAzmPwr) { // if not On, toggle ON
-      digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
       oDriveExt.odriveAzmPwr = true;
       motor1.power(true);
     } else { // since already ON, toggle OFF
-      digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
       oDriveExt.odriveAzmPwr = false;
       motor1.power(false);
     }
-    return true;
+    return false;
   }
             
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
@@ -402,15 +407,13 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!oDriveExt.odriveAltPwr) { // toggle ON
-      digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
       oDriveExt.odriveAltPwr = true; 
       motor2.power(true);
     } else { // toggle OFF
-      digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
       oDriveExt.odriveAltPwr = false;
       motor2.power(false); // Idle the ODrive motor
     }
-    return true;
+    return false;
   }
 
   // STOP everthing requested
@@ -443,7 +446,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     } else {
       setLocalCmd(":Td#"); // Disable Tracking
     }
-    return true; 
+    return false; 
   }
 
   // Set Night or Day Mode
@@ -463,12 +466,15 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
+    
+    //_oDriveDriver->SetPosition(0, 0.0);
+    //_oDriveDriver->SetPosition(1, 0.0);
+    //while (mount.isSlewing()); Y;
     //setLocalCmd(":hF#"); // reset Home position
-    _oDriveDriver->SetPosition(0, 0.0);
-    _oDriveDriver->SetPosition(1, 0.0);
-    setLocalCmd(":hC#"); // go HOME
+
+    setLocalCmd(":hF#"); // home Reset
     gotoHome = true;
-    return true;
+    return false;
   }
   
   // ======== COLUMN 3 of Buttons - Leftmost ========
@@ -482,7 +488,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     } else { // already parked
       setLocalCmd(":hR#"); // Un park position
     }
-    return true;
+    return false;
   }
 
   // Set Park Position to Current
@@ -505,7 +511,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
       digitalWrite(FAN_ON_PIN, LOW);
       fanOn = false;
     }
-    return true;
+    return false;
   }
   return false;
 }

@@ -92,7 +92,7 @@ void GotoScreen::draw() {
   setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
-  drawTitle(120, TITLE_TEXT_Y, "Go To");
+  drawTitle(135, TITLE_TEXT_Y, "Go To");
   drawMenuButtons();
   tft.setFont(&Inconsolata_Bold8pt7b);
 
