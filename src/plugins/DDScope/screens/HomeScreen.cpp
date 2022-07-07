@@ -178,7 +178,6 @@ void HomeScreen::updateHomeStatus() {
   #elif
     currentAZEncPos = 0; // define this for non ODrive implementations
   #endif
-
   canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZEncPos);
 
   
@@ -473,7 +472,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     //setLocalCmd(":hF#"); // home Reset
     //setLocalCmd(":hC#"); // home Reset
     gotoHome = true;
-    return false;
+    return true;
   }
   
   // ======== COLUMN 3 of Buttons - Leftmost ========

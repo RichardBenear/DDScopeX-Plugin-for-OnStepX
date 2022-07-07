@@ -13,6 +13,7 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
+#include "src/telescope/mount/goto/Goto.h"
 
 // These defines are from the SmartHandController repository
 #define L_CAT_PER_UNK "Period Unknown"
@@ -74,6 +75,9 @@ Button shcCatButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, 
 
 // Canvas Print constructor
 CanvasPrint shcCatDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+
+// Canvas Print object, Inconsolata_Bold8pt7b font
+CanvasPrint shcCatInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
 
 extern const char* Txt_Bayer[];
 
@@ -306,9 +310,9 @@ void SHCCatScreen::updateScreen() {
   // show if we are above and below visible limits
   tft.setFont(&Inconsolata_Bold8pt7b);  
   if (shcAlt[catButSelPos] > 10.0) {      // minimum 10 degrees altitude
-      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+      shcCatInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
   } else {
-      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+      shcCatInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
   }
 
   writeSHCTarget(catButSelPos); // write RA and DEC as target for GoTo
@@ -425,39 +429,49 @@ void SHCCatScreen::writeSHCTarget(uint16_t index) {
 
 // Show target coordinates RA/DEC and ALT/AZM
 void SHCCatScreen::showTargetCoords() {
-  char reply[15]    ="";
-  char _reply[15]   ="";
+  // Get Target RA: Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
+  //getLocalCmdTrim(":Gr#", reply);
+  //sprintf(_reply, "RA: %9s", reply);
+  //shcCatDefPrint(radec_x, ra_y, width, height, _reply, false);
+  
+  // Get Target DEC: sDD*MM# or sDD*MM:SS# (based on precision setting)
+  //getLocalCmdTrim(":Gd#", reply); 
+  //sprintf(_reply, "DEC: %9s", reply);
+  //shcCatDefPrint(radec_x, dec_y, width, height, _reply, false);
+
+  // Get Target ALT and AZ and display them as Double
+  //getLocalCmdTrim(":Gz#", reply); // DDD*MM'SS# 
+  //convert.dmsToDouble(&tAzm_d, reply, false, PM_HIGH);
+
+  //getLocalCmdTrim(":Gal#", reply);	// sDD*MM'SS#
+  //convert.dmsToDouble(&tAlt_d, reply, true, PM_HIGH);
+
+  //sprintf(_reply, "AZM: %6.1f", tAzm_d); 
+  //shcCatDefPrint(altazm_x, ra_y, width-10, height, _reply, false);    
+
+  //sprintf(_reply, "ALT: %6.1f", tAlt_d);
+  //shcCatDefPrint(altazm_x, dec_y, width-10, height, _reply, false); 
+
+    char _reply[15]   = "";
   uint16_t radec_x  = 155;
   uint16_t ra_y     = 405;
   uint16_t dec_y    = 418;
   uint16_t altazm_x = 250;
   uint16_t width    = 85;
   uint16_t height   = 12;
-  double tAzm_d     = 0.0;
-  double tAlt_d     = 0.0;
 
-  // Get Target RA: Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
-  getLocalCmdTrim(":Gr#", reply);
-  sprintf(_reply, "RA: %9s", reply);
-  shcCatDefPrint.cPrint(radec_x, ra_y, width, height, _reply, false);
-  
-  // Get Target DEC: sDD*MM# or sDD*MM:SS# (based on precision setting)
-  getLocalCmdTrim(":Gd#", reply); 
-  sprintf(_reply, "DEC: %9s", reply);
-  shcCatDefPrint.cPrint(radec_x, dec_y, width, height, _reply, false);
+  Coordinate catTarget = goTo.getGotoTarget();
+  transform.rightAscensionToHourAngle(&catTarget);
+  transform.equToHor(&catTarget);
 
-  // Get Target ALT and AZ and display them as Double
-  getLocalCmdTrim(":Gz#", reply); // DDD*MM'SS# 
-  convert.dmsToDouble(&tAzm_d, reply, false, PM_HIGH);
-
-  getLocalCmdTrim(":Gal#", reply);	// sDD*MM'SS#
-  convert.dmsToDouble(&tAlt_d, reply, true, PM_HIGH);
-
-  sprintf(_reply, "AZM: %6.1f", tAzm_d); 
-  shcCatDefPrint.cPrint(altazm_x, ra_y, width-10, height, _reply, false);    
-
-  sprintf(_reply, "ALT: %6.1f", tAlt_d);
-  shcCatDefPrint.cPrint(altazm_x, dec_y, width-10, height, _reply, false); 
+  sprintf(_reply, "RA: %6.1f", radToHrs(catTarget.r));
+  shcCatDefPrint.PrintCus(radec_x, ra_y, width, height, _reply, false);
+  sprintf(_reply, "DEC: %6.1f", radToDeg(catTarget.d));
+  shcCatDefPrint.PrintCus(radec_x, dec_y, width, height, _reply, false);
+  sprintf(_reply, "AZM: %6.1f", NormalizeAzimuth(radToDeg(catTarget.z))); 
+  shcCatDefPrint.PrintCus(altazm_x, ra_y, width-10, height, _reply, false);    
+  sprintf(_reply, "ALT: %6.1f", radToDeg(catTarget.a));
+  shcCatDefPrint.PrintCus(altazm_x, dec_y, width-10, height, _reply, false); 
 }
 
 SHCCatScreen shcCatScreen;

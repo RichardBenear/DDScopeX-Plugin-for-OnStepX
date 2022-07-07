@@ -6,6 +6,7 @@
 
 #include "Display.h"
 #include "UIelements.h"
+#include "../fonts/Inconsolata_Bold8pt7b.h"
 
 // =======================================================================
 // ======================= Button UI elements ============================
@@ -113,9 +114,10 @@ CanvasPrint::CanvasPrint(
     p_label           = label;
   }
 
-// =====================================================================
-// Canvas print function using characters
-void CanvasPrint::cPrint(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
+// ===================== Default Font ====================================
+// Decided to not pass in font type but use constructor objects instead
+// Canvas print function using character strings
+void CanvasPrint::Print(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
   char _label[60] = "";
   int y_box_offset = -6; // default font offset
   GFXcanvas1 canvas(width, height);
@@ -131,10 +133,43 @@ void CanvasPrint::cPrint(int x, int y, uint16_t width, uint16_t height, const ch
   }
 }
 
-  // Overload for double
-void CanvasPrint::cPrint(int x, int y, uint16_t width, uint16_t height, double label, bool warning) {
+// Using Overload for double
+void CanvasPrint::Print(int x, int y, uint16_t width, uint16_t height, double label, bool warning) {
   char charlabel[60];
   sprintf(charlabel, "%5.1f", label);
-  cPrint(p_x, p_y, p_width, p_height, charlabel, warning);
+  Print(p_x, p_y, p_width, p_height, charlabel, warning);
  }
+ //=====================================================================
 
+ //===================== Custom Font ===================================
+// Using custom font Inconsolata_Bold8pt7b
+void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
+  char _label[60] = "";
+  int y_box_offset = -6; // default font offset
+  GFXcanvas1 canvas(width, height);
+
+  canvas.setFont(&Inconsolata_Bold8pt7b); 
+  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
+  sprintf(_label, "%9s", label);
+  canvas.print(_label);
+  if (warning) { // show warning background
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorActive);
+  } else {
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorNotActive);
+  }
+}
+
+  // Using Overload for double
+void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, double label, bool warning) {
+  char charlabel[20];
+  sprintf(charlabel, "%5.1f", label);
+  PrintCus(p_x, p_y, p_width, p_height, charlabel, warning);
+}
+
+ // Using Overload for double
+void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, int label, bool warning) {
+  char charlabel[10];
+  sprintf(charlabel, "%8d", label);
+  PrintCus(p_x, p_y, p_width, p_height, charlabel, warning);
+}
+//=====================================================================

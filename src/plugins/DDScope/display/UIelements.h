@@ -73,9 +73,12 @@ class CanvasPrint{
       //GFXfont       font,
       const char*   label);
 
-    void cPrint(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning);
-    void cPrint(int x, int y, uint16_t width, uint16_t height,      double label, bool warning);
-    //void cPrint(       int y,                                  const GFXfont *f, const char* label, bool warning);
+    void Print(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning);
+    void Print(int x, int y, uint16_t width, uint16_t height,      double label, bool warning);
+    //void Print(       int y,                                  const GFXfont *f, const char* label, bool warning);
+    void PrintCus(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning);
+    void PrintCus(int x, int y, uint16_t width, uint16_t height, double label, bool warning);
+    void PrintCus(int x, int y, uint16_t width, uint16_t height, int label, bool warning);
 
   private:
     int           p_x;

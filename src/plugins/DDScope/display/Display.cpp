@@ -12,10 +12,14 @@
 #include <Adafruit_SPITFT.h>
 #include <gfxfont.h>
 
+// OnStepX
 #include "src/telescope/mount/Mount.h"
 #include "src/lib/commands/CommandErrors.h"
 #include "src/libApp/commands/ProcessCmds.h"
+#include "src/telescope/mount/goto/Goto.h"
 #include "src/lib/tasks/OnTask.h"
+
+// Fonts
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
@@ -352,6 +356,13 @@ void Display::updateOnStepCmdStatus() {
   if (!tls.isReady()) {
     canvPrint(2, 454, 0, 319, C_HEIGHT, " Time and/or Date Not Set");
   } else {
+    if (firstGPS) {
+      // One Time update the SHC LST and Latitude if GPS locked
+      cat_mgr.setLstT0(site.getSiderealTime()); 
+      cat_mgr.setLat(site.location.latitude);
+      firstGPS = false;
+    }
+    //VL(shc.getLat()); VL(shc.getLstT0());
     canvPrint(2, 454, 0, 319, C_HEIGHT, commandErrorStr[commandError]);
   } 
 }
@@ -629,18 +640,19 @@ void Display::updateCommonStatus() {
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;
 
+
   char ra_hms[10]   = ""; 
   char dec_dms[11]  = "";
   char tra_hms[10]  = "";
   char tdec_dms[11] = "";
-  char cAzmDMS[10]  = "";
-  char cAltDMS[11]  = "";
-  char tAzmDMS[10]  = "";
-  char tAltDMS[11]  = "";
-  double cAzm_d = 0.0;
-  double cAlt_d = 0.0;
-  double tAzm_d = 0.0;
-  double tAlt_d = 0.0;
+  //char cAzmDMS[10]  = "";
+  //char cAltDMS[11]  = "";
+  //char tAzmDMS[10]  = "";
+  //char tAltDMS[11]  = "";
+  //double cAzm_d = 0.0;
+  //double cAlt_d = 0.0;
+  //double tAzm_d = 0.0;
+  //double tAlt_d = 0.0;
 
   int y_offset = 0;
   // ----- Column 1 -----
@@ -648,12 +660,12 @@ void Display::updateCommonStatus() {
   getLocalCmdTrim(":GR#", ra_hms);
   canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
 
-// Target RA, Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
+  // Target RA, Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
   y_offset +=COM_LABEL_Y_SPACE; 
   getLocalCmdTrim(":Gr#", tra_hms);
   canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tra_hms);
 
-// Current DEC
+  // Current DEC
    y_offset +=COM_LABEL_Y_SPACE; 
   getLocalCmdTrim(":GD#", dec_dms);
   canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, dec_dms);
@@ -666,27 +678,39 @@ void Display::updateCommonStatus() {
   // ----- Column 2 -----
   y_offset =0;
 
-  // Get Current ALT and AZ and display them as Double
-  getLocalCmdTrim(":GZ#", cAzmDMS); // DDD*MM'SS# 
-  convert.dmsToDouble(&cAzm_d, cAzmDMS, false, PM_HIGH);
-  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAzm_d);
+  Coordinate dispTarget = goTo.getGotoTarget();
+  transform.rightAscensionToHourAngle(&dispTarget);
+  transform.equToHor(&dispTarget);
+  //VF("gototar.z="); VL(radToDeg(dispTarget.z));
+  //VF("gototar.a="); VL(radToDeg(dispTarget.a));
+  //VF("gototarH.r="); VL(radToHrs(dispTarget.r));
+  //VF("gototar.d="); VL(radToDeg(dispTarget.d));
 
-  y_offset +=COM_LABEL_Y_SPACE;  
-  getLocalCmdTrim(":GA#", cAltDMS);	// sDD*MM'SS#
-  convert.dmsToDouble(&cAlt_d, cAltDMS, true, PM_HIGH);
-  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAzm_d);
+  // Get CURRENT AZM
+  //getLocalCmdTrim(":GZ#", cAzmDMS); // DDD*MM'SS# 
+  //convert.dmsToDouble(&cAzm_d, cAzmDMS, false, PM_LOW);
+  double temp = NormalizeAzimuth(radToDeg(mount.getPosition(CR_MOUNT_HOR).z));
+  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, temp);
 
-  // Get Target ALT and AZ and display them as Double
+  // Get TARGET AZM
   y_offset +=COM_LABEL_Y_SPACE;  
-  getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
-  convert.dmsToDouble(&tAzm_d, tAzmDMS, false, PM_HIGH);
-  VL(tAzm_d);
-  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, cAlt_d);
+  //getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
+  //convert.dmsToDouble(&tAzm_d, tAzmDMS, false, PM_LOW);
+  temp = NormalizeAzimuth(radToDeg(dispTarget.z));
+  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, temp);
 
+  // Get CURRENT ALT
   y_offset +=COM_LABEL_Y_SPACE;  
-  getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
-  convert.dmsToDouble(&tAlt_d, tAltDMS, true, PM_HIGH);
-  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, tAlt_d);
+  //getLocalCmdTrim(":GA#", cAltDMS);	// sDD*MM'SS#
+  //convert.dmsToDouble(&cAlt_d, cAltDMS, true, PM_LOW);
+  temp = radToDeg(mount.getPosition(CR_MOUNT_ALT).a);
+  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, temp);
+  
+  // Get TARGET ALT
+  y_offset +=COM_LABEL_Y_SPACE;  
+  //getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
+  //convert.dmsToDouble(&tAlt_d, tAltDMS, true, PM_LOW);
+  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, radToDeg(dispTarget.a));
 }
 
 // draw a picture -This member function is a copy from rDUINOScope but with 

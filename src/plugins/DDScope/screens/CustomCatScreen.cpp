@@ -12,6 +12,7 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
+#include "src/telescope/mount/goto/Goto.h"
 
 #define CUS_X               1
 #define CUS_Y               50
@@ -53,8 +54,11 @@ Button customDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackgroun
 // Catalog Button object for custom font
 Button customCatButton(0, 0 ,0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
 
-// Canvas Print constructor
+// Canvas Print object default Arial 6x9 font
 CanvasPrint customDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+
+// Canvas Print object, Inconsolata_Bold8pt7b font
+CanvasPrint customInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
 
 // ========== Initialize and draw Custom Catalog ===============
 void CustomCatScreen::init() { 
@@ -73,7 +77,7 @@ void CustomCatScreen::init() {
   customCatalog = true;
 
   if (!loadCustomArray()) {
-      canvPrint(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Custom"); 
+      customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Custom"); 
       moreScreen.draw();
       return;
   } else {
@@ -184,8 +188,17 @@ void CustomCatScreen::drawCustomCat() {
     convert.hmsToDouble(&cRAdouble, _cArray[cAbsRow].cRAhhmmss, PM_HIGH);
     convert.dmsToDouble(&cDECdouble, _cArray[cAbsRow].cDECsddmmss, true, PM_HIGH);
     
+    // NOTE: next 2 line were old version now replace by Coordinate transform cusTarget
     //double cHAdouble=haRange(LST()*15.0-cRAdouble);
-    cat_mgr.EquToHor(cRAdouble*15, cDECdouble, &dcAlt[cAbsRow], &dcAzm[cAbsRow]);
+    //cat_mgr.EquToHor(cRAdouble*15, cDECdouble, &dcAlt[cAbsRow], &dcAzm[cAbsRow]);
+
+    // dcAlt[cAbsRow] is used by filter to check if above Horizon
+    Coordinate cusTarget;
+    cusTarget.r = hrsToRad(cRAdouble);
+    cusTarget.d = degToRad(cDECdouble);
+    transform.equToHor(&cusTarget);
+    dcAlt[cAbsRow] = radToDeg(cusTarget.a);
+    VF("alt="); VL(dcAlt[cAbsRow]);
 
     //VF("activeFilter="); VL(activeFilter);
     if (((moreScreen.activeFilter == FM_ABOVE_HORIZON) && (dcAlt[cAbsRow] > 10.0)) || moreScreen.activeFilter == FM_NONE) { // filter out elements below 10 deg if filter enabled
@@ -225,7 +238,7 @@ void CustomCatScreen::drawCustomCat() {
     // stop printing data if last row on the last page
     if (cAbsRow == cusRowEntries+1) {
       cEndOfList = true; 
-      if (cRow == 0) {canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "None above 10 deg");}
+      if (cRow == 0) {customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "None above 10 deg");}
       //VF("endOfList");
       return; 
     }
@@ -284,9 +297,9 @@ void CustomCatScreen::updateScreen() {
   // show if we are above and below visible limits
   tft.setFont(&Inconsolata_Bold8pt7b); 
   if (dcAlt[cAbsIndex] > 10.0) {      // minimum 10 degrees altitude
-      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+      customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
   } else {
-      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+      customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
   }
 
   writeCustomTarget(cAbsIndex); // write RA and DEC as target for GoTo
@@ -336,7 +349,7 @@ void CustomCatScreen::updateScreen() {
     // write new array into SD File
     File cWrFile;
     if ((cWrFile = SD.open("custom.csv", FILE_WRITE)) == 0) {
-      canvPrint(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "SD open ERROR");
+      customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "SD open ERROR");
       return;
     } else {
       if (cWrFile) {
@@ -425,39 +438,52 @@ void CustomCatScreen::writeCustomTarget(uint16_t index) {
 
 // Show target coordinates RA/DEC and ALT/AZM
 void CustomCatScreen::showTargetCoords() {
-  char reply[15]    ="";
-  char _reply[15]   ="";
+  char _reply[15]   = "";
   uint16_t radec_x  = 155;
   uint16_t ra_y     = 405;
   uint16_t dec_y    = 418;
   uint16_t altazm_x = 250;
   uint16_t width    = 85;
   uint16_t height   = 12;
-  double tAzm_d     = 0.0;
-  double tAlt_d     = 0.0;
 
-  // Get Target RA: Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
-  getLocalCmdTrim(":Gr#", reply);
-  sprintf(_reply, "RA: %9s", reply);
-  customDefPrint.cPrint(radec_x, ra_y, width, height, _reply, false);
+  // The following used the local command channel
+  // Decided to change to direct access to transfroms method since
+  //    getting target ALT and AZM didn't work as expected and transform is faster
+  //double cAzm_d     = 0.0;
+  //double cAlt_d     = 0.0;
+  //char reply[15]    = "";
   
+  // Get Target RA: Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
+  //getLocalCmdTrim(":Gr#", reply);
+
   // Get Target DEC: sDD*MM# or sDD*MM:SS# (based on precision setting)
-  getLocalCmdTrim(":Gd#", reply); 
-  sprintf(_reply, "DEC: %9s", reply);
-  customDefPrint.cPrint(radec_x, dec_y, width, height, _reply, false);
+  //getLocalCmdTrim(":Gd#", reply); 
 
   // Get Target ALT and AZ and display them as Double
-  getLocalCmdTrim(":Gz#", reply); // DDD*MM'SS# 
-  convert.dmsToDouble(&tAzm_d, reply, false, PM_HIGH);
+  //getLocalCmdTrim(":Gz#", reply); // DDD*MM'SS# 
+  //convert.dmsToDouble(&tAzm_d, reply, false, PM_HIGH);
 
-  getLocalCmdTrim(":Gal#", reply);	// sDD*MM'SS#
-  convert.dmsToDouble(&tAlt_d, reply, true, PM_HIGH);
+  //getLocalCmdTrim(":Gal#", reply);	// sDD*MM'SS#
+  //convert.dmsToDouble(&tAlt_d, reply, true, PM_HIGH);
 
-  sprintf(_reply, "AZM: %6.1f", tAzm_d); 
-  customDefPrint.cPrint(altazm_x, ra_y, width-10, height, _reply, false);    
+  //sprintf(_reply, "AZM: %6.1f", cAzm_d); 
+  //customDefPrint(altazm_x, ra_y, width-10, height, _reply, false);    
 
-  sprintf(_reply, "ALT: %6.1f", tAlt_d);
-  customDefPrint.cPrint(altazm_x, dec_y, width-10, height, _reply, false); 
+  //sprintf(_reply, "ALT: %6.1f", cAlt_d);
+  //customDefPrint(altazm_x, dec_y, width-10, height, _reply, false); 
+
+  Coordinate catTarget = goTo.getGotoTarget();
+  transform.rightAscensionToHourAngle(&catTarget);
+  transform.equToHor(&catTarget);
+
+  sprintf(_reply, "RA: %6.1f", radToHrs(catTarget.r));
+  customDefPrint.Print(radec_x, ra_y, width, height, _reply, false);
+  sprintf(_reply, "DEC: %6.1f", radToDeg(catTarget.d));
+  customDefPrint.Print(radec_x, dec_y, width, height, _reply, false);
+  sprintf(_reply, "AZM: %6.1f", NormalizeAzimuth(radToDeg(catTarget.z))); 
+  customDefPrint.Print(altazm_x, ra_y, width-10, height, _reply, false);    
+  sprintf(_reply, "ALT: %6.1f", radToDeg(catTarget.a));
+  customDefPrint.Print(altazm_x, dec_y, width-10, height, _reply, false); 
 }
 
 CustomCatScreen customCatScreen;

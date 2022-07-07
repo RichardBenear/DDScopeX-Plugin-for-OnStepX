@@ -63,24 +63,14 @@
 const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
 
 // More Screen Button object with standard Font size
-Button moreButton(
-                TRACK_R_X, TRACK_R_Y, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
-                "");
+Button moreButton(TRACK_R_X, TRACK_R_Y, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y,
+                display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
 
 // More Screen Button object with large Font size
-Button moreLgButton(
-                0, 0, 0, 0,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.largeFontWidth, 
-                display.largeFontHeight, 
-                "");
+Button moreLgButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.largeFontWidth, display.largeFontHeight, "");
+
+// Canvas Print object, Inconsolata_Bold8pt7b font
+CanvasPrint moreInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
 
 // ============= Initialize the Catalog & More page ==================
 void MoreScreen::draw() {
@@ -203,19 +193,19 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
 
   // Show current Tracking Rate
   // For ALT/AZ this always shows the default rate
-  char _sideRate[12];
+  char _sideRate[9];
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER+12;
-  char sideRate[10];
+  char sideRate[6];
   getLocalCmdTrim(":GT#", sideRate);
   sprintf(_sideRate, "TR=%s", sideRate);
-  canvPrint(TRACK_R_X-6, TRACK_R_Y+y_offset, 0, 90, 16, _sideRate);
+  moreInsPrint.PrintCus(TRACK_R_X-6, TRACK_R_Y+y_offset, 0, 90, 16, _sideRate);
 
   // ---- right hand column of buttons ----
   y_offset = 0;
   // Filter Selection Button - circular selection of 3 values
   if (filterBut) {
     moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_ON);
-    if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) canvPrint(120, 382, 0, 199, 16, "All Sky For STARS only");
+    if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) moreInsPrint.PrintCus(120, 382, 0, 199, 16, "All Sky For STARS only");
     filterBut = false;
   } else {
     moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_OFF);
@@ -228,7 +218,7 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
       yesCancelActive = true;
       moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Yes", BUT_OFF);
       moreButton.draw(MISC_X+40, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Cancel", BUT_OFF);
-      if (!objectSelected) canvPrint(120, 382, 0, 199, 16, "Delete Custom Catalog?!");
+      if (!objectSelected) moreInsPrint.PrintCus(120, 382, 0, 199, 16, "Delete Custom Catalog?!");
     }
     if (yesBut) { // go ahead and clear
     moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clearing", BUT_ON);

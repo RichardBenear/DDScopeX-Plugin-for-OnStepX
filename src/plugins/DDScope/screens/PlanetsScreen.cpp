@@ -297,10 +297,6 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     sprintf(cmd, ":Sd%c%02d:%02d:%02d#", sign, ivd1, ivd2, (int)fvd3);
     setLocalCmd(cmd);
     
-    //  :Sa[sDD*MM]# or :Sa[sDD*MM'SS]# or :Sa[sDD*MM'SS.SSS]#
-    //  :Sz[DDD*MM]# or :Sz[DDD*MM'SS]# or :Sz[DDD*MM'SS.SSS]#
-    
-
     // the following 5 lines are displayed on the Catalog/More page
     snprintf(moreScreen.catSelectionStr1, 16, "Name-:%-16s", PlanetNames[planetButSelPos]);
     snprintf(moreScreen.catSelectionStr2, 12, "AZM--:%-12f", obj.horiCoordinates.azi);
