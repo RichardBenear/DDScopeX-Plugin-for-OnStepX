@@ -137,9 +137,9 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
   if (oneXisOn) {   
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_ON);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Center", BUT_OFF);
-    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Fast", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_OFF); 
   } 
@@ -147,9 +147,9 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
   if (eightXisOn) {   
       guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Center", BUT_ON);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_ON);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Fast", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_OFF); 
   }   
@@ -157,9 +157,9 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
   if (twentyXisOn) {
       guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Center", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_ON);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Fast", BUT_ON);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_OFF); 
   }
@@ -167,9 +167,9 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
   if (HalfMaxisOn) {
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Center", BUT_OFF);
-    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Fast", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_ON); 
   }        
@@ -204,6 +204,9 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
         if (!guidingEast) {
             setLocalCmd(":Mw#"); // east west is swapped for DDScope
             guidingEast = true;
+            guidingWest = false;
+            guidingNorth = false;
+            guidingSouth = false;
         } else {
             setLocalCmd(":Qw#");
             guidingEast = false;
@@ -216,7 +219,10 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
       BEEP;
         if (!guidingWest) {
             setLocalCmd(":Me#"); // east west is swapped for DDScope
+            guidingEast = false;
             guidingWest = true;
+            guidingNorth = false;
+            guidingSouth = false;
         } else {
             setLocalCmd(":Qe#");
             guidingWest = false;
@@ -229,7 +235,10 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
       BEEP;
         if (!guidingNorth) {
             setLocalCmd(":Mn#");
+            guidingEast = false;
+            guidingWest = false;
             guidingNorth = true;
+            guidingSouth = false;
         } else {
             setLocalCmd(":Qn#");
             guidingNorth = false;
@@ -242,6 +251,9 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
       BEEP;
         if (!guidingSouth) {
             setLocalCmd(":Ms#");
+            guidingEast = false;
+            guidingWest = false;
+            guidingNorth = false;
             guidingSouth = true;
         } else {
             setLocalCmd(":Qs#");
@@ -250,6 +262,12 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
         return true;
     }
 
+    // :RG#       Set guide rate: Guiding        1X
+    // :RC#       Set guide rate: Centering      8X
+    // :RM#       Set guide rate: Find          20X
+    // :RF#       Set guide rate: Fast          48X
+    // :RS#       Set guide rate: Slew           ?X (1/2 of current goto rate)
+    // :Rn#       Set guide rate to n, where n = 0..9
     // Select Guide Rates
     int y_offset = 0;
     int x_offset = 0;  
@@ -266,11 +284,11 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
         return true;
     }
 
-    // 8x Rate for Centering
+    // 20x Rate
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":RC#");
+        setLocalCmd(":RM#");
         oneXisOn = false;
         eightXisOn = true;
         twentyXisOn = false;
@@ -278,11 +296,11 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
         return true;
     }
 
-    // 24x Rate for Moving
+    // 48x Rate for Moving
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":RM#");
+        setLocalCmd(":RF#");
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = true;

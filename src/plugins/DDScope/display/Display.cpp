@@ -63,38 +63,38 @@
 #define COM_COL2_DATA_X         250
 
 #define L_CE_NONE                    "No Errors"
-  #define L_CE_0                       "reply 0"
-  #define L_CE_CMD_UNKNOWN             "command unknown"
-  #define L_CE_REPLY_UNKNOWN           "invalid reply"
-  #define L_CE_PARAM_RANGE             "parameter out of range"
-  #define L_CE_PARAM_FORM              "bad parameter format"
-  #define L_CE_ALIGN_FAIL              "align failed"
-  #define L_CE_ALIGN_NOT_ACTIVE        "align not active"
-  #define L_CE_NOT_PARKED_OR_AT_HOME   "not parked or at home"
-  #define L_CE_PARKED                  "already parked"
-  #define L_CE_PARK_FAILED             "park failed"
-  #define L_CE_NOT_PARKED              "not parked"
-  #define L_CE_NO_PARK_POSITION_SET    "no park position set"
-  #define L_CE_GOTO_FAIL               "goto failed"
-  #define L_CE_LIBRARY_FULL            "library full"
-  #define L_CE_GOTO_ERR_BELOW_HORIZON  "goto below horizon"
-  #define L_CE_GOTO_ERR_ABOVE_OVERHEAD "goto above overhead"
-  #define L_CE_SLEW_ERR_IN_STANDBY     "slew in standby"
-  #define L_CE_SLEW_ERR_IN_PARK        "slew in park"
-  #define L_CE_GOTO_ERR_GOTO           "already in goto"
-  #define L_CE_SLEW_ERR_OUTSIDE_LIMITS "outside limits"
-  #define L_CE_SLEW_ERR_HARDWARE_FAULT "hardware fault"
-  #define L_CE_MOUNT_IN_MOTION         "mount in motion"
-  #define L_CE_GOTO_ERR_UNSPECIFIED    "other"
-  #define L_CE_UNK                     "unknown"
+#define L_CE_0                       "reply 0"
+#define L_CE_CMD_UNKNOWN             "command unknown"
+#define L_CE_REPLY_UNKNOWN           "invalid reply"
+#define L_CE_PARAM_RANGE             "parameter out of range"
+#define L_CE_PARAM_FORM              "bad parameter format"
+#define L_CE_ALIGN_FAIL              "align failed"
+#define L_CE_ALIGN_NOT_ACTIVE        "align not active"
+#define L_CE_NOT_PARKED_OR_AT_HOME   "not parked or at home"
+#define L_CE_PARKED                  "already parked"
+#define L_CE_PARK_FAILED             "park failed"
+#define L_CE_NOT_PARKED              "not parked"
+#define L_CE_NO_PARK_POSITION_SET    "no park position set"
+#define L_CE_GOTO_FAIL               "goto failed"
+#define L_CE_LIBRARY_FULL            "library full"
+#define L_CE_GOTO_ERR_BELOW_HORIZON  "goto below horizon"
+#define L_CE_GOTO_ERR_ABOVE_OVERHEAD "goto above overhead"
+#define L_CE_SLEW_ERR_IN_STANDBY     "slew in standby"
+#define L_CE_SLEW_ERR_IN_PARK        "slew in park"
+#define L_CE_GOTO_ERR_GOTO           "already in goto"
+#define L_CE_SLEW_ERR_OUTSIDE_LIMITS "outside limits"
+#define L_CE_SLEW_ERR_HARDWARE_FAULT "hardware fault"
+#define L_CE_MOUNT_IN_MOTION         "mount in motion"
+#define L_CE_GOTO_ERR_UNSPECIFIED    "other"
+#define L_CE_UNK                     "unknown"
 
-  static const char commandErrorStr[30][25] = {
-  L_CE_NONE, L_CE_0, L_CE_CMD_UNKNOWN, L_CE_REPLY_UNKNOWN, L_CE_PARAM_RANGE,
-  L_CE_PARAM_FORM, L_CE_ALIGN_FAIL, L_CE_ALIGN_NOT_ACTIVE, L_CE_NOT_PARKED_OR_AT_HOME,
-  L_CE_PARKED, L_CE_PARK_FAILED, L_CE_NOT_PARKED, L_CE_NO_PARK_POSITION_SET, L_CE_GOTO_FAIL,
-  L_CE_LIBRARY_FULL, L_CE_GOTO_ERR_BELOW_HORIZON, L_CE_GOTO_ERR_ABOVE_OVERHEAD,
-  L_CE_SLEW_ERR_IN_STANDBY, L_CE_SLEW_ERR_IN_PARK, L_CE_GOTO_ERR_GOTO, L_CE_SLEW_ERR_OUTSIDE_LIMITS,
-  L_CE_SLEW_ERR_HARDWARE_FAULT, L_CE_MOUNT_IN_MOTION, L_CE_GOTO_ERR_UNSPECIFIED, L_CE_UNK};
+static const char commandErrorStr[30][25] = {
+L_CE_NONE, L_CE_0, L_CE_CMD_UNKNOWN, L_CE_REPLY_UNKNOWN, L_CE_PARAM_RANGE,
+L_CE_PARAM_FORM, L_CE_ALIGN_FAIL, L_CE_ALIGN_NOT_ACTIVE, L_CE_NOT_PARKED_OR_AT_HOME,
+L_CE_PARKED, L_CE_PARK_FAILED, L_CE_NOT_PARKED, L_CE_NO_PARK_POSITION_SET, L_CE_GOTO_FAIL,
+L_CE_LIBRARY_FULL, L_CE_GOTO_ERR_BELOW_HORIZON, L_CE_GOTO_ERR_ABOVE_OVERHEAD,
+L_CE_SLEW_ERR_IN_STANDBY, L_CE_SLEW_ERR_IN_PARK, L_CE_GOTO_ERR_GOTO, L_CE_SLEW_ERR_OUTSIDE_LIMITS,
+L_CE_SLEW_ERR_HARDWARE_FAULT, L_CE_MOUNT_IN_MOTION, L_CE_GOTO_ERR_UNSPECIFIED, L_CE_UNK};
 
 // Menu button object
 Button menuButton( 
@@ -124,6 +124,7 @@ void Display::init() {
   delay(1500); // let start screen show for 1.5 sec
 
   // set some defaults
+  // NOTE: change these for your own personal settings
   VLF("MSG: Setting up Limits, TZ, Site Name, Slew Speed");
   setLocalCmd(":SG+07:00#"); // Set Default Time Zone
   setLocalCmd(":Sh-01#"); //Set horizon limit -1 deg
@@ -187,14 +188,12 @@ void Display::refreshButtons() {
       if (customCatScreen.catalogButStateChange()) customCatScreen.updateCustomButtons(false);  break; 
     case SHC_CAT_SCREEN:   
       if (shcCatScreen.catalogButStateChange()) shcCatScreen.updateShcButtons(false);           break; 
-  //case XSTATUS_SCREEN:                                           break; // no buttons here yet
+    case XSTATUS_SCREEN:                                                                        break; // no buttons here
 
     #ifdef ODRIVE_MOTOR_PRESENT
       case ODRIVE_SCREEN: 
         if (oDriveScreen.odriveButStateChange())   oDriveScreen.updateOdriveButtons(false);     break;
     #endif
-
-    default: VLF("touchscreen error");
   }
 };
 
@@ -354,7 +353,7 @@ void Display::updateOnStepCmdStatus() {
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;
   if (!tls.isReady()) {
-    canvPrint(2, 454, 0, 319, C_HEIGHT, " Time and/or Date Not Set");
+    canvPrint(2, 454, 0, 317, C_HEIGHT, " Time and/or Date Not Set");
   } else {
     if (firstGPS) {
       // One Time update the SHC LST and Latitude if GPS locked
@@ -363,7 +362,7 @@ void Display::updateOnStepCmdStatus() {
       firstGPS = false;
     }
     //VL(shc.getLat()); VL(shc.getLstT0());
-    canvPrint(2, 454, 0, 319, C_HEIGHT, commandErrorStr[commandError]);
+    canvPrint(2, 454, 0, 317, C_HEIGHT, commandErrorStr[commandError]);
   } 
 }
 
@@ -409,7 +408,7 @@ void Display::drawMenuButtons() {
   //  More & (CATs)--| Mo | GT | Se | Od | Al |
   //  ODrive---------| Od | Ho | Se | Al | Xs |
   //  Extended Status| Xs | Ho | Se | Al | Od |
-  //  Settings-------| Se | Ho | Fo | Al | Od |
+  //  Settings-------| Se | Ho | Xs | Al | Od |
   //  Alignment------| Al | Ho | Fo | Gu | Od |
   // else if not ODRIVE_PRESENT use this menu structure
   //  More & (CATs)--| Mo | GT | Se | Gu | Al |
@@ -524,7 +523,27 @@ void Display::drawMenuButtons() {
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "xSTAT", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "XSTAT", BUT_OFF);
+      x_offset = x_offset + MENU_X_SPACING;
+      y_offset +=MENU_Y_SPACING;
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", BUT_OFF);
+      x_offset = x_offset + MENU_X_SPACING;
+      y_offset +=MENU_Y_SPACING;
+       
+      #ifdef ODRIVE_MOTOR_PRESENT
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", BUT_OFF);
+      #elif
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
+      #endif  
+      break;
+
+      case XSTATUS_SCREEN: 
+      x_offset = 0;
+      y_offset = 0;
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "HOME", BUT_OFF);
+      x_offset = x_offset + MENU_X_SPACING;
+      y_offset +=MENU_Y_SPACING;
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "SETng", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", BUT_OFF);
@@ -681,10 +700,6 @@ void Display::updateCommonStatus() {
   Coordinate dispTarget = goTo.getGotoTarget();
   transform.rightAscensionToHourAngle(&dispTarget);
   transform.equToHor(&dispTarget);
-  //VF("gototar.z="); VL(radToDeg(dispTarget.z));
-  //VF("gototar.a="); VL(radToDeg(dispTarget.a));
-  //VF("gototarH.r="); VL(radToHrs(dispTarget.r));
-  //VF("gototar.d="); VL(radToDeg(dispTarget.d));
 
   // Get CURRENT AZM
   //getLocalCmdTrim(":GZ#", cAzmDMS); // DDD*MM'SS# 

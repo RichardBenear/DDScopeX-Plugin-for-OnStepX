@@ -62,7 +62,7 @@ void ODriveScreen::draw() {
 
   tft.setCursor(85, 164);
   tft.print("*HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
-  tft.setCursor(92, 176);
+  tft.setCursor(85, 176);
   tft.print("*FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
 }
 

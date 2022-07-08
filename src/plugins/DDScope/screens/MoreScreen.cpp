@@ -70,7 +70,7 @@ Button moreButton(TRACK_R_X, TRACK_R_Y, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y,
 Button moreLgButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.largeFontWidth, display.largeFontHeight, "");
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint moreInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvMoreInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
 
 // ============= Initialize the Catalog & More page ==================
 void MoreScreen::draw() {
@@ -137,34 +137,35 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
   if (sidereal) { 
     moreButton.draw(TRACK_R_Y+y_offset, "Sidereal", BUT_ON);
     
-      y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      moreButton.draw(TRACK_R_Y+y_offset, "Lunar", BUT_OFF);
+    y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
+    moreButton.draw(TRACK_R_Y+y_offset, "Lunar", BUT_OFF);
 
-      y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      moreButton.draw(TRACK_R_Y+y_offset, "King", BUT_OFF);
+    y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
+    moreButton.draw(TRACK_R_Y+y_offset, "King", BUT_OFF);
     
   }
   if (lunarRate) {
-      y_offset = 0;
-      moreButton.draw(TRACK_R_Y+y_offset, "Sidereal", BUT_OFF);
+    y_offset = 0;
+    moreButton.draw(TRACK_R_Y+y_offset, "Sidereal", BUT_OFF);
 
-      y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      moreButton.draw(TRACK_R_Y+y_offset, "Lunar", BUT_ON);
-    
-      y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      moreButton.draw(TRACK_R_Y+y_offset, "King", BUT_OFF);
+    y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
+    moreButton.draw(TRACK_R_Y+y_offset, "Lunar", BUT_ON);
+  
+    y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
+    moreButton.draw(TRACK_R_Y+y_offset, "King", BUT_OFF);
   }
   if (kingRate) {
-      y_offset = 0;
-      moreButton.draw(TRACK_R_Y+y_offset, "Sidereal", BUT_OFF);
+    y_offset = 0;
+    moreButton.draw(TRACK_R_Y+y_offset, "Sidereal", BUT_OFF);
 
-      y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      moreButton.draw(TRACK_R_Y+y_offset, "Lunar", BUT_OFF);
-  
-      y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
-      moreButton.draw(TRACK_R_Y+y_offset, "King", BUT_ON);
+    y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
+    moreButton.draw(TRACK_R_Y+y_offset, "Lunar", BUT_OFF);
+
+    y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER;
+    moreButton.draw(TRACK_R_Y+y_offset, "King", BUT_ON);
   }
 
+  // TO DO: figure out why incrementing or decrementing doesn't change the rate displayed below
   // increment tracking rate by 0.02 Hz
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER+TRACK_R_GROUP_SPACER ; // space between tracking setting fields
   if (incTrackRate) {
@@ -193,19 +194,21 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
 
   // Show current Tracking Rate
   // For ALT/AZ this always shows the default rate
-  char _sideRate[9];
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER+12;
-  char sideRate[6];
-  getLocalCmdTrim(":GT#", sideRate);
-  sprintf(_sideRate, "TR=%s", sideRate);
-  moreInsPrint.PrintCus(TRACK_R_X-6, TRACK_R_Y+y_offset, 0, 90, 16, _sideRate);
+ 
+  sprintF(reply, "%0.5f", siderealToHz(mount.trackingRate));
+  canvMoreInsPrint.PrintCus(TRACK_R_X-6, TRACK_R_Y+y_offset, 85, 15, reply, false);
 
   // ---- right hand column of buttons ----
   y_offset = 0;
   // Filter Selection Button - circular selection of 3 values
   if (filterBut) {
     moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_ON);
-    if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) moreInsPrint.PrintCus(120, 382, 0, 199, 16, "All Sky For STARS only");
+    if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) {
+      canvMoreInsPrint.PrintCus(2, 472, 317, 15, " All Sky For STARS only", true);
+    } else {
+      canvMoreInsPrint.PrintCus(2, 472, 317, 15, "", false);
+    }
     filterBut = false;
   } else {
     moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_OFF);
@@ -216,12 +219,12 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
   if (clrCustom) {
     if (!yesCancelActive) {
       yesCancelActive = true;
-      moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Yes", BUT_OFF);
-      moreButton.draw(MISC_X+40, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Cancel", BUT_OFF);
-      if (!objectSelected) moreInsPrint.PrintCus(120, 382, 0, 199, 16, "Delete Custom Catalog?!");
+      moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Yes", BUT_ON);
+      moreButton.draw(MISC_X+MISC_BOXSIZE_X/2, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Cancel", BUT_ON);
+      if (!objectSelected) canvMoreInsPrint.PrintCus(2, 472, 317, 15, " Delete Custom Catalog?!", true);
     }
     if (yesBut) { // go ahead and clear
-    moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clearing", BUT_ON);
+      moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clearing", BUT_ON);
       
       File rmFile = SD.open("/custom.csv");
         if (rmFile) {
@@ -238,7 +241,7 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
       clrCustom = false;
       yesCancelActive = false;
       moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clr Custom", BUT_OFF);
-      if (objectSelected) tft.fillRect(x, y, 199, 5*16, pgBackground);
+      canvMoreInsPrint.PrintCus(2, 472, 317, 15, "", false);
     }
   } else {
     moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clr Custom", BUT_OFF);

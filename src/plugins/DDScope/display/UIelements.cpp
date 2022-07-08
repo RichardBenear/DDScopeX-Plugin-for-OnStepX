@@ -145,7 +145,7 @@ void CanvasPrint::Print(int x, int y, uint16_t width, uint16_t height, double la
 // Using custom font Inconsolata_Bold8pt7b
 void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
   char _label[60] = "";
-  int y_box_offset = -6; // default font offset
+  int y_box_offset = 10; // custom font offset
   GFXcanvas1 canvas(width, height);
 
   canvas.setFont(&Inconsolata_Bold8pt7b); 

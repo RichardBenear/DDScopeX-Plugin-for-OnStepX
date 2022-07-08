@@ -12,7 +12,7 @@
 #define STATUS_BOX_X             40 
 #define STATUS_BOX_Y            150 
 #define STATUS_X                  3 
-#define STATUS_Y                101 
+#define STATUS_Y                104 
 #define STATUS_SPACING           14 
 
 // ========== Draw the Extended Status Screen ==========
@@ -46,20 +46,24 @@ void ExtStatusScreen::draw() {
   tft.print("OnStep FW Version: "); tft.print(xchanReply);
   
   // Begin parsing :GU# status data by getting the status string via local command channel
+  getLocalCmdTrim(":GU#", xchanReply); // Get OnStep Status
   // process the status string
   int i = 0;
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset); 
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
+  tft.print("String="); tft.print(xchanReply);
+
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
   if (strstr(xchanReply,"n")) tft.print("Not Tracking"); else tft.print("Tracking   ");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++; 
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
   if (strstr(xchanReply,"N")) tft.print("Not Slewing"); else tft.print("Slewing    ");
 
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
-  if      (strstr(xchanReply,"p")) tft.print("Not Parked        ");
-  else if (strstr(xchanReply,"I")) tft.print("Parking in process");
-  else if (strstr(xchanReply,"P")) tft.print("Parked            ");
-  else if (strstr(xchanReply,"F")) tft.print("Parking Failed    ");
-  else                             tft.print("ERROR             ");
+  if      (strstr(xchanReply,"p")) tft.print("Not Parked         ");
+  else if (strstr(xchanReply,"I")) tft.print("Parking in process ");
+  else if (strstr(xchanReply,"P")) tft.print("Parked             ");
+  else if (strstr(xchanReply,"F")) tft.print("Parking Failed     ");
+  else                             tft.print("Park Status Unknown");
   
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
   if (strstr(xchanReply,"H")) tft.print("Homed    "); else tft.print("Not Homed");
@@ -127,31 +131,10 @@ void ExtStatusScreen::draw() {
   else tft.print("pier side N/A") ;
 
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
-  tft.print("Pulse Guide Rate = "); tft.print(xchanReply[i] - '0');
+  tft.print("Pulse Guide Rate = "); tft.print(xchanReply[i]);
 
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++; 
-  tft.print("Guide Rate = "); tft.print(xchanReply[i] - '0');
-
-  int generalError = xchanReply[i] - '0';
-
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  
-  tft.print("General Error = "); 
-  if (generalError == 0)  tft.print("ERR_NONE         "); else
-  if (generalError == 1)  tft.print("ERR_MOTOR_FAULT  "); else
-  if (generalError == 2)  tft.print("ERR_ALT_MIN      "); else
-  if (generalError == 3)  tft.print("ERR_LIMIT_SENSE  "); else
-  if (generalError == 4)  tft.print("ERR_DEC          "); else
-  if (generalError == 5)  tft.print("ERR_AZM          "); else
-  if (generalError == 6)  tft.print("ERR_UNDER_POLE   "); else
-  if (generalError == 7)  tft.print("ERR_MERIDIAN     "); else
-  if (generalError == 8)  tft.print("ERR_SYNC         "); else
-  if (generalError == 9)  tft.print("ERR_PARK         "); else
-  if (generalError == 10) tft.print("ERR_GOTO_SYNC    "); else
-  if (generalError == 11) tft.print("ERR_ALT_MAX      "); else
-  if (generalError == 12) tft.print("ERR_UNSPECIFIED  "); else
-  if (generalError == 13) tft.print("ERR_WEATHER_INIT "); else
-  if (generalError == 14) tft.print("ERR_SITE_INIT    "); else
-  if (generalError == 15) tft.print("ERR_NV_INIT      ");
+  tft.print("Guide Rate = "); tft.print(xchanReply[i]);
   // end :GU# data string parsing
 
   // Other status information not from :GU# command
@@ -166,7 +149,7 @@ void ExtStatusScreen::draw() {
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  
   // show Current Date
   getLocalCmdTrim(":GC#", tempReply);
-  tft.print("Local Time = "); tft.print(tempReply); 
+  tft.print("Date = "); tft.print(tempReply); 
 
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  
   // show TZ Offset
@@ -176,18 +159,18 @@ void ExtStatusScreen::draw() {
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  
   // show Latitude
   getLocalCmdTrim(":Gt#", tempReply); 
-  tft.print("Time Zone = "); tft.print(tempReply);
+  tft.print("Latitude = "); tft.print(tempReply);
 
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  
   // show Longitude
   getLocalCmdTrim(":Gg#", tempReply); 
-  tft.print("Time Zone = "); tft.print(tempReply);
+  tft.print("Longitude = "); tft.print(tempReply);
     
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  
   getLocalCmdTrim(":GX80#", tempReply); 
   tft.print("UTC Time and Date = "); tft.print(tempReply);
   getLocalCmdTrim(":GX81#", tempReply); 
-  tft.print(" : "); tft.print(tempReply);
+  tft.print(":"); tft.print(tempReply);
 }
 
 ExtStatusScreen extStatusScreen;

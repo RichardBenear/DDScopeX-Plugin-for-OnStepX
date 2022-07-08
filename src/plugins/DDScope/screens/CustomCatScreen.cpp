@@ -55,10 +55,10 @@ Button customDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackgroun
 Button customCatButton(0, 0 ,0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
 
 // Canvas Print object default Arial 6x9 font
-CanvasPrint customDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvCustomDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint customInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvCustomInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
 
 // ========== Initialize and draw Custom Catalog ===============
 void CustomCatScreen::init() { 
@@ -77,7 +77,7 @@ void CustomCatScreen::init() {
   customCatalog = true;
 
   if (!loadCustomArray()) {
-      customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Custom"); 
+      canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Custom", true); 
       moreScreen.draw();
       return;
   } else {
@@ -185,6 +185,7 @@ void CustomCatScreen::drawCustomCat() {
     snprintf(cDecSrCmd[cAbsRow], 17, ":Sd%12s#", _cArray[cAbsRow].cDECsddmmss);
 
     // to get Altitude, first convert RAh and DEC to double
+    // Note: PM_HIGH is required for the format used here
     convert.hmsToDouble(&cRAdouble, _cArray[cAbsRow].cRAhhmmss, PM_HIGH);
     convert.dmsToDouble(&cDECdouble, _cArray[cAbsRow].cDECsddmmss, true, PM_HIGH);
     
@@ -193,12 +194,13 @@ void CustomCatScreen::drawCustomCat() {
     //cat_mgr.EquToHor(cRAdouble*15, cDECdouble, &dcAlt[cAbsRow], &dcAzm[cAbsRow]);
 
     // dcAlt[cAbsRow] is used by filter to check if above Horizon
+    // Coordinate calculation using OnStep transforms
     Coordinate cusTarget;
     cusTarget.r = hrsToRad(cRAdouble);
     cusTarget.d = degToRad(cDECdouble);
-    transform.equToHor(&cusTarget);
+    transform.rightAscensionToHourAngle(&cusTarget);
+    transform.equToAlt(&cusTarget);
     dcAlt[cAbsRow] = radToDeg(cusTarget.a);
-    VF("alt="); VL(dcAlt[cAbsRow]);
 
     //VF("activeFilter="); VL(activeFilter);
     if (((moreScreen.activeFilter == FM_ABOVE_HORIZON) && (dcAlt[cAbsRow] > 10.0)) || moreScreen.activeFilter == FM_NONE) { // filter out elements below 10 deg if filter enabled
@@ -238,7 +240,7 @@ void CustomCatScreen::drawCustomCat() {
     // stop printing data if last row on the last page
     if (cAbsRow == cusRowEntries+1) {
       cEndOfList = true; 
-      if (cRow == 0) {customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "None above 10 deg");}
+      if (cRow == 0) {canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "None above 10 deg", true);}
       //VF("endOfList");
       return; 
     }
@@ -266,9 +268,9 @@ bool CustomCatScreen::catalogButStateChange() {
 // update buttons and rest of screen
 void CustomCatScreen::updateCustomButtons(bool redrawBut) { 
   _redrawBut = redrawBut;  
-  tft.setFont(); // basic Arial
-
+  
   if (catButDetected) updateScreen();  
+  tft.setFont(); // basic Arial
 }
 
 //==================================================
@@ -297,13 +299,14 @@ void CustomCatScreen::updateScreen() {
   // show if we are above and below visible limits
   tft.setFont(&Inconsolata_Bold8pt7b); 
   if (dcAlt[cAbsIndex] > 10.0) {      // minimum 10 degrees altitude
-      customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+      canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
   } else {
-      customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+      canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
   }
+  tft.setFont();
 
   writeCustomTarget(cAbsIndex); // write RA and DEC as target for GoTo
-  tasks.yield(10);
+  tasks.yield(70);
   showTargetCoords(); // display the target coordinates that were just written
 
   // Support for deleting a object row from the Custom library screen
@@ -349,7 +352,7 @@ void CustomCatScreen::updateScreen() {
     // write new array into SD File
     File cWrFile;
     if ((cWrFile = SD.open("custom.csv", FILE_WRITE)) == 0) {
-      customInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "SD open ERROR");
+      canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "SD open ERROR", true);
       return;
     } else {
       if (cWrFile) {
@@ -442,7 +445,7 @@ void CustomCatScreen::showTargetCoords() {
   uint16_t radec_x  = 155;
   uint16_t ra_y     = 405;
   uint16_t dec_y    = 418;
-  uint16_t altazm_x = 250;
+  uint16_t altazm_x = 246;
   uint16_t width    = 85;
   uint16_t height   = 12;
 
@@ -461,29 +464,29 @@ void CustomCatScreen::showTargetCoords() {
 
   // Get Target ALT and AZ and display them as Double
   //getLocalCmdTrim(":Gz#", reply); // DDD*MM'SS# 
-  //convert.dmsToDouble(&tAzm_d, reply, false, PM_HIGH);
+  //convert.dmsToDouble(&tAzm_d, reply, false, PM_LOW);
 
   //getLocalCmdTrim(":Gal#", reply);	// sDD*MM'SS#
-  //convert.dmsToDouble(&tAlt_d, reply, true, PM_HIGH);
+  //convert.dmsToDouble(&tAlt_d, reply, true, PM_LOW);
 
   //sprintf(_reply, "AZM: %6.1f", cAzm_d); 
-  //customDefPrint(altazm_x, ra_y, width-10, height, _reply, false);    
+  //canvCustomDefPrint(altazm_x, ra_y, width-10, height, _reply, false);    
 
   //sprintf(_reply, "ALT: %6.1f", cAlt_d);
-  //customDefPrint(altazm_x, dec_y, width-10, height, _reply, false); 
+  //canvCustomDefPrint(altazm_x, dec_y, width-10, height, _reply, false); 
 
   Coordinate catTarget = goTo.getGotoTarget();
   transform.rightAscensionToHourAngle(&catTarget);
   transform.equToHor(&catTarget);
 
   sprintf(_reply, "RA: %6.1f", radToHrs(catTarget.r));
-  customDefPrint.Print(radec_x, ra_y, width, height, _reply, false);
+  canvCustomDefPrint.Print(radec_x, ra_y, width, height, _reply, false);
   sprintf(_reply, "DEC: %6.1f", radToDeg(catTarget.d));
-  customDefPrint.Print(radec_x, dec_y, width, height, _reply, false);
-  sprintf(_reply, "AZM: %6.1f", NormalizeAzimuth(radToDeg(catTarget.z))); 
-  customDefPrint.Print(altazm_x, ra_y, width-10, height, _reply, false);    
+  canvCustomDefPrint.Print(radec_x, dec_y, width, height, _reply, false);
+  sprintf(_reply, "AZM: %6.1f", (double)NormalizeAzimuth(radToDeg(catTarget.z))); 
+  canvCustomDefPrint.Print(altazm_x, ra_y, width-10, height, _reply, false);    
   sprintf(_reply, "ALT: %6.1f", radToDeg(catTarget.a));
-  customDefPrint.Print(altazm_x, dec_y, width-10, height, _reply, false); 
+  canvCustomDefPrint.Print(altazm_x, dec_y, width-10, height, _reply, false); 
 }
 
 CustomCatScreen customCatScreen;

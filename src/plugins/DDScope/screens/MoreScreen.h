@@ -26,6 +26,9 @@ class MoreScreen : public Display {
     char catSelectionStr5[15];
 
   private:
+    char reply[10];
+    //char _sideRate[9];
+    char preFilterState[20]="";
     bool catalogsActive = false;
     bool soundEnabled = true;
     bool goToButton = false;
@@ -44,7 +47,7 @@ class MoreScreen : public Display {
     bool yesCancelActive = false;
 
     bool preSlewState = false;
-    char preFilterState[20]="";
+    
 };
 
 extern MoreScreen moreScreen;

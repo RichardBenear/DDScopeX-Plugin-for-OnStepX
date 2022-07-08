@@ -20,7 +20,7 @@
 #define AZM_MOTOR 1
 #define ALT_MOTOR 0 
 
-#define TITLE_TEXT_Y       25
+#define TITLE_TEXT_Y       23
 
 // Screen Selection buttons
 #define MENU_X              3

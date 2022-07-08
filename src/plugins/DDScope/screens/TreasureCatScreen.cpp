@@ -57,10 +57,10 @@ Button treasureDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackgro
 Button treasureCatButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
 
 // Canvas Print object, default Arial 6x8 font
-CanvasPrint treasureDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvTreasureDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint treasureInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvTreasureInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
 
 //==================================================================
 void TreasureCatScreen::init() { 
@@ -78,7 +78,7 @@ void TreasureCatScreen::init() {
   // Show Page Title
   drawTitle(110, TITLE_TEXT_Y, "Treasure");
   if (!loadTreasureArray()) {
-      treasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, -6, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Treasure");
+      canvTreasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Treasure", false);
   } else { 
       parseTcatIntoArray();
   }
@@ -214,20 +214,28 @@ void TreasureCatScreen::drawTreasureCat() {
     snprintf(tDecSrCmd[tAbsRow], 14, ":Sd%+03d*%02d:%02d#", (int)decD, decM, decS);
     
     // to get Altitude, first convert RAh and DEC to double
+    // Note: PM_HIGH is required for the format used here
     convert.hmsToDouble(&tRAdouble, tRAhhmmss[tAbsRow], PM_HIGH);
     convert.dmsToDouble(&tDECdouble, tDECsddmmss[tAbsRow], true, PM_HIGH);
     
+    // First 5 lines in Treasure Catalog
+    //NGC189 ;00h39.6m;+61d06m;Cari;Open Clus; 8.8;5m       ;Caroline Herschel
+    //NGC225 ;00h43.6m;+61d46m;Cari;Open Clus; 7.0;15m      ;Caroline Herschel
+    //NGC281 ;00h52.8m;+56d37m;Cari;Brigt Neb; 7.8;35m-30m  ;Pacman           
+    //NGC288 ;00h52.8m;-26d35m;Sagi;Glob Clus; 7.9;13m      ;None             
+    //NGC404 ;01h09.4m;+35d43m;Andr;Galaxy   ; 9.8;6.6m     ;Mirachms Ghost   
+
     // dtAlt[tAbsRow] is used by filter to check if above Horizon
     Coordinate treTarget;
     treTarget.r = hrsToRad(tRAdouble);
     treTarget.d = degToRad(tDECdouble);
-    transform.equToHor(&treTarget);
+    transform.rightAscensionToHourAngle(&treTarget);
+    transform.equToAlt(&treTarget);
     dtAlt[tAbsRow] = radToDeg(treTarget.a);
-    VF("alt="); VL(dtAlt[tAbsRow]);
     
     // filter out elements below 10 deg if filter enabled
     if (((moreScreen.activeFilter == FM_ABOVE_HORIZON) && (dtAlt[tAbsRow] > 10.0)) || moreScreen.activeFilter == FM_NONE) { 
-    
+     
       // Erase text background
       tft.setCursor(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING));
       tft.fillRect(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), 215+WIDTH_OFF, 17,  display.butBackground);
@@ -264,7 +272,7 @@ void TreasureCatScreen::drawTreasureCat() {
     // stop printing data if last row on the last page
     if (tAbsRow == MAX_TREASURE_ROWS) {
       tEndOfList = true; 
-      if (tRow == 0) {treasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "None above 10 deg");}
+      if (tRow == 0) {canvTreasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "None above 10 deg", false);}
       return; 
     }
   }
@@ -331,13 +339,14 @@ void TreasureCatScreen::updateScreen() {
   // show if we are above and below visible limits
   tft.setFont(&Inconsolata_Bold8pt7b); 
   if (dtAlt[tAbsIndex] > 10.0) {   // show minimum 10 degrees altitude, use dtAlt[tAbsIndex] previously calculated 
-      treasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Above +10 deg");
+      canvTreasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
   } else {
-      treasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, 0, STATUS_STR_W, STATUS_STR_H, "Below +10 deg");
+      canvTreasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
   }
+  tft.setFont();
 
   writeTreasureTarget(tAbsIndex); // write RA and DEC as target for GoTo
-  tasks.yield(60);
+  tasks.yield(70);
   showTargetCoords(); // display the target coordinates that were just written
 
   pre_tRelIndex = tRelIndex;
@@ -441,7 +450,7 @@ void TreasureCatScreen::showTargetCoords() {
   uint16_t radec_x  = 155;
   uint16_t ra_y     = 405;
   uint16_t dec_y    = 418;
-  uint16_t altazm_x = 250;
+  uint16_t altazm_x = 246;
   uint16_t width    = 85;
   uint16_t height   = 12;
 
@@ -460,10 +469,10 @@ void TreasureCatScreen::showTargetCoords() {
 
   // Get Target ALT and AZ and display them as Double
   //getLocalCmdTrim(":Gz#", reply); // DDD*MM'SS# 
-  //convert.dmsToDouble(&tAzm_d, reply, false, PM_HIGH);
+  //convert.dmsToDouble(&tAzm_d, reply, false, PM_LOW);
 
   //getLocalCmdTrim(":Gal#", reply);	// sDD*MM'SS#
-  //convert.dmsToDouble(&tAlt_d, reply, true, PM_HIGH);
+  //convert.dmsToDouble(&tAlt_d, reply, true, PM_LOW);
   
   //sprintf(_reply, "AZM: %6.1f", tAzm_d); 
   //customDefPrint(altazm_x, ra_y, width-10, height, _reply, false);    
@@ -476,13 +485,13 @@ void TreasureCatScreen::showTargetCoords() {
   transform.equToHor(&catTarget);
 
   sprintf(_reply, "RA: %6.1f", radToHrs(catTarget.r));
-  treasureDefPrint.Print(radec_x, ra_y, width, height, _reply, false);
+  canvTreasureDefPrint.Print(radec_x, ra_y, width, height, _reply, false);
   sprintf(_reply, "DEC: %6.1f", radToDeg(catTarget.d));
-  treasureDefPrint.Print(radec_x, dec_y, width, height, _reply, false);
-  sprintf(_reply, "AZM: %6.1f", NormalizeAzimuth(radToDeg(catTarget.z))); 
-  treasureDefPrint.Print(altazm_x, ra_y, width-10, height, _reply, false);    
+  canvTreasureDefPrint.Print(radec_x, dec_y, width, height, _reply, false);
+  sprintf(_reply, "AZM: %6.1f", (double)NormalizeAzimuth(radToDeg(catTarget.z))); 
+  canvTreasureDefPrint.Print(altazm_x, ra_y, width-10, height, _reply, false);    
   sprintf(_reply, "ALT: %6.1f", radToDeg(catTarget.a));
-  treasureDefPrint.Print(altazm_x, dec_y, width-10, height, _reply, false); 
+  canvTreasureDefPrint.Print(altazm_x, dec_y, width-10, height, _reply, false); 
 }
 
 TreasureCatScreen treasureCatScreen;
