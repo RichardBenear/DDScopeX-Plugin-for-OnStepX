@@ -48,9 +48,15 @@ bool Rotator::command(char *reply, char *command, char *parameter, bool *supress
   if (command[0] == 'r') {
 
     // :rT#       Get rotator sTatus
-    //            Returns: M# (for moving) or S# (for stopped)
+    //            Returns: s#
+    // note: for now returns only M# when moving for compatability with the ASCOM driver
+    // future changes might
     if (command[1] == 'T') {
-      if (axis3.isSlewing()) strcpy(reply,"M"); else strcpy(reply,"S");
+      if (axis3.isSlewing()) strcat(reply, "M"); else { // [M]oving
+        strcat(reply, "S");                             // [S]topped)
+        if (derotatorEnabled) strcat(reply, "D");       // [D]e-Rotate enabled
+        if (derotatorReverse) strcat(reply, "R");       // De-Rotate [R]everse
+      }
       *numericReply = false;
     } else
 
@@ -70,7 +76,7 @@ bool Rotator::command(char *reply, char *command, char *parameter, bool *supress
 
     // :rD#       Get rotator degrees per step
     //            Returns: n.n#
-    if (command[1] == 'u') {
+    if (command[1] == 'D') {
       sprintF(reply, "%7.5f", 1.0/axis3.getStepsPerMeasure());
       *numericReply = false;
     } else
@@ -132,10 +138,10 @@ bool Rotator::command(char *reply, char *command, char *parameter, bool *supress
       *numericReply = false;
     } else
 
-    // :rR[sDDD*MM, etc.]#
-    //            Set rotator target angle Relative (in degrees)
+    // :rr[sDDD*MM, etc.]#
+    //            Set rotator target angle relative (in degrees)
     //            Returns: Nothing
-    if (command[1] == 'R') {
+    if (command[1] == 'r') {
       double r, t;
       convert.dmsToDouble(&r, parameter, true);
       t = axis3.getTargetCoordinate();
@@ -190,7 +196,7 @@ bool Rotator::command(char *reply, char *command, char *parameter, bool *supress
     if (command[1] == '+') {
       #ifdef MOUNT_PRESENT
         if (transform.mountType == ALTAZM) {
-          if (settings.parkState < PS_PARKED) derotatorEnabled = true; else *commandError = CE_PARKED;
+          if (settings.parkState == PS_UNPARKED) derotatorEnabled = true; else *commandError = CE_PARKED;
         }
       #endif
       *numericReply = false;

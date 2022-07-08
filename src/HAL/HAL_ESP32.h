@@ -55,7 +55,7 @@
 #define HAL_INIT() { \
   analogWriteResolution(ANALOG_WRITE_PWM_BITS); \
   SERIAL_BT_BEGIN(); \
-  if (HAL_SDA_PIN != OFF && HAL_SCL_PIN != OFF) HAL_Wire.begin(HAL_SDA_PIN, HAL_SCL_PIN, HAL_WIRE_CLOCK); \
+  if (I2C_SDA_PIN != OFF && I2C_SCL_PIN != OFF) HAL_Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN, HAL_WIRE_CLOCK); \
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -68,8 +68,12 @@
 // Misc. includes to support this processor's operation
 #include "../lib/analog/AN_ESP32.h"
 
-// Allow MCU reset -----------------------------------------------------------------------------------
+// MCU reset
 #define HAL_RESET() ESP.restart()
 
 // a really short fixed delay (none needed)
 #define HAL_DELAY_25NS()
+
+// stand-in for delayNanoseconds()
+#define delayNanoseconds(ns) delayMicroseconds(ceilf(ns/1000.0F))
+

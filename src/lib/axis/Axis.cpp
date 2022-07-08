@@ -268,9 +268,8 @@ double Axis::getOriginOrTargetDistance() {
 // set acceleration rate in "measures" per second per second (for autoSlew)
 void Axis::setSlewAccelerationRate(float mpsps) {
   if (autoRate == AR_NONE) {
-    // cap the acceleration rate so we can stay within the backlash frequency for 2 seconds
-    if (mpsps > backlashFreq/2.0F) mpsps = backlashFreq/2.0F;
     slewAccelRateFs = mpsps/FRACTIONAL_SEC;
+    if (slewAccelRateFs > backlashFreq/2.0F) slewAccelRateFs = backlashFreq/2.0F;
     slewAccelTime = NAN;
   }
 }
@@ -283,9 +282,8 @@ void Axis::setSlewAccelerationTime(float seconds) {
 // set acceleration for emergency stop movement in "measures" per second per second
 void Axis::setSlewAccelerationRateAbort(float mpsps) {
   if (autoRate == AR_NONE) {
-    // cap the acceleration rate so we can stay within the backlash frequency for 2 seconds
-    if (mpsps > backlashFreq/2.0F) mpsps = backlashFreq/2.0F;
     abortAccelRateFs = mpsps/FRACTIONAL_SEC;
+    if (abortAccelRateFs > backlashFreq/2.0F) abortAccelRateFs = backlashFreq/2.0F;
     abortAccelTime = NAN;
   }
 }

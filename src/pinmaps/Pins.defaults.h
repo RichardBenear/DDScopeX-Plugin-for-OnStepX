@@ -2,6 +2,9 @@
 // Null pin map, assigns OFF to all values not already assigned
 #pragma once
 
+// --------------------------------------------------------------------------------------------------------
+// Serial and I2C interface pins
+
 // usually the default serial port
 #if SERIAL_A_BAUD_DEFAULT != OFF
 #ifndef SERIAL_A
@@ -11,23 +14,52 @@
 
 /*
 // map the driver addresses so axis X is 0, Y is 1, Z is 2, and E0 is 3 instead of the actual...
-#define TMC_UART_DRIVER_ADDRESS_REMAP(x) (x)
+#define DRIVER_UART_ADDRESS_REMAP(x) (x)
 
 // map the driver addresses so axis5 becomes axis3 in hardware serial mode
-#define TMC_UART_DRIVER_ADDRESS_REMAP_AXIS5
+#define DRIVER_UART_ADDRESS_REMAP_AXIS5
 
 // Example for a board using SoftwareSerial ports to any number of drivers
-#define SERIAL_TMC              SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
-#define SERIAL_TMC_BAUD         115200           // Baud rate
-#define SERIAL_TMC_NO_RX                         // Recieving data doesn't work with software serial
+#define SERIAL_TMC                  SoftSerial     // Use software serial with RX on M2 and TX on M3 of axis
+#define SERIAL_TMC_BAUD             115200         // Baud rate
+#define SERIAL_TMC_NO_RX                           // Recieving data doesn't work with software serial
 
 // Example for a board using one HardwareSerial port to all four drivers
-#define SERIAL_TMC              Serial1          // Use a single hardware serial port to up to four drivers
-#define SERIAL_TMC_BAUD         500000           // Baud rate
-#define SERIAL_TMC_TX           11               // Transmit data
-#define SERIAL_TMC_RX           12               // Recieving data
+#define SERIAL_TMC                  Serial1        // Use a single hardware serial port to up to four drivers
+#define SERIAL_TMC_BAUD             500000         // Baud rate
+#define SERIAL_TMC_TX               11             // Transmit data
+#define SERIAL_TMC_RX               12             // Recieving data
 */
 
+// Specify the default I2C pins (if they can be set via the HAL)
+#ifndef I2C_SDA_PIN
+#define I2C_SDA_PIN                 OFF
+#endif
+
+#ifndef I2C_SCL_PIN
+#define I2C_SCL_PIN                 OFF
+#endif
+
+// --------------------------------------------------------------------------------------------------------
+// GPIO SSR74HC595 pins
+#ifndef GPIO_SSR74HC595_LATCH_PIN
+#define GPIO_SSR74HC595_LATCH_PIN   OFF            // If used, only pins 0 to 31 are supported on the ESP32
+#endif
+
+#ifndef GPIO_SSR74HC595_CLOCK_PIN
+#define GPIO_SSR74HC595_CLOCK_PIN   OFF            // If used, only pins 0 to 31 are supported on the ESP32
+#endif
+
+#ifndef GPIO_SSR74HC595_DATA_PIN
+#define GPIO_SSR74HC595_DATA_PIN    OFF            // If used, only pins 0 to 31 are supported on the ESP32
+#endif
+
+#ifndef GPIO_SSR74HC595_COUNT
+#define GPIO_SSR74HC595_COUNT       8              // 8, 16, 24, or 32 (for 1, 2, 3, or 4 74HC595's)
+#endif
+
+// --------------------------------------------------------------------------------------------------------
+// define standard pins as inactive
 #ifndef AUX0_PIN
 #define AUX0_PIN                    OFF
 #endif

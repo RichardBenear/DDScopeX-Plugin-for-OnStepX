@@ -17,7 +17,7 @@
 #endif
 
 // Use the following settings for any TMC UART driver (TMC2209U) that may be present
-#define TMC_UART_DRIVER_ADDRESS_REMAP_AXIS5      // Map driver axis5 to axis3 in hardware serial mode
+#define DRIVER_UART_ADDRESS_REMAP_AXIS5          // Map driver axis5 to axis3 in hardware serial mode
 
 #ifndef DRIVER_UART_HARDWARE_SERIAL
   #define DRIVER_UART_HARDWARE_SERIAL OFF        // Default is software serial for this board
@@ -37,11 +37,8 @@
 #endif
 
 // Specify the ESP32 I2C pins
-#define HAL_SDA_PIN             21
-#define HAL_SCL_PIN             22
-
-// Hint that the direction pins are shared
-#define SHARED_DIRECTION_PINS
+#define I2C_SDA_PIN             21
+#define I2C_SCL_PIN             22
 
 // The multi-purpose pins (Aux3..Aux8 can be analog pwm/dac if supported)
 #define AUX2_PIN                4                // ESP8266 RST control, or MISO for Axis1&2, or Axis4 EN support
@@ -49,24 +46,6 @@
 #define AUX4_PIN                22               // Home SW for Axis2, or I2C SCL
 #define AUX7_PIN                39               // Limit SW, PPS, etc.
 #define AUX8_PIN                25               // 1-Wire, Status LED, Status2 LED, Reticle LED, Tone, etc.
-
-// GPIO SSR74HC595 pins (if used, code below only works for pins 0 to 31)
-#define GPIO_SSR74HC595_LATCH_PIN OFF
-#define GPIO_SSR74HC595_CLOCK_PIN OFF
-#define GPIO_SSR74HC595_DATA_PIN  OFF
-#define GPIO_SSR74HC595_COUNT     8              // 8, 16, 24, or 32 (for 1, 2, 3, or 4 74HC595's)
-#if GPIO_SSR74HC595_LATCH_PIN != OFF
-  #define GPIO_SSR74HC595_LATCH_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_LATCH_PIN); }
-  #define GPIO_SSR74HC595_LATCH_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_LATCH_PIN); }
-#endif
-#if GPIO_SSR74HC595_CLOCK_PIN != OFF
-  #define GPIO_SSR74HC595_CLOCK_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_CLOCK_PIN); }
-  #define GPIO_SSR74HC595_CLOCK_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_CLOCK_PIN); }
-#endif
-#if GPIO_SSR74HC595_DATA_PIN != OFF
-  #define GPIO_SSR74HC595_DATA_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_DATA_PIN); }
-  #define GPIO_SSR74HC595_DATA_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_DATA_PIN); }
-#endif
 
 // Misc. pins
 #ifndef ONE_WIRE_PIN
@@ -139,6 +118,7 @@
 #define AXIS3_M2_PIN            OFF              // SPI CS (UART TX)
 #define AXIS3_M3_PIN            OFF              // SPI MISO (UART RX)
 #define AXIS3_STEP_PIN          2                // [must be low at boot 2]
+#define SHARED_DIRECTION_PINS                    // Hint that the direction pins are shared
 #define AXIS3_DIR_PIN           15
 
 // For focuser1 stepper driver

@@ -22,12 +22,8 @@
   #define SERIAL_B_TX           5
 #endif
 
-// Specify the ESP32 I2C pins
-#define HAL_SDA_PIN             21
-#define HAL_SCL_PIN             22
-
 // Use the following settings for any TMC UART driver (TMC2209U) that may be present
-#define TMC_UART_DRIVER_ADDRESS_REMAP_AXIS5      // Map driver axis5 to axis3 in hardware serial mode
+#define DRIVER_UART_ADDRESS_REMAP_AXIS5          // Map driver axis5 to axis3 in hardware serial mode
 
 #ifndef DRIVER_UART_HARDWARE_SERIAL
   #define DRIVER_UART_HARDWARE_SERIAL OFF        // Default is software serial for this board
@@ -46,30 +42,16 @@
   #error "Configuration (Config.h): For CNC3, set DRIVER_UART_HARDWARE_SERIAL to ON (pins TX15,RX39) or OFF (uses CS.)"
 #endif
 
+// Specify the ESP32 I2C pins
+#define I2C_SDA_PIN             21
+#define I2C_SCL_PIN             22
+
 // The multi-purpose pins (Aux3..Aux8 can be analog pwm/dac if supported)
 #define AUX2_PIN                18               // ESP8266 RST control, or SPI MISO Axis1&2
 #define AUX3_PIN                21               // Home SW for Axis1, or I2C SDA {assuming default SCL/SDA pins are present}
 #define AUX4_PIN                22               // Home SW for Axis2, or I2C SCL
 #define AUX7_PIN                39               // Limit SW, PPS, etc.
 #define AUX8_PIN                23               // 1-Wire, Status LED1, Status LED2, Reticle LED, etc.
-
-// GPIO SSR74HC595 pins (if used, code below only works for pins 0 to 31)
-#define GPIO_SSR74HC595_LATCH_PIN OFF
-#define GPIO_SSR74HC595_CLOCK_PIN OFF
-#define GPIO_SSR74HC595_DATA_PIN  OFF
-#define GPIO_SSR74HC595_COUNT     8              // 8, 16, 24, or 32 (for 1, 2, 3, or 4 74HC595's)
-#if GPIO_SSR74HC595_LATCH_PIN != OFF
-  #define GPIO_SSR74HC595_LATCH_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_LATCH_PIN); }
-  #define GPIO_SSR74HC595_LATCH_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_LATCH_PIN); }
-#endif
-#if GPIO_SSR74HC595_CLOCK_PIN != OFF
-  #define GPIO_SSR74HC595_CLOCK_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_CLOCK_PIN); }
-  #define GPIO_SSR74HC595_CLOCK_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_CLOCK_PIN); }
-#endif
-#if GPIO_SSR74HC595_DATA_PIN != OFF
-  #define GPIO_SSR74HC595_DATA_LOW() { GPIO.out_w1tc = ((uint32_t)1 << GPIO_SSR74HC595_DATA_PIN); }
-  #define GPIO_SSR74HC595_DATA_HIGH() { GPIO.out_w1ts = ((uint32_t)1 << GPIO_SSR74HC595_DATA_PIN); }
-#endif
 
 // Misc. pins
 #ifndef ONE_WIRE_PIN
