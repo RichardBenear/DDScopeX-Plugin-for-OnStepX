@@ -85,12 +85,12 @@ void DDScope::init() {
 
   // update currently selected screen status
   VF("MSG: Setup, start Screen status polling task (rate 2000 ms priority 6)... ");
-  uint8_t us_handle = tasks.add(3000, 0, true, 6, updateScreenWrapper, "UpdateSpecificScreen");
+  uint8_t us_handle = tasks.add(1000, 0, true, 6, updateScreenWrapper, "UpdateSpecificScreen");
   if (us_handle)  { VLF("success"); } else { VLF("FAILED!"); }
 
   // refresh Buttons
   VF("MSG: Setup, refresh Buttons (rate 1000 ms priority 6)... ");
-  uint8_t rs_handle = tasks.add(3000, 0, true, 6, refreshButtonsWrapper, "RefreshButtons");
+  uint8_t rs_handle = tasks.add(1000, 0, true, 6, refreshButtonsWrapper, "RefreshButtons");
   if (rs_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   #ifdef ODRIVE_MOTOR_PRESENT

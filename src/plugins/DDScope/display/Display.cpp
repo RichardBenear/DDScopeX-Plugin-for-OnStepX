@@ -340,9 +340,9 @@ void Display::updateBatVoltage() {
   char bvolts[12]="-- v";
   sprintf(bvolts, "%4.1f v", currentBatVoltage);
   if (currentBatVoltage < BATTERY_LOW_VOLTAGE) { 
-    canvPrint(120, 38, 0, 80, 15, bvolts, textColor, butOnBackground);
+    canvPrint(120, 38, 0, 80, 14, bvolts, textColor, butOnBackground);
   } else {
-    canvPrint(120, 38, 0, 80, 15, bvolts, textColor, butBackground);
+    canvPrint(120, 38, 0, 80, 14, bvolts, textColor, butBackground);
   }
 }
 
@@ -353,7 +353,7 @@ void Display::updateOnStepCmdStatus() {
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;
   if (!tls.isReady()) {
-    canvPrint(2, 454, 0, 317, C_HEIGHT, " Time and/or Date Not Set");
+    canvPrint(2, 454, 0, 317, C_HEIGHT, "TLS not ready");
   } else {
     if (firstGPS) {
       // One Time update the SHC LST and Latitude if GPS locked
@@ -361,7 +361,6 @@ void Display::updateOnStepCmdStatus() {
       cat_mgr.setLat(site.location.latitude);
       firstGPS = false;
     }
-    //VL(shc.getLat()); VL(shc.getLstT0());
     canvPrint(2, 454, 0, 317, C_HEIGHT, commandErrorStr[commandError]);
   } 
 }

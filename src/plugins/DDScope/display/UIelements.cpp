@@ -114,9 +114,9 @@ CanvasPrint::CanvasPrint(
     p_label           = label;
   }
 
-// ===================== Default Font ====================================
+// ===================== Default Font ==============================
 // Decided to not pass in font type but use constructor objects instead
-// Canvas print function using character strings
+// this Canvas print function using character strings, overloads follow this
 void CanvasPrint::Print(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
   char _label[60] = "";
   int y_box_offset = -6; // default font offset
@@ -133,18 +133,19 @@ void CanvasPrint::Print(int x, int y, uint16_t width, uint16_t height, const cha
   }
 }
 
-// Using Overload for double
+// Overload for double
 void CanvasPrint::Print(int x, int y, uint16_t width, uint16_t height, double label, bool warning) {
   char charlabel[60];
   sprintf(charlabel, "%5.1f", label);
   Print(p_x, p_y, p_width, p_height, charlabel, warning);
  }
- //=====================================================================
+//==================================================================
 
- //===================== Custom Font ===================================
+//===================== Custom Font ================================
 // Using custom font Inconsolata_Bold8pt7b
+// Text is Right Justified
 void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
-  char _label[60] = "";
+  char _label[80] = "";
   int y_box_offset = 10; // custom font offset
   GFXcanvas1 canvas(width, height);
 
@@ -166,10 +167,28 @@ void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, double
   PrintCus(p_x, p_y, p_width, p_height, charlabel, warning);
 }
 
- // Using Overload for double
+ // Overload for int
 void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, int label, bool warning) {
   char charlabel[10];
   sprintf(charlabel, "%8d", label);
   PrintCus(p_x, p_y, p_width, p_height, charlabel, warning);
 }
-//=====================================================================
+
+// Using custom font Inconsolata_Bold8pt7b
+// Text is Left Justified
+void CanvasPrint::PrintLJ(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
+  char _label[80] = "";
+  int y_box_offset = 10; // custom font offset
+  GFXcanvas1 canvas(width, height);
+
+  canvas.setFont(&Inconsolata_Bold8pt7b); 
+  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
+  sprintf(_label, "%-9s", label);
+  canvas.print(_label);
+  if (warning) { // show warning background
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorActive);
+  } else {
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorNotActive);
+  }
+}
+//=================================================================

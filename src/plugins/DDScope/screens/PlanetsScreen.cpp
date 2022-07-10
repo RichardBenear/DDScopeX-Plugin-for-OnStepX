@@ -52,6 +52,7 @@ void PlanetsScreen::draw() {
   tft.setFont(&Inconsolata_Bold8pt7b);
   planetPrevSel = 0;
   planetButSelPos = 2; // Mars on page entry
+  moreScreen.objectSelected = false;
 
   // Get the UTC offset from Onstep 
   char utcOffset[4];

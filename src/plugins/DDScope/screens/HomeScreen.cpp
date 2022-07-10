@@ -23,10 +23,10 @@
 
 // Column 2 Home Screen
 #define COL2_LABELS_X            170
-#define COL2_LABELS_Y            COL1_LABELS_Y
+#define COL2_LABELS_Y            COL1_LABELS_Y+8
 #define COL2_LABEL_SPACING       COL1_LABEL_SPACING
 #define COL2_DATA_X              267
-#define COL2_DATA_Y              COL1_DATA_Y
+#define COL2_DATA_Y              COL1_DATA_Y+8
 #define COL2_DATA_BOXSIZE_X      70
 #define COL2_DATA_BOXSIZE_Y      COL1_LABEL_SPACING
 
@@ -113,7 +113,7 @@ void HomeScreen::draw() {
   drawMenuButtons();
   drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
   tft.setFont(&Inconsolata_Bold8pt7b);
-  tft.drawFastVLine(165, COL1_LABELS_Y-12, 160, textColor);
+  //tft.drawFastVLine(165, COL1_LABELS_Y-12, 160, textColor);
 
   // ======Draw Status Text ===========
   // Labels for Real Time data only here, no data displayed yet
