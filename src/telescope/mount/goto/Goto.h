@@ -100,6 +100,8 @@ class Goto {
     // current goto rate in radians per second
     float rate;
 
+    float      usPerStepBase        = 128.0F;
+
   private:
 
     // set any additional destinations required for a goto
@@ -127,7 +129,7 @@ class Goto {
     AlignState alignState = {0, 0};
 
     float      usPerStepDefault     = 64.0F;
-    float      usPerStepBase        = 128.0F;
+  
     float      radsPerSecondCurrent;
 
     double slewDestinationDistHA = 0.0;

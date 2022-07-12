@@ -16,18 +16,17 @@ class GuideScreen : public Display {
     bool guideButStateChange();
   
   private:
-    Screen gCurScreen;
-    bool guidingEast;
-    bool guidingWest;
-    bool guidingNorth;
-    bool guidingSouth;
-    bool oneXisOn = true;
-    bool eightXisOn;
-    bool twentyXisOn;
-    bool HalfMaxisOn;
-    bool syncOn;
-    bool spiralOn;
-    bool stopPressed = false;
+    bool guidingEast  = false;
+    bool guidingWest  = false;
+    bool guidingNorth = false;
+    bool guidingSouth = false;
+    bool oneXisOn     = false;
+    bool eightXisOn   = false;
+    bool twentyXisOn  = true;
+    bool HalfMaxisOn  = false;
+    bool syncOn       = false;
+    bool spiralOn     = false;
+    bool stopPressed  = false;
     bool preSlewState = false;
 };
 

@@ -51,6 +51,9 @@
 
 #include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino 
 
+// ODrive servo motor serial driver
+extern ODriveArduino *_oDriveDriver;
+
 typedef struct ODriveDriverSettings {
   int16_t model;
   int8_t  status;
@@ -144,7 +147,6 @@ class ODriveMotor : public Motor {
     float stepsPerMeasure = 0.0F;
 };
 
-// ODrive servo motor serial driver
-extern ODriveArduino *_oDriveDriver;
+
 
 #endif

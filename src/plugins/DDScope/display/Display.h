@@ -41,7 +41,7 @@
 #define MAXPRESSU        1000
 #define PENRADIUS           3
 
-// Color definitions
+// Color definitions-565 format
 #define BLACK       0x0000      /*   0,   0,   0 */
 #define NAVY        0x000F      /*   0,   0, 128 */
 #define DARKGREEN   0x03E0      /*   0, 128,   0 */
@@ -60,8 +60,8 @@
 #define WHITE       0xFFFF      /* 255, 255, 255 */
 #define ORANGE      0xFD20      /* 255, 165,   0 */
 #define GREENYELLOW 0xAFE5      /* 173, 255,  47 */
-#define PINK        0xF81F		//
-#define DEEP_MAROON 0x4800		// 
+#define PINK        0xF81F		
+#define DEEP_MAROON 0x4000      //0x4800		// 
 
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
 #define BATTERY_LOW_VOLTAGE   21.0  
@@ -138,6 +138,7 @@ class Display {
     void setLocalCmd(const char *command);
     void getLocalCmd(const char *command, char *reply);
     void getLocalCmdTrim(const char *command, char *reply);
+    void getLocalCmdTrim(const char *command, String reply);
 
   // Colors, Buttons, BitMap printing
     
@@ -192,6 +193,9 @@ class Display {
     static Screen currentScreen;
     static bool _nightMode;
     static bool _redrawBut;
+
+    // Default Font Arial 6x8 is NULL
+    const GFXfont *default_font = (const GFXfont *)__null;
 
   private:
     CommandError commandError = CE_NONE;

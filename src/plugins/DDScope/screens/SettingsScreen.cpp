@@ -8,6 +8,7 @@
 #include "../catalog/Catalog.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
+#include "../../../lib/tasks/OnTask.h"
 
 #define PAD_BUTTON_X         2
 #define PAD_BUTTON_Y         280
@@ -52,10 +53,15 @@
 #define LO_CLEAR_X           T_CLEAR_X
 #define LO_CLEAR_Y           LO_SELECT_Y
 
-#define S_SEND_BUTTON_X      215
-#define S_SEND_BUTTON_Y      292
+#define S_SEND_BUTTON_X      217
+#define S_SEND_BUTTON_Y      282
 #define S_SEND_BOXSIZE_X     80
-#define S_SEND_BOXSIZE_Y     30
+#define S_SEND_BOXSIZE_Y     25
+
+#define SLEW_R_BUTTON_X      200
+#define SLEW_R_BUTTON_Y      312
+#define SLEW_R_BOXSIZE_X     120
+#define SLEW_R_BOXSIZE_Y     25
 
 #define SITE_BUTTON_X        210
 #define SITE_BUTTON_Y        321
@@ -84,6 +90,9 @@ Button settingsButton(
                 display.mainFontHeight, 
                 "");
                 
+// Canvas Print object Custom Font
+CanvasPrint canvSettingsInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+
 // ===== Draw the SETTINGS Page =====
 void SettingsScreen::draw() {
   setCurrentScreen(SETTINGS_SCREEN);
@@ -155,23 +164,23 @@ void SettingsScreen::updateSettingsStatus() {
   char tempReply[10];
   // show Local Time 24 Hr format
   getLocalCmdTrim(":GL#", tempReply); 
-  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y, 0, 80, 16, tempReply);
+  canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y, 80, 16, tempReply, false);
 
   // show Current Date
   getLocalCmdTrim(":GC#", tempReply); 
-  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y, 0, 80, 16, tempReply);
+  canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y, 80, 16, tempReply, false);
 
   // show TZ Offset
   getLocalCmdTrim(":GG#", tempReply); 
-  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*2, 0, 80, 16, tempReply);
+  canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*2, 80, 16, tempReply, false);
 
   // show Latitude
   getLocalCmdTrim(":Gt#", tempReply); 
-  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*3, 0, 80, 16, tempReply);
+  canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*3, 80, 16, tempReply, false);
 
   // show Longitude
   getLocalCmdTrim(":Gg#", tempReply); 
-  canvPrint(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*4, 0, 80, 16, tempReply);
+  canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*4, 80, 16, tempReply, false);
 }
 
 // Numpad handler, assign label to pressed button field array slot
@@ -247,6 +256,7 @@ bool SettingsScreen::settingsButStateChange() {
   }
 }
 
+// Update the buttons for the Settings Screen
 void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
   _redrawBut = _redrawBut;
   // Get button and print label
@@ -313,7 +323,7 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
     settingsButton.draw(U_SELECT_X, U_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "TzSel", BUT_OFF); 
   }
 
-  // Time Zone Clear Button update
+  // Time Zone Clear Button
   if (Tzclear) {
     settingsButton.draw(U_CLEAR_X, U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "TzClr", BUT_ON); 
     tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*2, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9, butBackground);
@@ -333,7 +343,7 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
     settingsButton.draw(LA_SELECT_X, LA_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "LaSel", BUT_OFF); 
   }
 
-  // Latitude Clear Button update
+  // Latitude Clear Button
   if (LaClear) {
     settingsButton.draw(LA_CLEAR_X, LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "LaClr", BUT_ON); 
     tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*3, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9, butBackground);
@@ -353,7 +363,7 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
     settingsButton.draw(LO_SELECT_X, LO_SELECT_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "LoSel", BUT_OFF); 
   }
 
-  // Longitude Clear Button update
+  // Longitude Clear Button
   if (LoClear) {
     settingsButton.draw(LO_CLEAR_X, LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "LoClr", BUT_ON); 
     tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*4, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9, butBackground);
@@ -366,13 +376,25 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
     settingsButton.draw(LO_CLEAR_X, LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "LoClr", BUT_OFF); 
   }
   
-  // Send Data Button update
+  // Send Data Button
   if (sSendOn) {
     settingsButton.draw(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, "Sent", BUT_ON);
     sSendOn = false; 
   } else {
     settingsButton.draw(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, "Send", BUT_OFF); 
   }
+
+  // Slew Rate Button
+  char temp[16]="";
+  getLocalCmdTrim(":GX92#", cRate); // get current rate 
+  cRateF = atol(cRate);
+  getLocalCmdTrim(":GX93#", bRate); // get base rate
+  bRateF = atol(bRate);
+  rateRatio = bRateF/cRateF;
+  rateRatio = roundf(rateRatio * 10) / 10; // get rid of extra digits
+  if (rateRatio == 0.70F) rateRatio = 0.75F; // take care of special case that needs extra digit
+  sprintf(temp, "Slew Rate %0.2f", rateRatio);
+  settingsButton.draw(SLEW_R_BUTTON_X, SLEW_R_BUTTON_Y, SLEW_R_BOXSIZE_X, SLEW_R_BOXSIZE_Y, temp, BUT_OFF); 
 }
 
 // **** TouchScreen was touched, determine which button *****
@@ -529,6 +551,17 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
       setLocalCmd(sCmd);
     }
     return true;
+  }
+
+  // SLew Rate Button, circular selection each button press (.5X, 1X, 2X) - default 1X
+  if (py > SLEW_R_BUTTON_Y && py < (SLEW_R_BUTTON_Y + SLEW_R_BOXSIZE_Y) && px > SLEW_R_BUTTON_X && px < (SLEW_R_BUTTON_X + SLEW_R_BOXSIZE_X)) {
+    BEEP;
+    if      (rateRatio == 1.00F) {setLocalCmd(":SX93,2#"); return true;} // if 1 then 1.5
+    else if (rateRatio == 1.50F) {setLocalCmd(":SX93,1#"); return true;} // if 1.5 then 2.0
+    else if (rateRatio >= 2.00F) {setLocalCmd(":SX93,5#"); return true;} // if 2.0 then 0.5
+    else if (rateRatio <= 0.50F) {setLocalCmd(":SX93,4#"); return true;} // if 0.5 then 0.75
+    else if (rateRatio == 0.75F) {setLocalCmd(":SX93,3#"); return true;} // if 0.75 then 1.00
+    else return false; 
   }
   return false;
 }

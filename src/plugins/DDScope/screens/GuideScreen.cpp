@@ -9,6 +9,7 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "src/telescope/mount/Mount.h"
+#include "src/telescope/mount/guide/Guide.h"
 
 // Guide buttons
 #define GUIDE_BOXSIZE_X          85
@@ -132,6 +133,27 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
   tft.setFont(&Inconsolata_Bold8pt7b); 
 
   // Draw Guide Rates Buttons
+  // :RG#       Set guide rate: Guiding        1X
+  // :RC#       Set guide rate: Centering      8X
+  // :RM#       Set guide rate: Find          20X
+  // :RF#       Set guide rate: Fast          48X
+  // :RS#       Set guide rate: Slew           ?X (1/2 of current goto rate)
+  // :Rn#       Set guide rate to n, where n = 0..9
+  char guideRateText[10];
+  switch (guide.settings.axis1RateSelect) {
+    case 0:  strcpy(guideRateText, " Quarter"); break;
+    case 1:  strcpy(guideRateText, "  Half  "); break;
+    case 2:  strcpy(guideRateText, "    1X  "); break;
+    case 3:  strcpy(guideRateText, "    2X  "); break;
+    case 4:  strcpy(guideRateText, "    4X  "); break;
+    case 5:  strcpy(guideRateText, "    8X  "); break;
+    case 6:  strcpy(guideRateText, "   20X  "); break;
+    case 7:  strcpy(guideRateText, "   48X  "); break;
+    case 8:  strcpy(guideRateText, "Half Max"); break;
+    case 9:  strcpy(guideRateText, "   Max  "); break;
+    case 10: strcpy(guideRateText, " Custom "); break;
+    default: strcpy(guideRateText, "  Error "); break;
+  }
   int x_offset = 0;
   int spacer = GUIDE_R_SPACER;
   if (oneXisOn) {   

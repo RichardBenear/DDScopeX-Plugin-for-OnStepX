@@ -102,6 +102,9 @@ Button homeButton(
                 display.mainFontHeight, 
                 "");
 
+// Canvas Print object Custom Font
+CanvasPrint canvHomeInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+
 // ===============================================
 // ======= Draw Initial content of HOME PAGE =====
 // ===============================================
@@ -113,7 +116,6 @@ void HomeScreen::draw() {
   drawMenuButtons();
   drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
   tft.setFont(&Inconsolata_Bold8pt7b);
-  //tft.drawFastVLine(165, COL1_LABELS_Y-12, 160, textColor);
 
   // ======Draw Status Text ===========
   // Labels for Real Time data only here, no data displayed yet
@@ -162,7 +164,7 @@ void HomeScreen::updateHomeStatus() {
   for (int i=0; i<COL_1_NUM_ROWS; i++) {
     getLocalCmdTrim(colOneCmdStr[i], xchReply); 
     if (strcmp(curCol1[i], xchReply) != 0) {
-      canvPrint(COL1_DATA_X, COL1_DATA_Y, y_offset, C_WIDTH-5, C_HEIGHT, xchReply);
+      canvHomeInsPrint.printRJ(COL1_DATA_X, COL1_DATA_Y+y_offset, C_WIDTH-5, C_HEIGHT, xchReply, false);
       strcpy(curCol1[i], xchReply);
     }
     y_offset +=COL1_LABEL_SPACING;
@@ -178,7 +180,7 @@ void HomeScreen::updateHomeStatus() {
   #elif
     currentAZEncPos = 0; // define this for non ODrive implementations
   #endif
-  canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZEncPos);
+  canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZEncPos, false);
 
   
   // ALT encoder
@@ -189,7 +191,7 @@ void HomeScreen::updateHomeStatus() {
   #elif
     currentALTEncPos = 0; // define this for non ODrive implementations
   #endif
-  canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTEncPos);
+  canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTEncPos, false);
  
 
   // AZ current
@@ -202,9 +204,9 @@ void HomeScreen::updateHomeStatus() {
   #endif
   
   if (currentAZMotorCur > MOTOR_CURRENT_WARNING) { // change background color...Warning!
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur, textColor, butOnBackground);
+    canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur, true);
   } else {
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur);
+    canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur, false);
   }
 
   
@@ -218,9 +220,9 @@ void HomeScreen::updateHomeStatus() {
   #endif
 
   if (currentALTMotorCur > MOTOR_CURRENT_WARNING) {
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur, textColor, butOnBackground);
+    canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur, true);
   } else {
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur);
+    canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur, false);
   }
 
   // AZ Motor Temperature
@@ -232,9 +234,9 @@ void HomeScreen::updateHomeStatus() {
   #endif
   
   if (currentAZMotorTemp >= MAX_MOTOR_TEMP) { // make box red
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp, textColor, butOnBackground);
+    canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp, true);
   } else {
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp);
+    canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorTemp, false);
   }
 
   // ALT Motor Temperature
@@ -246,9 +248,9 @@ void HomeScreen::updateHomeStatus() {
   #endif
 
   if (currentALTMotorTemp >= MAX_MOTOR_TEMP) { // make box red
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp, textColor, butOnBackground);
+    canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp, true);
   } else {
-    canvPrint(COL2_DATA_X, COL2_DATA_Y, y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp);
+    canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorTemp, false);
   }
 }
 

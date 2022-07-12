@@ -56,11 +56,11 @@ Button treasureDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackgro
 // Catalog Button object for custom font
 Button treasureCatButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
 
-// Canvas Print object, default Arial 6x8 font
-CanvasPrint canvTreasureDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+// Canvas Print object default Arial 6x9 font
+CanvasPrint canvTreasureDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.default_font);
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint canvTreasureInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvTreasureInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
 
 //==================================================================
 void TreasureCatScreen::init() { 
@@ -78,7 +78,7 @@ void TreasureCatScreen::init() {
   // Show Page Title
   drawTitle(110, TITLE_TEXT_Y, "Treasure");
   if (!loadTreasureArray()) {
-      canvTreasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Treasure", false);
+      canvTreasureInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Treasure", false);
   } else { 
       parseTcatIntoArray();
   }
@@ -272,7 +272,7 @@ void TreasureCatScreen::drawTreasureCat() {
     // stop printing data if last row on the last page
     if (tAbsRow == MAX_TREASURE_ROWS) {
       tEndOfList = true; 
-      if (tRow == 0) {canvTreasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "None above 10 deg", false);}
+      if (tRow == 0) {canvTreasureInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "None above 10 deg", false);}
       return; 
     }
   }
@@ -339,9 +339,9 @@ void TreasureCatScreen::updateScreen() {
   // show if we are above and below visible limits
   tft.setFont(&Inconsolata_Bold8pt7b); 
   if (dtAlt[tAbsIndex] > 10.0) {   // show minimum 10 degrees altitude, use dtAlt[tAbsIndex] previously calculated 
-      canvTreasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
+      canvTreasureInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
   } else {
-      canvTreasureInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
+      canvTreasureInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
   }
   tft.setFont();
 
@@ -485,13 +485,13 @@ void TreasureCatScreen::showTargetCoords() {
   transform.equToHor(&catTarget);
 
   sprintf(_reply, "RA: %6.1f", radToHrs(catTarget.r));
-  canvTreasureDefPrint.Print(radec_x, ra_y, width, height, _reply, false);
+  canvTreasureDefPrint.printRJ(radec_x, ra_y, width, height, _reply, false);
   sprintf(_reply, "DEC: %6.1f", radToDeg(catTarget.d));
-  canvTreasureDefPrint.Print(radec_x, dec_y, width, height, _reply, false);
+  canvTreasureDefPrint.printRJ(radec_x, dec_y, width, height, _reply, false);
   sprintf(_reply, "AZM: %6.1f", (double)NormalizeAzimuth(radToDeg(catTarget.z))); 
-  canvTreasureDefPrint.Print(altazm_x, ra_y, width-10, height, _reply, false);    
+  canvTreasureDefPrint.printRJ(altazm_x, ra_y, width-10, height, _reply, false);    
   sprintf(_reply, "ALT: %6.1f", radToDeg(catTarget.a));
-  canvTreasureDefPrint.Print(altazm_x, dec_y, width-10, height, _reply, false); 
+  canvTreasureDefPrint.printRJ(altazm_x, dec_y, width-10, height, _reply, false); 
 }
 
 TreasureCatScreen treasureCatScreen;

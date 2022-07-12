@@ -2,6 +2,7 @@
 // DCFocuserScreen.cpp  (DC motor focuser only)
 
 // Author: Richard Benear
+//
 // The following comments are only true for OnStep, not OnStepX..TBD what to do in OnStepX
 // 12/20/21
 // Initially, this Focuser Page tried to use the FocuserDC.h
@@ -60,6 +61,9 @@
 #define FOC_SPEED_INC 100 // default to inc/dec of 100 microsec
 #define EN_OFF_TIME 2000 // microseconds
 
+// Canvas Print object Custom Font
+CanvasPrint canvFocuserInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+
 // Draw the initial content for Focuser Page
 void DCFocuserScreen::draw() {
   tasks.yield(10);
@@ -112,26 +116,26 @@ void DCFocuserScreen::updateFocuserStatus() {
   updateCommonStatus();
 
   int y_offset = 0;
-  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMaxPosition);
+  canvFocuserInsPrint.printRJ(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y+y_offset, C_WIDTH, C_HEIGHT, focMaxPosition, false);
 
   y_offset +=FOC_LABEL_Y_SPACING;
-  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMinPosition);
+  canvFocuserInsPrint.printRJ(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y+y_offset, C_WIDTH, C_HEIGHT, focMinPosition, false);
      
   // Focuser Speed
   y_offset +=FOC_LABEL_Y_SPACING;
-  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveSpeed);
+  canvFocuserInsPrint.printRJ(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y+y_offset, C_WIDTH, C_HEIGHT, focMoveSpeed, false);
    
   // Focuser move distance
   y_offset +=FOC_LABEL_Y_SPACING;
-  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focMoveDistance);
+  canvFocuserInsPrint.printRJ(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y+y_offset, C_WIDTH, C_HEIGHT, focMoveDistance, false);
      
   // Update Current Focuser Position
   y_offset +=FOC_LABEL_Y_SPACING;
-  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focPosition);
+  canvFocuserInsPrint.printRJ(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y+y_offset, C_WIDTH, C_HEIGHT, focPosition, false);
 
   // Update Delta Focuser Position
   y_offset +=FOC_LABEL_Y_SPACING;
-  canvPrint(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y, y_offset, C_WIDTH, C_HEIGHT, focDeltaMove);
+  canvFocuserInsPrint.printRJ(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y+y_offset, C_WIDTH, C_HEIGHT, focDeltaMove, false);
 }
 
 bool DCFocuserScreen::focuserButStateChange() {

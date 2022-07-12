@@ -101,94 +101,99 @@ CanvasPrint::CanvasPrint(
       uint16_t      height,
       uint16_t      colorActive,
       uint16_t      colorNotActive,
-      //GFXfont       *font,
-      const char*   label)
+      const GFXfont *font)
   {                
-    p_x               = x;
-    p_y               = y;
-    p_width           = width;
-    p_height          = height;
-    p_colorActive     = colorActive;
-    p_colorNotActive  = colorNotActive;
-    //p_font            = font;      
-    p_label           = label;
+    _x               = x;
+    _y               = y;
+    _width           = width;
+    _height          = height;
+    _colorActive     = colorActive;
+    _colorNotActive  = colorNotActive;
+    _font            = (GFXfont *)font;      
   }
 
-// ===================== Default Font ==============================
-// Decided to not pass in font type but use constructor objects instead
-// this Canvas print function using character strings, overloads follow this
-void CanvasPrint::Print(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
-  char _label[60] = "";
-  int y_box_offset = -6; // default font offset
-  GFXcanvas1 canvas(width, height);
-
-  canvas.setFont(); // default Arial 6x8 pt font
-  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
-  sprintf(_label, "%9s", label);
-  canvas.print(_label);
-  if (warning) { // show warning background
-    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorActive);
+// ===================== Canvas Print ==============================
+// Right Justified, vertically centered
+void CanvasPrint::printRJ(int x, int y, uint16_t width, uint16_t height, const char* c_label, bool warning) {
+  char t_label[80] = "";
+  int y_box_offset;
+  if (_font == NULL) {
+    y_box_offset = -6; // default font offset
   } else {
-    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorNotActive);
+    y_box_offset = 10; // custom font offset
+  }
+  GFXcanvas1 canvas(width, height);
+  canvas.setFont(_font); 
+  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
+  sprintf(t_label, "%9s", c_label);
+  canvas.print(t_label);
+  if (warning) { // show warning background
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, _colorActive);
+  } else {
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, _colorNotActive);
   }
 }
 
-// Overload for double
-void CanvasPrint::Print(int x, int y, uint16_t width, uint16_t height, double label, bool warning) {
-  char charlabel[60];
-  sprintf(charlabel, "%5.1f", label);
-  Print(p_x, p_y, p_width, p_height, charlabel, warning);
+// Left Justified, vertically centered
+void CanvasPrint::printLJ(int x, int y, uint16_t width, uint16_t height, const char* c_label, bool warning) {
+  char t_label[80] = "";
+  int y_box_offset;
+  if (_font == NULL) {
+    y_box_offset = -6; // default font offset
+  } else {
+    y_box_offset = 10; // custom font offset
+  }
+  GFXcanvas1 canvas(width, height);
+  canvas.setFont(_font); 
+  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
+  sprintf(t_label, "%-9s", c_label);
+  canvas.print(t_label);
+  if (warning) { // show warning background
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, _colorActive);
+  } else {
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, _colorNotActive);
+  }
+}
+
+// Right Justified Overload for double
+void CanvasPrint::printRJ(int x, int y, uint16_t width, uint16_t height, double label, bool warning) {
+  char _label[80] = "";
+  int y_box_offset;
+  if (_font == NULL) {
+    y_box_offset = -6; // default font offset
+  } else {
+    y_box_offset = 10; // custom font offset
+  }
+  GFXcanvas1 canvas(width, height);
+  canvas.setFont(_font); 
+  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
+  sprintf(_label, "%6.1f", label);
+  canvas.print(_label);
+  if (warning) { // show warning background
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, _colorActive);
+  } else {
+    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, _colorNotActive);
+  }
+}
+/*
+//Right Justified Overload for double 
+// Not sure why this doesn't work. Using the one above instead. 
+void CanvasPrint::printRJ(int x, int y, uint16_t width, uint16_t height, double d_label, bool warning) {
+  char c_label[7]="";
+  sprintf(c_label, "%6.1f", d_label);
+  printRJ(x, y, width, height, c_label, warning);
+}
+*/
+// Right JustifiedOverload for int
+void CanvasPrint::printRJ(int x, int y, uint16_t width, uint16_t height, int i_label, bool warning) {
+  char c_label[7]="";
+  sprintf(c_label, "%d", i_label);
+  printRJ(x, y, width, height, c_label, warning);
  }
-//==================================================================
 
-//===================== Custom Font ================================
-// Using custom font Inconsolata_Bold8pt7b
-// Text is Right Justified
-void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
-  char _label[80] = "";
-  int y_box_offset = 10; // custom font offset
-  GFXcanvas1 canvas(width, height);
-
-  canvas.setFont(&Inconsolata_Bold8pt7b); 
-  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
-  sprintf(_label, "%9s", label);
-  canvas.print(_label);
-  if (warning) { // show warning background
-    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorActive);
-  } else {
-    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorNotActive);
-  }
-}
-
-  // Using Overload for double
-void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, double label, bool warning) {
-  char charlabel[20];
-  sprintf(charlabel, "%5.1f", label);
-  PrintCus(p_x, p_y, p_width, p_height, charlabel, warning);
-}
-
- // Overload for int
-void CanvasPrint::PrintCus(int x, int y, uint16_t width, uint16_t height, int label, bool warning) {
-  char charlabel[10];
-  sprintf(charlabel, "%8d", label);
-  PrintCus(p_x, p_y, p_width, p_height, charlabel, warning);
-}
-
-// Using custom font Inconsolata_Bold8pt7b
-// Text is Left Justified
-void CanvasPrint::PrintLJ(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning) {
-  char _label[80] = "";
-  int y_box_offset = 10; // custom font offset
-  GFXcanvas1 canvas(width, height);
-
-  canvas.setFont(&Inconsolata_Bold8pt7b); 
-  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
-  sprintf(_label, "%-9s", label);
-  canvas.print(_label);
-  if (warning) { // show warning background
-    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorActive);
-  } else {
-    tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, display.textColor, p_colorNotActive);
-  }
-}
-//=================================================================
+// Left Justified Overload for int
+void CanvasPrint::printLJ(int x, int y, uint16_t width, uint16_t height, int i_label, bool warning) {
+  char c_label[7]="";
+  sprintf(c_label, "%-d", i_label);
+  printLJ(x, y, width, height, c_label, warning);
+ }

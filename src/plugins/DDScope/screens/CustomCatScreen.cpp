@@ -55,10 +55,10 @@ Button customDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackgroun
 Button customCatButton(0, 0 ,0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
 
 // Canvas Print object default Arial 6x9 font
-CanvasPrint canvCustomDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvCustomDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.default_font);
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint canvCustomInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvCustomInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
 
 // ========== Initialize and draw Custom Catalog ===============
 void CustomCatScreen::init() { 
@@ -77,7 +77,7 @@ void CustomCatScreen::init() {
   customCatalog = true;
 
   if (!loadCustomArray()) {
-      canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Custom", true); 
+      canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Custom", true); 
       moreScreen.draw();
       return;
   } else {
@@ -240,7 +240,7 @@ void CustomCatScreen::drawCustomCat() {
     // stop printing data if last row on the last page
     if (cAbsRow == cusRowEntries+1) {
       cEndOfList = true; 
-      if (cRow == 0) {canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "None above 10 deg", true);}
+      if (cRow == 0) {canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "None above 10 deg", true);}
       //VF("endOfList");
       return; 
     }
@@ -299,9 +299,9 @@ void CustomCatScreen::updateScreen() {
   // show if we are above and below visible limits
   tft.setFont(&Inconsolata_Bold8pt7b); 
   if (dcAlt[cAbsIndex] > 10.0) {      // minimum 10 degrees altitude
-      canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
+      canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
   } else {
-      canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
+      canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
   }
   tft.setFont();
 
@@ -352,7 +352,7 @@ void CustomCatScreen::updateScreen() {
     // write new array into SD File
     File cWrFile;
     if ((cWrFile = SD.open("custom.csv", FILE_WRITE)) == 0) {
-      canvCustomInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "SD open ERROR", true);
+      canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "SD open ERROR", true);
       return;
     } else {
       if (cWrFile) {
@@ -480,13 +480,13 @@ void CustomCatScreen::showTargetCoords() {
   transform.equToHor(&catTarget);
 
   sprintf(_reply, "RA: %6.1f", radToHrs(catTarget.r));
-  canvCustomDefPrint.Print(radec_x, ra_y, width, height, _reply, false);
+  canvCustomDefPrint.printRJ(radec_x, ra_y, width, height, _reply, false);
   sprintf(_reply, "DEC: %6.1f", radToDeg(catTarget.d));
-  canvCustomDefPrint.Print(radec_x, dec_y, width, height, _reply, false);
+  canvCustomDefPrint.printRJ(radec_x, dec_y, width, height, _reply, false);
   sprintf(_reply, "AZM: %6.1f", (double)NormalizeAzimuth(radToDeg(catTarget.z))); 
-  canvCustomDefPrint.Print(altazm_x, ra_y, width-10, height, _reply, false);    
+  canvCustomDefPrint.printRJ(altazm_x, ra_y, width-10, height, _reply, false);    
   sprintf(_reply, "ALT: %6.1f", radToDeg(catTarget.a));
-  canvCustomDefPrint.Print(altazm_x, dec_y, width-10, height, _reply, false); 
+  canvCustomDefPrint.printRJ(altazm_x, dec_y, width-10, height, _reply, false); 
 }
 
 CustomCatScreen customCatScreen;

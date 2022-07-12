@@ -70,7 +70,7 @@ Button moreButton(TRACK_R_X, TRACK_R_Y, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y,
 Button moreLgButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.largeFontWidth, display.largeFontHeight, "");
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint canvMoreInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvMoreInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
 
 // ============= Initialize the Catalog & More page ==================
 void MoreScreen::draw() {
@@ -197,7 +197,7 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
   y_offset += TRACK_R_BOXSIZE_Y+TRACK_R_SPACER+12;
  
   sprintF(reply, "%0.5f", siderealToHz(mount.trackingRate));
-  canvMoreInsPrint.PrintCus(TRACK_R_X-6, TRACK_R_Y+y_offset, 85, 15, reply, false);
+  canvMoreInsPrint.printRJ(TRACK_R_X-6, TRACK_R_Y+y_offset, 85, 15, reply, false);
 
   // ---- right hand column of buttons ----
   y_offset = 0;
@@ -205,9 +205,9 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
   if (filterBut) {
     moreButton.draw(FM_X, FM_Y + y_offset, FM_BOXSIZE_X, FM_BOXSIZE_Y, activeFilterStr[activeFilter], BUT_ON);
     if (activeFilter == FM_ALIGN_ALL_SKY && !objectSelected) {
-      canvMoreInsPrint.PrintCus(2, 472, 317, 15, " All Sky For STARS only", true);
+      canvMoreInsPrint.printRJ(2, 472, 317, 15, " All Sky For STARS only", true);
     } else {
-      canvMoreInsPrint.PrintCus(2, 472, 317, 15, "", false);
+      canvMoreInsPrint.printRJ(2, 472, 317, 15, "", false);
     }
     filterBut = false;
   } else {
@@ -221,7 +221,7 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
       yesCancelActive = true;
       moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Yes", BUT_ON);
       moreButton.draw(MISC_X+MISC_BOXSIZE_X/2, MISC_Y + y_offset, MISC_BOXSIZE_X/2, MISC_BOXSIZE_Y, "Cancel", BUT_ON);
-      if (!objectSelected) canvMoreInsPrint.PrintCus(2, 472, 317, 15, " Delete Custom Catalog?!", true);
+      if (!objectSelected) canvMoreInsPrint.printRJ(2, 472, 317, 15, " Delete Custom Catalog?!", true);
     }
     if (yesBut) { // go ahead and clear
       moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clearing", BUT_ON);
@@ -241,7 +241,7 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
       clrCustom = false;
       yesCancelActive = false;
       moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clr Custom", BUT_OFF);
-      canvMoreInsPrint.PrintCus(2, 472, 317, 15, "", false);
+      canvMoreInsPrint.printRJ(2, 472, 317, 15, "", false);
     }
   } else {
     moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Clr Custom", BUT_OFF);

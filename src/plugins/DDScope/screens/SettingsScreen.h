@@ -15,6 +15,8 @@ class SettingsScreen : public Display {
     bool settingsButStateChange();
     void updateSettingsStatus();
     
+    float rateRatio = 1.0;
+
   private:
     void setProcessNumPadButton();
   
@@ -23,27 +25,35 @@ class SettingsScreen : public Display {
     char Dtext[8];
     char Tztext[8];
     char LaText[8];
-    char LoText[8];
+    char LoText[8]; 
+    char cRate[12]   = "";
+    char bRate[12]   = "";
+    char sCmd[12];
+
     int sButtonPosition;
+    
+    float cRateF;
+    float bRateF;
+
     uint8_t TtextIndex;
     uint8_t DtextIndex;
     uint8_t TztextIndex;
     uint8_t LaTextIndex;
     uint8_t LoTextIndex;
-    char sCmd[12];
-    bool Tselect;
-    bool Tclear;
-    bool Dselect;
-    bool Dclear;
-    bool Tzselect;
-    bool Tzclear;
-    bool LaSelect;
-    bool LaClear;
-    bool LoSelect;
-    bool LoClear;
-    bool sSendOn;
-    bool siteOn;
-    bool sNumDetected;
+    
+    bool Tselect    = true;
+    bool Tclear     = false;
+    bool Dselect    = false;
+    bool Dclear     = false;
+    bool Tzselect   = false;
+    bool Tzclear    = false;
+    bool LaSelect   = false;
+    bool LaClear    = false;
+    bool LoSelect   = false;
+    bool LoClear    = false;
+    bool sSendOn    = false;
+    bool siteOn     = false;
+    bool sNumDetected = false;
 };
 
 extern SettingsScreen settingsScreen;

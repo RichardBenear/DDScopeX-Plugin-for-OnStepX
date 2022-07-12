@@ -57,9 +57,9 @@
 #define COM_LABEL_Y_SPACE        17
 #define COM_COL1_LABELS_X         8
 #define COM_COL1_LABELS_Y       104
-#define COM_COL1_DATA_X          72
+#define COM_COL1_DATA_X          74
 #define COM_COL1_DATA_Y          COM_COL1_LABELS_Y
-#define COM_COL2_LABELS_X       179
+#define COM_COL2_LABELS_X       183
 #define COM_COL2_DATA_X         250
 
 #define L_CE_NONE                    "No Errors"
@@ -105,6 +105,9 @@ Button menuButton(
         display.largeFontWidth, 
         display.largeFontHeight, 
         "");
+
+// Canvas Print object Custom Font
+CanvasPrint canvDisplayInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
                 
 Screen Display::currentScreen = HOME_SCREEN;
 bool Display::_nightMode = false;
@@ -130,9 +133,6 @@ void Display::init() {
   setLocalCmd(":Sh-01#"); //Set horizon limit -1 deg
   setLocalCmd(":So86#"); // Set overhead limit 86 deg
   setLocalCmd(":SMHome#"); // Set Site 0 name "Home"
-  setLocalCmd(":SX93,1#"); // 2x slew speed
-  //setLocalCmd(":SX93,2#"); // 1.5x slew speed
-  //setLocalCmd(":SX93,3#"); // 1.0x slew speed
 }
 
 // initialize the SD card and boot screen
@@ -340,9 +340,9 @@ void Display::updateBatVoltage() {
   char bvolts[12]="-- v";
   sprintf(bvolts, "%4.1f v", currentBatVoltage);
   if (currentBatVoltage < BATTERY_LOW_VOLTAGE) { 
-    canvPrint(120, 38, 0, 80, 14, bvolts, textColor, butOnBackground);
+    canvDisplayInsPrint.printRJ(120, 38, 80, 14, bvolts, true);
   } else {
-    canvPrint(120, 38, 0, 80, 14, bvolts, textColor, butBackground);
+    canvDisplayInsPrint.printRJ(120, 38, 80, 14, bvolts, false);
   }
 }
 
@@ -353,7 +353,7 @@ void Display::updateOnStepCmdStatus() {
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;
   if (!tls.isReady()) {
-    canvPrint(2, 454, 0, 317, C_HEIGHT, "TLS not ready");
+    canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, "TLS not ready", false);
   } else {
     if (firstGPS) {
       // One Time update the SHC LST and Latitude if GPS locked
@@ -361,7 +361,7 @@ void Display::updateOnStepCmdStatus() {
       cat_mgr.setLat(site.location.latitude);
       firstGPS = false;
     }
-    canvPrint(2, 454, 0, 317, C_HEIGHT, commandErrorStr[commandError]);
+    canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, commandErrorStr[commandError], false);
   } 
 }
 
@@ -381,8 +381,8 @@ void Display::updateODriveErrBar() {
   tft.setCursor(label_x, y);
   tft.print("ALT Ctrl err:");
   
-  canvPrint(        data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(AZM_MOTOR, AXIS));
-  canvPrint(label_x+data_x, y, 0, C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(ALT_MOTOR, AXIS));
+  canvDisplayInsPrint.printRJ(        data_x, y,  C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(AZM_MOTOR, AXIS), false);
+  canvDisplayInsPrint.printRJ(label_x+data_x, y,  C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(ALT_MOTOR, AXIS), false);
 
   // sound varying frequency alarm if Motor and Encoders positions are too far apart
   oDriveExt.MotorEncoderDelta();
@@ -658,40 +658,31 @@ void Display::updateCommonStatus() {
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;
 
-
   char ra_hms[10]   = ""; 
   char dec_dms[11]  = "";
   char tra_hms[10]  = "";
   char tdec_dms[11] = "";
-  //char cAzmDMS[10]  = "";
-  //char cAltDMS[11]  = "";
-  //char tAzmDMS[10]  = "";
-  //char tAltDMS[11]  = "";
-  //double cAzm_d = 0.0;
-  //double cAlt_d = 0.0;
-  //double tAzm_d = 0.0;
-  //double tAlt_d = 0.0;
-
+  
   int y_offset = 0;
   // ----- Column 1 -----
   // Current RA, Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
   getLocalCmdTrim(":GR#", ra_hms);
-  canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, ra_hms);
+  canvDisplayInsPrint.printRJ(COM_COL1_DATA_X, COM_COL1_DATA_Y, C_WIDTH, C_HEIGHT, ra_hms, false);
 
   // Target RA, Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
   y_offset +=COM_LABEL_Y_SPACE; 
   getLocalCmdTrim(":Gr#", tra_hms);
-  canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tra_hms);
+  canvDisplayInsPrint.printRJ(COM_COL1_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH, C_HEIGHT, tra_hms, false);
 
   // Current DEC
    y_offset +=COM_LABEL_Y_SPACE; 
   getLocalCmdTrim(":GD#", dec_dms);
-  canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, dec_dms);
+  canvDisplayInsPrint.printRJ(COM_COL1_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH, C_HEIGHT, dec_dms, false);
 
   // Target DEC
   y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":Gd#", tdec_dms); 
-  canvPrint(COM_COL1_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH, C_HEIGHT, tdec_dms);
+  canvDisplayInsPrint.printRJ(COM_COL1_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH, C_HEIGHT, tdec_dms, false);
   
   // ----- Column 2 -----
   y_offset =0;
@@ -704,27 +695,27 @@ void Display::updateCommonStatus() {
   //getLocalCmdTrim(":GZ#", cAzmDMS); // DDD*MM'SS# 
   //convert.dmsToDouble(&cAzm_d, cAzmDMS, false, PM_LOW);
   double temp = NormalizeAzimuth(radToDeg(mount.getPosition(CR_MOUNT_HOR).z));
-  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, temp);
+  canvDisplayInsPrint.printRJ(COM_COL2_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH-20, C_HEIGHT, temp, false);
 
   // Get TARGET AZM
   y_offset +=COM_LABEL_Y_SPACE;  
   //getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
   //convert.dmsToDouble(&tAzm_d, tAzmDMS, false, PM_LOW);
   temp = NormalizeAzimuth(radToDeg(dispTarget.z));
-  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, temp);
+  canvDisplayInsPrint.printRJ(COM_COL2_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH-20, C_HEIGHT, temp, false);
 
   // Get CURRENT ALT
   y_offset +=COM_LABEL_Y_SPACE;  
   //getLocalCmdTrim(":GA#", cAltDMS);	// sDD*MM'SS#
   //convert.dmsToDouble(&cAlt_d, cAltDMS, true, PM_LOW);
   temp = radToDeg(mount.getPosition(CR_MOUNT_ALT).a);
-  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, temp);
+  canvDisplayInsPrint.printRJ(COM_COL2_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH-20, C_HEIGHT, temp, false);
   
   // Get TARGET ALT
   y_offset +=COM_LABEL_Y_SPACE;  
   //getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
   //convert.dmsToDouble(&tAlt_d, tAltDMS, true, PM_LOW);
-  canvPrint(COM_COL2_DATA_X, COM_COL1_DATA_Y, y_offset, C_WIDTH-15, C_HEIGHT, radToDeg(dispTarget.a));
+  canvDisplayInsPrint.printRJ(COM_COL2_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH-20, C_HEIGHT, radToDeg(dispTarget.a), false);
 }
 
 // draw a picture -This member function is a copy from rDUINOScope but with 

@@ -73,11 +73,11 @@ Button shcCatDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackgroun
 // Catalog Button object custom font
 Button shcCatButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
 
-// Canvas Print constructor
-CanvasPrint canvShcDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+// Canvas Print object default Arial 6x9 font
+CanvasPrint canvShcDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.default_font);
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint canvShcInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, "");
+CanvasPrint canvShcInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
 
 extern const char* Txt_Bayer[];
 
@@ -310,9 +310,9 @@ void SHCCatScreen::updateScreen() {
   // show if we are above and below visible limits
   tft.setFont(&Inconsolata_Bold8pt7b);  
   if (shcAlt[catButSelPos] > 10.0) {      // minimum 10 degrees altitude
-      canvShcInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
+      canvShcInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
   } else {
-      canvShcInsPrint.PrintCus(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
+      canvShcInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
   }
   tft.setFont();
 
@@ -466,13 +466,13 @@ void SHCCatScreen::showTargetCoords() {
   transform.equToHor(&catTarget);
 
   sprintf(_reply, "RA: %6.1f", radToHrs(catTarget.r));
-  canvShcDefPrint.Print(radec_x, ra_y, width, height, _reply, false);
+  canvShcDefPrint.printRJ(radec_x, ra_y, width, height, _reply, false);
   sprintf(_reply, "DEC: %6.1f", radToDeg(catTarget.d));
-  canvShcDefPrint.Print(radec_x, dec_y, width, height, _reply, false);
+  canvShcDefPrint.printRJ(radec_x, dec_y, width, height, _reply, false);
   sprintf(_reply, "AZM: %6.1f", (double)NormalizeAzimuth(radToDeg(catTarget.z))); 
-  canvShcDefPrint.Print(altazm_x, ra_y, width-10, height, _reply, false);    
+  canvShcDefPrint.printRJ(altazm_x, ra_y, width-10, height, _reply, false);    
   sprintf(_reply, "ALT: %6.1f", radToDeg(catTarget.a));
-  canvShcDefPrint.Print(altazm_x, dec_y, width-10, height, _reply, false); 
+  canvShcDefPrint.printRJ(altazm_x, dec_y, width-10, height, _reply, false); 
 }
 
 SHCCatScreen shcCatScreen;

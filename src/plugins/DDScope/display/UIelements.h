@@ -70,26 +70,23 @@ class CanvasPrint{
       uint16_t      height,
       uint16_t      colorActive,
       uint16_t      colorNotActive,
-      //GFXfont       font,
-      const char*   label);
+      const GFXfont *font);
 
-    void Print(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning);
-    void Print(int x, int y, uint16_t width, uint16_t height,      double label, bool warning);
-    //void Print(       int y,                                  const GFXfont *f, const char* label, bool warning);
-    void PrintCus(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning);
-    void PrintCus(int x, int y, uint16_t width, uint16_t height, double label, bool warning);
-    void PrintCus(int x, int y, uint16_t width, uint16_t height, int label, bool warning);
-    void PrintLJ(int x, int y, uint16_t width, uint16_t height, const char* label, bool warning);
+    void  printRJ(int x, int y, uint16_t width, uint16_t height, const char* c_label, bool warning);
+    void  printRJ(int x, int y, uint16_t width, uint16_t height,      double d_label, bool warning);
+    void  printRJ(int x, int y, uint16_t width, uint16_t height,         int i_label, bool warning);
 
+    void  printLJ(int x, int y, uint16_t width, uint16_t height, const char* c_label, bool warning);
+    void  printLJ(int x, int y, uint16_t width, uint16_t height,         int d_label, bool warning);
+   
   private:
-    int           p_x;
-    int           p_y;
-    uint16_t      p_width;
-    uint16_t      p_height;
-    uint16_t      p_colorActive;
-    uint16_t      p_colorNotActive;
-    GFXfont       p_font;      
-    const char*   p_label;
+    int           _x;
+    int           _y;
+    uint16_t      _width;
+    uint16_t      _height;
+    uint16_t      _colorActive;
+    uint16_t      _colorNotActive;
+    const GFXfont *_font;      
 };
 
 extern Button button;
