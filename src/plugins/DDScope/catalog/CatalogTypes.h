@@ -1,6 +1,8 @@
 // =====================================================
 // CatalogTypes.h
+//
 // This file is from the SmartHandController repository
+//
 #pragma once
 
 #include "Catalog.h"

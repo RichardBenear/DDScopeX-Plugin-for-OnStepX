@@ -1,14 +1,16 @@
-/*
-See rights and use declaration in License.h
+// =====================================================
+// Adafruit_ILI9486_Teensy.cpp
+//
+//See rights and use declaration in License.h
+//
+//based on Adafruit ili9341 library @ Dec 2016
+//modified for the Maple Mini (STM32) by Steve Strong 2017 - https://github.com/stevstrong/Adafruit_ILI9486_STM32
+//
+//Note: SPI pins are set in Library .h file, rather than using the constructor
+//
+//modified for Teensy 3.1 by Richard Palmer 2017
+//DMA transfers have been crippled by RP 
 
-based on Adafruit ili9341 library @ Dec 2016
-modified for the Maple Mini (STM32) by Steve Strong 2017 - https://github.com/stevstrong/Adafruit_ILI9486_STM32
-
-Note: SPI pins are set in Library .h file, rather than using the constructor
-
-modified for Teensy 3.1 by Richard Palmer 2017
-DMA transfers have been crippled by RP 
-*/
 #include "Adafruit_ILI9486_Teensy.h"
 #include <Adafruit_GFX.h>
 #include <gfxfont.h>

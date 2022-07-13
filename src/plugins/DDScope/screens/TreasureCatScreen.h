@@ -13,8 +13,6 @@
 #define MAX_TREASURE_PAGES       8 // more than needed with current settings
 #define MAX_TREASURE_ROWS      129 // full number of rows in catlog; starts with 1, not 0
 
-
-
 //====== Treasure Screen Class =========================
 class TreasureCatScreen : public Display {
   public:

@@ -1,5 +1,6 @@
 // ============================================================
 // CatalogConfig.h
+//
 // From the SmartHandController repository
 // --------------------------------------------------------------------------------
 // Data for different catalogs, each is a collection of certain celestial objects

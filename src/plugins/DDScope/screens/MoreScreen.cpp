@@ -1,11 +1,11 @@
 // =====================================================
 // MoreScreen.cpp
-// ====== CATALOG and "MORE" Menus Page ============
-// =================================================
+//
+// CATALOG and "MORE" Menus and Feature
 // The Catalog-and-More page allows access to More sub menus and Catalogs
 // Author: Richard Benear - Dec 2021
 //
-// Also uses routines from Smart Hand Controller (SHC) 
+// Uses the Catalog Manager portion from Smart Hand Controller (SHC).
 // Copyright (C) 2018 to 2021 Charles Lemaire, Howard Dutton, and Others
 // Author: Charles Lemaire, https://pixelstelescopes.wordpress.com/teenastro/
 // Author: Howard Dutton, http://www.stellarjourney.com, hjd1964@gmail.com
@@ -18,9 +18,10 @@
 #include "SHCCatScreen.h"
 #include "PlanetsScreen.h"
 #include "HomeScreen.h"
-#include "../catalog/Catalog.h"
+#include "../catalog/Catalog.h" // from SHC
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include <Fonts/FreeSansBold9pt7b.h>
+#include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "../../../telescope/mount/Mount.h"
 
 // Catalog Selection buttons
@@ -256,15 +257,15 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
   }
 
   // Larger Button Text for GoTo and Abort
-  tft.setFont(&FreeSansBold9pt7b); 
-
+  //tft.setFont(&FreeSansBold9pt7b); 
+  tft.setFont(&UbuntuMono_Bold11pt7b); 
   // Go To Coordinates Button
   if (goToButton) {
     moreLgButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Going", BUT_ON);
     goToButton = false;
   } else {
     if (!mount.isSlewing()) { 
-      moreLgButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "GoTo", BUT_OFF);
+      moreLgButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Go To", BUT_OFF);
     }
   }
   

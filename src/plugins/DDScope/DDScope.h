@@ -1,4 +1,8 @@
-// DDScope plugin 
+// =====================================================
+// DDScope.h
+//
+// DDScope (Direct Drive TeleScope) plugin for OnStepX
+
 #pragma once
 
 class DDScope {

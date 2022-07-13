@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------------------------
+// =====================================================
 // Display.h
 
 #ifndef DISPLAY_H
@@ -61,7 +61,7 @@
 #define ORANGE      0xFD20      /* 255, 165,   0 */
 #define GREENYELLOW 0xAFE5      /* 173, 255,  47 */
 #define PINK        0xF81F		
-#define DEEP_MAROON 0x4000      //0x4800		// 
+#define DEEP_MAROON 0x1800      //0x3000		// 
 
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
 #define BATTERY_LOW_VOLTAGE   21.0  
@@ -177,12 +177,12 @@ class Display {
     uint16_t textColor = YELLOW; 
     uint16_t butOutline = YELLOW; 
 
-    // Fonts
+    // Font sizing info
     const uint8_t  defFontWidth = 8; // default Arial
     const uint8_t  defFontHeight = 8; // default Arial
     const uint8_t  mainFontWidth = 8; // 8pt
     const uint8_t  mainFontHeight = 16; // 8pt
-    const uint8_t  largeFontWidth = 11; // 11pt
+    const uint8_t  largeFontWidth = 12; // 11pt
     const uint8_t  largeFontHeight = 22; // 11pt
     const uint8_t  xlargeFontWidth = 17; // 12pt
     const uint8_t  xlargeFontHeight = 29; // 12pt

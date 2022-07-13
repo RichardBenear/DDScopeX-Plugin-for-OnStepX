@@ -1,7 +1,7 @@
 // =====================================================
 // UIelements.cpp
-// User Interface elements (Button, CanvasPrint)
 //
+// User Interface elements (Buttons, CanvasPrint)
 // Author: Richard Benear 6/22
 
 #include "Display.h"
@@ -176,8 +176,8 @@ void CanvasPrint::printRJ(int x, int y, uint16_t width, uint16_t height, double 
   }
 }
 /*
-//Right Justified Overload for double 
-// Not sure why this doesn't work. Using the one above instead. 
+// Right Justified Overload for double 
+// ***Not sure why this doesn't work. Truncates digits after decimal. Using the one above instead. 
 void CanvasPrint::printRJ(int x, int y, uint16_t width, uint16_t height, double d_label, bool warning) {
   char c_label[7]="";
   sprintf(c_label, "%6.1f", d_label);

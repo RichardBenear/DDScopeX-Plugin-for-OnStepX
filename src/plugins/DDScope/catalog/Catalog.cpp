@@ -1,4 +1,6 @@
 // ==============================================
+// Catalog.cpp
+//
 // Catalog handler from the Smart Hand Controller (SHC) 
 // Copyright (C) 2018 to 2021 Charles Lemaire, Howard Dutton, and Others
 // Author: Charles Lemaire, https://pixelstelescopes.wordpress.com/teenastro/

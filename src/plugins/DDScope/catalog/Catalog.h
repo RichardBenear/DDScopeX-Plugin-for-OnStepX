@@ -1,6 +1,8 @@
 // =====================================================
 // Catalog.h
+//
 // This file is from the SmartHandController repository
+
 #pragma once
 
 //#include "Arduino.h"

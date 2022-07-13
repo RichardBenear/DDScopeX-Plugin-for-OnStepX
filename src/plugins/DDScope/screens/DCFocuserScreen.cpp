@@ -1,11 +1,14 @@
 // =====================================================
-// DCFocuserScreen.cpp  (DC motor focuser only)
-
-// Author: Richard Benear
+// DCFocuserScreen.cpp  
+//
+// DC motor focuser - Model: Moonlight CR1 Crayford with MF1 DC Servo
+//
+// Author: Richard Benear 
+// 12/20/21
 //
 // The following comments are only true for OnStep, not OnStepX..TBD what to do in OnStepX
-// 12/20/21
-// Initially, this Focuser Page tried to use the FocuserDC.h
+// 
+// Initially, with OnStep, this Focuser Page tried to use the FocuserDC.h
 // and StepperDC.h implementations done by Howard Dutton to 
 // drive a DC Motor Focuser by using the local command channel (cmdX).
 // The hardware used was an A4988 stepper driver. This mostly worked

@@ -1,9 +1,12 @@
+// =====================================================
+// DDScope.cpp
 //
-// Title:  DDScopeX (Plugin for OnStep)
+// Title:  DDScope (Plugin for OnStepX)
 // Author: Richard Benear
 //
 // Description:
-// Direct Drive Telescope plugin for OnStep
+// Direct Drive Telescope plugin for OnStepX.
+// Refer to Readme.md for more information.
 //
 // Copyright (C) 2022 Richard Benear
 //
@@ -23,8 +26,8 @@
 
 // Firmware version -------------------------------------------------------------------------
 #define PluginName                "DDScope"
-#define PluginFWVersionMajor        1
-#define PluginFWVersionMinor        00    // minor version 00 to 99
+#define PluginFWVersionMajor       1
+#define PluginFWVersionMinor       01    // minor version 00 to 99
 
 #include <Arduino.h>
 #include "DDScope.h"
@@ -84,13 +87,13 @@ void DDScope::init() {
   homeScreen.draw();
 
   // update currently selected screen status
-  VF("MSG: Setup, start Screen status polling task (rate 2000 ms priority 6)... ");
-  uint8_t us_handle = tasks.add(1000, 0, true, 6, updateScreenWrapper, "UpdateSpecificScreen");
+  VF("MSG: Setup, start Screen status polling task (rate 1500 ms priority 6)... ");
+  uint8_t us_handle = tasks.add(1500, 0, true, 6, updateScreenWrapper, "UpdateSpecificScreen");
   if (us_handle)  { VLF("success"); } else { VLF("FAILED!"); }
 
   // refresh Buttons
-  VF("MSG: Setup, refresh Buttons (rate 1000 ms priority 6)... ");
-  uint8_t rs_handle = tasks.add(1000, 0, true, 6, refreshButtonsWrapper, "RefreshButtons");
+  VF("MSG: Setup, refresh Buttons (rate 1500 ms priority 6)... ");
+  uint8_t rs_handle = tasks.add(1500, 0, true, 6, refreshButtonsWrapper, "RefreshButtons");
   if (rs_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   #ifdef ODRIVE_MOTOR_PRESENT

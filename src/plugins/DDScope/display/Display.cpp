@@ -1,11 +1,10 @@
-// ==============================================
-// ============ Display Support =================
-// ==============================================
-// Common Display functions
+// =====================================================
+// Display.cpp
+//
+// Display Support - Common Display functions
 // 3.5" RPi Touchscreen and Display
 // SPI Interface
 // Author: Richard Benear 3/30/2021 - refactor 6/22
-// **************************************************
 
 #include <Arduino.h>
 #include <Adafruit_GFX.h>

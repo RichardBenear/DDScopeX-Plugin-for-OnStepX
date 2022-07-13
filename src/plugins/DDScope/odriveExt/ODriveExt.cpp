@@ -1,7 +1,7 @@
 // ============================================
 // ODriveExt.cpp
-// ======== ODrive Extended Support ===========
-// ============================================
+//
+// ODrive Extended Support functions
 // Author: Richard Benear 2022
 // 
 // ODrive communication via Teensy 4.0 serial
@@ -25,7 +25,6 @@ const char* ODriveComponentsStr[4] = {
 float ODriveExt::getODriveBusVoltage() {
   ODRIVE_SERIAL << "r vbus_voltage\n";
   float battery_voltage = _oDriveDriver->readFloat();
-  //VL(battery_voltage);
   
   // 3 volt qualification keeps ALERT from happening when under development without ODrive powered
   if (battery_voltage < BATTERY_LOW_VOLTAGE && battery_voltage > 3) { 

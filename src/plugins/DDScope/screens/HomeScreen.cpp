@@ -1,6 +1,6 @@
 // =====================================================
 // HomeScreen.cpp
-
+//
 // Author: Richard Benear 3/20/21
 
 #include "HomeScreen.h"
@@ -467,12 +467,11 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    
     _oDriveDriver->SetPosition(0, 0.0);
     _oDriveDriver->SetPosition(1, 0.0);
 
     //setLocalCmd(":hF#"); // home Reset
-    //setLocalCmd(":hC#"); // home Reset
+    setLocalCmd(":hC#"); // go home
     gotoHome = true;
     return true;
   }

@@ -1,5 +1,6 @@
 // =====================================================
 // SHCCatScreen.cpp
+//
 // SHC (Smart Hand Controller) Catalog Screen
 // This is composed of multiple catalog choices derived from OnStep/SHC by Howard Dutton
 //

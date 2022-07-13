@@ -1,6 +1,6 @@
 //==================================================
 // Adafruit_ILI9486_Teensy.h
-
+//
 //See rights and use declaration in License.h
 //based on Adafruit ili9341 library @ Dec 2016
 //modified for the Maple Mini by Steve Strong 2017

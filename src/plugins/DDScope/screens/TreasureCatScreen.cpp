@@ -1,12 +1,11 @@
 // =====================================================
 // TreasureCat.cpp
-// "Treasure" Catalog Screen
 //
+// "Treasure" Catalog Screen
 // Author: Richard Benear 6/22
 //
 // The Treasure catalog is a compilation of popular objects from :rDUINO Scope-http://www.rduinoscope.tk/index.html
-// Load the treasure.csv file from SD to an array of text lines
-// success = 1, fail = 0
+// The <mod1_treasure.csv> file must be stored on the SD card for this to work
 
 #include "MoreScreen.h"
 #include "TreasureCatScreen.h"

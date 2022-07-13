@@ -1,5 +1,6 @@
 // =====================================================
 // Align Screen.h
+
 #ifndef ALIGN_S_H
 #define ALIGN_S_H
 

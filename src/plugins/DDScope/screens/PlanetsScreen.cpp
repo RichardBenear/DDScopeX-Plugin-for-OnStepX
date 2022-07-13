@@ -6,7 +6,7 @@
 // This page uses the Ephemeris by:
 // Copyright (c) 2017 by Sebastien MARCHAND (Web:www.marscaper.com, Email:sebastien@marscaper.com)
 //
-// Also uses some routines from Smart Hand Controller (SHC) 
+// Also uses Catalog Manager routines from Smart Hand Controller (SHC) 
 // Copyright (C) 2018 to 2021 Charles Lemaire, Howard Dutton, and Others
 // Author: Charles Lemaire, https://pixelstelescopes.wordpress.com/teenastro/
 // Author: Howard Dutton, http://www.stellarjourney.com, hjd1964@gmail.com

@@ -1,6 +1,7 @@
 // ==============================================
-// ========== Extended Status Screen ============
-// ==============================================
+// ExtStatusScreen.cpp
+//
+// Extended Status Screen
 // Author: Richard Benear
 // 8/30/2021
 
