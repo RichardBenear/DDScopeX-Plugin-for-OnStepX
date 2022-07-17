@@ -51,12 +51,12 @@
 #define FM_BOXSIZE_Y            28
 #define FM_SPACER_Y              2 
 
-#define GOTO_BUT_X             217
+#define GOTO_BUT_X             212
 #define GOTO_BUT_Y             264
-#define GOTO_M_BOXSIZE_X        90
+#define GOTO_M_BOXSIZE_X       100
 #define GOTO_M_BOXSIZE_Y        40
 
-#define ABORT_M_BUT_X          218
+#define ABORT_M_BUT_X          212
 #define ABORT_M_BUT_Y          310
 
 const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
@@ -74,7 +74,6 @@ CanvasPrint canvMoreInsPrint(&Inconsolata_Bold8pt7b);
 // ============= Initialize the Catalog & More page ==================
 void MoreScreen::draw() {
   setCurrentScreen(MORE_SCREEN);
-  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 
@@ -259,7 +258,7 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
   tft.setFont(&UbuntuMono_Bold11pt7b); 
   // Go To Coordinates Button
   if (goToButton) {
-    moreLgButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Going", BUT_ON);
+    moreLgButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Slewing", BUT_ON);
     goToButton = false;
   } else {
     if (!mount.isSlewing()) { 

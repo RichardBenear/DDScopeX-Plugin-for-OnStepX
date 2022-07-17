@@ -47,7 +47,7 @@
 
 // OnStepX specific pins
 #define STATUS_BUZZER_PIN       4     // Output Piezo Buzzer
-#define STATUS_MOUNT_LED_PIN    7     // Output, active low
+#define STATUS_TRACK_LED_PIN    7     // Output, active low, flash when tracking
 
 // Using Beitian BN-220 without the PPS pinned out. The BN-280 has PPS pinned out
 #define PPS_SENSE_PIN           2     // Input Pin, Pulse Per Second from GPS

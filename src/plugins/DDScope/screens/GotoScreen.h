@@ -14,6 +14,8 @@ class GotoScreen : public Display {
     void updateGotoStatus();
     void updateGotoButtons(bool);
     bool gotoButStateChange();
+
+    float rateRatio = 1.0;
     
   private:
     void processNumPadButton();
@@ -21,6 +23,8 @@ class GotoScreen : public Display {
     
     char RAtext[8] = "";
     char DECtext[8] = "";
+    char cRate[12]   = "";
+    char bRate[12]   = "";
 
     int buttonPosition = 0;
     uint8_t RAtextIndex = 0;
@@ -36,6 +40,9 @@ class GotoScreen : public Display {
     bool goToButton = false;
     bool abortPgBut = false;
     bool preSlewState = false;
+
+    float cRateF;
+    float bRateF;
 };
 
 extern GotoScreen gotoScreen;

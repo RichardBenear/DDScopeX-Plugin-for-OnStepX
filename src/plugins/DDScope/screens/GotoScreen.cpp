@@ -43,14 +43,19 @@
 #define SEND_BOXSIZE_X       70
 #define SEND_BOXSIZE_Y       40
 
+#define SLEW_R_BUTTON_X      190
+#define SLEW_R_BUTTON_Y      266
+#define SLEW_R_BOXSIZE_X     120
+#define SLEW_R_BOXSIZE_Y     25
+
 #define POL_BUTTON_X         40
 #define POL_BUTTON_Y         219
 #define POL_BOXSIZE_X        100
 #define POL_BOXSIZE_Y        28
 
-#define GOTO_BUTTON_X        200
+#define GOTO_BUTTON_X        195
 #define GOTO_BUTTON_Y        300
-#define GOTO_BOXSIZE_X       100
+#define GOTO_BOXSIZE_X       110
 #define GOTO_BOXSIZE_Y       50
 
 #define ABORT_BUTTON_X       GOTO_BUTTON_X
@@ -236,6 +241,18 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
     gotoButton.draw(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, "Send", BUT_OFF);
   }
 
+  // Slew Rate Button
+  char temp[16]="";
+  getLocalCmdTrim(":GX92#", cRate); // get current rate 
+  cRateF = atol(cRate);
+  getLocalCmdTrim(":GX93#", bRate); // get base rate
+  bRateF = atol(bRate);
+  rateRatio = bRateF/cRateF;
+  rateRatio = roundf(rateRatio * 10) / 10; // get rid of extra digits
+  if (rateRatio == 0.70F) rateRatio = 0.75F; // take care of special case that needs extra digit
+  sprintf(temp, "Slew Rate %0.2f", rateRatio);
+  gotoButton.draw(SLEW_R_BUTTON_X, SLEW_R_BUTTON_Y, SLEW_R_BOXSIZE_X, SLEW_R_BOXSIZE_Y, temp, BUT_OFF); 
+
   // Quick Set Polaris Target Button
   if (setPolOn) {
     gotoButton.draw(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, "Setting", BUT_ON);
@@ -248,10 +265,10 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
   //tft.setFont(&FreeSansBold9pt7b);    
   // Go To Coordinates Button
   if (goToButton) {
-    gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Going", BUT_ON);
+    gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Slewing", BUT_ON);
     goToButton = false;
   } else if (mount.isSlewing()) { 
-    gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Going", BUT_ON);
+    gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Slewing", BUT_ON);
   } else {
     gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Go To", BUT_OFF);
   }
@@ -363,6 +380,17 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     abortPgBut = true;
     setLocalCmd(":Q#"); // stops move
     return true;
+  }
+
+  // SLew Rate Button, circular selection each button press (.5X, 1X, 2X) - default 1X
+  if (py > SLEW_R_BUTTON_Y && py < (SLEW_R_BUTTON_Y + SLEW_R_BOXSIZE_Y) && px > SLEW_R_BUTTON_X && px < (SLEW_R_BUTTON_X + SLEW_R_BOXSIZE_X)) {
+    BEEP;
+    if      (rateRatio == 1.00F) {setLocalCmd(":SX93,2#"); return true;} // if 1 then 1.5
+    else if (rateRatio == 1.50F) {setLocalCmd(":SX93,1#"); return true;} // if 1.5 then 2.0
+    else if (rateRatio >= 2.00F) {setLocalCmd(":SX93,5#"); return true;} // if 2.0 then 0.5
+    else if (rateRatio <= 0.50F) {setLocalCmd(":SX93,4#"); return true;} // if 0.5 then 0.75
+    else if (rateRatio == 0.75F) {setLocalCmd(":SX93,3#"); return true;} // if 0.75 then 1.00
+    else return false; 
   }
   return false;
 }

@@ -185,7 +185,8 @@ class Display {
 
   private:
     //CommandError commandError = CE_NONE;
-    //bool firstGPS = true;
+    bool firstGPS = true;
+    bool trackLedOn = false;
 };
 
 extern Display display;

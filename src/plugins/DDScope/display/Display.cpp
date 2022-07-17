@@ -16,6 +16,7 @@
 #include "src/lib/commands/CommandErrors.h"
 #include "src/libApp/commands/ProcessCmds.h"
 #include "src/telescope/mount/goto/Goto.h"
+#include "src/telescope/mount/site/Site.h"
 #include "src/lib/tasks/OnTask.h"
 #include "src/libApp/commands/ProcessCmds.h"
 
@@ -287,11 +288,15 @@ void Display::updateBatVoltage() {
   float currentBatVoltage = oDriveExt.getODriveBusVoltage();
   char bvolts[12]="-- v";
   sprintf(bvolts, "%4.1f v", currentBatVoltage);
+  
   if (currentBatVoltage < BATTERY_LOW_VOLTAGE) { 
-    canvDisplayInsPrint.printRJ(120, 38, 80, 14, bvolts, true);
+    tft.fillRect(135, 26, 50, 14, butOnBackground);
   } else {
-    canvDisplayInsPrint.printRJ(120, 38, 80, 14, bvolts, false);
+    tft.fillRect(135, 26, 50, 14, butBackground);
   }
+  tft.setFont(&Inconsolata_Bold8pt7b);
+  tft.setCursor(135, 38);
+  tft.print(bvolts);
 }
 
 // ============ OnStep Command Errors ===============
@@ -370,7 +375,7 @@ void Display::drawMenuButtons() {
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
       break;
 
    case GUIDE_SCREEN:
@@ -385,7 +390,7 @@ void Display::drawMenuButtons() {
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
       break;
 
    case FOCUSER_SCREEN:
@@ -400,7 +405,7 @@ void Display::drawMenuButtons() {
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
       break;
@@ -417,7 +422,7 @@ void Display::drawMenuButtons() {
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
       break;
       
    case MORE_SCREEN:
@@ -494,7 +499,7 @@ void Display::drawMenuButtons() {
       #ifdef ODRIVE_MOTOR_PRESENT
         menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", BUT_OFF);
       #elif
-        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
       #endif  
       break;
 
@@ -513,7 +518,7 @@ void Display::drawMenuButtons() {
       #ifdef ODRIVE_MOTOR_PRESENT
         menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", BUT_OFF);
       #elif
-        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
       #endif  
       break;
 
@@ -532,7 +537,7 @@ void Display::drawMenuButtons() {
      
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "MORE..", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
      
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
@@ -595,7 +600,37 @@ void Display::drawCommonStatusLabels() {
 // UpdateCommon Status - Real time data update for the particular labels printed above
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
-  tft.setTextColor(textColor);
+
+  // If the GPS (or other TLS) is locked, then send LST and Latitude to the cat_mgr module
+  if (tls.isReady() && firstGPS) {
+    double f=0;
+    char reply[12];
+
+    // Set LST for the cat_mgr 
+    display.getLocalCmdTrim(":GS#", reply);
+    convert.hmsToDouble(&f, reply);
+    cat_mgr.setLstT0(f);
+
+    // Set Latitude for cat_mgr
+    display.getLocalCmdTrim(":Gt#", reply);
+    convert.dmsToDouble(&f, reply, true);
+    cat_mgr.setLat(f);
+    firstGPS = false;
+  }
+
+  // Flash tracking LED if mount is tracking
+  if (mount.isTracking()) {
+    if (trackLedOn) {
+      digitalWrite(STATUS_TRACK_LED_PIN, HIGH); // LED OFF, active low
+      trackLedOn = false;
+    } else {
+      digitalWrite(STATUS_TRACK_LED_PIN, LOW); // LED ON
+      trackLedOn = true;
+    }
+  } else { // not tracking 
+    digitalWrite(STATUS_TRACK_LED_PIN, HIGH); // LED OFF
+  }
+
   if (currentScreen == CUSTOM_SCREEN || 
       currentScreen == SHC_CAT_SCREEN ||
       currentScreen == PLANETS_SCREEN ||

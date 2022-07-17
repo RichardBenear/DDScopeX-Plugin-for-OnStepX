@@ -45,7 +45,6 @@ Button planetsButton(
 // Initialize the PLANETS page
 void PlanetsScreen::draw() {
   setCurrentScreen(PLANETS_SCREEN);
-  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawTitle(110, TITLE_TEXT_Y, "Planets");

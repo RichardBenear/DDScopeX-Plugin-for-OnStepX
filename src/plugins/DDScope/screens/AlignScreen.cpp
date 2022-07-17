@@ -206,7 +206,7 @@ void AlignScreen::updateAlignButtons(bool redrawBut) {
 
   // Go To Coordinates Button
   if (gotoBut || mount.isSlewing()) {
-    alignButton.draw(GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "Going", BUT_ON);
+    alignButton.draw(GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "Slewing", BUT_ON);
   } else {
     alignButton.draw(GOTO_X, GOTO_Y,  GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "GOTO", BUT_OFF);
   }

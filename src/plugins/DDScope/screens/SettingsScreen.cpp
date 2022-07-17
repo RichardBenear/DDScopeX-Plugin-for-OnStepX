@@ -57,11 +57,6 @@
 #define S_SEND_BOXSIZE_X     80
 #define S_SEND_BOXSIZE_Y     25
 
-#define SLEW_R_BUTTON_X      200
-#define SLEW_R_BUTTON_Y      312
-#define SLEW_R_BOXSIZE_X     120
-#define SLEW_R_BOXSIZE_Y     25
-
 #define SITE_BUTTON_X        210
 #define SITE_BUTTON_Y        321
 #define SITE_BOXSIZE_X       90
@@ -95,7 +90,6 @@ CanvasPrint canvSettingsInsPrint(&Inconsolata_Bold8pt7b);
 // ===== Draw the SETTINGS Page =====
 void SettingsScreen::draw() {
   setCurrentScreen(SETTINGS_SCREEN);
-  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   
@@ -382,18 +376,6 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
   } else {
     settingsButton.draw(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, "Send", BUT_OFF); 
   }
-
-  // Slew Rate Button
-  char temp[16]="";
-  getLocalCmdTrim(":GX92#", cRate); // get current rate 
-  cRateF = atol(cRate);
-  getLocalCmdTrim(":GX93#", bRate); // get base rate
-  bRateF = atol(bRate);
-  rateRatio = bRateF/cRateF;
-  rateRatio = roundf(rateRatio * 10) / 10; // get rid of extra digits
-  if (rateRatio == 0.70F) rateRatio = 0.75F; // take care of special case that needs extra digit
-  sprintf(temp, "Slew Rate %0.2f", rateRatio);
-  settingsButton.draw(SLEW_R_BUTTON_X, SLEW_R_BUTTON_Y, SLEW_R_BOXSIZE_X, SLEW_R_BOXSIZE_Y, temp, BUT_OFF); 
 }
 
 // **** TouchScreen was touched, determine which button *****
@@ -550,17 +532,6 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
       setLocalCmd(sCmd);
     }
     return true;
-  }
-
-  // SLew Rate Button, circular selection each button press (.5X, 1X, 2X) - default 1X
-  if (py > SLEW_R_BUTTON_Y && py < (SLEW_R_BUTTON_Y + SLEW_R_BOXSIZE_Y) && px > SLEW_R_BUTTON_X && px < (SLEW_R_BUTTON_X + SLEW_R_BOXSIZE_X)) {
-    BEEP;
-    if      (rateRatio == 1.00F) {setLocalCmd(":SX93,2#"); return true;} // if 1 then 1.5
-    else if (rateRatio == 1.50F) {setLocalCmd(":SX93,1#"); return true;} // if 1.5 then 2.0
-    else if (rateRatio >= 2.00F) {setLocalCmd(":SX93,5#"); return true;} // if 2.0 then 0.5
-    else if (rateRatio <= 0.50F) {setLocalCmd(":SX93,4#"); return true;} // if 0.5 then 0.75
-    else if (rateRatio == 0.75F) {setLocalCmd(":SX93,3#"); return true;} // if 0.75 then 1.00
-    else return false; 
   }
   return false;
 }

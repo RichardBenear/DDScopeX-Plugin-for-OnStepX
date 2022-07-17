@@ -60,6 +60,9 @@ void DDScope::init() {
   pinMode(ALT_ENABLED_LED_PIN, OUTPUT);
   digitalWrite(ALT_ENABLED_LED_PIN,HIGH); // LED OFF, active low
 
+  pinMode(STATUS_TRACK_LED_PIN, OUTPUT);
+  digitalWrite(STATUS_TRACK_LED_PIN,HIGH); // LED OFF, active low
+
   pinMode(BATTERY_LOW_LED_PIN, OUTPUT); 
   digitalWrite(BATTERY_LOW_LED_PIN,HIGH); // LED OFF, active low
 
@@ -98,8 +101,8 @@ void DDScope::init() {
 
   #ifdef ODRIVE_MOTOR_PRESENT
     // update battery voltage
-    VF("MSG: Setup, start Battery voltage polling task (rate 10000 ms priority 6)... ");
-    uint8_t bv_handle = tasks.add(10000, 0, true, 6, updateBatVoltWrapper, "UpdateBatVolt");
+    VF("MSG: Setup, start Battery voltage polling task (rate 5000 ms priority 6)... ");
+    uint8_t bv_handle = tasks.add(5000, 0, true, 6, updateBatVoltWrapper, "UpdateBatVolt");
     if (bv_handle)  { VLF("success"); } else { VLF("FAILED!"); }
   
     VF("MSG: ODrive, ODRIVE_SWAP_AXES = "); if(ODRIVE_SWAP_AXES) VLF("ON"); else VLF("OFF");

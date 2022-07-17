@@ -86,7 +86,6 @@ extern const char* Txt_Bayer[];
 void SHCCatScreen::init(uint8_t catSelected) {
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(SHC_CAT_SCREEN);
-  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 
@@ -105,7 +104,7 @@ void SHCCatScreen::init(uint8_t catSelected) {
   // Show Page Title
   strcpy(title, cat_mgr.catalogTitle());
   if (catSelected == HERSCHEL) strcpy(title, "Herschel"); else // shorten title
-  if (catSelected == STARS) strcpy(title, "Stars"); // shorten title
+  if (catSelected == STARS) strcpy(title, "  Stars"); // shorten title
   drawTitle(110, TITLE_TEXT_Y, title); 
 
   // Sub title

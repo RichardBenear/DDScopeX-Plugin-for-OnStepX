@@ -14,9 +14,7 @@ class SettingsScreen : public Display {
     void updateSettingsButtons(bool);
     bool settingsButStateChange();
     void updateSettingsStatus();
-    
-    float rateRatio = 1.0;
-
+  
   private:
     void setProcessNumPadButton();
   
@@ -26,14 +24,9 @@ class SettingsScreen : public Display {
     char Tztext[8];
     char LaText[8];
     char LoText[8]; 
-    char cRate[12]   = "";
-    char bRate[12]   = "";
     char sCmd[12];
 
     int sButtonPosition;
-    
-    float cRateF;
-    float bRateF;
 
     uint8_t TtextIndex;
     uint8_t DtextIndex;

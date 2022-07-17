@@ -19,7 +19,6 @@
 // ========== Draw the Extended Status Screen ==========
 void ExtStatusScreen::draw() {
   setCurrentScreen(XSTATUS_SCREEN);
-  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
