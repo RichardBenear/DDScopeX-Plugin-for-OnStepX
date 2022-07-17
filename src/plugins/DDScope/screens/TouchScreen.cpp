@@ -3,7 +3,6 @@
 //
 // Author: Richard Benear 2022
 
-#include "../display/Display.h"
 #include "TouchScreen.h"
 #include "../../../lib/tasks/OnTask.h"
 #include "../screens/AlignScreen.h"

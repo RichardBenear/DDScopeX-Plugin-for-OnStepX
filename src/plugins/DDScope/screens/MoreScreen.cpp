@@ -10,8 +10,6 @@
 // Author: Charles Lemaire, https://pixelstelescopes.wordpress.com/teenastro/
 // Author: Howard Dutton, http://www.stellarjourney.com, hjd1964@gmail.com
 
-#include "../display/display.h"
-#include "../display/UIelements.h"
 #include "MoreScreen.h"
 #include "TreasureCatScreen.h"
 #include "CustomCatScreen.h"
@@ -65,18 +63,18 @@ const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"
 
 // More Screen Button object with standard Font size
 Button moreButton(TRACK_R_X, TRACK_R_Y, TRACK_R_BOXSIZE_X, TRACK_R_BOXSIZE_Y,
-                display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
+                butOnBackground, butBackground, butOutline, mainFontWidth, mainFontHeight, "");
 
 // More Screen Button object with large Font size
-Button moreLgButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.largeFontWidth, display.largeFontHeight, "");
+Button moreLgButton(0, 0, 0, 0, butOnBackground, butBackground, butOutline, largeFontWidth, largeFontHeight, "");
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint canvMoreInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+CanvasPrint canvMoreInsPrint(&Inconsolata_Bold8pt7b);
 
 // ============= Initialize the Catalog & More page ==================
 void MoreScreen::draw() {
   setCurrentScreen(MORE_SCREEN);
-  setNightMode(getNightMode());
+  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 

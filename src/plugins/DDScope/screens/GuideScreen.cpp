@@ -47,27 +47,27 @@
 // Guide Screen Button object
 Button guideButton(
                 GUIDE_R_X, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                mainFontWidth, 
+                mainFontHeight, 
                 "");
                 
 // Guide Screen Large Button object
 Button guideLargeButton(
                 GUIDE_R_X, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.largeFontWidth, 
-                display.largeFontHeight, 
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                largeFontWidth, 
+                largeFontHeight, 
                 "");
 
 // Draw the GUIDE Page
 void GuideScreen::draw() { 
   setCurrentScreen(GUIDE_SCREEN);
-  setNightMode(getNightMode());
+  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();

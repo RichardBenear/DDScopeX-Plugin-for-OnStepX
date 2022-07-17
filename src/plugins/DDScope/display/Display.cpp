@@ -17,6 +17,7 @@
 #include "src/libApp/commands/ProcessCmds.h"
 #include "src/telescope/mount/goto/Goto.h"
 #include "src/lib/tasks/OnTask.h"
+#include "src/libApp/commands/ProcessCmds.h"
 
 // Fonts
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -25,9 +26,8 @@
 #include <Fonts/FreeSansBold12pt7b.h>
 
 // DDScope specific
-#include "../DDScope.h"
+//#include "../DDScope.h"
 #include "Display.h"
-#include "UIelements.h"
 #include "../catalog/Catalog.h"
 #include "../screens/AlignScreen.h"
 #include "../screens/TreasureCatScreen.h"
@@ -96,22 +96,22 @@ L_CE_SLEW_ERR_IN_STANDBY, L_CE_SLEW_ERR_IN_PARK, L_CE_GOTO_ERR_GOTO, L_CE_SLEW_E
 L_CE_SLEW_ERR_HARDWARE_FAULT, L_CE_MOUNT_IN_MOTION, L_CE_GOTO_ERR_UNSPECIFIED, L_CE_UNK};
 
 // Menu button object
-Button menuButton( 
-        MENU_X, MENU_Y, MENU_BOXSIZE_X, MENU_BOXSIZE_Y,
-        display.butOnBackground, 
-        display.butBackground, 
-        display.butOutline, 
-        display.largeFontWidth, 
-        display.largeFontHeight, 
-        "");
+Button menuButton(MENU_X, MENU_Y, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, butOnBackground, butBackground, butOutline, largeFontWidth, largeFontHeight, "");
 
 // Canvas Print object Custom Font
-CanvasPrint canvDisplayInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+CanvasPrint canvDisplayInsPrint(&Inconsolata_Bold8pt7b);
                 
 Screen Display::currentScreen = HOME_SCREEN;
 bool Display::_nightMode = false;
 bool Display::_redrawBut = false;
 Adafruit_ILI9486_Teensy tft;
+
+uint16_t pgBackground = XDARK_MAROON;
+uint16_t butBackground = BLACK;
+uint16_t titleBackground = BLACK;
+uint16_t butOnBackground = MAROON;
+uint16_t textColor = YELLOW; 
+uint16_t butOutline = ORANGE; 
 
 // =========================================
 // ========= Initialize Display ============
@@ -120,8 +120,8 @@ void Display::init() {
   VLF("MSG: Display, started"); 
   tft.begin(); delay(1);
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
-  setNightMode(getNightMode()); 
-  
+  setNightMode(false); // always start up in Day Mode
+
   sdInit(); // initialize the SD card and draw start screen
   delay(1500); // let start screen show for 1.5 sec
 
@@ -149,8 +149,8 @@ void Display::sdInit() {
     return;
   } 
 
-  tft.fillScreen(BLACK); 
-  tft.setTextColor(YELLOW);
+  tft.fillScreen(pgBackground); 
+  tft.setTextColor(textColor);
   drawPic(&StarMaps, 1, 0, 320, 480);  
   drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
   tft.setCursor(60, 80);
@@ -248,82 +248,31 @@ void Display::getLocalCmdTrim(const char *command, char *reply) {
 }
 
 // Draw the Title block
-void Display::drawTitle(int text_x_offset, int text_y_offset, const char* label) {
+void Display::drawTitle(int text_x, int text_y, const char* label) {
   tft.setFont(&FreeSansBold12pt7b);
-  tft.fillRect(TITLE_BOX_X, TITLE_BOX_Y, TITLE_BOXSIZE_X, TITLE_BOXSIZE_Y, butBackground);
+  tft.setTextColor(textColor);
+  tft.fillRect(TITLE_BOX_X, TITLE_BOX_Y, TITLE_BOXSIZE_X, TITLE_BOXSIZE_Y, titleBackground);
   tft.drawRect(TITLE_BOX_X, TITLE_BOX_Y, TITLE_BOXSIZE_X, TITLE_BOXSIZE_Y, butOutline);
-  tft.setCursor(TITLE_BOX_X + text_x_offset, TITLE_BOX_Y + text_y_offset);
+  tft.setCursor(TITLE_BOX_X + text_x, TITLE_BOX_Y + text_y);
   tft.print(label);
   tft.setFont(&Inconsolata_Bold8pt7b);
 }
 
-//---------------------------------------------------------
-// Update a Data Field text using bitmap canvas
-// const char* label 
-void Display::canvPrint(int x, int y, int y_off, int width, int height, const char* label, uint16_t textColor, uint16_t butBackgnd) {
-  char rjlabel[60];
-  int y_box_offset = 10;
-  GFXcanvas1 canvas(width, height);
-
-  canvas.setFont(&Inconsolata_Bold8pt7b);  
-  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
-  sprintf(rjlabel, "%9s", label);
-  canvas.print(rjlabel);
-  tft.drawBitmap(x, y - y_box_offset + y_off, canvas.getBuffer(), width, height, textColor, butBackgnd);
-}
-
-// type const char* overload without colors
-void Display::canvPrint(int x, int y, int y_off, int width, int height, const char* label) {
-  canvPrint(x, y, y_off, width, height, label, textColor, butBackground);
-}
-
-void Display::canvPrint(int x, int y, int y_off, int width, int height, double label, uint16_t textColor, uint16_t butBackgnd) {
-  char charlabel[60];
-  int y_box_offset = 10;
-  GFXcanvas1 canvas(width, height);
-
-  canvas.setFont(&Inconsolata_Bold8pt7b);  
-  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
-  sprintf(charlabel, "%6.1f", label);
-  canvas.print(charlabel);
-  tft.drawBitmap(x, y - y_box_offset + y_off, canvas.getBuffer(), width, height, textColor, butBackgnd);
-}
-
-// type double label, overload without colors
-void Display::canvPrint(int x, int y, int y_off, int width, int height, double label) {
-  canvPrint(x, y, y_off, width, height, label, textColor, butBackground);
-}
-
-// type int label overload
-void Display::canvPrint(int x, int y, int y_off, int width, int height, int label) {
-  char rjlabel[50];
-  int y_box_offset = 10;
-  int x_fontSize = 10;
-  GFXcanvas1 canvas(width, height);
-
-  canvas.setFont(&Inconsolata_Bold8pt7b);
-  canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
-  sprintf(rjlabel, "%*d", width/x_fontSize, label); // right justify text in the bitmap
-  canvas.print(rjlabel);
-  tft.drawBitmap(x, y - y_box_offset + y_off, canvas.getBuffer(), width, height, textColor, butBackground);
-}
-//------------------------------------------------------
-
-// Color Themes (Day and Night)
+// Color Themes (Day or Night)
 void Display::setNightMode(bool nightMode) {
   _nightMode = nightMode;
-  if (!_nightMode) {
+  if (!nightMode) {
     // Day Color Theme
-    pgBackground = DEEP_MAROON; 
+    pgBackground = XDARK_MAROON; 
     butBackground = BLACK;
-    butOnBackground = RED;
+    butOnBackground = MAROON;
     textColor = YELLOW; 
-    butOutline = YELLOW; 
+    butOutline = ORANGE; 
   } else {  
     // Night Color Theme
     pgBackground = BLACK; 
-    butBackground = DEEP_MAROON;
-    butOnBackground = BLACK;
+    butBackground = DARK_MAROON;
+    butOnBackground = MAROON;
     textColor = ORANGE; 
     butOutline = ORANGE; 
   }
@@ -352,15 +301,9 @@ void Display::updateOnStepCmdStatus() {
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;
   if (!tls.isReady()) {
-    canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, "TLS not ready", false);
+    //canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, "TLS not ready", false);
   } else {
-    if (firstGPS) {
-      // One Time update the SHC LST and Latitude if GPS locked
-      cat_mgr.setLstT0(site.getSiderealTime()); 
-      cat_mgr.setLat(site.location.latitude);
-      firstGPS = false;
-    }
-    canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, commandErrorStr[commandError], false);
+    //canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, commandErrorStr[cmdError.commandError], false);
   } 
 }
 
@@ -652,6 +595,7 @@ void Display::drawCommonStatusLabels() {
 // UpdateCommon Status - Real time data update for the particular labels printed above
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
+  tft.setTextColor(textColor);
   if (currentScreen == CUSTOM_SCREEN || 
       currentScreen == SHC_CAT_SCREEN ||
       currentScreen == PLANETS_SCREEN ||

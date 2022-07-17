@@ -7,7 +7,6 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
-#include "../display/UIelements.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "../odriveExt/ODriveExt.h"
@@ -95,15 +94,10 @@ static const char colOneCmdStr[COL_1_NUM_ROWS][8] = {
 // Home Screen Button object
 Button homeButton(
                 ACTION_COL_1_X, ACTION_COL_1_Y, ACTION_BOXSIZE_X, ACTION_BOXSIZE_Y,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
-                "");
+                butOnBackground, butBackground, butOutline, mainFontWidth, mainFontHeight, "");
 
 // Canvas Print object Custom Font
-CanvasPrint canvHomeInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+CanvasPrint canvHomeInsPrint(&Inconsolata_Bold8pt7b);
 
 // ===============================================
 // ======= Draw Initial content of HOME PAGE =====
@@ -117,7 +111,7 @@ void HomeScreen::draw() {
   drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
   tft.setFont(&Inconsolata_Bold8pt7b);
 
-  // ======Draw Status Text ===========
+  // ====== Draw Home Screen Status Text ===========
   // Labels for Real Time data only here, no data displayed yet
   // ---- Column 1 ----
   int y_offset = 0;
@@ -136,10 +130,11 @@ void HomeScreen::draw() {
   }
 
   // draw and initialize buttons, labels, and status upon entry to this screen
+  updateHomeButtons(false);
   drawCommonStatusLabels();
   updateHomeStatus(); 
   updateCommonStatus(); 
-  updateHomeButtons(false);
+  
 }
 
 // =================================================
@@ -287,9 +282,7 @@ bool HomeScreen::homeButStateChange() {
 void HomeScreen::updateHomeButtons(bool redrawBut) {
   // redrawBut when true forces a refresh of all buttons once more..used for a toggle effect on some buttons
   _redrawBut = redrawBut;
-
   int y_offset = 0;
-  tft.setTextColor(textColor);
 
   // ============== Column 1 ===============
   // Enable / Disable Azimuth Motor
@@ -445,6 +438,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
       oDriveExt.odriveAltPwr = true;
       oDriveExt.odriveAzmPwr = true;
     } else {
+      // disabling Tracking does not disable motors so leave motor flags ON
       setLocalCmd(":Td#"); // Disable Tracking
     }
     return false; 
@@ -459,6 +453,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     } else {
       setNightMode(false); // toggle off
     }
+    drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
     draw(); // redraw new screen colors
     return true;
   }

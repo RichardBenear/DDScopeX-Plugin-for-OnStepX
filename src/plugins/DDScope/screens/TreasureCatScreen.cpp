@@ -50,22 +50,21 @@
 
 
 // Catalog Button object for default Arial font
-Button treasureDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.defFontWidth, display.defFontHeight, "");
+Button treasureDefButton(0, 0, 0, 0, butOnBackground, butBackground, butOutline, defFontWidth, defFontHeight, "");
 
 // Catalog Button object for custom font
-Button treasureCatButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
+Button treasureCatButton(0, 0, 0, 0, butOnBackground, butBackground, butOutline, mainFontWidth, mainFontHeight, "");
 
 // Canvas Print object default Arial 6x9 font
-CanvasPrint canvTreasureDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.default_font);
+CanvasPrint canvTreasureDefPrint(display.default_font);
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint canvTreasureInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+CanvasPrint canvTreasureInsPrint(&Inconsolata_Bold8pt7b);
 
 //==================================================================
 void TreasureCatScreen::init() { 
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(TREASURE_SCREEN);
-  setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   moreScreen.objectSelected = false;
@@ -237,7 +236,7 @@ void TreasureCatScreen::drawTreasureCat() {
      
       // Erase text background
       tft.setCursor(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING));
-      tft.fillRect(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), 215+WIDTH_OFF, 17,  display.butBackground);
+      tft.fillRect(CAT_X+CAT_W-WIDTH_OFF+2, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), 215+WIDTH_OFF, 17,  butBackground);
 
       // get object names and put them on the buttons
       treasureDefButton.drawLJ(CAT_X, CAT_Y+tRow*(CAT_H+CAT_Y_SPACING), CAT_W-WIDTH_OFF, CAT_H, _tArray[tAbsRow].tObjName, BUT_OFF);

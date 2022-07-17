@@ -69,16 +69,16 @@
 #define FONT_Y_OFF          7
 
 // Catalog Button object default Arial
-Button shcCatDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.defFontWidth, display.defFontHeight, "");
+Button shcCatDefButton(0, 0, 0, 0, butOnBackground, butBackground, butOutline, defFontWidth, defFontHeight, "");
 
 // Catalog Button object custom font
-Button shcCatButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
+Button shcCatButton(0, 0, 0, 0, butOnBackground, butBackground, butOutline, mainFontWidth, mainFontHeight, "");
 
 // Canvas Print object default Arial 6x9 font
-CanvasPrint canvShcDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.default_font);
+CanvasPrint canvShcDefPrint(display.default_font);
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint canvShcInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+CanvasPrint canvShcInsPrint(&Inconsolata_Bold8pt7b);
 
 extern const char* Txt_Bayer[];
 
@@ -86,7 +86,7 @@ extern const char* Txt_Bayer[];
 void SHCCatScreen::init(uint8_t catSelected) {
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(SHC_CAT_SCREEN);
-  setNightMode(getNightMode());
+  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 
@@ -162,14 +162,14 @@ void SHCCatScreen::drawShcCat() {
 
   while ((shcRow < NUM_CAT_ROWS_PER_SCREEN) || ((shcRow < shcLastRow) && shcLastPage)) { 
     // Page number and total Pages
-    tft.fillRect(8, 9, 70, 12,  display.butBackground);
+    tft.fillRect(8, 9, 70, 12,  butBackground);
     tft.setCursor(8, 9); tft.printf("Page "); tft.print(shcCurrentPage+1);
     tft.printf(" of ");
     if (moreScreen.activeFilter) tft.print("??"); else tft.print((cat_mgr.getMaxIndex()/NUM_CAT_ROWS_PER_SCREEN)+1);
 
     // erase any previous data
     tft.setCursor(CAT_X+CAT_W+2, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING));
-    tft.fillRect(CAT_X+CAT_W+2, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), 215, 17, display.butBackground);
+    tft.fillRect(CAT_X+CAT_W+2, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING), 215, 17, butBackground);
 
     //fill the button with some identifying text which varies depending on catalog chosen
     memset(shcObjName[shcRow], '\0', 20); //NULL out row first

@@ -5,8 +5,8 @@
 #define HOME_S_H
 
 #include "Arduino.h"
-#include "../display/display.h"
 #include "src/telescope/mount/park/Park.h"
+#include "../display/Display.h"
 
 class HomeScreen : public Display {
   public:

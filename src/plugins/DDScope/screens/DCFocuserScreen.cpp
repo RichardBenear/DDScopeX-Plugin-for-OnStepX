@@ -65,13 +65,12 @@
 #define EN_OFF_TIME 2000 // microseconds
 
 // Canvas Print object Custom Font
-CanvasPrint canvFocuserInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+CanvasPrint canvFocuserInsPrint(&Inconsolata_Bold8pt7b);
 
 // Draw the initial content for Focuser Page
 void DCFocuserScreen::draw() {
   tasks.yield(10);
   setCurrentScreen(FOCUSER_SCREEN);
-  setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   
@@ -153,21 +152,21 @@ bool DCFocuserScreen::focuserButStateChange() {
 // Focuser Screen Main Button object
 Button focuserButton(
                 0, 0, 0, 0,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                mainFontWidth, 
+                mainFontHeight, 
                 "");
 
 // Focuser Screen Large Button object
 Button focuserXLargeButton(
                 0, 0, 0, 0,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.xlargeFontWidth, 
-                display.xlargeFontHeight, 
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                xlargeFontWidth, 
+                xlargeFontHeight, 
                 "");
 
 //***** Update Focuser Buttons ******

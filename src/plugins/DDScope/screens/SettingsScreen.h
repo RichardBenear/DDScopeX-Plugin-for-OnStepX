@@ -5,7 +5,7 @@
 #define SETTINGS_S_H
 
 #include <Arduino.h>
-#include "../display/display.h"
+#include "../display/Display.h"
 
 class SettingsScreen : public Display {
   public:

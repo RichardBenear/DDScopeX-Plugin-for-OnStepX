@@ -4,7 +4,6 @@
 // Author: Richard Benear 2/13/22
 
 #include "SettingsScreen.h"
-#include "../display/display.h"
 #include "../catalog/Catalog.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
@@ -83,20 +82,20 @@
 // Settings Screen Button object
 Button settingsButton(
                 0, 0, 0, 0,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                mainFontWidth, 
+                mainFontHeight, 
                 "");
                 
 // Canvas Print object Custom Font
-CanvasPrint canvSettingsInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+CanvasPrint canvSettingsInsPrint(&Inconsolata_Bold8pt7b);
 
 // ===== Draw the SETTINGS Page =====
 void SettingsScreen::draw() {
   setCurrentScreen(SETTINGS_SCREEN);
-  setNightMode(getNightMode());
+  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   

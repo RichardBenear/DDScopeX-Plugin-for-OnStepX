@@ -32,11 +32,11 @@
 // ODrive Screen Button object
 Button odriveButton(
                 OD_ACT_COL_1_X, OD_ACT_COL_1_Y, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                mainFontWidth, 
+                mainFontHeight, 
                 "");
 
 // Demo Mode Wrapper
@@ -45,7 +45,7 @@ void demoWrapper() { oDriveExt.demoMode(true); }
 //****** Draw ODrive Screen ******
 void ODriveScreen::draw() {
   setCurrentScreen(ODRIVE_SCREEN);
-  setNightMode(getNightMode());
+  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   

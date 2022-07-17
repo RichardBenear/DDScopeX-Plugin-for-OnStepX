@@ -35,17 +35,17 @@ const char PlanetNames[8][8] = {"Mercury", "Venus", "Mars", "Jupiter", "Saturn",
 // Planets Screen Button object
 Button planetsButton(
                 0,0,0,0,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                mainFontWidth, 
+                mainFontHeight, 
                 "");
 
 // Initialize the PLANETS page
 void PlanetsScreen::draw() {
   setCurrentScreen(PLANETS_SCREEN);
-  setNightMode(getNightMode());
+  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawTitle(110, TITLE_TEXT_Y, "Planets");

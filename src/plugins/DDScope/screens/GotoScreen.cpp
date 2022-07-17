@@ -68,21 +68,21 @@
 // Go To Screen Button object
 Button gotoButton(
                 0, 0, 0, 0,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.mainFontWidth, 
-                display.mainFontHeight, 
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                mainFontWidth, 
+                mainFontHeight, 
                 "");
 
                 // Go To Screen Button object
 Button gotoLargeButton(
                 0, 0, 0, 0,
-                display.butOnBackground, 
-                display.butBackground, 
-                display.butOutline, 
-                display.largeFontWidth, 
-                display.largeFontHeight, 
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                largeFontWidth, 
+                largeFontHeight, 
                 "");
 
 char numLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", "+"};
@@ -90,7 +90,6 @@ char numLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", 
 // Draw the Go To Page
 void GotoScreen::draw() {
   setCurrentScreen(GOTO_SCREEN);
-  setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawTitle(130, TITLE_TEXT_Y, "Go To");

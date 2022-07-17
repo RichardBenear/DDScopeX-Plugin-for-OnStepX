@@ -49,22 +49,21 @@
 custom_t _cArray[MAX_CUSTOM_ROWS];
 
 // Catalog Button object for default Arial font
-Button customDefButton(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.defFontWidth, display.defFontHeight, "");
+Button customDefButton(0, 0, 0, 0, butOnBackground, butBackground, butOutline, defFontWidth, defFontHeight, "");
 
 // Catalog Button object for custom font
-Button customCatButton(0, 0 ,0, 0, display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
+Button customCatButton(0, 0 ,0, 0, butOnBackground, butBackground, butOutline, mainFontWidth, mainFontHeight, "");
 
 // Canvas Print object default Arial 6x9 font
-CanvasPrint canvCustomDefPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, display.default_font);
+CanvasPrint canvCustomDefPrint(display.default_font);
 
 // Canvas Print object, Inconsolata_Bold8pt7b font
-CanvasPrint canvCustomInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+CanvasPrint canvCustomInsPrint(&Inconsolata_Bold8pt7b);
 
 // ========== Initialize and draw Custom Catalog ===============
 void CustomCatScreen::init() { 
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(CUSTOM_SCREEN);
-  setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   moreScreen.objectSelected = false;
@@ -207,7 +206,7 @@ void CustomCatScreen::drawCustomCat() {
       //VF("printing row="); VL(cAbsRow);
       // Erase text background
       tft.setCursor(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING));
-      tft.fillRect(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), 215, 17,  display.butBackground);
+      tft.fillRect(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), 215, 17,  butBackground);
 
       // get object names and put them on the buttons
       customDefButton.drawLJ(CUS_X, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[cAbsRow].cObjName, BUT_OFF);

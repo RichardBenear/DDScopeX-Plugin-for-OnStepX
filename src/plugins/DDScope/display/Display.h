@@ -4,6 +4,8 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+
+#include <Arduino.h>
 #include <SD.h>
 #include "src/Common.h"
 #include <XPT2046_Touchscreen.h>
@@ -57,11 +59,14 @@
 #define RED         0xF800      /* 255,   0,   0 */
 #define MAGENTA     0xF81F      /* 255,   0, 255 */
 #define YELLOW      0xFFE0      /* 255, 255,   0 */
+#define DIM_YELLOW  0xFE60
 #define WHITE       0xFFFF      /* 255, 255, 255 */
 #define ORANGE      0xFD20      /* 255, 165,   0 */
 #define GREENYELLOW 0xAFE5      /* 173, 255,  47 */
 #define PINK        0xF81F		
-#define DEEP_MAROON 0x1800      //0x3000		// 
+#define XDARK_MAROON 0x1800      
+#define DARK_MAROON 0x3000   
+#define GRAY_BLACK  0x0840
 
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
 #define BATTERY_LOW_VOLTAGE   21.0  
@@ -99,31 +104,29 @@ enum SelectedCatalog
   CUSTOM,
 };
 
-//----------------------------------------------
-// Structure storing Button object
-//----------------------------------------------
-typedef struct 
-{
-  bool                  initialized    = false;
-  uint16_t              x              = 0;
-  uint16_t              y              = 0;
-  uint8_t               width          = 0;
-  uint8_t               height         = 0;
-  bool                  pressed        = false;
-  uint16_t              colorActive    = 0xF800;
-  uint16_t              colorNotActive = 0x0000;
-  uint16_t              colorBorder    = 0xFFE0;
-  const char*           label          = "";
-  bool                  monitorOn      = false;
-  int                   fontCharWidth  = 8;
-  int                   fontCharHeight = 16;
-} ButObject;
-
 // Display objects
 extern Adafruit_ILI9486_Teensy tft;
-
 static XPT2046_Touchscreen ts(TS_CS, TS_IRQ); // Use Interrupts for touchscreen
 static TS_Point p;
+
+// --- Common Globals ---
+// Color Theme - default DAY mode
+extern uint16_t pgBackground; 
+extern uint16_t butBackground;
+extern uint16_t titleBackground;
+extern uint16_t butOnBackground;
+extern uint16_t textColor; 
+extern uint16_t butOutline; 
+
+// Font sizing info
+const uint8_t  defFontWidth = 8; // default Arial
+const uint8_t  defFontHeight = 8; // default Arial
+const uint8_t  mainFontWidth = 8; // 8pt
+const uint8_t  mainFontHeight = 16; // 8pt
+const uint8_t  largeFontWidth = 12; // 11pt
+const uint8_t  largeFontHeight = 22; // 11pt
+const uint8_t  xlargeFontWidth = 17; // 12pt
+const uint8_t  xlargeFontHeight = 29; // 12pt
 
 // =========================================
 class Display {
@@ -170,23 +173,6 @@ class Display {
     void setNightMode(bool);
     bool getNightMode();
 
-    // Color Theme
-    uint16_t pgBackground = DEEP_MAROON; 
-    uint16_t butBackground = BLACK;
-    uint16_t butOnBackground = RED;
-    uint16_t textColor = YELLOW; 
-    uint16_t butOutline = YELLOW; 
-
-    // Font sizing info
-    const uint8_t  defFontWidth = 8; // default Arial
-    const uint8_t  defFontHeight = 8; // default Arial
-    const uint8_t  mainFontWidth = 8; // 8pt
-    const uint8_t  mainFontHeight = 16; // 8pt
-    const uint8_t  largeFontWidth = 12; // 11pt
-    const uint8_t  largeFontHeight = 22; // 11pt
-    const uint8_t  xlargeFontWidth = 17; // 12pt
-    const uint8_t  xlargeFontHeight = 29; // 12pt
-
     // frequency and duration adjustable tone
     inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration); }
 
@@ -198,8 +184,8 @@ class Display {
     const GFXfont *default_font = (const GFXfont *)__null;
 
   private:
-    CommandError commandError = CE_NONE;
-    bool firstGPS = true;
+    //CommandError commandError = CE_NONE;
+    //bool firstGPS = true;
 };
 
 extern Display display;

@@ -7,21 +7,12 @@
 #ifndef UI_ELEMENTS_H
 #define UI_ELEMENTS_H
 
-#include <Arduino.h>
-
 #define BUTTON_RADIUS 7
-
-typedef struct Boundry{
-  int x;
-  int y;
-  uint16_t width;
-  uint16_t height;
-} Boundry;
 
 //----------------------------------------------------------
 // Button element
 //----------------------------------------------------------
-class Button{
+class Button {
   
 	public:
     // constructor
@@ -59,18 +50,11 @@ class Button{
 //----------------------------------------------------------
 // Canvas Text element
 //----------------------------------------------------------
-class CanvasPrint{
+class CanvasPrint {
   
 	public:
     // constructor
-    CanvasPrint(
-      int           x, 
-      int           y, 
-      uint16_t      width, 
-      uint16_t      height,
-      uint16_t      colorActive,
-      uint16_t      colorNotActive,
-      const GFXfont *font);
+    CanvasPrint(const GFXfont *font);
 
     void  printRJ(int x, int y, uint16_t width, uint16_t height, const char* c_label, bool warning);
     void  printRJ(int x, int y, uint16_t width, uint16_t height,      double d_label, bool warning);
@@ -80,13 +64,7 @@ class CanvasPrint{
     void  printLJ(int x, int y, uint16_t width, uint16_t height,         int d_label, bool warning);
    
   private:
-    int           _x;
-    int           _y;
-    uint16_t      _width;
-    uint16_t      _height;
-    uint16_t      _colorActive;
-    uint16_t      _colorNotActive;
-    const GFXfont *_font;      
+    const GFXfont *c_font;    
 };
 
 extern Button button;

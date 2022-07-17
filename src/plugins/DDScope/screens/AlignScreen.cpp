@@ -79,15 +79,14 @@ AlignStates Current_State = Idle_State;
 AlignStates Next_State = Idle_State;
 
 // Align Button object
-Button alignButton(0,0,0,0,display.butOnBackground, display.butBackground, display.butOutline, display.mainFontWidth, display.mainFontHeight, "");
+Button alignButton(0,0,0,0, butOnBackground, butBackground, butOutline, mainFontWidth, mainFontHeight, "");
 
 // Canvas Print object Custom Font
-CanvasPrint canvAlignInsPrint(0, 0, 0, 0, display.butOnBackground, display.butBackground, &Inconsolata_Bold8pt7b);
+CanvasPrint canvAlignInsPrint(&Inconsolata_Bold8pt7b);
 
 // ---- Draw Alignment Page ----
 void AlignScreen::draw() {
   setCurrentScreen(ALIGN_SCREEN);
-  setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawTitle(100, TITLE_TEXT_Y, "Alignment");
