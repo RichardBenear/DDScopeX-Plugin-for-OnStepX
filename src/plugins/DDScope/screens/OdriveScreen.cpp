@@ -10,7 +10,7 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../../../telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
-#include <HardwareSerial.h>
+//#include <HardwareSerial.h>
 
 #define OD_ERR_OFFSET_X           4 
 #define OD_ERR_OFFSET_Y         188
@@ -45,7 +45,6 @@ void demoWrapper() { oDriveExt.demoMode(true); }
 //****** Draw ODrive Screen ******
 void ODriveScreen::draw() {
   setCurrentScreen(ODRIVE_SCREEN);
-  //setNightMode(getNightMode());
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   
@@ -61,9 +60,9 @@ void ODriveScreen::draw() {
   ODriveVersion oDversion;
   oDriveExt.getODriveVersion(oDversion);
 
-  tft.setCursor(85, 164);
+  tft.setCursor(82, 164);
   tft.print("*HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
-  tft.setCursor(85, 176);
+  tft.setCursor(82, 176);
   tft.print("*FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
 }
 
