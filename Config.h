@@ -54,11 +54,13 @@
                                            // ODrive axis 1 = OnStep axis 1 = AZM
 #define ODRIVE_SERIAL             Serial3  // Teensy HW serial
 #define ODRIVE_SERIAL_BAUD         230400  // 19200 default
-#define ODRIVE_SLEW_DIRECT             ON  // using ODrive trapezoidal move profile
+#define ODRIVE_SLEW_DIRECT            OFF  // ON=using ODrive trapezoidal move profile. OFF=using OnStep move profile
 #define ODRIVE_ABSOLUTE                ON  // using absolute encoder
-#define ODRIVE_SYNC_LIMIT            1300  // in arc seconds..encoder resolution=2^14=16380=16380/360=45.5/deg=45.5/60=0.7583/arc-min
-                                           //         or 1/0.7583 = 1.32 arc-min per encoder tick
-#define ODRIVE_UPDATE_MS              250  // 0.50 HZ position update rate
+#define ODRIVE_SYNC_LIMIT              80  // in arc seconds..one encoder tick
+                                           // encoder resolution=2^14=16380; 16380/360=45.5 ticks/deg 
+                                           // 45.5/60=0.7583 ticks/min; 0.7583/60 = .00126 ticks/sec
+                                           // or 1/0.7583 = 1.32 arc-min/tick;  1.32*60 sec = 79.2 arc sec per encoder tick
+#define ODRIVE_UPDATE_MS              100  // 10 HZ position update rate
 
 // =================================================================================================================================
 // MOUNT ===========================================================================================================================
@@ -72,7 +74,7 @@
 
 // If runtime axis settings are enabled changes in the section below may be ignored unless you reset to defaults:
 // \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ 
-#define AXIS1_STEPS_PER_DEGREE       1800 //  12800, n. Number of steps per degree:                                          <-Req'd
+#define AXIS1_STEPS_PER_DEGREE      12800 //  12800, n. Number of steps per degree:                                          <-Req'd
                                           //         n = (stepper_steps * micro_steps * overall_gear_reduction)/360.0
 #define AXIS1_REVERSE                 OFF //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
 #define AXIS1_LIMIT_MIN              -180 //   -180, n. Where n= -90..-360 (degrees.) Minimum "Hour Angle" or Azimuth.        Adjust
@@ -107,7 +109,7 @@
 
 // If runtime axis settings are enabled changes in the section below may be ignored unless you reset to defaults:
 // \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/
-#define AXIS2_STEPS_PER_DEGREE       1800 //  12800, n. Number of steps per degree:                                          <-Req'd
+#define AXIS2_STEPS_PER_DEGREE      12800 //  12800, n. Number of steps per degree:                                          <-Req'd
                                           //         n = (stepper_steps * micro_steps * overall_gear_reduction)/360.0
 #define AXIS2_REVERSE                 OFF //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
 #define AXIS2_LIMIT_MIN                 0 //    -90, n. Where n=-90..0 (degrees.) Minimum allowed Declination or Altitude.    Infreq
@@ -155,7 +157,7 @@
                                           //         Better tracking accuracy especially for Mega2560's w/ceramic resonator.
 
 // USER FEEDBACK -------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#USER_FEEDBACK
-#define STATUS_MOUNT_LED               ON //    OFF, ON Flashes proportional to rate of movement or solid on for slews.       Option
+#define STATUS_MOUNT_LED              OFF //    OFF, ON Flashes proportional to rate of movement or solid on for slews.       Option
 #define STATUS_BUZZER                1200 //    OFF, ON, n. Where n=100..6000 (Hz freq.) for speaker. ON for piezo buzzer.    Option
 #define STATUS_BUZZER_DEFAULT          ON //    OFF, ON default starts w/buzzer enabled.                                      Option
 #define STATUS_BUZZER_MEMORY           ON //    OFF, ON to remember buzzer setting across power cycles.                       Option
@@ -201,8 +203,8 @@
 #define SLEW_RATE_BASE_DESIRED        6.0 //    1.0, n. Desired slew rate in deg/sec. Adjustable at run-time from            <-Req'd
                                           //         1/2 to 2x this rate, and as performace considerations require.
 #define SLEW_RATE_MEMORY              OFF //    OFF, ON Remembers rates set across power cycles.                              Option
-#define SLEW_ACCELERATION_DIST        0.5 //    5.0, n, (degrees.) Approx. distance for acceleration (and deceleration.)      Adjust
-#define SLEW_RAPID_STOP_DIST          0.5 //    2.0, n, (degrees.) Approx. distance required to stop when a slew              Adjust
+#define SLEW_ACCELERATION_DIST        2.0 //    5.0, n, (degrees.) Approx. distance for acceleration (and deceleration.)      Adjust
+#define SLEW_RAPID_STOP_DIST          2.0 //    2.0, n, (degrees.) Approx. distance required to stop when a slew              Adjust
                                           //         is aborted or a limit is exceeded.
 #define GOTO_FEATURE                   ON //     ON, Use OFF to disable mount Goto features.                                  Infreq
 #define GOTO_OFFSET                  0.25 //   0.25, Offset in deg's for goto target unidirectional approach, 0.0 disables    Option
