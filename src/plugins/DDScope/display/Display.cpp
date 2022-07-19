@@ -27,7 +27,6 @@
 #include <Fonts/FreeSansBold12pt7b.h>
 
 // DDScope specific
-//#include "../DDScope.h"
 #include "Display.h"
 #include "../catalog/Catalog.h"
 #include "../screens/AlignScreen.h"
@@ -87,6 +86,26 @@
 #define L_CE_MOUNT_IN_MOTION         "mount in motion"
 #define L_CE_GOTO_ERR_UNSPECIFIED    "other"
 #define L_CE_UNK                     "unknown"
+
+// copied from SWS MountStatus.h
+// general (background) errors
+#define L_GE_NONE "None"
+#define L_GE_MOTOR_FAULT "Motor/driver fault"
+#define L_GE_ALT_MIN "Below horizon limit" 
+#define L_GE_LIMIT_SENSE "Limit sense"
+#define L_GE_DEC "Dec limit exceeded"
+#define L_GE_AZM "Azm limit exceeded"
+#define L_GE_UNDER_POLE "Under pole limit exceeded"
+#define L_GE_MERIDIAN "Meridian limit exceeded"
+#define L_GE_SYNC "Sync safety limit exceeded"
+#define L_GE_PARK "Park failed"
+#define L_GE_GOTO_SYNC "Goto sync failed"
+#define L_GE_UNSPECIFIED "Unknown error"
+#define L_GE_ALT_MAX "Above overhead limit"
+#define L_GE_WEATHER_INIT "Weather sensor init failed"
+#define L_GE_SITE_INIT "Time or loc. not updated"
+#define L_GE_NV_INIT "Init NV/EEPROM bad"
+#define L_GE_OTHER "Unknown Error, code"
 
 static const char commandErrorStr[30][25] = {
 L_CE_NONE, L_CE_0, L_CE_CMD_UNKNOWN, L_CE_REPLY_UNKNOWN, L_CE_PARAM_RANGE,
@@ -222,6 +241,8 @@ void Display::updateSpecificScreen() {
     #endif
     default: break;
   }
+  updateMessageBar();
+  updateOnStepCmdStatus();
 }
 
 // ======= Use Local Command Channel ========
@@ -237,7 +258,6 @@ void Display::getLocalCmd(const char *command, char *reply) {
   SERIAL_LOCAL.transmit(command);
   tasks.yield(70);
   strcpy(reply, SERIAL_LOCAL.receive()); 
-  updateOnStepCmdStatus();
 }
 
 void Display::getLocalCmdTrim(const char *command, char *reply) {
@@ -245,7 +265,6 @@ void Display::getLocalCmdTrim(const char *command, char *reply) {
   tasks.yield(70);
   strcpy(reply, SERIAL_LOCAL.receive()); 
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
-  updateOnStepCmdStatus();
 }
 
 // Draw the Title block
@@ -299,39 +318,60 @@ void Display::updateBatVoltage() {
   tft.print(bvolts);
 }
 
-// ============ OnStep Command Errors ===============
-void Display::updateOnStepCmdStatus() {
-  if (currentScreen == CUSTOM_SCREEN || 
-      currentScreen == SHC_CAT_SCREEN ||
-      currentScreen == PLANETS_SCREEN ||
-      currentScreen == TREASURE_SCREEN) return;
-  if (!tls.isReady()) {
-    //canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, "TLS not ready", false);
-  } else {
-    //canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, commandErrorStr[cmdError.commandError], false);
-  } 
+bool Display::getLastErrorMessage(char message[]) {
+  strcpy(message,"");
+  if (_lastError == ERR_NONE) strcpy(message, L_GE_NONE); else
+  if (_lastError == ERR_MOTOR_FAULT) strcpy(message, L_GE_MOTOR_FAULT); else
+  if (_lastError == ERR_ALT_MIN) strcpy(message, L_GE_ALT_MIN); else
+  if (_lastError == ERR_LIMIT_SENSE) strcpy(message, L_GE_LIMIT_SENSE); else
+  if (_lastError == ERR_DEC) strcpy(message, L_GE_DEC); else
+  if (_lastError == ERR_AZM) strcpy(message, L_GE_AZM); else
+  if (_lastError == ERR_UNDER_POLE) strcpy(message, L_GE_UNDER_POLE); else
+  if (_lastError == ERR_MERIDIAN) strcpy(message, L_GE_MERIDIAN); else
+  if (_lastError == ERR_SYNC) strcpy(message, L_GE_SYNC); else
+  if (_lastError == ERR_PARK) strcpy(message, L_GE_PARK); else
+  if (_lastError == ERR_GOTO_SYNC) strcpy(message, L_GE_GOTO_SYNC); else
+  if (_lastError == ERR_UNSPECIFIED) strcpy(message, L_GE_UNSPECIFIED); else
+  if (_lastError == ERR_ALT_MAX) strcpy(message, L_GE_ALT_MAX); else
+  if (_lastError == ERR_WEATHER_INIT) strcpy(message, L_GE_WEATHER_INIT); else
+  if (_lastError == ERR_SITE_INIT) strcpy(message, L_GE_SITE_INIT); else
+  if (_lastError == ERR_NV_INIT) strcpy(message, L_GE_NV_INIT); else
+  sprintf(message, L_GE_OTHER " %d", (int)_lastError);
+  return message[0];
 }
 
-// ODrive AZ and ALT CONTROLLER (only) Error Status
-void Display::updateODriveErrBar() {
+// ============ OnStep Command Errors ===============
+void Display::updateOnStepCmdStatus() {
+  
+  char s[80] = "";
+  char sTemp[80]="";
   if (currentScreen == CUSTOM_SCREEN || 
       currentScreen == SHC_CAT_SCREEN ||
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;
-  int x = 2;
-  int y = 473;
-  int label_x = 160;
-  int data_x = 110;
 
-  tft.setCursor(x, y);
-  tft.print("AZ Ctrl err:");
-  tft.setCursor(label_x, y);
-  tft.print("ALT Ctrl err:");
+  getLocalCmdTrim(":GU#", s);
+  _lastError = (Errors)(s[strlen(s) - 1] - '0');
+  getLastErrorMessage(sTemp);
+  canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, s, false);
+  //canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, CommandProcessor.lastCommandError, false);
+}
+
+// Message Bar
+void Display::updateMessageBar() {
+  if (currentScreen == CUSTOM_SCREEN || 
+      currentScreen == SHC_CAT_SCREEN ||
+      currentScreen == PLANETS_SCREEN ||
+      currentScreen == TREASURE_SCREEN) return;
   
-  canvDisplayInsPrint.printRJ(        data_x, y,  C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(AZM_MOTOR, AXIS), false);
-  canvDisplayInsPrint.printRJ(label_x+data_x, y,  C_WIDTH-40, C_HEIGHT, (int)oDriveExt.getODriveErrors(ALT_MOTOR, AXIS), false);
+  // TO DO: add more messages
+  if (!tls.isReady()) {
+    canvDisplayInsPrint.printRJ(2, 473, 317, C_HEIGHT, "TLS not ready", false);
+  } else {
+    canvDisplayInsPrint.printRJ(2, 473, 317, C_HEIGHT, "TLS ready", false);
+  }
 
-  // sound varying frequency alarm if Motor and Encoders positions are too far apart
+  // frequency varying alarm if Motor and Encoders positions are too far apart indicating unbalanced loading or hitting obstruction
   oDriveExt.MotorEncoderDelta();
 }
 
