@@ -43,8 +43,8 @@
 // Firmware version ----------------------------------------------------------------------------------------------------------------
 #define FirmwareName                "On-Step"
 #define FirmwareVersionMajor        10
-#define FirmwareVersionMinor        07     // minor version 00 to 99
-#define FirmwareVersionPatch        "p"    // for example major.minor patch: 10.03c
+#define FirmwareVersionMinor        8      // minor version 00 to 99
+#define FirmwareVersionPatch        "b"    // for example major.minor patch: 10.03c
 #define FirmwareVersionConfig       5      // internal, for tracking configuration file changes
 
 #include "src/Common.h"
@@ -63,7 +63,7 @@ extern Telescope telescope;
 #endif
 
 void systemServices() {
-  if (!xBusy) nv.poll();
+  if (!xBusy) nv.poll(false);
 }
 
 void sensesPoll() {

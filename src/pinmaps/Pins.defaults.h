@@ -3,7 +3,7 @@
 #pragma once
 
 // --------------------------------------------------------------------------------------------------------
-// Serial and I2C interface pins
+// Serial, SPI, and I2C interface pins
 
 // usually the default serial port
 #if SERIAL_A_BAUD_DEFAULT != OFF
@@ -30,6 +30,11 @@
 #define SERIAL_TMC_TX               11             // Transmit data
 #define SERIAL_TMC_RX               12             // Recieving data
 */
+
+// pin# for controlling the reset of W5500 so it comes up properly
+#ifndef ETHERNET_RESET_PIN
+#define ETHERNET_RESET_PIN          OFF
+#endif
 
 // Specify the default I2C pins (if they can be set via the HAL)
 #ifndef I2C_SDA_PIN
@@ -208,10 +213,10 @@
 #define AXIS1_SENSE_HOME_PIN        OFF
 #endif
 #ifndef AXIS1_SENSE_LIMIT_MIN_PIN
-#define AXIS1_SENSE_LIMIT_MIN_PIN LIMIT_SENSE_PIN
+#define AXIS1_SENSE_LIMIT_MIN_PIN   LIMIT_SENSE_PIN
 #endif
 #ifndef AXIS1_SENSE_LIMIT_MAX_PIN
-#define AXIS1_SENSE_LIMIT_MAX_PIN LIMIT_SENSE_PIN
+#define AXIS1_SENSE_LIMIT_MAX_PIN   LIMIT_SENSE_PIN
 #endif
 
 #ifndef AXIS2_ENABLE_PIN
@@ -257,10 +262,10 @@
 #define AXIS2_SENSE_HOME_PIN        OFF
 #endif
 #ifndef AXIS2_SENSE_LIMIT_MIN_PIN
-#define AXIS2_SENSE_LIMIT_MIN_PIN LIMIT_SENSE_PIN
+#define AXIS2_SENSE_LIMIT_MIN_PIN   LIMIT_SENSE_PIN
 #endif
 #ifndef AXIS2_SENSE_LIMIT_MAX_PIN
-#define AXIS2_SENSE_LIMIT_MAX_PIN LIMIT_SENSE_PIN
+#define AXIS2_SENSE_LIMIT_MAX_PIN   LIMIT_SENSE_PIN
 #endif
 
 #ifndef AXIS3_ENABLE_PIN
@@ -604,4 +609,39 @@
 #endif
 #ifndef AXIS9_SENSE_LIMIT_MAX_PIN
 #define AXIS9_SENSE_LIMIT_MAX_PIN   OFF
+#endif
+
+#ifndef FOCUSER_TEMPERATURE_PIN
+#define FOCUSER_TEMPERATURE_PIN       OFF // analog pin
+#endif
+#ifndef FOCUSER_BUTTON_SENSE_IN_PIN
+#define FOCUSER_BUTTON_SENSE_IN_PIN   OFF
+#endif
+#ifndef FOCUSER_BUTTON_SENSE_OUT_PIN
+#define FOCUSER_BUTTON_SENSE_OUT_PIN  OFF
+#endif
+
+#ifndef FEATURE1_TEMPERATURE_PIN
+#define FEATURE1_TEMPERATURE_PIN      OFF // analog pin
+#endif
+#ifndef FEATURE2_TEMPERATURE_PIN
+#define FEATURE2_TEMPERATURE_PIN      OFF
+#endif
+#ifndef FEATURE3_TEMPERATURE_PIN
+#define FEATURE3_TEMPERATURE_PIN      OFF
+#endif
+#ifndef FEATURE4_TEMPERATURE_PIN
+#define FEATURE4_TEMPERATURE_PIN      OFF
+#endif
+#ifndef FEATURE5_TEMPERATURE_PIN
+#define FEATURE5_TEMPERATURE_PIN      OFF
+#endif
+#ifndef FEATURE6_TEMPERATURE_PIN
+#define FEATURE6_TEMPERATURE_PIN      OFF
+#endif
+#ifndef FEATURE7_TEMPERATURE_PIN
+#define FEATURE7_TEMPERATURE_PIN      OFF
+#endif
+#ifndef FEATURE8_TEMPERATURE_PIN
+#define FEATURE8_TEMPERATURE_PIN      OFF
 #endif

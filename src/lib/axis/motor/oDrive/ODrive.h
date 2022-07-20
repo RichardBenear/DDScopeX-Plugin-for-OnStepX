@@ -54,6 +54,9 @@
 // ODrive servo motor serial driver
 extern ODriveArduino *_oDriveDriver;
 
+// ODrive servo motor serial driver
+extern ODriveArduino *_oDriveDriver;
+
 typedef struct ODriveDriverSettings {
   int16_t model;
   int8_t  status;

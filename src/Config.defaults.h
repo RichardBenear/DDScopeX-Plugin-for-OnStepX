@@ -51,7 +51,7 @@
 
 // ESP32 virtual serial bluetooth command channel
 #ifndef SERIAL_BT_MODE
-#define SERIAL_BT_MODE                OFF                         // use STATION to enable the interface (ESP32 only)
+#define SERIAL_BT_MODE                OFF                         // use SLAVE to enable the interface (ESP32 only)
 #endif
 #ifndef SERIAL_BT_NAME
 #define SERIAL_BT_NAME                "OnStep"                    // Bluetooth name of command channel
@@ -59,22 +59,24 @@
 
 // ESP32 virtual serial IP command channels
 #ifndef SERIAL_IP_MODE
-#define SERIAL_IP_MODE                OFF                         // use ACCESS_POINT or STATION to enable the interface (ESP32 only)
+#define SERIAL_IP_MODE                OFF                         // use settings shown below to enable the interface
 #endif
 #ifndef SERIAL_SERVER
 #define SERIAL_SERVER                 BOTH                        // STANDARD (port 9999) or PERSISTENT (ports 9996 to 9998)
 #endif
 
 // translate Config.h IP settings into low level library settings
-#if SERIAL_IP_MODE == ACCESS_POINT
+#if SERIAL_IP_MODE == ETHERNET_W5500
+#define OPERATIONAL_MODE ETHERNET_W5500
+#elif SERIAL_IP_MODE == ETHERNET_W5100
+#define OPERATIONAL_MODE ETHERNET_W5100
+#elif SERIAL_IP_MODE == WIFI_ACCESS_POINT
 #define OPERATIONAL_MODE WIFI
 #define AP_ENABLED true
-#endif
-#if SERIAL_IP_MODE == STATION
+#elif SERIAL_IP_MODE == WIFI_STATION
 #define OPERATIONAL_MODE WIFI
 #define STA_ENABLED true
-#endif
-#if SERIAL_IP_MODE == BOTH
+#elif SERIAL_IP_MODE == BOTH
 #define OPERATIONAL_MODE WIFI
 #define AP_ENABLED true
 #define STA_ENABLED true
@@ -102,6 +104,9 @@
 #ifndef STA_AP_FALLBACK
 #define STA_AP_FALLBACK               true                        // activate SoftAP if station fails to connect
 #endif
+#ifndef STA_AUTO_RECONNECT
+#define STA_AUTO_RECONNECT            true                        // automatically reconnect if connection is dropped
+#endif
 #ifndef STA_SSID
 #define STA_SSID                      "Home"                      // Station SSID to connnect to
 #endif
@@ -109,16 +114,16 @@
 #define STA_PASSWORD                  "password"                  // Wifi Station mode password
 #endif
 #ifndef STA_DHCP_ENABLED
-#define STA_DHCP_ENABLED              false                       // true to use LAN DHCP addresses
+#define STA_DHCP_ENABLED              false                       // Wifi Station/Ethernet DHCP enabled
 #endif
 #ifndef STA_IP_ADDR
-#define STA_IP_ADDR                   {192,168,0,2}               // Wifi Station IP Address
+#define STA_IP_ADDR                   {192,168,0,2}               // Wifi Station/Ethernet IP Address
 #endif
 #ifndef STA_GW_ADDR
-#define STA_GW_ADDR                   {192,168,0,1}               // Wifi Station GATEWAY Address
+#define STA_GW_ADDR                   {192,168,0,1}               // Wifi Station/Ethernet GATEWAY Address
 #endif
 #ifndef STA_SN_MASK
-#define STA_SN_MASK                   {255,255,255,0}             // Wifi Station SUBNET Mask
+#define STA_SN_MASK                   {255,255,255,0}             // Wifi Station/Ethernet SUBNET Mask.
 #endif
 
 // sensors
@@ -763,6 +768,28 @@
   #ifndef AXIS3_SERVO_PH2_STATE
   #define AXIS3_SERVO_PH2_STATE         LOW
   #endif
+#endif
+
+// -----------------------------------------------------------------------------------
+// focuser settings, all
+
+#ifndef FOCUSER_TEMPERATURE
+#define FOCUSER_TEMPERATURE           OFF                         // activate and set focuser sensor type DS18B20, THERMISTOR, etc.
+#endif
+#ifndef FOCUSER_BUTTON_SENSE_OUT
+#define FOCUSER_BUTTON_SENSE_OUT      OFF                         // moves focuser out
+#endif
+#ifndef FOCUSER_BUTTON_SENSE_IN
+#define FOCUSER_BUTTON_SENSE_IN       OFF                         // moves focuser in
+#endif
+#ifndef FOCUSER_BUTTON_SENSE_INIT
+#define FOCUSER_BUTTON_SENSE_INIT     INPUT_PULLUP                // pin mode for focuser buttons
+#endif
+#ifndef FOCUSER_BUTTON_FOCUSER_INDEX
+#define FOCUSER_BUTTON_FOCUSER_INDEX  1                           // which focuser to associate pushbutton control with (1 to 6)
+#endif
+#ifndef FOCUSER_BUTTON_MOVE_RATE
+#define FOCUSER_BUTTON_MOVE_RATE      0                           // focuser button move rate, 0 uses last set or specify fixed rate in um/sec
 #endif
 
 // -----------------------------------------------------------------------------------
@@ -1534,13 +1561,6 @@
   #endif
 #endif
 
-#ifndef FOCUSER_TEMPERATURE
-#define FOCUSER_TEMPERATURE             OFF                         // activate and set focuser sensor type DS18B20, THERMISTOR, etc.
-#endif
-#ifndef FOCUSER_TEMPERATURE_PIN
-#define FOCUSER_TEMPERATURE_PIN         OFF                         // for thermistors, analog pin
-#endif
-
 #if defined(AXIS1_DRIVER_PRESENT) || defined(AXIS2_DRIVER_PRESENT) || defined(AXIS3_DRIVER_PRESENT) || \
     defined(AXIS4_DRIVER_PRESENT) || defined(AXIS5_DRIVER_PRESENT) || defined(AXIS6_DRIVER_PRESENT) || \
     defined(AXIS7_DRIVER_PRESENT) || defined(AXIS8_DRIVER_PRESENT) || defined(AXIS9_DRIVER_PRESENT)
@@ -1585,9 +1605,6 @@
 #ifndef FEATURE1_TEMP
 #define FEATURE1_TEMP                 OFF                         // temperature sensor, thermistor or DS1820
 #endif
-#ifndef FEATURE1_TEMPERATURE_PIN
-#define FEATURE1_TEMPERATURE_PIN             OFF                         // for thermistors, analog pin
-#endif
 #ifndef FEATURE1_PIN
 #define FEATURE1_PIN                  OFF                         // OUTPUT control pin
 #endif
@@ -1606,9 +1623,6 @@
 #endif
 #ifndef FEATURE2_TEMP
 #define FEATURE2_TEMP                 OFF
-#endif
-#ifndef FEATURE2_TEMPERATURE_PIN
-#define FEATURE2_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE2_PIN
 #define FEATURE2_PIN                  OFF
@@ -1629,9 +1643,6 @@
 #ifndef FEATURE3_TEMP
 #define FEATURE3_TEMP                 OFF
 #endif
-#ifndef FEATURE3_TEMPERATURE_PIN
-#define FEATURE3_TEMPERATURE_PIN             OFF
-#endif
 #ifndef FEATURE3_PIN
 #define FEATURE3_PIN                  OFF
 #endif
@@ -1650,9 +1661,6 @@
 #endif
 #ifndef FEATURE4_TEMP
 #define FEATURE4_TEMP                 OFF
-#endif
-#ifndef FEATURE4_TEMPERATURE_PIN
-#define FEATURE4_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE4_PIN
 #define FEATURE4_PIN                  OFF
@@ -1673,9 +1681,6 @@
 #ifndef FEATURE5_TEMP
 #define FEATURE5_TEMP                 OFF
 #endif
-#ifndef FEATURE5_TEMPERATURE_PIN
-#define FEATURE5_TEMPERATURE_PIN             OFF
-#endif
 #ifndef FEATURE5_PIN
 #define FEATURE5_PIN                  OFF
 #endif
@@ -1694,9 +1699,6 @@
 #endif
 #ifndef FEATURE6_TEMP
 #define FEATURE6_TEMP                 OFF
-#endif
-#ifndef FEATURE6_TEMPERATURE_PIN
-#define FEATURE6_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE6_PIN
 #define FEATURE6_PIN                  OFF
@@ -1717,9 +1719,6 @@
 #ifndef FEATURE7_TEMP
 #define FEATURE7_TEMP                 OFF
 #endif
-#ifndef FEATURE7_TEMPERATURE_PIN
-#define FEATURE7_TEMPERATURE_PIN             OFF
-#endif
 #ifndef FEATURE7_PIN
 #define FEATURE7_PIN                  OFF
 #endif
@@ -1738,9 +1737,6 @@
 #endif
 #ifndef FEATURE8_TEMP
 #define FEATURE8_TEMP                 OFF
-#endif
-#ifndef FEATURE8_TEMPERATURE_PIN
-#define FEATURE8_TEMPERATURE_PIN             OFF
 #endif
 #ifndef FEATURE8_PIN
 #define FEATURE8_PIN                  OFF
