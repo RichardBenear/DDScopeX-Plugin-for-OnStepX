@@ -165,7 +165,7 @@ class Display {
     void updateOnStepCmdStatus();
 
     #ifdef ODRIVE_MOTOR_PRESENT
-      void updateODriveErrBar();
+      void updateMessageBar();
       void updateBatVoltage();
     #endif
 
@@ -184,7 +184,10 @@ class Display {
     const GFXfont *default_font = (const GFXfont *)__null;
 
   private:
-    //CommandError commandError = CE_NONE;
+    bool getGeneralErrorMessage(char message[]);
+
+    uint8_t _lastError = 0;
+    char lastCmdErr[4] = "";
     bool firstGPS = true;
     bool trackLedOn = false;
 };

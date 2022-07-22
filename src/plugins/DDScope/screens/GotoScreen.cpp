@@ -370,7 +370,8 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > GOTO_BUTTON_Y && py < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && px > GOTO_BUTTON_X && px < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
     BEEP;
     goToButton = true;
-    setLocalCmd(":MS#"); // move to
+    getLocalCmdTrim(":MS#", cmd);
+    updateOnStepCmdStatus();
     return true;
   }
 

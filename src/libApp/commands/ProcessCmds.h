@@ -18,13 +18,13 @@ class CommandProcessor {
 
     // pass along commands as required for processing
     CommandError command(char *reply, char *command, char *parameter, bool *supressFrame, bool *numericReply);
-    
+    CommandError lastCommandError  = CE_NONE;
   private:
     void logErrors(char *cmd, char *param, char *reply, CommandError e);
     void appendChecksum(char *s);
 
     CommandError commandError      = CE_NONE;
-    CommandError lastCommandError  = CE_NONE;
+    //CommandError lastCommandError  = CE_NONE;
     bool serialReady               = false;
     long serialBaud                = 9600;
     char channel                   = '?';

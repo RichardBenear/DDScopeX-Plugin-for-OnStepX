@@ -18,7 +18,7 @@
 #include "src/telescope/mount/goto/Goto.h"
 #include "src/telescope/mount/site/Site.h"
 #include "src/lib/tasks/OnTask.h"
-#include "src/libApp/commands/ProcessCmds.h"
+//#include "src/libApp/commands/ProcessCmds.h"
 
 // Fonts
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -242,12 +242,18 @@ void Display::updateSpecificScreen() {
     default: break;
   }
   updateMessageBar();
-  updateOnStepCmdStatus();
+  //updateOnStepCmdStatus();
 }
 
-// ======= Use Local Command Channel ========
+// ======= Local Command Channel Support ========
 void Display::setLocalCmd(char *command) {
+  char reply[80];
   SERIAL_LOCAL.transmit(command);
+  tasks.yield(70);
+  // you must always do a receive() on the local channel or the xmit_index to xmit buffer doesn't increment
+  // this will add leading 1's to your receive data because of the bool-only reply's to some commands
+  strcpy(reply, SERIAL_LOCAL.receive()); 
+  //VF("sLC="); VL(reply);
 }
 
 void Display::setLocalCmd(const char *command) {
@@ -265,6 +271,7 @@ void Display::getLocalCmdTrim(const char *command, char *reply) {
   tasks.yield(70);
   strcpy(reply, SERIAL_LOCAL.receive()); 
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
+  //VF("gLC="); VL(reply);
 }
 
 // Draw the Title block
@@ -318,8 +325,13 @@ void Display::updateBatVoltage() {
   tft.print(bvolts);
 }
 
-bool Display::getLastErrorMessage(char message[]) {
+bool Display::getGeneralErrorMessage(char message[]) {
+  enum GeneralErrors: uint8_t {
+  ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT_MIN, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM,
+  ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC, ERR_PARK, ERR_GOTO_SYNC, ERR_UNSPECIFIED,
+  ERR_ALT_MAX, ERR_WEATHER_INIT, ERR_SITE_INIT, ERR_NV_INIT};
   strcpy(message,"");
+
   if (_lastError == ERR_NONE) strcpy(message, L_GE_NONE); else
   if (_lastError == ERR_MOTOR_FAULT) strcpy(message, L_GE_MOTOR_FAULT); else
   if (_lastError == ERR_ALT_MIN) strcpy(message, L_GE_ALT_MIN); else
@@ -342,19 +354,20 @@ bool Display::getLastErrorMessage(char message[]) {
 
 // ============ OnStep Command Errors ===============
 void Display::updateOnStepCmdStatus() {
-  
-  char s[80] = "";
-  char sTemp[80]="";
+  char cmdErr[12] = "";
   if (currentScreen == CUSTOM_SCREEN || 
       currentScreen == SHC_CAT_SCREEN ||
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;
 
-  getLocalCmdTrim(":GU#", s);
-  _lastError = (Errors)(s[strlen(s) - 1] - '0');
-  getLastErrorMessage(sTemp);
-  canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, s, false);
+  getLocalCmdTrim(":GE#", cmdErr);
+  canvDisplayInsPrint.printLJ(2, 454, 317, C_HEIGHT+2, commandErrorStr[atoi(cmdErr)], false);
+  //_lastError = (Errors)(s[strlen(s) - 1] - '0');
+  //getLastErrorMessage(sTemp);
+  canvDisplayInsPrint.printLJ(2, 454, 317, C_HEIGHT+2, commandErrorStr[atoi(cmdErr)], false);
   //canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, CommandProcessor.lastCommandError, false);
+  //strcpy(lastCmdError, cmdErr);
+  //}
 }
 
 // Message Bar

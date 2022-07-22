@@ -339,10 +339,11 @@ void AlignScreen::stateMachine() {
         }
         break;
       }   
-
+      char reply[13];
       case Goto_State: {
         if (gotoBut) {
-          setLocalCmd(":MS#");
+          getLocalCmdTrim(":MS#", reply);
+          updateOnStepCmdStatus();
           gotoBut = false;
           Next_State = Wait_For_Slewing_State;
         } else { // wait for GoTo button press
