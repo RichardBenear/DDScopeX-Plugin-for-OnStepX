@@ -162,7 +162,8 @@ class Display {
     // Status and updates
     void updateSpecificScreen();
     void updateCommonStatus();  
-    void updateOnStepCmdStatus();
+    void getOnStepCmdErr();
+    void getOnStepGenErr();
 
     #ifdef ODRIVE_MOTOR_PRESENT
       void updateMessageBar();

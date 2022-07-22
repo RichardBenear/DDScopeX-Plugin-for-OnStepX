@@ -75,6 +75,7 @@ void GuideScreen::draw() {
 
   drawCommonStatusLabels();
   updateGuideButtons(false);
+  getOnStepCmdErr(); // show error bar
 }
 
 // task update for this screen

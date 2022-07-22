@@ -61,8 +61,9 @@
 #define COM_COL2_LABELS_X       183
 #define COM_COL2_DATA_X         250
 
-#define L_CE_NONE                    "No Errors"
-#define L_CE_0                       "reply 0"
+#define L_CE_NONE                    "no errors"
+#define L_CE_1                       "no error true"
+#define L_CE_0                       "no error false/fail"
 #define L_CE_CMD_UNKNOWN             "command unknown"
 #define L_CE_REPLY_UNKNOWN           "invalid reply"
 #define L_CE_PARAM_RANGE             "parameter out of range"
@@ -74,18 +75,27 @@
 #define L_CE_PARK_FAILED             "park failed"
 #define L_CE_NOT_PARKED              "not parked"
 #define L_CE_NO_PARK_POSITION_SET    "no park position set"
-#define L_CE_GOTO_FAIL               "goto failed"
+#define L_CE_SLEW_FAIL               "goto failed"
 #define L_CE_LIBRARY_FULL            "library full"
-#define L_CE_GOTO_ERR_BELOW_HORIZON  "goto below horizon"
-#define L_CE_GOTO_ERR_ABOVE_OVERHEAD "goto above overhead"
+#define L_CE_SLEW_ERR_BELOW_HORIZON  "goto below horizon"
+#define L_CE_SLEW_ERR_ABOVE_OVERHEAD "goto above overhead"
 #define L_CE_SLEW_ERR_IN_STANDBY     "slew in standby"
 #define L_CE_SLEW_ERR_IN_PARK        "slew in park"
-#define L_CE_GOTO_ERR_GOTO           "already in goto"
+#define L_CE_SLEW_ERR_SLEW           "already in goto"
 #define L_CE_SLEW_ERR_OUTSIDE_LIMITS "outside limits"
 #define L_CE_SLEW_ERR_HARDWARE_FAULT "hardware fault"
 #define L_CE_MOUNT_IN_MOTION         "mount in motion"
-#define L_CE_GOTO_ERR_UNSPECIFIED    "other"
+#define L_CE_SLEW_ERR_UNSPECIFIED    "other"
 #define L_CE_UNK                     "unknown"
+
+static const char cmdErrStr[26][25] = {
+L_CE_NONE, L_CE_1, L_CE_0, L_CE_CMD_UNKNOWN, L_CE_REPLY_UNKNOWN, L_CE_PARAM_RANGE,
+L_CE_PARAM_FORM, L_CE_ALIGN_FAIL, L_CE_ALIGN_NOT_ACTIVE, L_CE_NOT_PARKED_OR_AT_HOME,
+L_CE_PARKED, L_CE_PARK_FAILED, L_CE_NOT_PARKED, L_CE_NO_PARK_POSITION_SET, L_CE_SLEW_FAIL,
+L_CE_LIBRARY_FULL, L_CE_SLEW_ERR_BELOW_HORIZON, L_CE_SLEW_ERR_ABOVE_OVERHEAD,
+L_CE_SLEW_ERR_IN_STANDBY, L_CE_SLEW_ERR_IN_PARK, L_CE_SLEW_ERR_SLEW, L_CE_SLEW_ERR_OUTSIDE_LIMITS,
+L_CE_SLEW_ERR_HARDWARE_FAULT, L_CE_MOUNT_IN_MOTION, L_CE_SLEW_ERR_UNSPECIFIED, L_CE_UNK
+};
 
 // copied from SWS MountStatus.h
 // general (background) errors
@@ -107,14 +117,6 @@
 #define L_GE_NV_INIT "Init NV/EEPROM bad"
 #define L_GE_OTHER "Unknown Error, code"
 
-static const char commandErrorStr[30][25] = {
-L_CE_NONE, L_CE_0, L_CE_CMD_UNKNOWN, L_CE_REPLY_UNKNOWN, L_CE_PARAM_RANGE,
-L_CE_PARAM_FORM, L_CE_ALIGN_FAIL, L_CE_ALIGN_NOT_ACTIVE, L_CE_NOT_PARKED_OR_AT_HOME,
-L_CE_PARKED, L_CE_PARK_FAILED, L_CE_NOT_PARKED, L_CE_NO_PARK_POSITION_SET, L_CE_GOTO_FAIL,
-L_CE_LIBRARY_FULL, L_CE_GOTO_ERR_BELOW_HORIZON, L_CE_GOTO_ERR_ABOVE_OVERHEAD,
-L_CE_SLEW_ERR_IN_STANDBY, L_CE_SLEW_ERR_IN_PARK, L_CE_GOTO_ERR_GOTO, L_CE_SLEW_ERR_OUTSIDE_LIMITS,
-L_CE_SLEW_ERR_HARDWARE_FAULT, L_CE_MOUNT_IN_MOTION, L_CE_GOTO_ERR_UNSPECIFIED, L_CE_UNK};
-
 // Menu button object
 Button menuButton(MENU_X, MENU_Y, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, butOnBackground, butBackground, butOutline, largeFontWidth, largeFontHeight, "");
 
@@ -130,7 +132,7 @@ uint16_t pgBackground = XDARK_MAROON;
 uint16_t butBackground = BLACK;
 uint16_t titleBackground = BLACK;
 uint16_t butOnBackground = MAROON;
-uint16_t textColor = YELLOW; 
+uint16_t textColor = DIM_YELLOW; 
 uint16_t butOutline = ORANGE; 
 
 // =========================================
@@ -241,19 +243,17 @@ void Display::updateSpecificScreen() {
     #endif
     default: break;
   }
-  updateMessageBar();
-  //updateOnStepCmdStatus();
+  //updateMessageBar();
 }
 
 // ======= Local Command Channel Support ========
 void Display::setLocalCmd(char *command) {
-  char reply[80];
   SERIAL_LOCAL.transmit(command);
-  tasks.yield(70);
-  // you must always do a receive() on the local channel or the xmit_index to xmit buffer doesn't increment
-  // this will add leading 1's to your receive data because of the bool-only reply's to some commands
-  strcpy(reply, SERIAL_LOCAL.receive()); 
-  //VF("sLC="); VL(reply);
+  tasks.yield(50);
+  // you must always do a matching receive() on the local channel or the xmit_index for xmit buffer doesn't increment
+  // this will add leading 1's to your receive data because of the bool-only reply's from some previous commands
+  SERIAL_LOCAL.receive();
+  getOnStepCmdErr();
 }
 
 void Display::setLocalCmd(const char *command) {
@@ -271,7 +271,6 @@ void Display::getLocalCmdTrim(const char *command, char *reply) {
   tasks.yield(70);
   strcpy(reply, SERIAL_LOCAL.receive()); 
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
-  //VF("gLC="); VL(reply);
 }
 
 // Draw the Title block
@@ -293,7 +292,7 @@ void Display::setNightMode(bool nightMode) {
     pgBackground = XDARK_MAROON; 
     butBackground = BLACK;
     butOnBackground = MAROON;
-    textColor = YELLOW; 
+    textColor = DIM_YELLOW; 
     butOutline = ORANGE; 
   } else {  
     // Night Color Theme
@@ -352,27 +351,42 @@ bool Display::getGeneralErrorMessage(char message[]) {
   return message[0];
 }
 
-// ============ OnStep Command Errors ===============
-void Display::updateOnStepCmdStatus() {
-  char cmdErr[12] = "";
+// ========== OnStep Command Errors =============
+void Display::getOnStepCmdErr() {
+  char cmdErr[60] = "";
+  char temp[60] = "Command Error: ";
   if (currentScreen == CUSTOM_SCREEN || 
       currentScreen == SHC_CAT_SCREEN ||
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;
 
+  // get and show any command errors
   getLocalCmdTrim(":GE#", cmdErr);
-  canvDisplayInsPrint.printLJ(2, 454, 317, C_HEIGHT+2, commandErrorStr[atoi(cmdErr)], false);
-  //_lastError = (Errors)(s[strlen(s) - 1] - '0');
-  //getLastErrorMessage(sTemp);
-  canvDisplayInsPrint.printLJ(2, 454, 317, C_HEIGHT+2, commandErrorStr[atoi(cmdErr)], false);
-  //canvDisplayInsPrint.printRJ(2, 454, 317, C_HEIGHT, CommandProcessor.lastCommandError, false);
-  //strcpy(lastCmdError, cmdErr);
-  //}
+  strcat(temp, cmdErrStr[atoi(cmdErr)]);
+  canvDisplayInsPrint.printLJ(2, 454, 317, C_HEIGHT+2, temp, false);
+}
+
+// ========== OnStep General Errors =============
+void Display::getOnStepGenErr() {
+  if (currentScreen == CUSTOM_SCREEN || 
+      currentScreen == SHC_CAT_SCREEN ||
+      currentScreen == PLANETS_SCREEN ||
+      currentScreen == TREASURE_SCREEN) return;
+
+  char genErr[60] = "";
+  char temp[60] = "";
+  char temp1[60] = "General Error: ";
+  getLocalCmdTrim(":GU#", genErr);
+  _lastError = (genErr[strlen(genErr) - 1] - '0');
+  getGeneralErrorMessage(temp);
+  strcat(temp1, temp);
+  canvDisplayInsPrint.printLJ(2, 473, 317, C_HEIGHT+2, temp1, false);
 }
 
 // Message Bar
 void Display::updateMessageBar() {
-  if (currentScreen == CUSTOM_SCREEN || 
+  if (currentScreen == ALIGN_SCREEN || 
+      currentScreen == CUSTOM_SCREEN || 
       currentScreen == SHC_CAT_SCREEN ||
       currentScreen == PLANETS_SCREEN ||
       currentScreen == TREASURE_SCREEN) return;

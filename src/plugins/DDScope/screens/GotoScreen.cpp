@@ -103,6 +103,7 @@ void GotoScreen::draw() {
 
   drawCommonStatusLabels();
   updateGotoButtons(false);
+  getOnStepCmdErr(); // show error bar
 
   RAtextIndex = 0; 
   DECtextIndex = 0; 
@@ -371,7 +372,7 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     goToButton = true;
     getLocalCmdTrim(":MS#", cmd);
-    updateOnStepCmdStatus();
+    //updateOnStepCmdStatus();
     return true;
   }
 

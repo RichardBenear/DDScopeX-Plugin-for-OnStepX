@@ -19,11 +19,11 @@ class SettingsScreen : public Display {
     void setProcessNumPadButton();
   
     char sNumLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", "+"};
-    char Ttext[8];
-    char Dtext[8];
-    char Tztext[8];
-    char LaText[8];
-    char LoText[8]; 
+    char Ttext[8] = {'0','0',':','0','0',':','0','0'};
+    char Dtext[8] = {'0','0','/','0','0','/','0','0'};
+    char Tztext[3]= {'0','0','0'};
+    char LaText[5]= {'0','0','0','0','0'};
+    char LoText[6]= {'0','0','0','0','0','0'};
     char sCmd[12];
 
     int sButtonPosition;

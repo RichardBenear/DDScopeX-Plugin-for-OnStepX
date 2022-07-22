@@ -21,9 +21,9 @@
 #define TXT_FIELD_X         135
 #define TXT_FIELD_Y         TXT_LABEL_Y+2
 #define TXT_FIELD_WIDTH     65
-#define TXT_FIELD_HEIGHT    23
+#define TXT_FIELD_HEIGHT    16
 #define TXT_SPACING_X       10
-#define TXT_SPACING_Y       TXT_FIELD_HEIGHT
+#define TXT_SPACING_Y       23
 
 #define T_SELECT_X           205
 #define T_SELECT_Y           167
@@ -62,17 +62,13 @@
 #define SITE_BOXSIZE_X       90
 #define SITE_BOXSIZE_Y       20
 
-#define S_CMD_ERR_X          190
-#define S_CMD_ERR_Y          300
-#define S_CMD_ERR_W          159
-#define S_CMD_ERR_H          19
-
 #define TDU_DISP_X           156
 #define TDU_DISP_Y           355
 #define TDU_OFFSET_X         80
 #define TDU_OFFSET_Y         20
 
-#define CUSTOM_FONT_OFFSET  -14
+#define CUSTOM_FONT_OFFSET  -TXT_FIELD_HEIGHT+2
+#define CHAR_WIDTH           8
 
 // Settings Screen Button object
 Button settingsButton(
@@ -99,6 +95,7 @@ void SettingsScreen::draw() {
   drawCommonStatusLabels(); // status common to many pages
   updateCommonStatus();
   updateSettingsButtons(false);
+  getOnStepCmdErr(); // show error bar
 
   TtextIndex = 0; 
   DtextIndex = 0; 
@@ -142,11 +139,11 @@ void SettingsScreen::draw() {
   }
 
   // Initialize the background for the Text Entry fields
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+                CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y+  CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*2+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*3+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
-  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*4+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+                CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y+  CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*2+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*3+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
+  tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*4+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
 } // end initialize
 
 // task update for this screen
@@ -179,62 +176,69 @@ void SettingsScreen::updateSettingsStatus() {
 // Numpad handler, assign label to pressed button field array slot
 void SettingsScreen::setProcessNumPadButton() {
   if (sNumDetected) {
-    // Time Format: [HHMMSS]
-    if (Tselect && TtextIndex < 6 && (sButtonPosition != 9 || sButtonPosition != 11)) {
+    // Time Format: [HH:MM:SS]
+    if (Tselect && TtextIndex < 8 && (sButtonPosition != 9 || sButtonPosition != 11)) {
       Ttext[TtextIndex] = sNumLabels[sButtonPosition][0];
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
-      tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y);
-      tft.print(Ttext); 
+      tft.setCursor(TXT_FIELD_X+TtextIndex*CHAR_WIDTH, TXT_FIELD_Y);
+      tft.print(Ttext[TtextIndex]); 
       TtextIndex++;
+      if (TtextIndex == 2 || TtextIndex == 5) {
+        tft.setCursor(TXT_FIELD_X+TtextIndex*CHAR_WIDTH, TXT_FIELD_Y);
+        tft.print(':'); 
+        TtextIndex++;
+      }
     }
 
-    // Date Format: [DDMMYY] last two digits of year
-    if (Dselect && DtextIndex < 6 && (sButtonPosition != 9 || sButtonPosition != 11)) {
+    // Date Format: [DD/MM/YY] last two digits of year
+    if (Dselect && DtextIndex < 8 && (sButtonPosition != 9 || sButtonPosition != 11)) {
       Dtext[DtextIndex] = sNumLabels[sButtonPosition][0]; 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
-      tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y);
-      tft.print(Dtext);
+      tft.setCursor(TXT_FIELD_X+DtextIndex*CHAR_WIDTH, TXT_FIELD_Y+TXT_SPACING_Y);
+      tft.print(Dtext[DtextIndex]); 
       DtextIndex++;
+      if (DtextIndex == 2 || DtextIndex == 5) {
+        tft.setCursor(TXT_FIELD_X+DtextIndex*CHAR_WIDTH, TXT_FIELD_Y+TXT_SPACING_Y);
+        tft.print('/'); 
+        DtextIndex++;
+      }
     }
 
     // Time Zone Format: [sDD] first character must be a +/- and allow only 2 additional chars
     if (Tzselect && (((TztextIndex == 0 && (sButtonPosition == 9 || sButtonPosition == 11)) 
           || (TztextIndex>0 && (sButtonPosition!=9||sButtonPosition!=11)))) && TztextIndex < 3) { 
       Tztext[TztextIndex] = sNumLabels[sButtonPosition][0]; 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*2)+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
-      tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*2));
-      tft.print(Tztext);
+      tft.setCursor(TXT_FIELD_X+TztextIndex*CHAR_WIDTH, TXT_FIELD_Y+(TXT_SPACING_Y*2));
+      tft.print(Tztext[TztextIndex]);
       TztextIndex++;
     }
 
     //Latitude Format: [sDD.D] first character must be a +/- and require 3 additional chars. Automatically put decimal in after first 2
     if (LaSelect && (((LaTextIndex == 0 && (sButtonPosition == 9 || sButtonPosition == 11)) 
-        || (LaTextIndex>0 && (sButtonPosition!=9||sButtonPosition!=11)))) && LaTextIndex < 4) { //
+        || (LaTextIndex>0 && (sButtonPosition!=9||sButtonPosition!=11)))) && LaTextIndex < 5) { //
       LaText[LaTextIndex] = sNumLabels[sButtonPosition][0]; 
 
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*3)+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
-      tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*3));
-      if (LaSelect && LaTextIndex == 3) {
-        sprintf(LaText, "%c%c%c.%c", LaText[0], LaText[1], LaText[2], LaText[3]);
-      }
-      tft.print(LaText);
+      tft.setCursor(TXT_FIELD_X+LaTextIndex*CHAR_WIDTH, TXT_FIELD_Y+(TXT_SPACING_Y*3));
+      tft.print(LaText[LaTextIndex]);
       LaTextIndex++;
-      if (LaSelect && LaTextIndex == 3) tft.print(".");
+      if (LaSelect && LaTextIndex == 3) {
+        tft.setCursor(TXT_FIELD_X+LaTextIndex*CHAR_WIDTH, TXT_FIELD_Y+(TXT_SPACING_Y*3));
+        tft.print(".");
+        LaTextIndex++;
+      }
     }
 
     //Longitude Format: [sDDD.D] first character must be a +/- and require 4 additional chars. Automatically put decimal in after first 3
     if (LoSelect && (((LoTextIndex == 0 && (sButtonPosition == 9 || sButtonPosition == 11)) 
-      || (LoTextIndex>0 && (sButtonPosition!=9||sButtonPosition!=11)))) && LoTextIndex < 5) {
+      || (LoTextIndex>0 && (sButtonPosition!=9||sButtonPosition!=11)))) && LoTextIndex < 6) {
       LoText[LoTextIndex] = sNumLabels[sButtonPosition][0]; 
       
-      tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*4)+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-8, butBackground);
-      tft.setCursor(TXT_FIELD_X, TXT_FIELD_Y+(TXT_SPACING_Y*4));
-      if (LoSelect && LoTextIndex == 4) {
-        sprintf(LoText, "%c%c%c%c.%c", LoText[0], LoText[1], LoText[2], LoText[3], LoText[4]);
-      }
-      tft.print(LoText);
+      tft.setCursor(TXT_FIELD_X+LoTextIndex*CHAR_WIDTH, TXT_FIELD_Y+(TXT_SPACING_Y*4));
+      tft.print(LoText[LoTextIndex]);
       LoTextIndex++;
-      if (LoSelect && LoTextIndex == 4) tft.print(".");
+      if (LoSelect && LoTextIndex == 4) {
+        tft.setCursor(TXT_FIELD_X+LoTextIndex*CHAR_WIDTH, TXT_FIELD_Y+(TXT_SPACING_Y*4));
+        tft.print(".");
+        LoTextIndex++;
+      }
     }
     sNumDetected = false;
   }
@@ -250,8 +254,8 @@ bool SettingsScreen::settingsButStateChange() {
 }
 
 // Update the buttons for the Settings Screen
-void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
-  _redrawBut = _redrawBut;
+void SettingsScreen::updateSettingsButtons(bool redrawBut) {
+  _redrawBut = redrawBut;
   // Get button and print label
   switch (sButtonPosition) {
     case 0:  setProcessNumPadButton(); break;
@@ -279,9 +283,8 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
   // Time Clear button
   if (Tclear) {
     settingsButton.draw(T_CLEAR_X, T_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "TiClr", BUT_ON);
-    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9, butBackground);
+    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
     memset(Ttext,0,sizeof(Ttext)); // clear Time buffer
-    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
     TtextIndex = 0;
     sButtonPosition = 12;
     Tclear = false;
@@ -299,9 +302,8 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
   // Date Clear Button
   if (Dclear) {
     settingsButton.draw( D_CLEAR_X, D_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "DaClr", BUT_ON); 
-    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9, butBackground);
+    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
     memset(Dtext,0,sizeof(Dtext)); // clear DATE buffer
-    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
     DtextIndex = 0;
     sButtonPosition = 12;
     Dclear = false;
@@ -319,9 +321,8 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
   // Time Zone Clear Button
   if (Tzclear) {
     settingsButton.draw(U_CLEAR_X, U_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "TzClr", BUT_ON); 
-    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*2, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9, butBackground);
+    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*2, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
     memset(Tztext,0,sizeof(Tztext)); // clear TZ buffer
-    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
     TztextIndex = 0;
     sButtonPosition = 12;
     Tzclear = false;
@@ -339,9 +340,8 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
   // Latitude Clear Button
   if (LaClear) {
     settingsButton.draw(LA_CLEAR_X, LA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "LaClr", BUT_ON); 
-    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*3, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9, butBackground);
+    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*3, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
     memset(LaText,0,sizeof(LaText)); // clear latitude buffer
-    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
     LaTextIndex = 0;
     sButtonPosition = 12;
     LaClear = false;
@@ -359,9 +359,8 @@ void SettingsScreen::updateSettingsButtons(bool _redrawBut) {
   // Longitude Clear Button
   if (LoClear) {
     settingsButton.draw(LO_CLEAR_X, LO_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "LoClr", BUT_ON); 
-    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*4, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT-9, butBackground);
+    tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+CUSTOM_FONT_OFFSET+TXT_SPACING_Y*4, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
     memset(LoText,0,sizeof(LoText)); // clear longitude buffer
-    tft.fillRect(S_CMD_ERR_X, S_CMD_ERR_Y+CUSTOM_FONT_OFFSET, S_CMD_ERR_W, S_CMD_ERR_H, pgBackground);
     LoTextIndex = 0;
     sButtonPosition = 12;
     LoClear = false;
@@ -514,18 +513,19 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
       // Set Local Time :SL[HH:MM:SS]# 24Hr format
       sprintf(sCmd, ":SL%c%c:%c%c:%c%c#", Ttext[0], Ttext[1], Ttext[2], Ttext[3], Ttext[4], Ttext[5]);
       setLocalCmd(sCmd);
+      delay(70);
     } else if (Dselect) { // :SC[MM/DD/YY]# 
       sprintf(sCmd, ":SC%c%c/%c%c/%c%c#", Dtext[0], Dtext[1], Dtext[2], Dtext[3], Dtext[4], Dtext[5]);
       setLocalCmd(sCmd);
-    } else if (Tzselect) { // :SG[sHH]#
+    } else if (Tzselect) { // :SG[sHH]# // Time Zone
       sprintf(sCmd, ":SG%c%c%c#", Tztext[0], Tztext[1], Tztext[2]);
       setLocalCmd(sCmd);
-    } else if (LaSelect) { // :St[sDD*MM]#
+    } else if (LaSelect) { // :St[sDD*MM]#  Latitude
       uint8_t laMin = LaText[4] - '0';  //digit after decimal point
       sprintf(sLaMin, "%02d\n", laMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":St%c%c%c*%2s#", LaText[0], LaText[1], LaText[2], sLaMin);
       setLocalCmd(sCmd);
-    } else if (LoSelect) { // :Sg[(s)DDD*MM]#
+    } else if (LoSelect) { // :Sg[(s)DDD*MM]#  Longitude
       uint8_t loMin = LoText[5] - '0'; //digit after decimal point
       sprintf(sLoMin, "%02d\n", loMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":Sg%c%c%c%c*%2s#", LoText[0], LoText[1], LoText[2], LoText[3], sLoMin);

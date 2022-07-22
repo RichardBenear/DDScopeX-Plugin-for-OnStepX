@@ -134,7 +134,7 @@ void HomeScreen::draw() {
   drawCommonStatusLabels();
   updateHomeStatus(); 
   updateCommonStatus(); 
-  
+  getOnStepCmdErr(); // show error bar
 }
 
 // =================================================

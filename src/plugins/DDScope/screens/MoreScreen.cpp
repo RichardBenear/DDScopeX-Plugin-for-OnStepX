@@ -94,6 +94,7 @@ void MoreScreen::draw() {
 
   drawCommonStatusLabels(); // Common status at top of most screens
   updateMoreButtons(false); // Draw initial More Page Buttons; false=no redraw
+  getOnStepCmdErr(); // show error bar
 }
 
 // task update for this screen
@@ -302,7 +303,6 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
 // ===== TouchScreen Poll "MORE" page ==========
 //==============================================
 bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
-  char reply[5];
 
   // Home Page ICON Button
   if (px > 10 && px < 50 && py > 5 && py < 37) {
@@ -439,7 +439,6 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     goToButton = true;
     setLocalCmd(":MS#");
-    updateOnStepCmdStatus();
   return true;
   }
 

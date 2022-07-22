@@ -116,6 +116,7 @@ void AlignScreen::draw() {
   }
   canvAlignInsPrint.printLJ(250, 240, 65, 15, guideRateText, false);
   showCorrections();
+  getOnStepCmdErr(); // show error bar
 }
 
 // task update for this screen
@@ -343,7 +344,7 @@ void AlignScreen::stateMachine() {
       case Goto_State: {
         if (gotoBut) {
           getLocalCmdTrim(":MS#", reply);
-          updateOnStepCmdStatus();
+          //updateOnStepCmdStatus();
           gotoBut = false;
           Next_State = Wait_For_Slewing_State;
         } else { // wait for GoTo button press

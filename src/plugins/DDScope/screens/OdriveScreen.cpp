@@ -56,6 +56,7 @@ void ODriveScreen::draw() {
   updateOdriveButtons(false);
   showGains();
   showODriveErrors();
+  getOnStepCmdErr(); // show error bar
 
   ODriveVersion oDversion;
   oDriveExt.getODriveVersion(oDversion);
