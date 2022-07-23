@@ -173,7 +173,7 @@ void Display::sdInit() {
 
   tft.fillScreen(pgBackground); 
   tft.setTextColor(textColor);
-  drawPic(&StarMaps, 1, 0, 320, 480);  
+  drawPic(&StarMaps, 1, 0, TFT_WIDTH, TFT_HEIGHT);  
   drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
   tft.setCursor(60, 80);
   tft.setTextSize(2);
@@ -324,6 +324,26 @@ void Display::updateBatVoltage() {
   tft.print(bvolts);
 }
 
+// Show GPS Status ICON
+void Display::showGpsStatus() {
+  if (currentScreen == CUSTOM_SCREEN || 
+      currentScreen == SHC_CAT_SCREEN ||
+      currentScreen == PLANETS_SCREEN ||
+      currentScreen == TREASURE_SCREEN) return;
+  uint8_t extern gps_icon[];
+  if (!tls.isReady()) {
+    if (!flash) {
+      flash = true;
+      tft.drawBitmap(275, 3, gps_icon, 37, 37,  butBackground, RED);
+    } else {
+      flash = false;
+      tft.drawBitmap(275, 3, gps_icon, 37, 37,  butBackground, DIM_YELLOW);
+    }
+  } else {
+    tft.drawBitmap(275, 3, gps_icon, 37, 37,  butBackground, DIM_YELLOW);
+  }
+}
+
 bool Display::getGeneralErrorMessage(char message[]) {
   enum GeneralErrors: uint8_t {
   ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT_MIN, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM,
@@ -381,25 +401,13 @@ void Display::getOnStepGenErr() {
   getGeneralErrorMessage(temp);
   strcat(temp1, temp);
   canvDisplayInsPrint.printLJ(2, 473, 317, C_HEIGHT+2, temp1, false);
-}
-
-// Message Bar
-void Display::updateMessageBar() {
-  if (currentScreen == ALIGN_SCREEN || 
-      currentScreen == CUSTOM_SCREEN || 
-      currentScreen == SHC_CAT_SCREEN ||
-      currentScreen == PLANETS_SCREEN ||
-      currentScreen == TREASURE_SCREEN) return;
   
-  // TO DO: add more messages
-  if (!tls.isReady()) {
-    canvDisplayInsPrint.printRJ(2, 473, 317, C_HEIGHT, "TLS not ready", false);
-  } else {
-    canvDisplayInsPrint.printRJ(2, 473, 317, C_HEIGHT, "TLS ready", false);
-  }
-
+  #ifdef ODRIVE_MOTOR_PRESENT
   // frequency varying alarm if Motor and Encoders positions are too far apart indicating unbalanced loading or hitting obstruction
   oDriveExt.MotorEncoderDelta();
+  #endif
+
+  showGpsStatus();
 }
 
 // Draw the Menu buttons

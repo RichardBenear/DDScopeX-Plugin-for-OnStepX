@@ -12,6 +12,9 @@
 #include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
 #include "UIelements.h"
 
+#define TFT_WIDTH 320
+#define TFT_HEIGHT 480
+
 #define C_WIDTH  80
 #define C_HEIGHT 14
 
@@ -166,7 +169,7 @@ class Display {
     void getOnStepGenErr();
 
     #ifdef ODRIVE_MOTOR_PRESENT
-      void updateMessageBar();
+      void showGpsStatus();
       void updateBatVoltage();
     #endif
 
@@ -191,6 +194,7 @@ class Display {
     char lastCmdErr[4] = "";
     bool firstGPS = true;
     bool trackLedOn = false;
+    bool flash = false;
 };
 
 extern Display display;
