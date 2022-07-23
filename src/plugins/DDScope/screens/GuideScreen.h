@@ -20,6 +20,7 @@ class GuideScreen : public Display {
     bool guidingWest  = false;
     bool guidingNorth = false;
     bool guidingSouth = false;
+    bool halfXisOn    = false;
     bool oneXisOn     = false;
     bool eightXisOn   = false;
     bool twentyXisOn  = true;
