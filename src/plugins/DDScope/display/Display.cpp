@@ -58,8 +58,8 @@
 #define COM_COL1_LABELS_Y       104
 #define COM_COL1_DATA_X          74
 #define COM_COL1_DATA_Y          COM_COL1_LABELS_Y
-#define COM_COL2_LABELS_X       183
-#define COM_COL2_DATA_X         250
+#define COM_COL2_LABELS_X       180
+#define COM_COL2_DATA_X         245
 
 #define L_CE_NONE                    "no errors"
 #define L_CE_1                       "no error true"
@@ -173,7 +173,7 @@ void Display::sdInit() {
 
   tft.fillScreen(pgBackground); 
   tft.setTextColor(textColor);
-  drawPic(&StarMaps, 1, 0, TFT_WIDTH, TFT_HEIGHT);  
+  drawPic(&StarMaps, 1, 0, TFTWIDTH, TFT_HEIGHT);  
   drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
   tft.setCursor(60, 80);
   tft.setTextSize(2);
@@ -670,6 +670,7 @@ void Display::drawCommonStatusLabels() {
   tft.print("ALT tgt:"); 
   
   tft.drawFastHLine(1, COM_COL1_LABELS_Y+y_offset+6, TFTWIDTH-1, textColor);
+  tft.drawFastVLine(TFTWIDTH/2, 96, 60, textColor);
 }
 
 // UpdateCommon Status - Real time data update for the particular labels printed above

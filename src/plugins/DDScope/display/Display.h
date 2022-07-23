@@ -12,7 +12,7 @@
 #include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
 #include "UIelements.h"
 
-#define TFT_WIDTH 320
+#define TFTWIDTH 320
 #define TFT_HEIGHT 480
 
 #define C_WIDTH  80

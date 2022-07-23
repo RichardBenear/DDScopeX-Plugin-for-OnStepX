@@ -14,7 +14,7 @@
 
 // Column 1 Home Screen
 #define COL1_LABELS_X            3
-#define COL1_LABELS_Y            186
+#define COL1_LABELS_Y            182
 #define COL1_LABEL_SPACING       21
 #define COL1_DATA_BOXSIZE_X      70
 #define COL1_DATA_X              84
@@ -110,6 +110,7 @@ void HomeScreen::draw() {
   drawMenuButtons();
   drawTitle(18, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
   tft.setFont(&Inconsolata_Bold8pt7b);
+  tft.drawFastVLine(TFTWIDTH/2, 172, 141, textColor);
 
   // ====== Draw Home Screen Status Text ===========
   // Labels for Real Time data only here, no data displayed yet

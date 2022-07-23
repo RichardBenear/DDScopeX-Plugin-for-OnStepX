@@ -28,7 +28,7 @@
 // Guide rates buttons
 #define GUIDE_R_X                3
 #define GUIDE_R_Y              165
-#define GUIDE_R_BOXSIZE_X      TFT_WIDTH/5 - GUIDE_R_SPACER 
+#define GUIDE_R_BOXSIZE_X      TFTWIDTH/5 - GUIDE_R_SPACER 
 #define GUIDE_R_BOXSIZE_Y       28
 #define GUIDE_R_SPACER           4 
 
