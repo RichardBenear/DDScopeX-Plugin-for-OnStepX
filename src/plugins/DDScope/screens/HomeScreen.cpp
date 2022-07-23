@@ -472,14 +472,15 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   }
   
   // ======== COLUMN 3 of Buttons - Leftmost ========
-  // Park and UnPark Telescope
+  // Park and UnPark Telescope 
+  // Note: if Time/Date not set then you can't unpark
   y_offset = 0;
   if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING}
     if (park.state == PS_UNPARKED) {
       setLocalCmd(":hP#"); // go Park
-    } else { // already parked
+    } else if (park.state == PS_PARKED) { // only unpark if already parked
       setLocalCmd(":hR#"); // Un park position
     }
     return false;
