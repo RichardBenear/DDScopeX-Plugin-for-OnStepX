@@ -334,13 +334,13 @@ void Display::showGpsStatus() {
   if (!tls.isReady()) {
     if (!flash) {
       flash = true;
-      tft.drawBitmap(275, 3, gps_icon, 37, 37,  butBackground, RED);
+      tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, RED);
     } else {
       flash = false;
-      tft.drawBitmap(275, 3, gps_icon, 37, 37,  butBackground, DIM_YELLOW);
+      tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, DIM_YELLOW);
     }
   } else {
-    tft.drawBitmap(275, 3, gps_icon, 37, 37,  butBackground, DIM_YELLOW);
+    tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, DIM_YELLOW);
   }
 }
 
