@@ -97,7 +97,7 @@ void GotoScreen::draw() {
   setCurrentScreen(GOTO_SCREEN);
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
-  drawTitle(130, TITLE_TEXT_Y, "Go To");
+  drawTitle(120, TITLE_TEXT_Y, "Go To");
   drawMenuButtons();
   tft.setFont(&Inconsolata_Bold8pt7b);
 
@@ -249,8 +249,7 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
   getLocalCmdTrim(":GX93#", bRate); // get base rate
   bRateF = atol(bRate);
   rateRatio = bRateF/cRateF;
-  rateRatio = roundf(rateRatio * 10) / 10; // get rid of extra digits
-  if (rateRatio == 0.70F) rateRatio = 0.75F; // take care of special case that needs extra digit
+  rateRatio = roundf(rateRatio * 100) / 100; // get rid of extra digits
   sprintf(temp, "Slew Rate %0.2f", rateRatio);
   gotoButton.draw(SLEW_R_BUTTON_X, SLEW_R_BUTTON_Y, SLEW_R_BOXSIZE_X, SLEW_R_BOXSIZE_Y, temp, BUT_OFF); 
 
@@ -387,11 +386,11 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
   // SLew Rate Button, circular selection each button press (.5X, 1X, 2X) - default 1X
   if (py > SLEW_R_BUTTON_Y && py < (SLEW_R_BUTTON_Y + SLEW_R_BOXSIZE_Y) && px > SLEW_R_BUTTON_X && px < (SLEW_R_BUTTON_X + SLEW_R_BOXSIZE_X)) {
     BEEP;
-    if      (rateRatio == 1.00F) {setLocalCmd(":SX93,2#"); return true;} // if 1 then 1.5
-    else if (rateRatio == 1.50F) {setLocalCmd(":SX93,1#"); return true;} // if 1.5 then 2.0
-    else if (rateRatio >= 2.00F) {setLocalCmd(":SX93,5#"); return true;} // if 2.0 then 0.5
-    else if (rateRatio <= 0.50F) {setLocalCmd(":SX93,4#"); return true;} // if 0.5 then 0.75
-    else if (rateRatio == 0.75F) {setLocalCmd(":SX93,3#"); return true;} // if 0.75 then 1.00
+    if      (rateRatio >= 0.86F && rateRatio <= 1.35F) {setLocalCmd(":SX93,2#"); return true;} // if 1 then 1.5
+    else if (rateRatio >= 1.36F && rateRatio <= 1.75F) {setLocalCmd(":SX93,1#"); return true;} // if 1.5 then 2.0
+    else if (rateRatio >= 1.76F && rateRatio <= 2.35F) {setLocalCmd(":SX93,5#"); return true;} // if 2.0 then 0.5
+    else if (rateRatio >= 0.30F && rateRatio <= 0.65F) {setLocalCmd(":SX93,4#"); return true;} // if 0.5 then 0.75
+    else if (rateRatio >= 0.66F && rateRatio <= 0.85F) {setLocalCmd(":SX93,3#"); return true;} // if 0.75 then 1.00
     else return false; 
   }
   return false;
