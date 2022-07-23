@@ -28,9 +28,9 @@
 // Guide rates buttons
 #define GUIDE_R_X                3
 #define GUIDE_R_Y              165
-#define GUIDE_R_BOXSIZE_X       74 
+#define GUIDE_R_BOXSIZE_X      TFT_WIDTH/5 - GUIDE_R_SPACER 
 #define GUIDE_R_BOXSIZE_Y       28
-#define GUIDE_R_SPACER           6 
+#define GUIDE_R_SPACER           4 
 
 // Stop guide button
 #define STOP_X                    7
@@ -146,54 +146,75 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
     case 2:  strcpy(guideRateText, "    1X  "); break;
     case 3:  strcpy(guideRateText, "    2X  "); break;
     case 4:  strcpy(guideRateText, "    4X  "); break;
-    case 5:  strcpy(guideRateText, "    8X  "); break;
-    case 6:  strcpy(guideRateText, "   20X  "); break;
-    case 7:  strcpy(guideRateText, "   48X  "); break;
-    case 8:  strcpy(guideRateText, "Half Max"); break;
+    case 5:  strcpy(guideRateText, "    8X  "); break; // Center
+    case 6:  strcpy(guideRateText, "   20X  "); break; // Find
+    case 7:  strcpy(guideRateText, "   48X  "); break; // Fast
+    case 8:  strcpy(guideRateText, "Half Max"); break; // Very Fast
     case 9:  strcpy(guideRateText, "   Max  "); break;
     case 10: strcpy(guideRateText, " Custom "); break;
     default: strcpy(guideRateText, "  Error "); break;
   }
+
   int x_offset = 0;
   int spacer = GUIDE_R_SPACER;
+  if (halfXisOn) {   
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "0.5x", BUT_ON);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "48x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1/2 Max", BUT_OFF); 
+  } 
+
   if (oneXisOn) {   
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_ON);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "0.5x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_ON);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Fast", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_OFF); 
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "48x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1/2 Max", BUT_OFF); 
   } 
 
   if (eightXisOn) {   
-      guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "0.5x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_ON);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Fast", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_ON);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_OFF); 
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "48x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1/2 Max", BUT_OFF); 
   }   
 
   if (twentyXisOn) {
-      guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_OFF);
+   guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "0.5x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Fast", BUT_ON);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_OFF); 
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "48x", BUT_ON);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1/2 Max", BUT_OFF); 
   }
 
   if (HalfMaxisOn) {
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Guide", BUT_OFF);
+   guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "0.5x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Find", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Fast", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "Half Max", BUT_ON); 
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "48x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1/2 Max", BUT_ON); 
   }        
 
   if (spiralOn) {  
@@ -295,10 +316,24 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     int x_offset = 0;  
     int spacer = GUIDE_R_SPACER;
     
-    // 1x Guide Rate 
+    // .5x Guide Rate 
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":RG#");
+        setLocalCmd(":R1#");
+        halfXisOn = true;
+        oneXisOn = false;
+        eightXisOn = false;
+        twentyXisOn = false;
+        HalfMaxisOn = false;
+        return true;
+    }
+
+    // 1x Guide Rate 
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
+      BEEP;
+        setLocalCmd(":R2#");
+        halfXisOn = false;
         oneXisOn = true;
         eightXisOn = false;
         twentyXisOn = false;
@@ -310,7 +345,8 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":RM#");
+        setLocalCmd(":R6#");
+        halfXisOn = false;
         oneXisOn = false;
         eightXisOn = true;
         twentyXisOn = false;
@@ -322,7 +358,8 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":RF#");
+        setLocalCmd(":R7#");
+        halfXisOn = false;
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = true;
@@ -334,7 +371,8 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":RS#");
+        setLocalCmd(":R8#");
+        halfXisOn = false;
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = false;
