@@ -108,7 +108,7 @@ void HomeScreen::draw() {
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
-  drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
+  drawTitle(18, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   // ====== Draw Home Screen Status Text ===========
