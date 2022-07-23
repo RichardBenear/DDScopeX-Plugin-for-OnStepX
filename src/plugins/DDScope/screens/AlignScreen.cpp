@@ -18,11 +18,12 @@
 #define A_STATUS_X          115
 #define A_STATUS_Y          245
 #define A_STATUS_Y_SP       19
+
 #define STATE_UPDATE_W      220
 #define STATE_UPDATE_H      15
-
 #define STATE_LABEL_X       2
-#define STATE_LABEL_Y       470
+#define STATE_LABEL_Y       454
+
 #define STATUS_LABEL_X      95
 #define STATUS_LABEL_Y      176
 #define STATUS_LABEL_W      317
