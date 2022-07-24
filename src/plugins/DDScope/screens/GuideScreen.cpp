@@ -70,7 +70,7 @@ void GuideScreen::draw() {
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
-  drawTitle(110, TITLE_TEXT_Y, "Guiding");
+  drawTitle(125, TITLE_TEXT_Y, "Guide");
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   drawCommonStatusLabels();
