@@ -1,67 +1,75 @@
 # DDScopeX
 
-Direct Drive Telescope Plugin for OnStepX - A servo controlled F4.5 13" ALT/AZ GoTo Newtonian Telescope
+**D**irect **D**rive Tele**Scope** Plugin for OnStepX - A servo controlled F4.5 13" ALT/AZ GoTo Newtonian Telescope
 
 * Author: Richard Benear 2021, 2022
 
-The DDScopeX firmware implementation is a Plugin for OnStepX by Howard Dutton. OnStepX is FW for a GoTo telescope controller by Howard Dutton. OnStepX provides
-the capability of adding Plugins to take advantage of the core firmware.
+The DDScopeX firmware implementation is a Plugin containing 17 different **Screens** (Pages)
+for **Control** and **Status** using OnStepX core FW authored by Howard Dutton. 
+OnStepX is firmware for a GoTo telescope controller running on many possible hardware platforms.
+OnStepX provides the capability of adding Plugins to take advantage of the core firmware.
 
 DDScopeX includes several celestial Catalogs that were leveraged from the catalog code
 of the Smart Hand Controller also authored by Howard Dutton.
 
-DDScopeX hardware uses Direct Drive technology by using 3-phase Axial Flux Permanent Magnet
-DC Motors (AFPMDC Motor). There is closed loop Servo control of motor positions using
-an ODrive subsystem and 2^14 (16,384 tick absolute encoders. The Motors,
+DDScopeX hardware uses Direct Drive motor technology by using 3-phase Axial Flux Permanent Magnet DC Motors (AFPMDC Motor). There is closed loop Servo control of motor positions using an ODrive subsystem and 2^14 (16,384 tick absolute encoders. The Motors,
 Electronics, and Mechanics were designed and constructed by the author.
 Motor closed-loop control is handled by the ODrive subsystem using a serial
 command channel from DDScopeX.
 
-A menu and pages (screens) structure using a 3.5" LCD touchscreen is implemented.
+A menu and screens (pages) structure using a 3.5" LCD touchscreen is implemented.
 The 3.5" Display is an electrically modified Rasperry Pi TFT LCD using the
 SPI interface over an HDMI cable.
 
+Many of the DDScope components were 3D printed with Carbon Fiber filaments. Mechanical design was done in **FreeCAD**.
+
+The PC Board schematic and PCB design were done in ``KiCad``.
+
+## Using DDSCope UI on other Hardware Platforms
+
+It is possible to use the DDScope User Interface (UI) Screens on other hardware platforms by changing ``ODRIVE`` in ``#define AXIS1_DRIVER_MODEL ODRIVE`` in ``Config.h`` to whatever motor drive model you may be using. This should disable all ODrive specific code.
+
 ## DDScopeX specific files
 
-These are listed to provide clarity of where the specific files are located for DDScopeX since not all of them are under the `plugins` directory.
+These are listed to provide clarity of where the specific files are located for DDScopeX since not all of them are under the ``plugins`` directory.
 
 ### Top Level
 
-* OnStepX/Config.h
-* OnStepX/Extended.config.h
-* OnStepX/src/Pinmap.Plugin.DDT.h
-* OnStepX/src/plugins/DDScope.cpp
-* OnStepX/src/plugins/DDScope.h
+* ``OnStepX/Config.h``
+* ``OnStepX/Extended.config.h``
+* ``OnStepX/src/Pinmap.Plugin.DDT.h``
+* ``OnStepX/src/plugins/DDScope.cpp``
+* ``OnStepX/src/plugins/DDScope.h``
 
 ### Screens (src/plugins/DDScope/screens/)
 
-* Home (HomeScreen.cpp)
-* Guide (GuideScreen.cpp)
-* Focuser (DCFocuserScreen.cpp)
-* GoTo (GotoScreen.cpp)
-* Catalogs & More (MoreScreen.cpp)
-* SHC Catalogs (SHCCatScreen.cpp)
+* Home (``HomeScreen.cpp``)
+* Guide (``GuideScreen.cpp``)
+* Focuser (``DCFocuserScreen.cpp``)
+* GoTo (``GotoScreen.cpp``)
+* Catalogs & More (``MoreScreen.cpp``)
+* SHC Catalogs (``SHCCatScreen.cpp``)
   * General Stars
   * Messier
   * Caldwell
   * Herschel
   * IC
-* Planets (PlanetsScreen.cpp)
-* Treasure (TreasureScreen.cpp)
-* Custom User (CustomScreen.cpp)
-* ODrive (OdriveScreen.cpp)
-* Extended Status (ExtStatusScreen.cpp)
-* Settings (SettingScreen.cpp)
-* Alignment (AlignScreen.cpp)
+* Planets (``PlanetsScreen.cpp``)
+* Treasure (``TreasureScreen.cpp``)
+* Custom User (``CustomScreen.cpp``)
+* ODrive ``(OdriveScreen.cpp``)
+* Extended Status (``ExtStatusScreen.cpp``)
+* Settings (``SettingScreen.cpp``)
+* Alignment (``AlignScreen.cpp``)
 
 ### Supporting files
 
-* OnStepX/src/plugins/DDScope/display/Display.cpp: Common functions for Screens
-* OnStepX/src/plugins/DDScope/display/UIElements.cpp: Buttons and text support
-* OnStepX/src/plugins/DDScope/display/NGC1566.bmp: Bitmap of boot screen
-* OnStepX/src/plugins/DDScope/display/icons.c: Bitmaps of icons
-* OnStepX/src/plugins/DDScope/odriveExt/ODriveExt.cpp: Common functions for ODrive support
-* OnStepX/src/plugins/DDScope/libCatalogs/mod1_treasure.csv: Excel file of treasure catalog
+* ``OnStepX/src/plugins/DDScope/display/Display.cpp``: Common functions for Screens
+* ``OnStepX/src/plugins/DDScope/display/UIElements.cpp``: Buttons and text support
+* ``OnStepX/src/plugins/DDScope/display/NGC1566.bmp``: Bitmap of boot screen
+* ``OnStepX/src/plugins/DDScope/display/icons.c``: Bitmaps of icons
+* ``OnStepX/src/plugins/DDScope/odriveExt/ODriveExt.cpp``: Common functions for ODrive support
+* ``OnStepX/src/plugins/DDScope/libCatalogs/mod1_treasure.csv``: Excel file of treasure catalog
 
 ### Key supporting packages and components
 
@@ -78,7 +86,7 @@ These are listed to provide clarity of where the specific files are located for 
     Original file has been formatted differently for DDScopeX
 * _Adafruit_ILI9486_Teensy_ by Steve Strong & Richard Palmer
 
-### `.pio\libdeps\teensy41` (imported libraries)
+### ``.pio\libdeps\teensy41`` (imported libraries)
 
 * Adafruit BME280 Library
 * Adafruit BusIO
@@ -92,7 +100,7 @@ These are listed to provide clarity of where the specific files are located for 
 
 ## DDScopeX Features
 
-Fundamentally, DDScopeX provides 13 touchscreens that support the functions of OnStepX and the ODrive motor controller.
+DDScopeX provides 17 (touch)screens that support the functions of OnStepX and the ODrive motor controller. If the ``ODRIVE`` motor model is changed in ``Config.h`` to some other motor model, then there are 16 Screens since the ODrive Screen is not included.
 
 ### OnStepX Features Supported
 
@@ -151,13 +159,13 @@ Fundamentally, DDScopeX provides 13 touchscreens that support the functions of O
 
 ## Other Documentation
 
-* DDScopeX: In process...will include PC Board, motor construction, and mount construction instructions.
-* OnStepX: Detailed documentation, including the full set of features, detailed designs for PCBs, instructions on how to build a controller, how to configure the firmware for your particular mount, can all be found the [OnStep Group Wiki](https://groups.io/g/onstep/wiki/home).
+* **DDScopeX:** In process...will include PC Board, motor construction, and mount construction instructions.
+* **OnStepX:** Detailed documentation, including the full set of features, detailed designs for PCBs, instructions on how to build a controller, how to configure the firmware for your particular mount, can all be found the [OnStep Group Wiki](https://groups.io/g/onstep/wiki/home).
 
 ## Change Log
 
-* DDScopeX changes: Once released, versioning will take place.
-* OnStepX changes: All the changes are tracked in git, and a detailed list can be accessed using the following git command:  
+* **DDScopeX** changes: Once released, versioning will take place.
+* **OnStepX** changes: All the changes are tracked in git, and a detailed list can be accessed using the following git command:  
         _git log --date=short --pretty=format:"%h %ad %<(20)%an %<(150,trunc)%s"_
 
 ## Support
@@ -172,13 +180,19 @@ See [LICENSE.txt](./LICENSE.txt) file.
 
 ## Images
 
-### Menu Screens
-![Menu Screens](menuScreens.jpg)
+### Screens (Pages)
 
-### Catalog Screens
+This composite picture (collage) shows all 17 screens contained in DDScopeX. The picture quality is not the best because the camera picks up and overempasizes the glow at top and bottom of screen. The pictures have been post processed to try and remove the glow, but this tends to darken them. The screens actually look much better when viewed live.
 
-![Catalog Screens](catalogScreens.jpg)
+The Rasperry Pi TFT LCD does not have SPI read capability so it was not possible to do a
+screen dump (using some custom code) to a bitmap (.bmp) file. This would have been the ideal way to get a true color representation of the Screens.
 
-### DDScope
+![Menu Screens](DDScopeX_Screens.jpg)
 
-![DDScope Picture](DDScope.jpg)
+### DDScopeX Picture
+
+![DDScope Picture](DDScope.png)
+
+### DDScopeX Video
+
+[ to be done ]
