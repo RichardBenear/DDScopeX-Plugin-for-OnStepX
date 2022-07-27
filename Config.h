@@ -53,7 +53,7 @@
 #define ODRIVE_SWAP_AXES               ON  // ODrive axis 0 = OnStep axis 2 = ALT
                                            // ODrive axis 1 = OnStep axis 1 = AZM
 #define ODRIVE_SERIAL             Serial3  // Teensy HW serial
-#define ODRIVE_SERIAL_BAUD         230400  // 19200 default
+#define ODRIVE_SERIAL_BAUD         115200  // 19200 default
 #define ODRIVE_SLEW_DIRECT            OFF  // ON=using ODrive trapezoidal move profile. OFF=using OnStep move profile
 #define ODRIVE_ABSOLUTE                ON  // using absolute encoder
 #define ODRIVE_SYNC_LIMIT              80  // in arc seconds..one encoder tick
