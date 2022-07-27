@@ -7,6 +7,7 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
+#include "src/lib/axis/Axis.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "../odriveExt/ODriveExt.h"
@@ -251,11 +252,11 @@ void HomeScreen::updateHomeStatus() {
 }
 
 bool HomeScreen::homeButStateChange() {
-  if (preAzmState != oDriveExt.getODriveCurrentState(AZM_MOTOR)) {
-    preAzmState = oDriveExt.getODriveCurrentState(AZM_MOTOR); 
+  if (preAzmState != axis1.isEnabled()) {
+    preAzmState = axis1.isEnabled(); 
     return true; 
-  } else if (preAltState != oDriveExt.getODriveCurrentState(ALT_MOTOR)) {
-    preAltState = preAltState != oDriveExt.getODriveCurrentState(ALT_MOTOR); 
+  } else if (preAltState != axis2.isEnabled()) {
+    preAltState = axis2.isEnabled(); 
     return true; 
   } else if (preTrackState != mount.isTracking()) {
     preTrackState = mount.isTracking(); 
@@ -286,8 +287,8 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
   int y_offset = 0;
 
   // ============== Column 1 ===============
-  // Enable / Disable Azimuth Motor
-  if (oDriveExt.getODriveCurrentState(AZM_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
+  // Draw Enable / Disable Azimuth Motor
+  if (axis1.isEnabled()) {
     homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "AZM Enabled", BUT_ON);
     digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
   } else { //motor off
@@ -297,7 +298,7 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
 
   // Enable / Disable Altitude Motor
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (oDriveExt.getODriveCurrentState(ALT_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
+  if (axis2.isEnabled()) {
     digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
     homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "ALT Enabled", BUT_ON);
   } else { //motor off
@@ -387,11 +388,9 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Enable Azimuth motor
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    if (!oDriveExt.odriveAzmPwr) { // if not On, toggle ON
-      oDriveExt.odriveAzmPwr = true;
+    if (!axis1.isEnabled()) { // if not On, toggle ON
       motor1.power(true);
     } else { // since already ON, toggle OFF
-      oDriveExt.odriveAzmPwr = false;
       motor1.power(false);
     }
     return false;
@@ -401,11 +400,9 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   // Enable Altitude motor
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    if (!oDriveExt.odriveAltPwr) { // toggle ON
-      oDriveExt.odriveAltPwr = true; 
+    if (!axis2.isEnabled()) { // toggle ON 
       motor2.power(true);
     } else { // toggle OFF
-      oDriveExt.odriveAltPwr = false;
       motor2.power(false); // Idle the ODrive motor
     }
     return false;
@@ -417,13 +414,12 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     BEEP;
     if (!stopButton) {
       stopButton = true;
-
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
-      oDriveExt.odriveAzmPwr = false; 
       motor1.power(false);
+      axis1.enable(false);
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
-      oDriveExt.odriveAltPwr = false;
       motor2.power(false);
+      axis2.enable(false);
     }
     return true;
   }
@@ -435,9 +431,6 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     BEEP;
     if (!mount.isTracking()) {
       setLocalCmd(":Te#"); // Enable Tracking
-      // set motor flags to true since tracking command enables motor power
-      oDriveExt.odriveAltPwr = true;
-      oDriveExt.odriveAzmPwr = true;
     } else {
       // disabling Tracking does not disable motors so leave motor flags ON
       setLocalCmd(":Td#"); // Disable Tracking

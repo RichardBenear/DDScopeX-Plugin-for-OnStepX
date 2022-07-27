@@ -261,8 +261,7 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
     gotoButton.draw(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, "Set Polaris", BUT_OFF);
   }
 
-  tft.setFont(&UbuntuMono_Bold11pt7b); 
-  //tft.setFont(&FreeSansBold9pt7b);    
+  tft.setFont(&UbuntuMono_Bold11pt7b);  
   // Go To Coordinates Button
   if (goToButton) {
     gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Slewing", BUT_ON);
@@ -371,7 +370,6 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     goToButton = true;
     getLocalCmdTrim(":MS#", cmd);
-    //updateOnStepCmdStatus();
     return true;
   }
 

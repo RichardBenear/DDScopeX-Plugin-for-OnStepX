@@ -10,6 +10,7 @@
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../../../telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
+//#include "src/lib/axis/motor/Motor.h"
 //#include <HardwareSerial.h>
 
 #define OD_ERR_OFFSET_X           4 
@@ -103,7 +104,7 @@ void ODriveScreen::showGains() {
 
 // ===== Decode all ODrive Errors =====
 void ODriveScreen::decodeODriveErrors(int axis, Component, uint32_t errorCode) {
-  if (axis == -1) { //then ODrive top level decode
+  if (axis == -1) { //then ODrive top level decode, not axis specific
     if      (errorCode == ODRIVE_ERROR_NONE)                          tft.println("ODRIVE_ERROR_NONE");
     else if (errorCode == ODRIVE_ERROR_CONTROL_ITERATION_MISSED)      tft.println("ODRIVE_ERROR_CONTROL_ITERATION_MISSED");
     else if (errorCode == ODRIVE_ERROR_DC_BUS_UNDER_VOLTAGE)          tft.println("ODRIVE_ERROR_DC_BUS_UNDER_VOLTAGE");
@@ -201,9 +202,10 @@ void ODriveScreen::showODriveErrors() {
   int y_offset = 0;
   tft.setFont();
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y); 
+  uint32_t err = 0;
 
   // ODrive top level errors
-  uint32_t err = oDriveExt.getODriveErrors(-1, Component::NONE);
+  err = oDriveExt.getODriveErrors(-1, Component::NONE);
   oDriveScreen.decodeODriveErrors(-1, Component::NONE, err);
   
   // AZM Errors
@@ -214,9 +216,11 @@ void ODriveScreen::showODriveErrors() {
   for (Component comp = Component::AXIS; comp != Component::COMP_LAST; ++comp) {
     y_offset +=OD_ERR_SPACING;
     tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-    uint32_t err = oDriveExt.getODriveErrors(AZM_MOTOR, comp);
+    err = oDriveExt.getODriveErrors(AZM_MOTOR, comp);
     oDriveScreen.decodeODriveErrors(AZM_MOTOR, comp, err);
   }
+
+  Y;
 
   // ALT Errors
   y_offset +=OD_ERR_SPACING + 6;
@@ -226,17 +230,17 @@ void ODriveScreen::showODriveErrors() {
   for (Component comp = Component::AXIS; comp != Component::COMP_LAST; ++comp) {
     y_offset +=OD_ERR_SPACING;
     tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-    uint32_t err = oDriveExt.getODriveErrors(ALT_MOTOR, comp);
+    err = oDriveExt.getODriveErrors(ALT_MOTOR, comp);
     decodeODriveErrors(ALT_MOTOR, comp, err);
   }
 }
 
 bool ODriveScreen::odriveButStateChange() {
-  if (preAzmState != oDriveExt.getODriveCurrentState(AZM_MOTOR)) {
-    preAzmState = oDriveExt.getODriveCurrentState(AZM_MOTOR); 
+  if (preAzmState != axis1.isEnabled()) {
+    preAzmState = axis1.isEnabled(); 
     return true; 
-  } else if (preAltState != oDriveExt.getODriveCurrentState(ALT_MOTOR)) {
-    preAltState = preAltState != oDriveExt.getODriveCurrentState(ALT_MOTOR); 
+  } else if (preAltState != axis2.isEnabled()) {
+    preAltState = axis2.isEnabled(); 
     return true; 
   } else if (display._redrawBut) {
     display._redrawBut = false;
@@ -259,7 +263,7 @@ void ODriveScreen::updateOdriveButtons(bool redrawBut) {
 
  // ----- Column 1 -----
   // Enable / Disable Azimuth Motor
-  if (oDriveExt.getODriveCurrentState(AZM_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
+  if (axis1.isEnabled()) {
     odriveButton.draw(OD_ACT_COL_1_X, OD_ACT_COL_1_Y + y_offset, "AZM Enabled", BUT_ON);
   } else { //motor off
     odriveButton.draw(OD_ACT_COL_1_X, OD_ACT_COL_1_Y + y_offset, "EN AZM", BUT_OFF);
@@ -267,7 +271,7 @@ void ODriveScreen::updateOdriveButtons(bool redrawBut) {
 
   // Enable / Disable Altitude Motor
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-  if (oDriveExt.getODriveCurrentState(ALT_MOTOR) == AXIS_STATE_CLOSED_LOOP_CONTROL) {
+  if (axis2.isEnabled()) {
     odriveButton.draw(OD_ACT_COL_1_X, OD_ACT_COL_1_Y + y_offset, "ALT Enabled", BUT_ON);
   } else { //motor off
     odriveButton.draw(OD_ACT_COL_1_X, OD_ACT_COL_1_Y + y_offset, "EN ALT", BUT_OFF);
@@ -364,13 +368,11 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   // Enable Azimuth motor
   if (px > OD_ACT_COL_1_X + x_offset && px < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_1_Y + y_offset && py <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     BEEP;
-    if (!oDriveExt.odriveAzmPwr) { // if not On, toggle ON
+    if (!axis1.isEnabled()) { // if not On, toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-      oDriveExt.odriveAzmPwr = true;
       motor1.power(true);
     } else { // since already ON, toggle OFF
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-      oDriveExt.odriveAzmPwr = false;
       motor1.power(false);
     }
     return true;
@@ -380,14 +382,12 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   // Enable Altitude motor
   if (px > OD_ACT_COL_1_X + x_offset && px < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_1_Y + y_offset && py <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     BEEP;
-    if (!oDriveExt.odriveAltPwr) { // toggle ON
+    if (axis2.isEnabled()) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-      oDriveExt.odriveAltPwr = true; 
       motor2.power(true);
     } else { // toggle OFF
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
-      oDriveExt.odriveAltPwr = false;
-      motor2.power(false); // Idle the ODrive motor
+      motor2.power(false); // turn off ODrive motor
     }
     return true;
   }
@@ -401,10 +401,10 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     if (!OdStopButton) {
       setLocalCmd(":Q#"); // stops move
       motor1.power(false); // turn off the motors
+      axis1.enable(false);
       motor2.power(false);
+      axis2.enable(false);
       OdStopButton = true;
-      oDriveExt.odriveAzmPwr = false;
-      oDriveExt.odriveAltPwr = false;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
     }
