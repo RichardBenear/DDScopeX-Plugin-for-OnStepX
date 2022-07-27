@@ -19,6 +19,16 @@ const char* ODriveComponentsStr[4] = {
             "Encoder"        
 };
 
+// ==============================================================================
+// NOTE: A change to the HardwareSerial.cpp library
+// In HardwareSerial.cpp, this line was changed: PUS(3) was changed to PUS(2)
+// PUS() is Pullup Strength for the Teensy RX PAD. 3 = 22K ohm, 2 = 100K ohm
+// When set to 22K ohm, the ODrive TX signal would only have a low of .4 volt above ground.
+// When set to 100K ohm, the ODrive TX signal would be about 20mv above ground.
+// Apparently, the ODrive TX drive strength isn't very high
+//	*(portControlRegister(hardware->rx_pins[rx_pin_index_].pin)) = IOMUXC_PAD_DSE(7) | IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(2) | IOMUXC_PAD_HYS;
+//===============================================================================
+
 //=========================================================
 // Read ODrive bus voltage which is approx. the battery voltage
 // Battery Low LED is only on when battery is below low threashold
@@ -63,6 +73,16 @@ float ODriveExt::getMotorCurrent(int axis) {
   return _oDriveDriver->readFloat();
 }  
 
+// This ODrive command/response (getODriveCurrentState) causes intermittent dropouts from the RX of ODrive serial when motors are enabled.
+// Oscilloscope shows that RX into Teensy only goes down to 400 mv above ground. Apparently ODrive doesn't have enough
+// source current to drive the signal lower against the Teensy Pad pullup set at IOMUXC_PAD_PUS(3) or 22K ohms.
+// By setting this to IOMUXC_PAD_PUS(2) or 100K ohms the low level of RX is about 50mv above ground (good).
+// This didn't "cure" the dropout problem but seemed to make it less frequent. Possibly, it increases the immunity from 
+// motor induced noise.
+// In file HardwareSerial.cpp of the Teensy4 framework, around line 145 this code was changed:
+//  if (!half_duplex_mode_)  {
+//    *(portControlRegister(hardware->rx_pins[rx_pin_index_].pin)) = IOMUXC_PAD_DSE(7) | IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(2) | IOMUXC_PAD_HYS;
+//
 // read current state
 int ODriveExt::getODriveCurrentState(int axis) {
   ODRIVE_SERIAL << "r axis" << axis << ".current_state\n";
@@ -82,13 +102,13 @@ float ODriveExt::getMotorPositionDelta(int axis) {
 // This will warn that the motors may be getting too hot since more current is required trying to move them to the requested position
 // Beeping occurs at higher frequency as position delta from target increases
 void ODriveExt::MotorEncoderDelta() {
-  if (odriveAzmPwr) {
+  if (axis1.isEnabled()) {
     float AZposDelta = getMotorPositionDelta(AZM_MOTOR);
     if (AZposDelta > 0.002 && AZposDelta < 0.03) soundFreq(AZposDelta * 50000, 20);
     else if (AZposDelta > 0.03) soundFreq(3000, 20); // saturated
   }
   
-  if (odriveAltPwr) {
+  if (axis2.isEnabled()) {
     float ALTposDelta = getMotorPositionDelta(ALT_MOTOR);
     if (ALTposDelta > .002 && ALTposDelta < 0.03) {
       soundFreq(ALTposDelta * 50000, 40);
@@ -182,15 +202,15 @@ float ODriveExt::getMotorTemp(int axis) {
 uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
   if (axis == -1) { // ODrive top level error
     ODRIVE_SERIAL << "r odrive.error\n";
-    return _oDriveDriver->readInt();
+    return (uint32_t)_oDriveDriver->readInt();
   }
 
   if (component == NONE) {
     ODRIVE_SERIAL << "r odrive.axis"<<axis<<".error\n";
-    return _oDriveDriver->readInt();
+    return (uint32_t)_oDriveDriver->readInt();
   } else {
     ODRIVE_SERIAL << "r odrive.axis"<<axis<<"."<<ODriveComponentsStr[component]<<".error\n";
-    return _oDriveDriver->readInt();
+    return (uint32_t)_oDriveDriver->readInt();
   }
 }
 

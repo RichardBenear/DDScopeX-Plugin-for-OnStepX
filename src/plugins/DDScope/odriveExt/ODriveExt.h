@@ -60,9 +60,6 @@ class ODriveExt : public Display {
     void clearODriveErrors(int axis, int comp);
     void setHigherBaud();
     void clearAllODriveErrors();
-    
-    bool odriveAzmPwr = false;
-    bool odriveAltPwr = false;
 
     bool oDserialAvail = false;
 
