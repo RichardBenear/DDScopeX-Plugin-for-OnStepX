@@ -48,65 +48,64 @@ void ExtStatusScreen::draw() {
   // Begin parsing :GU# status data by getting the status string via local command channel
   getLocalCmdTrim(":GU#", xchanReply); // Get OnStep Status
   // process the status string
-  int i = 0;
   y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   tft.print("String="); tft.print(xchanReply);
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"n")) tft.print("Not Tracking"); else tft.print("Tracking   ");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"N")) tft.print("Not Slewing"); else tft.print("Slewing    ");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if      (strstr(xchanReply,"p")) tft.print("Not Parked         ");
   else if (strstr(xchanReply,"I")) tft.print("Parking in process ");
   else if (strstr(xchanReply,"P")) tft.print("Parked             ");
   else if (strstr(xchanReply,"F")) tft.print("Parking Failed     ");
   else                             tft.print("Park Status Unknown");
   
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"H")) tft.print("Homed    "); else tft.print("Not Homed");
 
   #if TIME_LOCATION_PPS_SENSE != OFF
-    y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+    y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
     if (strstr(xchanReply,"S")) tft.print("PPS Synched    "); else tft.print("PPS Not Synched");
   #endif
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"G")) tft.print("Pulse Guide Active  "); else tft.print("Pulse Guide Inactive");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"g")) tft.print("Guide Active    "); else tft.print("Guiding Inactive");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"r")) tft.print("Refraction Enabled Dual Axis");
   if (strstr(xchanReply,"rs")) tft.print("Refraction Enabled Single Axis");
   if (strstr(xchanReply,"t")) tft.print("OnTrack Enabled Dual Axis");
   if (strstr(xchanReply,"ts")) tft.print("OnTrack Enabled Single Axis");
   else tft.print("Rate Compensation None");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   tft.print("Tracking Rate = "); 
-  if (strstr(xchanReply,"(")) tft.print("Lunar");
+  if      (strstr(xchanReply,"(")) tft.print("Lunar");
   else if (strstr(xchanReply,"O")) tft.print("Solar");
   else if (strstr(xchanReply,"k")) tft.print("King");
   else tft.print("Sidereal");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++; 
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"w")) tft.print("Waiting At Home    "); else tft.print("Not Waiting At Home");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"u")) tft.print("Pause At Home Enabled      "); else tft.print("Pausing-At-Home Not Enabled");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"z")) tft.print("Buzzer Enabled "); else tft.print("Buzzer Disabled");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"a")) tft.print("Auto Meridian Flip: Enabled"); else tft.print("Auto Meridian Flip: Disabled");
 
   #if AXIS1_PEC == ON
-    y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+    y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
     if (strstr(xchanReply,"R")) tft.print("PEC was recorded");
     if (transform.mountType != ALTAZM) {
       tft.print("PEC state = ");
@@ -118,23 +117,23 @@ void ExtStatusScreen::draw() {
     }
   #endif
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"A")) tft.print("ALTAZM Mount"); 
   else if (strstr(xchanReply,"K")) tft.print("FORK Mount"); 
   else if (strstr(xchanReply,"E")) tft.print("GEM Mount"); 
   else tft.print("No Mount ");
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
   if (strstr(xchanReply,"o")) tft.print("pier side NONE"); 
   else if (strstr(xchanReply,"T")) tft.print("pier side EAST"); 
   else if (strstr(xchanReply,"W")) tft.print("pier side WEST");
   else tft.print("pier side N/A") ;
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++;
-  tft.print("Pulse Guide Rate = "); tft.print(xchanReply[i]);
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
+  tft.print("Pulse Guide Rate = "); tft.print(xchanReply[strlen(xchanReply)-3]);
 
-  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  i++; 
-  tft.print("Guide Rate = "); tft.print(xchanReply[i]);
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);
+  tft.print("Guide Rate = "); tft.print(xchanReply[strlen(xchanReply)-2]);
   // end :GU# data string parsing
 
   // Other status information not from :GU# command
@@ -171,6 +170,17 @@ void ExtStatusScreen::draw() {
   tft.print("UTC Time and Date = "); tft.print(tempReply);
   getLocalCmdTrim(":GX81#", tempReply); 
   tft.print(":"); tft.print(tempReply);
+
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  
+  // show Longitude
+  getLocalCmdTrim(":Gh#", tempReply); 
+  tft.print("Horizon Limit = "); tft.print(tempReply);
+    
+  y_offset +=y_spacer; tft.setCursor(STATUS_X, y_offset);  
+  // show Longitude
+  getLocalCmdTrim(":Go#", tempReply); 
+  tft.print("Overhead Limit = "); tft.print(tempReply);
+    
 }
 
 ExtStatusScreen extStatusScreen;
