@@ -44,6 +44,8 @@
 #define SPIRAL_BOXSIZE_X         86 
 #define SPIRAL_BOXSIZE_Y         40 
 
+#define EAST_WEST_SWAPPED     // comment out if you don't want to swap east / west guide button actions
+
 // Guide Screen Button object
 Button guideButton(
                 GUIDE_R_X, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y,
@@ -104,24 +106,28 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
     guideLargeButton.draw(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "EAST", BUT_ON);
   } else {
     guideLargeButton.draw(RIGHT_OFFSET_X, RIGHT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "EAST", BUT_OFF);
+    guidingEast = false;
   }
 
   if (guidingWest && mount.isSlewing()) { 
     guideLargeButton.draw(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "WEST", BUT_ON);
   } else {
     guideLargeButton.draw(LEFT_OFFSET_X, LEFT_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "WEST", BUT_OFF);
+    guidingWest = false;
   }
 
  if (guidingNorth && mount.isSlewing()) { 
     guideLargeButton.draw(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "NORTH", BUT_ON);
   } else {
     guideLargeButton.draw(UP_OFFSET_X, UP_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "NORTH", BUT_OFF);
+    guidingNorth = false;
   }
 
   if (guidingSouth && mount.isSlewing()) { 
     guideLargeButton.draw(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "SOUTH", BUT_ON);
   } else {
     guideLargeButton.draw(DOWN_OFFSET_X, DOWN_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "SOUTH", BUT_OFF);
+    guidingSouth = false;
   }
   
   if (!syncOn) {
@@ -240,70 +246,74 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
         syncOn = true;
         return true;  
     }
-                    
-    // EAST / RIGHT button
-    if (py > RIGHT_OFFSET_Y && py < (RIGHT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > RIGHT_OFFSET_X && px < (RIGHT_OFFSET_X + GUIDE_BOXSIZE_X)) {
-      BEEP;
-        if (!guidingEast) {
-            setLocalCmd(":Mw#"); // east west is swapped for DDScope
-            guidingEast = true;
-            guidingWest = false;
-            guidingNorth = false;
-            guidingSouth = false;
-        } else {
-            setLocalCmd(":Qw#");
-            guidingEast = false;
-        }
-        return true;
+                 
+    // guiding WEST / LEFT button
+    if (py > LEFT_OFFSET_Y && py < (LEFT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > LEFT_OFFSET_X && px < (LEFT_OFFSET_X + GUIDE_BOXSIZE_X)) {
+      BEEP; 
+      if (!guidingWest) {
+        #ifdef EAST_WEST_SWAPPED 
+          setLocalCmd(":Me#");
+        #else
+          setLocalCmd(":Mw#");
+        #endif
+        guidingWest = true;
+      } else if (!mount.isSlewing() || guidingWest) {
+        #ifdef EAST_WEST_SWAPPED 
+          setLocalCmd(":Qe#");
+        #else
+          setLocalCmd(":Qw#");
+        #endif
+        guidingWest = false;
+      }
+      return true;
     }
                     
-    // WEST / LEFT button
-    if (py > LEFT_OFFSET_Y && py < (LEFT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > LEFT_OFFSET_X && px < (LEFT_OFFSET_X + GUIDE_BOXSIZE_X)) {
-      BEEP;
-        if (!guidingWest) {
-            setLocalCmd(":Me#"); // east west is swapped for DDScope
-            guidingEast = false;
-            guidingWest = true;
-            guidingNorth = false;
-            guidingSouth = false;
-        } else {
-            setLocalCmd(":Qe#");
-            guidingWest = false;
-        }
-        return true;
+    // guiding EAST / RIGHT button
+    if (py > RIGHT_OFFSET_Y && py < (RIGHT_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > RIGHT_OFFSET_X && px < (RIGHT_OFFSET_X + GUIDE_BOXSIZE_X)) {
+      BEEP; 
+      if (!guidingEast) {
+        #ifdef EAST_WEST_SWAPPED 
+          setLocalCmd(":Mw#");
+        #else
+          setLocalCmd(":Me#");
+        #endif
+        guidingEast = true;
+      } else if (!mount.isSlewing() || guidingEast) {
+        #ifdef EAST_WEST_SWAPPED 
+          setLocalCmd(":Qw#");
+        #else
+          setLocalCmd(":Qe#");
+        #endif
+        guidingEast = false;
+      }
+      return true;
     }
                     
     // NORTH / UP button
     if (py > UP_OFFSET_Y && py < (UP_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > UP_OFFSET_X && px < (UP_OFFSET_X + GUIDE_BOXSIZE_X)) {
-      BEEP;
-        if (!guidingNorth) {
-            setLocalCmd(":Mn#");
-            guidingEast = false;
-            guidingWest = false;
-            guidingNorth = true;
-            guidingSouth = false;
-        } else {
-            setLocalCmd(":Qn#");
-            guidingNorth = false;
-        }
-        return true;
-    }
+      BEEP; 
+      if (!guidingNorth) {
+        setLocalCmd(":Mn#");
+        guidingNorth = true;
+      } else if (!mount.isSlewing() || guidingNorth) {
+        setLocalCmd(":Qn#");
+        guidingNorth = false;
+      }
+      return true;
+    } 
                     
     // SOUTH / DOWN button
     if (py > DOWN_OFFSET_Y && py < (DOWN_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > DOWN_OFFSET_X && px < (DOWN_OFFSET_X + GUIDE_BOXSIZE_X)) {
-      BEEP;
-        if (!guidingSouth) {
-            setLocalCmd(":Ms#");
-            guidingEast = false;
-            guidingWest = false;
-            guidingNorth = false;
-            guidingSouth = true;
-        } else {
-            setLocalCmd(":Qs#");
-            guidingSouth = false;
-        }
-        return true;
-    }
+      BEEP; 
+      if (!guidingSouth) {
+        setLocalCmd(":Ms#");
+        guidingSouth = true;
+      } else if (!mount.isSlewing() || guidingSouth) {
+        setLocalCmd(":Qs#");
+        guidingSouth = false;
+      }
+      return true;
+    } 
 
     // :RG#       Set guide rate: Guiding        1X
     // :RC#       Set guide rate: Centering      8X
