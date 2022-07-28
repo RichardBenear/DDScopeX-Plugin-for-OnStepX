@@ -426,6 +426,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
       motor2.power(false);
       axis2.enable(false);
+      setLocalCmd(":Td#"); // Disable Tracking
     }
     return true;
   }
