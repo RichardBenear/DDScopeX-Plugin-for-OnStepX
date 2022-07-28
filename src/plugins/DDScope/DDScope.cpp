@@ -44,10 +44,6 @@ void updateScreenWrapper() { display.updateSpecificScreen(); }
 void refreshButtonsWrapper() { display.refreshButtons(); }
 void generalErrorWrapper() { display.getOnStepGenErr(); }
 
-#ifdef ODRIVE_MOTOR_PRESENT
-  void updateBatVoltWrapper() { display.updateBatVoltage(); }
-#endif
-
 void DDScope::init() {
 
   VF("MSG: Plugins, starting:"); VLF(PluginName);
@@ -106,11 +102,6 @@ void DDScope::init() {
   if (ge_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   #ifdef ODRIVE_MOTOR_PRESENT
-    // update battery voltage
-    VF("MSG: Setup, start Battery voltage polling task (rate 5000 ms priority 6)... ");
-    uint8_t bv_handle = tasks.add(5000, 0, true, 6, updateBatVoltWrapper, "UpdateBatVolt");
-    if (bv_handle)  { VLF("success"); } else { VLF("FAILED!"); }
-  
     VF("MSG: ODrive, ODRIVE_SWAP_AXES = "); if(ODRIVE_SWAP_AXES) VLF("ON"); else VLF("OFF");
   #endif
 }

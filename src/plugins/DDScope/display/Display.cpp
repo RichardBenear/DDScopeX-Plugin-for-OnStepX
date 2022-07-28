@@ -151,7 +151,7 @@ void Display::init() {
   // NOTE: change these for your own personal settings
   VLF("MSG: Setting up Limits, TZ, Site Name, Slew Speed");
   setLocalCmd(":SG+07:00#"); // Set Default Time Zone
-  setLocalCmd(":Sh-01#"); //Set horizon limit -1 deg
+  setLocalCmd(":Sh-02#"); //Set horizon limit -2 deg
   setLocalCmd(":So86#"); // Set overhead limit 86 deg
   setLocalCmd(":SMHome#"); // Set Site 0 name "Home"
 }
@@ -225,6 +225,8 @@ currentScreen = curScreen;
 
 // select which screen to update
 void Display::updateSpecificScreen() {
+  oDriveExt.updateBatVoltage(); // do this first in case ODrive powered down or serial RX stopped, which will set appropriate flags
+
   switch (currentScreen) {
     case HOME_SCREEN:       homeScreen.updateHomeStatus();            break;
     case GUIDE_SCREEN:      guideScreen.updateGuideStatus();          break;
@@ -243,7 +245,6 @@ void Display::updateSpecificScreen() {
     #endif
     default: break;
   }
-  //updateMessageBar();
 }
 
 // ======= Local Command Channel Support ========
@@ -313,7 +314,7 @@ void Display::updateBatVoltage() {
   float currentBatVoltage = oDriveExt.getODriveBusVoltage();
   char bvolts[12]="-- v";
   sprintf(bvolts, "%4.1f v", currentBatVoltage);
-  
+  if (previousBatVoltage == currentBatVoltage) return;
   if (currentBatVoltage < BATTERY_LOW_VOLTAGE) { 
     tft.fillRect(135, 26, 50, 14, butOnBackground);
   } else {
@@ -322,6 +323,7 @@ void Display::updateBatVoltage() {
   tft.setFont(&Inconsolata_Bold8pt7b);
   tft.setCursor(135, 38);
   tft.print(bvolts);
+  previousBatVoltage = currentBatVoltage;
 }
 
 // Show GPS Status ICON
@@ -404,7 +406,7 @@ void Display::getOnStepGenErr() {
   
   #ifdef ODRIVE_MOTOR_PRESENT
   // frequency varying alarm if Motor and Encoders positions are too far apart indicating unbalanced loading or hitting obstruction
-  oDriveExt.MotorEncoderDelta();
+  //oDriveExt.MotorEncoderDelta();
   #endif
 
   showGpsStatus();

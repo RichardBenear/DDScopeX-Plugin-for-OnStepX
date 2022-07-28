@@ -183,6 +183,7 @@ class Display {
     static Screen currentScreen;
     static bool _nightMode;
     static bool _redrawBut;
+    float previousBatVoltage = 0.7;
 
     // Default Font Arial 6x8 is NULL
     const GFXfont *default_font = (const GFXfont *)__null;
