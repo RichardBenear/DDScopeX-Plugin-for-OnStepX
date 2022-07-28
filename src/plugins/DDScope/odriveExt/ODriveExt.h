@@ -18,15 +18,6 @@ enum Component
   COMP_LAST
 };
 
-typedef struct ODriveVersion {
-  uint8_t hwMajor;
-  uint8_t hwMinor;
-  uint8_t hwVar;
-  uint8_t fwMajor;
-  uint8_t fwMinor;
-  uint8_t fwRev;
-} ODriveVersion;
-    
 // Printing with stream operator helper functions
 template<class T> inline Print& operator <<(Print& obj, T arg) { obj.print(arg);    return obj; }
 template<>        inline Print& operator <<(Print& obj, float arg) { obj.print(arg, 4); return obj; }
@@ -47,9 +38,8 @@ class ODriveExt : public Display {
     float getODrivePosGain(int axis);
     float getODriveBusVoltage();
 
-    void getODriveVersion(ODriveVersion oDversion);
     uint32_t getODriveErrors(int axis, Component component);
-    void demoMode(bool onState);
+    void demoMode();
     
     // other actions
     void setODriveVelGain(int axis, float level);
@@ -63,7 +53,6 @@ class ODriveExt : public Display {
 
     bool oDserialAvail = false;
 
-    ODriveVersion oDversion = {0, 0, 0, 0, 0, 0};
     Component component = COMP_FIRST;
     
   private:
