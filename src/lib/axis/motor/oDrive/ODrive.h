@@ -113,6 +113,7 @@ class ODriveMotor : public Motor {
     void move();
 
   private:
+
 //  float o_position0 = 0;
 //  float o_position1 = 0;
 

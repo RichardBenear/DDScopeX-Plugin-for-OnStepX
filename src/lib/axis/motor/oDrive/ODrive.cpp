@@ -235,7 +235,6 @@ void ODriveMotor::poll() {
   #endif
   interrupts();
 
-  // high resolution setPosition interferes with other ODRIVE_SERIAL
   setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
 }
 
