@@ -234,7 +234,6 @@ void ODriveMotor::poll() {
     long target = motorSteps + backlashSteps;
   #endif
   interrupts();
-
   setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
 }
 
