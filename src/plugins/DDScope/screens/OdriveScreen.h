@@ -7,6 +7,15 @@
 #include <Arduino.h>
 #include "../odriveExt/ODriveExt.h"
 
+typedef struct ODriveVersion {
+  uint8_t hwMajor;
+  uint8_t hwMinor;
+  uint8_t hwVar;
+  uint8_t fwMajor;
+  uint8_t fwMinor;
+  uint8_t fwRev;
+} ODriveVersion;
+
 class ODriveScreen : public Display {
   public:
     void draw();
@@ -15,6 +24,8 @@ class ODriveScreen : public Display {
     void updateOdriveButtons(bool);
     bool odriveButStateChange();
     void decodeODriveErrors(int axis, Component, uint32_t errorCode);
+
+    bool demoActive       = false;
     
   private:
     void showODriveErrors();
@@ -28,8 +39,8 @@ class ODriveScreen : public Display {
     bool ALTgainHigh      = false;
     bool ALTgainDefault   = true;
     bool OdStopButton     = false;
-    bool demoActive       = false;
     bool ODpositionUpdateEnabled = true;
+    
     int preAzmState       = 0;
     int preAltState       = 0;
     int demoHandle;
