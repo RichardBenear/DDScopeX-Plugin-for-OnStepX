@@ -41,7 +41,8 @@ Button odriveButton(
                 "");
 
 // Demo Mode Wrapper
-void demoWrapper() { oDriveExt.demoMode(true); }
+void demoWrapper() { oDriveExt.demoMode(); }
+ODriveVersion oDversion;
 
 //****** Draw ODrive Screen ******
 void ODriveScreen::draw() {
@@ -59,13 +60,28 @@ void ODriveScreen::draw() {
   showODriveErrors();
   getOnStepCmdErr(); // show error bar
 
-  ODriveVersion oDversion;
-  oDriveExt.getODriveVersion(oDversion);
+  ODRIVE_SERIAL << "r hw_version_major\n";
+  oDversion.hwMajor = _oDriveDriver->readInt();
+
+  ODRIVE_SERIAL << "r hw_version_minor\n";
+  oDversion.hwMinor = _oDriveDriver->readInt();
+
+  ODRIVE_SERIAL << "r hw_version_variant\n";
+  oDversion.hwVar = _oDriveDriver->readInt();
+
+  ODRIVE_SERIAL << "r fw_version_major\n";
+  oDversion.fwMajor = _oDriveDriver->readInt();
+
+  ODRIVE_SERIAL << "r fw_version_minor\n";
+  oDversion.fwMinor = _oDriveDriver->readInt(); 
+
+  ODRIVE_SERIAL << "r fw_version_revision\n";
+  oDversion.fwRev = _oDriveDriver->readInt();
 
   tft.setCursor(82, 164);
-  tft.print("*HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
+  tft.print("HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
   tft.setCursor(82, 176);
-  tft.print("*FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
+  tft.print("FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
 }
 
 // task update for this screen
@@ -478,19 +494,21 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   y_offset = 0;
   // Demo Mode for ODrive
   // Toggle on Demo Mode if button pressed, toggle off if pressed and already on
-  // Demo mode relies on a pseudo-thread that fires off the change in positions
+  // Demo Mode bypasses OnStep control to repeat a sequence of moves
   if (px > OD_ACT_COL_3_X + x_offset && px < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_3_Y + y_offset && py <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     BEEP;
     if (!demoActive) {
-      VLF("MSG: Demo ODrive");
+      setLocalCmd(":Q#"); // does not turn off Motor power
       demoActive = true;
-      demoHandle = tasks.add(10000, 0, true, 6, demoWrapper, "Demo On");
+      
+      // Start demo task
+      VF("MSG: Setup, Demo Mode (rate 10 sec priority 6)... ");
+      uint8_t demoHandle = tasks.add(10000, 0, true, 6, demoWrapper, "Demo");
+      if (demoHandle) { VLF("success"); } else { VLF("FAILED!"); }
     } else {
       demoActive = false;
       VLF("MSG: Demo OFF ODrive");
-      //tasks.remove(demoHandle);
-      oDriveExt.demoMode(false);
-      tasks.setDurationComplete(tasks.getHandleByName("Demo On"));
+      tasks.setDurationComplete(demoHandle);
     }
     return true;
   }
@@ -521,9 +539,13 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
   if (px > OD_ACT_COL_3_X + x_offset && px < OD_ACT_COL_3_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_3_Y + y_offset && py <  OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     BEEP;
-    if (ODpositionUpdateEnabled) {
+    if (ODpositionUpdateEnabled) { // on, then toggle off
+      axis1.enable(false);
+      axis2.enable(false);
       ODpositionUpdateEnabled = false;
-    } else {
+    } else { // off, then toggle on
+      axis1.enable(true);
+      axis2.enable(true);
       ODpositionUpdateEnabled = true;
     }
     return false;
