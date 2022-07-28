@@ -154,12 +154,18 @@ void HomeScreen::updateHomeStatus() {
   // update the common status block that is on most screens
   updateCommonStatus(); 
 
-  char xchReply[10]="";
+  char xchReply[12]="";
   int y_offset = 0;
 
   // Loop through Column 1 poll updates
   for (int i=0; i<COL_1_NUM_ROWS; i++) {
     getLocalCmdTrim(colOneCmdStr[i], xchReply); 
+
+    if (i == (int)4) { // handle special case....convert C to F
+      double tempF = ((atof(xchReply)*9)/5) + 32;
+      sprintf(xchReply, "%3.1f F", tempF); // convert back to string to right justify
+    }
+
     if (strcmp(curCol1[i], xchReply) != 0) {
       canvHomeInsPrint.printRJ(COL1_DATA_X, COL1_DATA_Y+y_offset, C_WIDTH-5, C_HEIGHT, xchReply, false);
       strcpy(curCol1[i], xchReply);
