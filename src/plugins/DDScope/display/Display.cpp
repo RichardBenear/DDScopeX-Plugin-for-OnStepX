@@ -405,8 +405,8 @@ void Display::getOnStepGenErr() {
   canvDisplayInsPrint.printLJ(2, 473, 317, C_HEIGHT+2, temp1, false);
   
   #ifdef ODRIVE_MOTOR_PRESENT
-  // frequency varying alarm if Motor and Encoders positions are too far apart indicating unbalanced loading or hitting obstruction
-  //oDriveExt.MotorEncoderDelta();
+    // frequency varying alarm if Motor and Encoders positions are too far apart indicating unbalanced loading or hitting obstruction
+    oDriveExt.MotorEncoderDelta();
   #endif
 
   showGpsStatus();
