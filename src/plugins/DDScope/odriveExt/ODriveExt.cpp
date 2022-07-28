@@ -20,12 +20,13 @@ const char* ODriveComponentsStr[4] = {
 };
 
 // ==============================================================================
-// NOTE: A change to the HardwareSerial.cpp library
+// NOTE: A change to the HardwareSerial.cpp library was made.
 // In HardwareSerial.cpp, this line was changed: PUS(3) was changed to PUS(2)
 // PUS() is Pullup Strength for the Teensy RX PAD. 3 = 22K ohm, 2 = 100K ohm
 // When set to 22K ohm, the ODrive TX signal would only have a low of .4 volt above ground.
 // When set to 100K ohm, the ODrive TX signal would be about 20mv above ground.
 // Apparently, the ODrive TX drive strength isn't very high
+// But, it's not clear if this has any functional benefit; maybe better noise immunity.
 //	*(portControlRegister(hardware->rx_pins[rx_pin_index_].pin)) = IOMUXC_PAD_DSE(7) | IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(2) | IOMUXC_PAD_HYS;
 //===============================================================================
 
@@ -81,9 +82,9 @@ void ODriveExt::setODrivePosGain(int axis, float level) {
 float ODriveExt::getODriveBusVoltage() {
   ODRIVE_SERIAL << "r vbus_voltage\n"; Y;
   float battery_voltage = _oDriveDriver->readFloat();
-  if (battery_voltage <= 0.10F) {
+  if (battery_voltage <= 0.20F) {
     odriveRXoff = true; 
-    return;
+    return battery_voltage;
   } else { 
     odriveRXoff = false;
   }
@@ -102,7 +103,7 @@ float ODriveExt::getODriveBusVoltage() {
 
 // get absolute Encoder positions in degrees
 float ODriveExt::getEncoderPositionDeg(int axis) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; Y;
   float turns = _oDriveDriver->readFloat();
   return turns*360;
@@ -110,35 +111,35 @@ float ODriveExt::getEncoderPositionDeg(int axis) {
 
 // get motor positions in turns
 float ODriveExt::getMotorPositionTurns(int axis) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; Y;
   return _oDriveDriver->readFloat();
 }  
 
 // get motor position in counts
 int ODriveExt::getMotorPositionCounts(int axis) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate_counts\n"; Y;
   return _oDriveDriver->readInt();
 } 
 
 // get Motor Current
 float ODriveExt::getMotorCurrent(int axis) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n"; Y;
   return _oDriveDriver->readFloat();
 }  
 
 // read current state
 int ODriveExt::getODriveCurrentState(int axis) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   ODRIVE_SERIAL << "r axis" << axis << ".current_state\n";
   return _oDriveDriver->readInt();
 }
 
 // Get the difference between ODrive setpoint and the encoder
 float ODriveExt::getMotorPositionDelta(int axis) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
   float reqPos = _oDriveDriver->readFloat();   
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n";
@@ -171,26 +172,26 @@ void ODriveExt::MotorEncoderDelta() {
 
 // Get ODrive gains
 float ODriveExt::getODriveVelGain(int axis) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n"; Y;
   return _oDriveDriver->readFloat();
 }
 
 float ODriveExt::getODriveVelIntGain(int axis) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n"; Y;
   return _oDriveDriver->readFloat();
 }
 
 float ODriveExt::getODrivePosGain(int axis) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n"; Y;
   return _oDriveDriver->readFloat();
 }
 
 // ========  Get the ODRIVE errors ========
 uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
-  if (odriveRXoff) return;
+  if (odriveRXoff) return -1;
   if (axis == -1) { // ODrive top level error
     ODRIVE_SERIAL << "r odrive.error\n";
     return (uint32_t)_oDriveDriver->readInt(); Y;
@@ -203,22 +204,6 @@ uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
     ODRIVE_SERIAL << "r odrive.axis"<<axis<<"."<<ODriveComponentsStr[component]<<".error\n"; Y;
     return (uint32_t)_oDriveDriver->readInt();
   }
-}
-
-void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
-  if (odriveRXoff) return;
-  ODRIVE_SERIAL << "r hw_version_major\n"; Y;
-  oDversion.hwMajor = _oDriveDriver->readInt();
-  ODRIVE_SERIAL << "r hw_version_minor\n"; Y;
-  oDversion.hwMinor = _oDriveDriver->readInt();
-  ODRIVE_SERIAL << "r hw_version_variant\n"; Y;
-  oDversion.hwVar = _oDriveDriver->readInt();
-  ODRIVE_SERIAL << "r fw_version_major\n"; Y;
-  oDversion.fwMajor = _oDriveDriver->readInt();
-  ODRIVE_SERIAL << "r fw_version_minor\n"; Y;
-  oDversion.fwMinor = _oDriveDriver->readInt(); 
-  ODRIVE_SERIAL << "r fw_version_revision\n"; Y;
-  oDversion.fwRev = _oDriveDriver->readInt();
 }
 
 // =========== Motor Thermistor Support =============
@@ -248,52 +233,46 @@ float ODriveExt::getMotorTemp(int axis) {
 
 // =================== Demo Mode ====================
 // Demo mode requires that the OnStep updates to the Axis be stopped but the Motor power is ON
-void ODriveExt::demoMode(bool onState) {
-  // choose some AZM and ALT positions in fractional "Turns"
+// Demo mode repeats a sequence of moves
+void ODriveExt::demoMode() {
+  // choosing some AZM and ALT positions in fractional "Turns"
   // ALT position should never be negative in actual use because of the position of the focuser but it "can" go negative in demo
-  // ALT axis at Turn = 0.0 is telescope vertical
-  // AZ axis at Turn = 0.0 is telescope pointing North (when physically aligned north)
+ 
   float pos_one = 0.15;
   float pos_two = 0.3;
   float pos_three = -0.1;
   float pos_four = -0.4;
   float pos_five = 0.4;
   int demo_pos = 0;
-  setLocalCmd(":Q#"); // does not turn off Motor power
+
   
-  if (onState) {
-    switch(demo_pos) {
-      case 0:
-        _oDriveDriver->SetPosition(ALT_MOTOR, pos_one);
-        _oDriveDriver->SetPosition(AZM_MOTOR, pos_one);
-        ++demo_pos;
-        break;
-      case 1:
-        _oDriveDriver->SetPosition(ALT_MOTOR, pos_two);
-        _oDriveDriver->SetPosition(AZM_MOTOR, pos_two);
-        ++demo_pos;
-        break;
-      case 2:
-        _oDriveDriver->SetPosition(ALT_MOTOR, pos_three);
-        _oDriveDriver->SetPosition(AZM_MOTOR, pos_one);
-        ++demo_pos;
-        break;
-      case 3:
-        _oDriveDriver->SetPosition(ALT_MOTOR, pos_four);
-        _oDriveDriver->SetPosition(AZM_MOTOR, pos_five);
-        demo_pos = 0;
-        break;
-      default:
-        _oDriveDriver->SetPosition(ALT_MOTOR, pos_one);
-        _oDriveDriver->SetPosition(AZM_MOTOR, pos_one);
-        demo_pos = 0;
-        break;
-    }
-  } else { // off
-    _oDriveDriver->SetPosition(ALT_MOTOR, 0);
-    _oDriveDriver->SetPosition(AZM_MOTOR, 0);
-    axis1.init(&motor1); // start motor timers
-    axis2.init(&motor2);
+  
+  switch(demo_pos) {
+    case 0:
+      _oDriveDriver->SetPosition(ALT_MOTOR, pos_one);
+      _oDriveDriver->SetPosition(AZM_MOTOR, pos_one);
+      ++demo_pos;
+      break;
+    case 1:
+      _oDriveDriver->SetPosition(ALT_MOTOR, pos_two);
+      _oDriveDriver->SetPosition(AZM_MOTOR, pos_two);
+      ++demo_pos;
+      break;
+    case 2:
+      _oDriveDriver->SetPosition(ALT_MOTOR, pos_three);
+      _oDriveDriver->SetPosition(AZM_MOTOR, pos_one);
+      ++demo_pos;
+      break;
+    case 3:
+      _oDriveDriver->SetPosition(ALT_MOTOR, pos_four);
+      _oDriveDriver->SetPosition(AZM_MOTOR, pos_five);
+      demo_pos = 0;
+      break;
+    default:
+      _oDriveDriver->SetPosition(ALT_MOTOR, pos_one);
+      _oDriveDriver->SetPosition(AZM_MOTOR, pos_one);
+      demo_pos = 0;
+      break;
   }
 }
 
