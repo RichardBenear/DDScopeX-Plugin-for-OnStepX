@@ -445,7 +445,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     if (!mount.isTracking()) {
       setLocalCmd(":Te#"); // Enable Tracking
     } else {
-      // disabling Tracking does not disable motors so leave motor flags ON
+      // disabling Tracking does not disable motors so leave motor power flags ON
       setLocalCmd(":Td#"); // Disable Tracking
     }
     return false; 
