@@ -11,6 +11,10 @@
 #include "src/telescope/mount/Mount.h"
 #include "src/telescope/mount/guide/Guide.h"
 
+#ifdef ODRIVE_MOTOR_PRESENT
+  #include "../odriveExt/ODriveExt.h"
+#endif
+
 // Guide buttons
 #define GUIDE_BOXSIZE_X          85
 #define GUIDE_BOXSIZE_Y          65 
@@ -66,6 +70,9 @@ Button guideLargeButton(
                 largeFontHeight, 
                 "");
 
+// Canvas Print object Custom Font
+CanvasPrint canvGuideInsPrint(&Inconsolata_Bold8pt7b);
+
 // Draw the GUIDE Page
 void GuideScreen::draw() { 
   setCurrentScreen(GUIDE_SCREEN);
@@ -82,7 +89,29 @@ void GuideScreen::draw() {
 
 // task update for this screen
 void GuideScreen::updateGuideStatus() {
-  updateCommonStatus(); // only this update for now
+  char cAZMposition[12] = "";
+  char cALTposition[12] = "";
+
+  // show the current Encoder positions
+  #ifdef ODRIVE_MOTOR_PRESENT
+    // Show ODrive AZM encoder positions
+    sprintf(cAZMposition, "AZM = %4.1f", oDriveExt.getEncoderPositionDeg(AZM_MOTOR));
+  #elif
+    AZEncPos = 0; // define this for non ODrive implementations
+  #endif
+  canvGuideInsPrint.printRJ(10, 210, 92, 16, cAZMposition, false);
+
+  // ALT encoder
+ #ifdef ODRIVE_MOTOR_PRESENT
+    // Show ODrive AZM encoder positions
+    sprintf(cALTposition, "ALT = %4.1f", oDriveExt.getEncoderPositionDeg(ALT_MOTOR));
+  #elif
+    AZEncPos = 0; // define this for non ODrive implementations
+  #endif
+  canvGuideInsPrint.printRJ(10, 230, 92, 16, cALTposition, false);
+
+  // show the Common coordinates area
+  updateCommonStatus();
 }
 
 bool GuideScreen::guideButStateChange() {
@@ -255,7 +284,7 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
           setLocalCmd(":Me#");
         #else
           setLocalCmd(":Mw#");
-        #endif
+        #endif 
         guidingWest = true;
       } else if (!mount.isSlewing() || guidingWest) {
         #ifdef EAST_WEST_SWAPPED 
@@ -407,6 +436,14 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     if (py > STOP_Y && py < (STOP_Y + STOP_BOXSIZE_Y) && px > STOP_X && px < (STOP_X + STOP_BOXSIZE_X)) {
       BEEP;
         setLocalCmd(":Q#");
+        digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
+        motor1.power(false);
+        axis1.enable(false);
+        digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
+        motor2.power(false);
+        axis2.enable(false);
+        setLocalCmd(":Td#"); // Disable Tracking
+        
         stopPressed = true;
         spiralOn = false;
         guidingEast = false;
