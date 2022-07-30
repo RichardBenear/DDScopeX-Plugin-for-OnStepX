@@ -78,15 +78,17 @@ void ODriveScreen::draw() {
   ODRIVE_SERIAL << "r fw_version_revision\n";
   oDversion.fwRev = _oDriveDriver->readInt();
 
-  tft.setCursor(82, 164);
+  tft.setCursor(92, 164);
   tft.print("HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
-  tft.setCursor(82, 176);
+  tft.setCursor(92, 176);
   tft.print("FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
 }
 
-// task update for this screen
+// status update for this screen
 void ODriveScreen::updateOdriveStatus() {
   updateCommonStatus();
+  showODriveErrors();
+  showGains();
 }
 
 // ====== Show the Gains ======

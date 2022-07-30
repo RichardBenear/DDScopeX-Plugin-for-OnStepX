@@ -9,11 +9,16 @@
 class ExtStatusScreen : public Display {
   public:
     void draw();
+    void mountStatus();
+    void tlsStatus();
+    void limitsStatus();
+    void updateExStatus();
 
   private: 
-
+    char exReply[50];
+    
 };
-
+    
 extern ExtStatusScreen extStatusScreen;
 
 #endif
