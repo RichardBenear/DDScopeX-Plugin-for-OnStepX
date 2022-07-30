@@ -523,6 +523,7 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     delay(2);
     digitalWrite(ODRIVE_RST, HIGH);
     delay(500);
+    //oDriveScreen.draw();
     ODRIVE_SERIAL.flush();
     oDriveExt.clearAllODriveErrors();
     resetODriveFlag = true;
