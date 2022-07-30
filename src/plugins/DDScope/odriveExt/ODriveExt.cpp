@@ -245,8 +245,6 @@ void ODriveExt::demoMode() {
   float pos_five = 0.4;
   int demo_pos = 0;
 
-  
-  
   switch(demo_pos) {
     case 0:
       _oDriveDriver->SetPosition(ALT_MOTOR, pos_one);
