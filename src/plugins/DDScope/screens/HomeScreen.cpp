@@ -109,9 +109,13 @@ void HomeScreen::draw() {
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
-  drawTitle(18, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
+  drawTitle(48, TITLE_TEXT_Y, "Direct-Drive Scope");
   tft.setFont(&Inconsolata_Bold8pt7b);
   tft.drawFastVLine(TFTWIDTH/2, 172, 141, textColor);
+
+  // Draw the FAN Icon bitmap
+  uint8_t extern fan_icon[];
+  tft.drawBitmap(7, 7, fan_icon, 30, 30,  butBackground, ORANGE);
 
   // ====== Draw Home Screen Status Text ===========
   // Labels for Real Time data only here, no data displayed yet
@@ -330,15 +334,16 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
     homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Tracking", BUT_ON);
   }
 
-  // Night / Day Mode
+  // Reset Home Telescope
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (getNightMode()) {
-    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Night Mode", BUT_OFF);  
-  } else { // Day mode
-    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Day Mode", BUT_OFF);     
-  }
+  if (resetHome) {
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Resetting", BUT_ON);  
+    resetHome = false;      
+  } else {
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Reset Home", BUT_OFF);
+  }  
   
-  // Home Telescope
+  // Find Home Telescope
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (mount.isSlewing()) {
     homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Slewing", BUT_ON);
@@ -349,9 +354,17 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
     homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Go Home", BUT_OFF);
   }  
 
-  // ============== Column 3 ===============
-  // Park / unPark Telescope
   y_offset = 0;
+  // ============== Column 3 ===============
+  // Night / Day Mode
+  if (getNightMode()) {
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_2_Y + y_offset, "Night Mode", BUT_OFF);  
+  } else { // Day mode
+    homeButton.draw(ACTION_COL_3_X, ACTION_COL_2_Y + y_offset, "Day Mode", BUT_OFF);     
+  }
+
+  // Park / unPark Telescope
+  y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING
   if (park.state == PS_PARKED) {
     homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Parked", BUT_ON); 
@@ -372,14 +385,6 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
     parkWasSet = false;
   } else {
     homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Set Park", BUT_OFF);
-  }
-
-  // Turn ON / OFF Fan
-  y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (!fanOn) {
-    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Fan Off", BUT_OFF);
-  } else {
-    homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Fan On", true);
   }
 }
 
@@ -419,6 +424,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!stopButton) {
+      setLocalCmd(":Q#");
       stopButton = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
       motor1.power(false);
@@ -445,9 +451,30 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     return false; 
   }
 
-  // Set Night or Day Mode
+  // Reset Home Telescope 
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
+    BEEP;
+    _oDriveDriver->SetPosition(0, 0.0);
+    _oDriveDriver->SetPosition(1, 0.0);
+    setLocalCmd(":hF#"); // home Reset
+    resetHome = true;
+    return true;
+  }
+  
+  // Find Home Telescope 
+  y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
+  if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
+    BEEP;
+    setLocalCmd(":hC#"); // go home
+    gotoHome = true;
+    return true;
+  }
+  
+  y_offset = 0;
+  // ======== COLUMN 3 of Buttons - Leftmost ========
+  // Set Night or Day Mode
+  if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!getNightMode()) {
       setNightMode(true); // toggle on
@@ -458,24 +485,10 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     draw(); // redraw new screen colors
     return true;
   }
-  
-  // Go to Home Telescope 
-  y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
-    BEEP;
-    _oDriveDriver->SetPosition(0, 0.0);
-    _oDriveDriver->SetPosition(1, 0.0);
 
-    //setLocalCmd(":hF#"); // home Reset
-    setLocalCmd(":hC#"); // go home
-    gotoHome = true;
-    return true;
-  }
-  
-  // ======== COLUMN 3 of Buttons - Leftmost ========
   // Park and UnPark Telescope 
   // Note: if Time/Date not set then you can't unpark
-  y_offset = 0;
+ y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING}
@@ -496,9 +509,8 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     return true;
   }
 
-  // Fan Control Action Button
-  y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
+  // Fan Control ICON button
+  if (px > 0 && px < 45 && py > 0 && py < 45) {
     BEEP;
     if (!fanOn) {
       digitalWrite(FAN_ON_PIN, HIGH);

@@ -21,6 +21,7 @@ class HomeScreen : public Display {
     // button states
     bool parkWasSet = false;
     bool stopButton = true;
+    bool resetHome = false;
     bool gotoHome =false;
     bool fanOn = false;
     int preAzmState;
