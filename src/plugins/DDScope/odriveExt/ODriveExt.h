@@ -57,7 +57,7 @@ class ODriveExt : public Display {
     
   private:
     bool batLowLED = false;
-    bool odriveRXoff = false;
+    bool oDriveRXoff = false;
 };
 
 extern ODriveExt oDriveExt;
