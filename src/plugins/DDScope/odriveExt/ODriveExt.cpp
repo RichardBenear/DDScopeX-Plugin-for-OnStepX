@@ -80,13 +80,13 @@ void ODriveExt::setODrivePosGain(int axis, float level) {
 // Read ODrive bus voltage which is approx. the battery voltage
 // Battery Low LED is only on when battery is below low threashold
 float ODriveExt::getODriveBusVoltage() {
-  ODRIVE_SERIAL << "r vbus_voltage\n"; Y;
+  ODRIVE_SERIAL << "r vbus_voltage\n";
   float battery_voltage = _oDriveDriver->readFloat();
   if (battery_voltage <= 0.20F) {
-    odriveRXoff = true; 
+    oDriveRXoff = true; 
     return battery_voltage;
   } else { 
-    odriveRXoff = false;
+    oDriveRXoff = false;
   }
   
   // 3 volt qualification keeps ALERT from happening when under development without ODrive powered
@@ -103,7 +103,7 @@ float ODriveExt::getODriveBusVoltage() {
 
 // get absolute Encoder positions in degrees
 float ODriveExt::getEncoderPositionDeg(int axis) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; Y;
   float turns = _oDriveDriver->readFloat();
   return turns*360;
@@ -111,35 +111,35 @@ float ODriveExt::getEncoderPositionDeg(int axis) {
 
 // get motor positions in turns
 float ODriveExt::getMotorPositionTurns(int axis) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; Y;
   return _oDriveDriver->readFloat();
 }  
 
 // get motor position in counts
 int ODriveExt::getMotorPositionCounts(int axis) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate_counts\n"; Y;
   return _oDriveDriver->readInt();
 } 
 
 // get Motor Current
 float ODriveExt::getMotorCurrent(int axis) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n"; Y;
   return _oDriveDriver->readFloat();
 }  
 
 // read current state
 int ODriveExt::getODriveCurrentState(int axis) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   ODRIVE_SERIAL << "r axis" << axis << ".current_state\n";
   return _oDriveDriver->readInt();
 }
 
 // Get the difference between ODrive setpoint and the encoder
 float ODriveExt::getMotorPositionDelta(int axis) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
   float reqPos = _oDriveDriver->readFloat();   
   ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n";
@@ -152,7 +152,7 @@ float ODriveExt::getMotorPositionDelta(int axis) {
 // This will warn that the motors may be getting too hot since more current is required trying to move them to the requested position
 // Beeping occurs at higher frequency as position delta from target increases
 void ODriveExt::MotorEncoderDelta() {
-  if (!odriveRXoff) return;
+  if (!oDriveRXoff) return;
   if (axis1.isEnabled()) {
     float AZposDelta = getMotorPositionDelta(AZM_MOTOR);
     if (AZposDelta > 0.002 && AZposDelta < 0.03) soundFreq(AZposDelta * 50000, 20);
@@ -160,7 +160,7 @@ void ODriveExt::MotorEncoderDelta() {
   }
   
   if (axis2.isEnabled()) {
-    float ALTposDelta = getMotorPositionDelta(ALT_MOTOR);
+    float ALTposDelta = getMotorPositionDelta(ALT_MOTOR); Y;
     if (ALTposDelta > .002 && ALTposDelta < 0.03) {
       soundFreq(ALTposDelta * 50000, 40);
     
@@ -172,26 +172,26 @@ void ODriveExt::MotorEncoderDelta() {
 
 // Get ODrive gains
 float ODriveExt::getODriveVelGain(int axis) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n"; Y;
   return _oDriveDriver->readFloat();
 }
 
 float ODriveExt::getODriveVelIntGain(int axis) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n"; Y;
   return _oDriveDriver->readFloat();
 }
 
 float ODriveExt::getODrivePosGain(int axis) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n"; Y;
   return _oDriveDriver->readFloat();
 }
 
 // ========  Get the ODRIVE errors ========
 uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
-  if (odriveRXoff) return -1;
+  if (oDriveRXoff) return -1.0;
   if (axis == -1) { // ODrive top level error
     ODRIVE_SERIAL << "r odrive.error\n";
     return (uint32_t)_oDriveDriver->readInt(); Y;
