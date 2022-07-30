@@ -239,7 +239,7 @@ void Display::updateSpecificScreen() {
     case CUSTOM_SCREEN:     customCatScreen.updateCustomStatus();     break;
     case SHC_CAT_SCREEN:    shcCatScreen.updateShcStatus();           break;
     case PLANETS_SCREEN:    planetsScreen.updatePlanetsStatus();      break;
-  //case XSTATUS_SCREEN:                                              break;
+    case XSTATUS_SCREEN:    extStatusScreen.updateExStatus();         break;
     #ifdef ODRIVE_MOTOR_PRESENT
       case ODRIVE_SCREEN:   oDriveScreen.updateOdriveStatus();        break;
     #endif
