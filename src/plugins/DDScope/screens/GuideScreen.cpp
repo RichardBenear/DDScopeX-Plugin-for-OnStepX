@@ -95,20 +95,20 @@ void GuideScreen::updateGuideStatus() {
   // show the current Encoder positions
   #ifdef ODRIVE_MOTOR_PRESENT
     // Show ODrive AZM encoder positions
-    sprintf(cAZMposition, "AZM = %4.1f", oDriveExt.getEncoderPositionDeg(AZM_MOTOR));
+    sprintf(cAZMposition, "AZM deg= %4.1f", oDriveExt.getEncoderPositionDeg(AZM_MOTOR));
   #elif
     AZEncPos = 0; // define this for non ODrive implementations
   #endif
-  canvGuideInsPrint.printRJ(10, 210, 92, 16, cAZMposition, false);
+  canvGuideInsPrint.printRJ(5, 210, 112, 16, cAZMposition, false);
 
   // ALT encoder
  #ifdef ODRIVE_MOTOR_PRESENT
     // Show ODrive AZM encoder positions
-    sprintf(cALTposition, "ALT = %4.1f", oDriveExt.getEncoderPositionDeg(ALT_MOTOR));
+    sprintf(cALTposition, "ALT deg= %4.1f", oDriveExt.getEncoderPositionDeg(ALT_MOTOR));
   #elif
     AZEncPos = 0; // define this for non ODrive implementations
   #endif
-  canvGuideInsPrint.printRJ(10, 230, 92, 16, cALTposition, false);
+  canvGuideInsPrint.printRJ(5, 230, 112, 16, cALTposition, false);
 
   // show the Common coordinates area
   updateCommonStatus();
