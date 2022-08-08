@@ -45,7 +45,8 @@ extern uint8_t useDMA;
 #define CD_COMMAND   digitalWrite(TFT_RS, LOW);  
 #define CD_DATA      digitalWrite(TFT_RS, HIGH);  
 
-#define swap(a, b) { int16_t t = a; a = b; b = t; }
+// name changed to swap16 from swap because same name elsewhere caused error
+#define swap16(a, b) { int16_t t = a; a = b; b = t; }
 
 //======================================================================
 class Adafruit_ILI9486_Teensy : public Adafruit_GFX

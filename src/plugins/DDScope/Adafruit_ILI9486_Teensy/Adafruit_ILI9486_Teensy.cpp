@@ -343,12 +343,12 @@ void Adafruit_ILI9486_Teensy::drawLine(int16_t x0, int16_t y0,int16_t x1, int16_
 
 	bool steep = abs(y1 - y0) > abs(x1 - x0);
 	if (steep) {
-		swap(x0, y0);
-		swap(x1, y1);
+		swap16(x0, y0);
+		swap16(x1, y1);
 	}
 	if (x0 > x1) {
-		swap(x0, x1);
-		swap(y0, y1);
+		swap16(x0, x1);
+		swap16(y0, y1);
 	}
 
 	int16_t dx, dy;
