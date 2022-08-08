@@ -1,7 +1,12 @@
 // =====================================================
 // ODriveExt.h
 
-#include <ODriveArduino.h>
+#if ODRIVE_COMM_MODE == OD_UART
+  #include <ODriveArduino.h>
+
+  
+#endif
+
 #include "../display/Display.h"
 
 #ifndef ODRIVEEXT_H
@@ -10,7 +15,7 @@
 enum Component
 {
   COMP_FIRST,
-  NONE,
+  NO_COMP,
   AXIS,
   CONTROLLER,
   MOTOR,
@@ -18,15 +23,21 @@ enum Component
   COMP_LAST
 };
 
-// Printing with stream operator helper functions
-template<class T> inline Print& operator <<(Print& obj, T arg) { obj.print(arg);    return obj; }
-template<>        inline Print& operator <<(Print& obj, float arg) { obj.print(arg, 4); return obj; }
+typedef struct ODriveVersion {
+  uint8_t hwMajor;
+  uint8_t hwMinor;
+  uint8_t hwVar;
+  uint8_t fwMajor;
+  uint8_t fwMinor;
+  uint8_t fwRev;
+} ODriveVersion;
+
 
 class ODriveExt : public Display {
   public:
     // getters
-    int   getMotorPositionCounts(int axis);
-    int   getODriveCurrentState(int axis);
+    int getMotorPositionCounts(int axis);
+    uint8_t getODriveCurrentState(int axis);
 
     float getEncoderPositionDeg(int axis);
     float getMotorPositionTurns(int axis);
@@ -37,13 +48,13 @@ class ODriveExt : public Display {
     float getODriveVelIntGain(int axis);
     float getODrivePosGain(int axis);
     float getODriveBusVoltage();
+    void getODriveVersion(ODriveVersion);
 
     uint32_t getODriveErrors(int axis, Component component);
     void demoMode();
     
     // other actions
-    void setODriveVelGain(int axis, float level);
-    void setODriveVelIntGain(int axis, float level);
+    void setODriveVelGains(int axis, float level, float intLevel);
     void setODrivePosGain(int axis, float level);
     void updateODriveMotorPositions();
     void MotorEncoderDelta();

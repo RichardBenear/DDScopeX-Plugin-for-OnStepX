@@ -4,7 +4,7 @@
 // Author: Richard Benear 2022
 
 #include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino
-#include <ODriveEnums.h>
+//#include <ODriveEnums.h>
 #include "ODriveScreen.h"
 #include "../odriveExt/ODriveExt.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -59,24 +59,7 @@ void ODriveScreen::draw() {
   showGains();
   showODriveErrors();
   getOnStepCmdErr(); // show error bar
-
-  ODRIVE_SERIAL << "r hw_version_major\n";
-  oDversion.hwMajor = _oDriveDriver->readInt();
-
-  ODRIVE_SERIAL << "r hw_version_minor\n";
-  oDversion.hwMinor = _oDriveDriver->readInt();
-
-  ODRIVE_SERIAL << "r hw_version_variant\n";
-  oDversion.hwVar = _oDriveDriver->readInt();
-
-  ODRIVE_SERIAL << "r fw_version_major\n";
-  oDversion.fwMajor = _oDriveDriver->readInt();
-
-  ODRIVE_SERIAL << "r fw_version_minor\n";
-  oDversion.fwMinor = _oDriveDriver->readInt(); 
-
-  ODRIVE_SERIAL << "r fw_version_revision\n";
-  oDversion.fwRev = _oDriveDriver->readInt();
+  oDriveExt.getODriveVersion(oDversion);
 
   tft.setCursor(92, 164);
   tft.print("HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
@@ -223,8 +206,8 @@ void ODriveScreen::showODriveErrors() {
   uint32_t err = 0;
 
   // ODrive top level errors
-  err = oDriveExt.getODriveErrors(-1, Component::NONE);
-  oDriveScreen.decodeODriveErrors(-1, Component::NONE, err);
+  err = oDriveExt.getODriveErrors(-1, Component::NO_COMP);
+  oDriveScreen.decodeODriveErrors(-1, Component::NO_COMP, err);
   
   // AZM Errors
   y_offset +=OD_ERR_SPACING + 6;
@@ -368,7 +351,7 @@ void ODriveScreen::updateOdriveButtons(bool redrawBut) {
   }
 
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
-  // Enable or Disable the ODrive position update via UART
+  // Enable or Disable the ODrive position update via SERIAL
   if (ODpositionUpdateEnabled) {
     odriveButton.draw(OD_ACT_COL_3_X, OD_ACT_COL_3_Y + y_offset, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y, "Updates On", BUT_ON);
   } else {
@@ -434,13 +417,7 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   if (px > OD_ACT_COL_2_X + x_offset && px < OD_ACT_COL_2_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_2_Y + y_offset && py <  OD_ACT_COL_2_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     BEEP;
     VLF("MSG: Clearing ODrive Errors");
-    oDriveExt.clearODriveErrors(AZM_MOTOR, ENCODER);
-    oDriveExt.clearODriveErrors(AZM_MOTOR, CONTROLLER);
-    oDriveExt.clearODriveErrors(AZM_MOTOR, MOTOR);
-    oDriveExt.clearODriveErrors(ALT_MOTOR, ENCODER);
-    oDriveExt.clearODriveErrors(ALT_MOTOR, CONTROLLER);
-    oDriveExt.clearODriveErrors(ALT_MOTOR, MOTOR);
-    clearODriveErr = true;
+    oDriveExt.clearAllODriveErrors();
     return true;
   }
 
@@ -451,9 +428,8 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     AZgainHigh = true;
     AZgainDefault = false;
-    oDriveExt.setODriveVelGain(AZM_MOTOR, 1.8); // Set Velocity Gain
+    oDriveExt.setODriveVelGains(AZM_MOTOR, 1.8, 2.3); // Set Velocity Gain
     delay(1);
-    oDriveExt.setODriveVelIntGain(AZM_MOTOR, 2.3); // Set Velocity Integrator Gain
     return true;
   }
 
@@ -463,9 +439,8 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     AZgainHigh = false;
     AZgainDefault = true;
-    oDriveExt.setODriveVelGain(AZM_MOTOR, 1.5);
+    oDriveExt.setODriveVelGains(AZM_MOTOR, 1.5, 2.0);
     delay(1);
-    oDriveExt.setODriveVelIntGain(AZM_MOTOR, 2.0);
     return true;
   }
 
@@ -475,9 +450,8 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     ALTgainHigh = true;
     ALTgainDefault = false;
-    oDriveExt.setODriveVelGain(ALT_MOTOR, 0.5); // Set Velocity Gain
+    oDriveExt.setODriveVelGains(ALT_MOTOR, 0.5, 0.7); // Set Velocity Gain, Integrator gain
     delay(1);
-    oDriveExt.setODriveVelIntGain(ALT_MOTOR, 0.7); // Set Velocity Integrator Gain
     return true;
   }
 
@@ -487,9 +461,8 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     ALTgainHigh = false;
     ALTgainDefault = true;
-    oDriveExt.setODriveVelGain(ALT_MOTOR, 0.3);
+    oDriveExt.setODriveVelGains(ALT_MOTOR, 0.3, 0.4);
     delay(1);
-    oDriveExt.setODriveVelIntGain(ALT_MOTOR, 0.4);
     return true;
   }
 
@@ -536,7 +509,7 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     return true;
   }
 
-  // Disable / Enable ODrive motor position update - UART between ODrive and Teensy
+  // Disable / Enable ODrive motor position update - SERIAL between ODrive and Teensy
   // Disable-position-updates so that they don't override the ODrive
   // motor positions while tuning ODrive with ODrive USB channel
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;

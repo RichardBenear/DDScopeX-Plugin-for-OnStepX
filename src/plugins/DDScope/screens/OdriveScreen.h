@@ -7,14 +7,7 @@
 #include <Arduino.h>
 #include "../odriveExt/ODriveExt.h"
 
-typedef struct ODriveVersion {
-  uint8_t hwMajor;
-  uint8_t hwMinor;
-  uint8_t hwVar;
-  uint8_t fwMajor;
-  uint8_t fwMinor;
-  uint8_t fwRev;
-} ODriveVersion;
+
 
 class ODriveScreen : public Display {
   public:

@@ -2,6 +2,7 @@
 // axis servo motor
 
 #include "ODrive.h"
+#include "ODriveEnums.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
 
@@ -13,8 +14,12 @@ ODriveMotor *odriveMotorInstance[2];
 IRAM_ATTR void moveODriveMotorAxis1() { odriveMotorInstance[0]->move(); }
 IRAM_ATTR void moveODriveMotorAxis2() { odriveMotorInstance[1]->move(); }
 
-// ODrive servo motor driver
-ODriveArduino *_oDriveDriver;
+#if ODRIVE_COMM_MODE == OD_UART
+  // ODrive servo motor serial driver
+  ODriveArduino *_oDriveDriver;
+#elif ODRIVE_COMM_MODE == OD_CAN
+  ODriveTeensyCAN *_oDriveDriver;
+#endif
 
 // constructor
 ODriveMotor::ODriveMotor(uint8_t axisNumber, const ODriveDriverSettings *Settings, bool useFastHardwareTimers) {
@@ -32,7 +37,11 @@ ODriveMotor::ODriveMotor(uint8_t axisNumber, const ODriveDriverSettings *Setting
   this->useFastHardwareTimers = useFastHardwareTimers;
   driverType = ODRIVER;
 
-  _oDriveDriver = new ODriveArduino(ODRIVE_SERIAL);
+  #if ODRIVE_COMM_MODE == OD_UART
+    _oDriveDriver = new ODriveArduino(ODRIVE_SERIAL);
+  #elif ODRIVE_COMM_MODE == OD_CAN
+    _oDriveDriver = new ODriveTeensyCAN(250000); // using default ODrive CAN baudrate = 250000
+  #endif
 
   // attach the function pointers to the callbacks
   odriveMotorInstance[this->axisNumber - 1] = this;
@@ -48,9 +57,15 @@ bool ODriveMotor::init() {
   if (axisNumber == 1) {
     pinModeEx(ODRIVE_RST_PIN, OUTPUT);
     digitalWriteEx(ODRIVE_RST_PIN, HIGH); // bring ODrive out of Reset
-    delay(1000);                          // allow time for ODrive to boot
-    ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
-    VLF("MSG: ODrive, channel init");
+    delay(1000);  // allow time for ODrive to boot
+    
+    #if ODRIVE_COMM_MODE == OD_UART                        
+      ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
+      VLF("MSG: ODrive, SERIAL channel init");
+    #elif ODRIVE_COMM_MODE == OD_CAN
+      // constructor already does the .begin()
+      VLF("MSG: ODrive, CAN channel init");
+    #endif
   }
 
   power(false);
@@ -113,12 +128,22 @@ bool ODriveMotor::validateParameters(float param1, float param2, float param3, f
 void ODriveMotor::power(bool state) {
   int requestedState = AXIS_STATE_IDLE;
   if (state) requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
-  float timeout = 0.5;
-  if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
-    VF("WRN: ODrive"); V(axisNumber); VF(", ");
-    VLF(" Power, closed loop control - command timeout!");
-    return;
-  }
+  
+  #if ODRIVE_COMM_MODE == OD_UART 
+  float timeout = 0.5;                        
+    if(!_oDriveDriver->run_state(axisNumber - 1, requestedState, false, timeout)) {
+      VF("WRN: ODrive"); V(axisNumber); VF(", ");
+      VLF(" Power, closed loop control - command timeout!");
+      return;
+    }
+  #elif ODRIVE_COMM_MODE == OD_CAN
+    if(!_oDriveDriver->RunState(axisNumber - 1, requestedState)) { //currently, always returns true...need to add timeout
+      VF("WRN: ODrive"); V(axisNumber); VF(", ");
+      VLF(" Power, closed loop control - command timeout!");
+      return;
+    }
+  #endif
+
   V(axisPrefix); VF("closed loop control - ");
   if (state) { VLF("Active"); } else { VLF("Idle"); }
 }
@@ -150,7 +175,11 @@ void ODriveMotor::resetPositionSteps(long value) {
   // if (axisNumber - 1 == 1) oPosition = o_position1;
 
   // get ODrive position in fractionial Turns
-  oPosition = _oDriveDriver->GetPosition(axisNumber - 1)*TWO_PI*stepsPerMeasure; // axis1/2 are in steps per radian
+  #if ODRIVE_COMM_MODE == OD_UART
+    oPosition = _oDriveDriver->GetPosition(axisNumber - 1)*TWO_PI*stepsPerMeasure; // axis1/2 are in steps per radian
+  #elif ODRIVE_COMM_MODE == OD_CAN
+    oPosition = _oDriveDriver->GetPosition(axisNumber - 1)*TWO_PI*stepsPerMeasure; // axis1/2 are in steps per radian
+  #endif
 
   noInterrupts();
   motorSteps    = oPosition;
@@ -234,7 +263,11 @@ void ODriveMotor::poll() {
     long target = motorSteps + backlashSteps;
   #endif
   interrupts();
-  setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
+  #if ODRIVE_COMM_MODE == OD_UART
+    setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
+  #elif ODRIVE_COMM_MODE == OD_CAN
+    _oDriveDriver->SetPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
+  #endif
 }
 
 // sets dir as required and moves coord toward target at setFrequencySteps() rate

@@ -85,6 +85,11 @@
 #define SERVO                       -11    // general purpose flag for a SERVO driver motor
 #define STEP_DIR                    -12    // general purpose flag for a STEP_DIR driver motor
 
+// ODrive communication modes
+#define OD_UART                   201      // ODrive uses Serial
+#define OD_CAN                    202      // ODrive uses CAN
+#define OD_I2C                    203      // ODrive uses I2C
+
 // NV/EEPROM
 #define NV_KEY_VALUE                111111111UL
 

@@ -49,13 +49,15 @@
   #define ODRIVE_SYNC_LIMIT  OFF
 #endif
 
-#include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino 
-
-// ODrive servo motor serial driver
-extern ODriveArduino *_oDriveDriver;
-
-// ODrive servo motor serial driver
-extern ODriveArduino *_oDriveDriver;
+#if ODRIVE_COMM_MODE == OD_UART
+  #include <ODriveArduino.h> // https://github.com/odriverobotics/ODrive/tree/master/Arduino/ODriveArduino 
+  // ODrive servo motor serial driver
+  extern ODriveArduino *_oDriveDriver;
+#elif ODRIVE_COMM_MODE == OD_CAN
+  #include <FlexCAN_T4.h> //https://github.com/tonton81/FlexCAN_T4.git
+  #include <ODriveTeensyCAN.h> //https://github.com/Malaphor/ODriveTeensyCAN.git
+  extern ODriveTeensyCAN *_oDriveDriver;
+#endif
 
 typedef struct ODriveDriverSettings {
   int16_t model;
@@ -117,6 +119,7 @@ class ODriveMotor : public Motor {
 //  float o_position0 = 0;
 //  float o_position1 = 0;
 
+    #if ODRIVE_COMM_MODE == OD_UART
     // special command to send high resolution position to odrive
     void setPosition(int motor_number, float position) {
 //    if (motor_number == 0) o_position0 = position;
@@ -126,6 +129,7 @@ class ODriveMotor : public Motor {
       command[2] = '0' + motor_number;
       ODRIVE_SERIAL.print(command);
     }
+    #endif
 
     unsigned long lastSetPositionTime = 0;
     uint8_t oDriveMonitorHandle = 0;
@@ -150,7 +154,5 @@ class ODriveMotor : public Motor {
     DriverStatus status = { false, {false, false}, {false, false}, false, false, false, false };
     float stepsPerMeasure = 0.0F;
 };
-
-
 
 #endif

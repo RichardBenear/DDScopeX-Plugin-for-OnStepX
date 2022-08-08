@@ -48,8 +48,8 @@
 // SIGNALING ------------------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration_Controller#SIGNALING
                                           //         Applies to all axes.
 
-
 // ODRIVE ------------------------------------------------------
+#define ODRIVE_COMM_MODE           OD_CAN  // OD_CAN  // Use OD_UART or OD_CAN...I2C may be added later
 #define ODRIVE_SWAP_AXES               ON  // ODrive axis 0 = OnStep axis 2 = ALT
                                            // ODrive axis 1 = OnStep axis 1 = AZM
 #define ODRIVE_SERIAL             Serial3  // Teensy HW serial
