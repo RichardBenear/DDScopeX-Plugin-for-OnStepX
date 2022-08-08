@@ -55,7 +55,8 @@
   extern ODriveArduino *_oDriveDriver;
 #elif ODRIVE_COMM_MODE == OD_CAN
   #include <FlexCAN_T4.h> //https://github.com/tonton81/FlexCAN_T4.git
-  #include <ODriveTeensyCAN.h> //https://github.com/Malaphor/ODriveTeensyCAN.git
+  // changes were required to this library so it is local now
+  #include "src/plugins/DDScope/ODriveTeensyCAN/ODriveTeensyCAN.h" //https://github.com/Malaphor/ODriveTeensyCAN.git
   extern ODriveTeensyCAN *_oDriveDriver;
 #endif
 
