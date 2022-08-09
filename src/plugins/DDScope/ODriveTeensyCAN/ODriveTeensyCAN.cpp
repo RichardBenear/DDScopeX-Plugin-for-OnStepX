@@ -32,6 +32,7 @@ FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> Can0;
 ODriveTeensyCAN::ODriveTeensyCAN(int CANBaudRate) {
   this->CANBaudRate = CANBaudRate;
 	Can0.begin();
+  Serial.printf("MSG: begin CAN");
   Can0.setBaudRate(CANBaudRate);
 }
 
