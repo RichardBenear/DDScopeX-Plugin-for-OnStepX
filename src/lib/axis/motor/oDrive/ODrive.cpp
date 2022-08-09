@@ -19,6 +19,7 @@ IRAM_ATTR void moveODriveMotorAxis2() { odriveMotorInstance[1]->move(); }
   ODriveArduino *_oDriveDriver;
 #elif ODRIVE_COMM_MODE == OD_CAN
   ODriveTeensyCAN *_oDriveDriver;
+  //ODriveTeensyCAN odriveCAN(250000);
 #endif
 
 // constructor
