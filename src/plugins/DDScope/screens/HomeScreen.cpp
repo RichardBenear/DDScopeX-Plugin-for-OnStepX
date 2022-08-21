@@ -210,7 +210,7 @@ void HomeScreen::updateHomeStatus() {
     currentAZMotorCur = 0; // define this for non ODrive implementations
   #endif
   
-  if (currentAZMotorCur > MOTOR_CURRENT_WARNING) { // change background color...Warning!
+  if (abs(currentAZMotorCur) > MOTOR_CURRENT_WARNING) { // change background color...Warning!
     canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur, true);
   } else {
     canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur, false);
@@ -226,7 +226,7 @@ void HomeScreen::updateHomeStatus() {
     currentALTMotorCur = 0; // define this for non ODrive implementations
   #endif
 
-  if (currentALTMotorCur > MOTOR_CURRENT_WARNING) {
+  if (abs(currentALTMotorCur) > MOTOR_CURRENT_WARNING) {
     canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur, true);
   } else {
     canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentALTMotorCur, false);
