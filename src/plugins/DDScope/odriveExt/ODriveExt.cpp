@@ -86,9 +86,9 @@ void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
     oDversion.fwRev = _oDriveDriver->readInt();
   #elif ODRIVE_COMM_MODE == OD_CAN
   // needs implemented
-    oDversion.hwMajor = 9;
-    oDversion.hwMinor = 9;
-    oDversion.hwVar   = 9;
+    oDversion.hwMajor = 0;
+    oDversion.hwMinor = 6;
+    oDversion.hwVar   = 4;
     oDversion.fwMajor = 9;
     oDversion.fwMinor = 9;
     oDversion.fwRev   = 9;
@@ -98,7 +98,7 @@ void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
 // NOTE: Since the ODriveArduino library has up to 1000ms timeout waiting for a RX character,
 // a tasks.yield() is added after every read command.
 // NOTE: if the RX data from ODrive drops out or the ODrive is off during debug, then just return
-// from any of the follow "read" routines with -1.
+// from any of the follow "read" routines with -9.
 
 // Read ODrive bus voltage which is approx. the battery voltage
 // Battery Low LED is only on when battery is below low threashold
@@ -130,7 +130,7 @@ float ODriveExt::getODriveBusVoltage() {
 
 // get absolute Encoder positions in degrees
 float ODriveExt::getEncoderPositionDeg(int axis) {
-  if (oDriveRXoff) return -1.0;
+  if (oDriveRXoff) return -9.9; // arbitrary number
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; Y;
     float turns = _oDriveDriver->readFloat();
@@ -142,7 +142,7 @@ float ODriveExt::getEncoderPositionDeg(int axis) {
 
 // get motor positions in turns
 float ODriveExt::getMotorPositionTurns(int axis) {
-  if (oDriveRXoff) return -1.0;
+  if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate\n"; Y;
     float turns = _oDriveDriver->readFloat();
@@ -154,7 +154,7 @@ float ODriveExt::getMotorPositionTurns(int axis) {
 
 // get motor position in counts
 int ODriveExt::getMotorPositionCounts(int axis) {
-  if (oDriveRXoff) return -1.0;
+  if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis" << axis << ".encoder.pos_estimate_counts\n"; Y;
     int counts = _oDriveDriver->readInt();
@@ -166,7 +166,7 @@ int ODriveExt::getMotorPositionCounts(int axis) {
 
 // get Motor Current
 float ODriveExt::getMotorCurrent(int axis) {
-  if (oDriveRXoff) return -1.0;
+  if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis" << axis << ".motor.I_bus\n"; Y;
     float Iq = _oDriveDriver->readFloat();
@@ -189,7 +189,7 @@ uint8_t ODriveExt::getODriveCurrentState(int axis) {
 
 // Get the difference between ODrive setpoint and the encoder
 float ODriveExt::getMotorPositionDelta(int axis) {
-  if (oDriveRXoff) return -1.0;
+  if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
     float reqPos = _oDriveDriver->readFloat();   
@@ -228,31 +228,37 @@ void ODriveExt::MotorEncoderDelta() {
 
 // Get ODrive gains
 float ODriveExt::getODriveVelGain(int axis) {
-  if (oDriveRXoff) return -1.0;
+  if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n"; Y;
     float velGain = _oDriveDriver->readFloat();
   #elif ODRIVE_COMM_MODE == OD_CAN
-    //float velGain = _oDriveDriver->??();
-    float velGain = 99; // need to put something here
+    // not a commmand that is implemented with "CAN Simple" on ODrive so just return built-in constants
+    if (axis == 0) {
+      if (!AZgainHigh) return AZM_VEL_GAIN_DEF; else return AZM_VEL_GAIN_HI;    
+    } else {
+      if (!ALTgainHigh) return ALT_VEL_GAIN_DEF; else return ALT_VEL_GAIN_HI;    
+    }
   #endif
-  return velGain;
 }
 
 float ODriveExt::getODriveVelIntGain(int axis) {
-  if (oDriveRXoff) return -1.0;
+  if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n"; Y;
     float velIntGain = _oDriveDriver->readFloat();
   #elif ODRIVE_COMM_MODE == OD_CAN
-    //float velIntGain = _oDriveDriver->??();
-    float velIntGain = 99; // need to put something here
+    // not a commmand that is implemented with "CAN Simple" on ODrive so just return built-in constants
+    if (axis == 0) {
+      if (!AZgainHigh) return AZM_VEL_INT_GAIN_DEF; else return AZM_VEL_INT_GAIN_HI;    
+    } else {
+      if (!ALTgainHigh) return ALT_VEL_INT_GAIN_DEF; else return ALT_VEL_INT_GAIN_HI;    
+    }
   #endif
-  return velIntGain;
 }
 
 float ODriveExt::getODrivePosGain(int axis) {
-  if (oDriveRXoff) return -1.0;
+  if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n"; Y;
     float posGain = _oDriveDriver->readFloat();
@@ -265,30 +271,41 @@ float ODriveExt::getODrivePosGain(int axis) {
 
 // ========  Get the ODRIVE errors ========
 uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
-  if (oDriveRXoff) return -1;
+  if (oDriveRXoff) return 99;
   uint32_t axisErr = 99;
-  if (component == NO_COMP) {
+
+  // ODrive Top Level Error
+  if (axis == -1) {
     #if ODRIVE_COMM_MODE == OD_UART
-      ODRIVE_SERIAL << "r odrive.axis"<<axis<<".error\n"; Y;
-      axisErr = (uint32_t)_oDriveDriver->readInt();
+      ODRIVE_SERIAL << "r odrive.error\n"; Y;
+      return axisErr = (uint32_t)_oDriveDriver->readInt();
     #elif ODRIVE_COMM_MODE == OD_CAN
-      axisErr = _oDriveDriver->GetAxisError(axis);
+      return axisErr = 88; // No implementation for this in CAN bus
     #endif
   } else {
+    // ODrive Errors (Axis, Controller, Motor, or Encoder)
     #if ODRIVE_COMM_MODE == OD_UART
-      ODRIVE_SERIAL << "r odrive.axis"<<axis<<"."<<ODriveComponentsStr[component]<<".error\n"; Y;
-      uint32_t axisCompErr = (uint32_t)_oDriveDriver->readInt();
-    #elif ODRIVE_COMM_MODE == OD_CAN
-      if (component == MOTOR) {
-        axisErr = _oDriveDriver->GetMotorError(axis);
-      } else if (component == ENCODER) {
-        axisErr = _oDriveDriver->GetEncoderError(axis);
-      //} else if (component == CONTROLLER) {
-      //  axisErr = _oDriveDriver->GetControllerError(axis);
+      if (component = NO_COMP) { // axis error
+        ODRIVE_SERIAL << "r odrive.axis"<<axis<<".error\n"; Y;
+        return axisErr = (uint32_t)_oDriveDriver->readInt();
+      } else { // component of the Axis error
+        ODRIVE_SERIAL << "r odrive.axis"<<axis<<"."<<ODriveComponentsStr[component]<<".error\n"; Y;
+        return axisErr = (uint32_t)_oDriveDriver->readInt();
       }
-    #endif
-  } 
-  return axisErr;
+    #elif ODRIVE_COMM_MODE == OD_CAN
+      if (component == AXIS) {
+        return axisErr = _oDriveDriver->GetAxisError(axis);
+      } else if (component == MOTOR) {
+        return axisErr = _oDriveDriver->GetMotorError(axis);
+      } else if (component == ENCODER) {
+        return axisErr = _oDriveDriver->GetEncoderError(axis);
+      } else if (component == CONTROLLER) {
+        return axisErr = _oDriveDriver->GetControllerFlags(axis);
+      } else {
+        return axisErr = 99;
+      }
+    #endif 
+  }
 }
 
 // =========== Motor Thermistor Support =============

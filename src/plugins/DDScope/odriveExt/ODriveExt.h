@@ -1,16 +1,23 @@
 // =====================================================
 // ODriveExt.h
 
-#if ODRIVE_COMM_MODE == OD_UART
-  #include <ODriveArduino.h>
-
-  
-#endif
+//#if ODRIVE_COMM_MODE == OD_UART
+  //#include <ODriveArduino.h>
+//#endif
 
 #include "../display/Display.h"
 
 #ifndef ODRIVEEXT_H
 #define ODRIVEEXT_H
+
+#define AZM_VEL_GAIN_DEF      1.5 // do not change unless changed in ODrive FW
+#define AZM_VEL_GAIN_HI       1.8
+#define ALT_VEL_GAIN_DEF      0.3 // do not change unless changed in ODrive FW
+#define ALT_VEL_GAIN_HI       0.5
+#define AZM_VEL_INT_GAIN_DEF  2.0 // do not change unless changed in ODrive FW
+#define AZM_VEL_INT_GAIN_HI   2.3
+#define ALT_VEL_INT_GAIN_DEF  0.4 // do not change unless changed in ODrive FW
+#define ALT_VEL_INT_GAIN_HI   0.7
 
 enum Component
 {
@@ -31,7 +38,6 @@ typedef struct ODriveVersion {
   uint8_t fwMinor;
   uint8_t fwRev;
 } ODriveVersion;
-
 
 class ODriveExt : public Display {
   public:
@@ -65,6 +71,11 @@ class ODriveExt : public Display {
     bool oDserialAvail = false;
 
     Component component = COMP_FIRST;
+
+    bool AZgainHigh;
+    bool ALTgainHigh;
+    bool AZgainDefault;   
+    bool ALTgainDefault;
     
   private:
     bool batLowLED = false;
