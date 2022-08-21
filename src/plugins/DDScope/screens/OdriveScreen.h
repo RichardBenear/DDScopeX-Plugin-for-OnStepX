@@ -7,8 +7,6 @@
 #include <Arduino.h>
 #include "../odriveExt/ODriveExt.h"
 
-
-
 class ODriveScreen : public Display {
   public:
     void draw();
@@ -27,10 +25,6 @@ class ODriveScreen : public Display {
     static const uint8_t box_height_adj = 10;
     bool clearODriveErr   = false;
     bool resetODriveFlag  = false;
-    bool AZgainHigh       = false;
-    bool AZgainDefault    = true;
-    bool ALTgainHigh      = false;
-    bool ALTgainDefault   = true;
     bool OdStopButton     = false;
     bool ODpositionUpdateEnabled = true;
     
