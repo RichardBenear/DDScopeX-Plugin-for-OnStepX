@@ -98,6 +98,7 @@ class ODriveTeensyCAN {
     uint32_t GetMotorError(int axis_id);
     uint32_t GetEncoderError(int axis_id);
     uint32_t GetAxisError(int axis_id);
+    uint8_t GetControllerFlags(int axis_id);
     uint8_t GetCurrentState(int axis_id);
     float GetVbusVoltage(int axis_id);  //Can be sent to either axis
     float GetADCVoltage(int axis_id, uint8_t gpio_num);  //Can be sent to either axis

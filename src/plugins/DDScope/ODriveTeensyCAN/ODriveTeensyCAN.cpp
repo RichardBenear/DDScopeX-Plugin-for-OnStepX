@@ -4,7 +4,7 @@
 #include "ODriveTeensyCAN.h"
 #include <FlexCAN_T4.h>
 
-#define TIMEOUT 2 // msec
+#define TIMEOUT 4 // msec
 
 static const int kMotorOffsetFloat = 2;
 static const int kMotorStrideFloat = 28;
@@ -32,8 +32,14 @@ FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> Can0;
 ODriveTeensyCAN::ODriveTeensyCAN(int CANBaudRate) {
   this->CANBaudRate = CANBaudRate;
 	Can0.begin();
-  Serial.printf("MSG: begin CAN");
   Can0.setBaudRate(CANBaudRate);
+
+  // explore using FIFO and interrupts
+  //Can0.setMaxMB(16);
+  //Can0.enableFIFO();
+  //Can0.enableFIFOInterrupt();
+  //Can0.onReceive(canSniff);
+  //Can0.mailboxStatus();
 }
 
 int ODriveTeensyCAN::sendMessage(int axis_id, int cmd_id, bool remote_transmission_request, int length, byte *signal_bytes) {
@@ -78,6 +84,12 @@ int ODriveTeensyCAN::sendMessage(int axis_id, int cmd_id, bool remote_transmissi
   }
 }
 
+// # 0x001 - Heartbeat 
+// axisError:       bits  0 - 31, bytes 0, 1, 2, 3
+// axisState:       bits 32 - 39, byte 4
+// motorFlags:      bits 40 - 47, byte 5
+// encoderFlags:    bits 48 - 55, byte 6
+// controllerFlags: bits 56 - 63, byte 7
 int ODriveTeensyCAN::Heartbeat() {
   CAN_message_t return_msg;
 	if(Can0.read(return_msg) == 1) {
@@ -257,7 +269,7 @@ float ODriveTeensyCAN::GetPosition(int axis_id) {
   *((uint8_t *)(&output) + 1) = msg_data[1];
   *((uint8_t *)(&output) + 2) = msg_data[2];
   *((uint8_t *)(&output) + 3) = msg_data[3];
-  Serial.print(output);
+  //Serial.print(output);
   return output;
 }
 
@@ -397,6 +409,24 @@ uint32_t ODriveTeensyCAN::GetAxisError(int axis_id) {
     }
   }
 }
+
+uint8_t ODriveTeensyCAN::GetControllerFlags(int axis_id) {
+  byte msg_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t output;
+
+  CAN_message_t return_msg;
+
+  uint32_t msg_id = (axis_id << CommandIDLength) + CMD_ID_ODRIVE_HEARTBEAT_MESSAGE;
+
+  while (true) {
+    if (Can0.read(return_msg) && (return_msg.id == msg_id)) {
+      memcpy(msg_data, return_msg.buf, sizeof(return_msg.buf));
+      *((uint8_t *)(&output) + 0) = msg_data[7];
+      return output;
+    }
+  }
+}
+
 
 uint8_t ODriveTeensyCAN::GetCurrentState(int axis_id) {
   byte msg_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
