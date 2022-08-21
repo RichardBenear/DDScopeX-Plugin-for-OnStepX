@@ -99,7 +99,7 @@ void GuideScreen::updateGuideStatus() {
   #elif
     AZEncPos = 0; // define this for non ODrive implementations
   #endif
-  canvGuideInsPrint.printRJ(5, 210, 112, 16, cAZMposition, false);
+  canvGuideInsPrint.printRJ(3, 210, 106, 16, cAZMposition, false);
 
   // ALT encoder
  #ifdef ODRIVE_MOTOR_PRESENT
@@ -108,7 +108,7 @@ void GuideScreen::updateGuideStatus() {
   #elif
     AZEncPos = 0; // define this for non ODrive implementations
   #endif
-  canvGuideInsPrint.printRJ(5, 230, 112, 16, cALTposition, false);
+  canvGuideInsPrint.printRJ(3, 230, 106, 16, cALTposition, false);
 
   // show the Common coordinates area
   updateCommonStatus();
