@@ -14,12 +14,11 @@ ODriveMotor *odriveMotorInstance[2];
 IRAM_ATTR void moveODriveMotorAxis1() { odriveMotorInstance[0]->move(); }
 IRAM_ATTR void moveODriveMotorAxis2() { odriveMotorInstance[1]->move(); }
 
+// ODrive servo motor driver object pointer
 #if ODRIVE_COMM_MODE == OD_UART
-  // ODrive servo motor serial driver
   ODriveArduino *_oDriveDriver;
 #elif ODRIVE_COMM_MODE == OD_CAN
   ODriveTeensyCAN *_oDriveDriver;
-  //ODriveTeensyCAN odriveCAN(250000);
 #endif
 
 // constructor
@@ -38,12 +37,6 @@ ODriveMotor::ODriveMotor(uint8_t axisNumber, const ODriveDriverSettings *Setting
   this->useFastHardwareTimers = useFastHardwareTimers;
   driverType = ODRIVER;
 
-  #if ODRIVE_COMM_MODE == OD_UART
-    _oDriveDriver = new ODriveArduino(ODRIVE_SERIAL);
-  #elif ODRIVE_COMM_MODE == OD_CAN
-    _oDriveDriver = new ODriveTeensyCAN(250000); // using default ODrive CAN baudrate = 250000
-  #endif
-
   // attach the function pointers to the callbacks
   odriveMotorInstance[this->axisNumber - 1] = this;
   switch (this->axisNumber) {
@@ -60,11 +53,12 @@ bool ODriveMotor::init() {
     digitalWriteEx(ODRIVE_RST_PIN, HIGH); // bring ODrive out of Reset
     delay(1000);  // allow time for ODrive to boot
     
-    #if ODRIVE_COMM_MODE == OD_UART                        
+    #if ODRIVE_COMM_MODE == OD_UART
+      _oDriveDriver = new ODriveArduino(ODRIVE_SERIAL);
       ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
       VLF("MSG: ODrive, SERIAL channel init");
     #elif ODRIVE_COMM_MODE == OD_CAN
-      // constructor already does the .begin()
+      _oDriveDriver = new ODriveTeensyCAN(250000); // constructor does the .begin
       VLF("MSG: ODrive, CAN channel init");
     #endif
   }
