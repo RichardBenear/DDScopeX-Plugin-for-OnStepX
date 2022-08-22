@@ -103,6 +103,7 @@ void DDScope::init() {
 
   #ifdef ODRIVE_MOTOR_PRESENT
     VF("MSG: ODrive, ODRIVE_SWAP_AXES = "); if(ODRIVE_SWAP_AXES) VLF("ON"); else VLF("OFF");
+    VF("MSG: ODrive, ODRIVE_COMM_MODE = "); if(ODRIVE_COMM_MODE == OD_UART) VLF("SERIAL"); else VLF("CAN bus");
   #endif
 }
 
