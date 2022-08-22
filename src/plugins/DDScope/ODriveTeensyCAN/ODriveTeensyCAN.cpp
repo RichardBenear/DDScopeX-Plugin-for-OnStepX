@@ -1,4 +1,5 @@
-//https://github.com/Malaphor/ODriveTeensyCAN.git
+// https://github.com/Malaphor/ODriveTeensyCAN.git
+// This file has been modified from the original by R. Benear 8/22
 
 #include "Arduino.h"
 #include "ODriveTeensyCAN.h"
