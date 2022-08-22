@@ -27,6 +27,10 @@
 #define OD_ACT_X_SPACING         7
 #define OD_ACT_Y_SPACING         3
 
+// Printing with stream operator helper functions
+template<class T> inline Print& operator <<(Print& obj,     T arg) { obj.print(arg   ); return obj; }
+template<>        inline Print& operator <<(Print& obj, float arg) { obj.print(arg, 4); return obj; }
+
 // ODrive Screen Button object
 Button odriveButton(
                 OD_ACT_COL_1_X, OD_ACT_COL_1_Y, OD_ACT_BOXSIZE_X, OD_ACT_BOXSIZE_Y,
@@ -39,6 +43,16 @@ Button odriveButton(
 
 // Demo Mode Wrapper
 void demoWrapper() { oDriveExt.demoMode(); }
+
+typedef struct ODriveVersion {
+    uint8_t hwMajor;
+    uint8_t hwMinor;
+    uint8_t hwVar;
+    uint8_t fwMajor;
+    uint8_t fwMinor;
+    uint8_t fwRev;
+    } ODriveVersion;
+
 ODriveVersion oDversion;
 
 //****** Draw ODrive Screen ******
@@ -53,11 +67,38 @@ void ODriveScreen::draw() {
 
   drawCommonStatusLabels();
   updateOdriveButtons(false);
-  showGains();
   showODriveErrors();
-  getOnStepCmdErr(); // show error bar
-  oDriveExt.getODriveVersion(oDversion);
+  showGains();
 
+  #if ODRIVE_COMM_MODE == OD_UART
+    ODRIVE_SERIAL << "r hw_version_major\n";
+    oDversion.hwMajor = _oDriveDriver->readInt();
+
+    ODRIVE_SERIAL << "r hw_version_minor\n";
+    oDversion.hwMinor = _oDriveDriver->readInt();
+
+    ODRIVE_SERIAL << "r hw_version_variant\n";
+    oDversion.hwVar = _oDriveDriver->readInt();
+
+    ODRIVE_SERIAL << "r fw_version_major\n";
+    oDversion.fwMajor = _oDriveDriver->readInt();
+
+    ODRIVE_SERIAL << "r fw_version_minor\n";
+    oDversion.fwMinor = _oDriveDriver->readInt(); 
+
+    ODRIVE_SERIAL << "r fw_version_revision\n";
+    oDversion.fwRev = _oDriveDriver->readInt();
+  #elif ODRIVE_COMM_MODE == OD_CAN
+  // needs implemented
+    oDversion.hwMajor = 3;
+    oDversion.hwMinor = 6;
+    oDversion.hwVar   = 24;
+    oDversion.fwMajor = 0;
+    oDversion.fwMinor = 5;
+    oDversion.fwRev   = 4;
+  #endif
+
+  tft.setFont(); // default
   tft.setCursor(92, 164);
   tft.print("HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
   tft.setCursor(92, 176);
@@ -67,8 +108,7 @@ void ODriveScreen::draw() {
 // status update for this screen
 void ODriveScreen::updateOdriveStatus() {
   updateCommonStatus();
-  showODriveErrors();
-  showGains();
+  getOnStepCmdErr(); // show error bar
 }
 
 // ====== Show the Gains ======
