@@ -17,27 +17,28 @@ typedef struct FocuserConfiguration {
   uint8_t  slewRateMinimum;
   float    accelerationTime;
   float    rapidStopTime;
-  bool powerDown;
+  bool     powerDown;
+  uint16_t powerDownTime;
 } FocuserConfiguration;
 
 const FocuserConfiguration configuration[] = {
 #if FOCUSER_MAX >= 1
-  {AXIS4_DRIVER_MODEL != OFF, AXIS4_SLEW_RATE_DESIRED, AXIS4_SLEW_RATE_MINIMUM, AXIS4_ACCELERATION_TIME, AXIS4_RAPID_STOP_TIME, AXIS4_POWER_DOWN == ON},
+  {AXIS4_DRIVER_MODEL != OFF, AXIS4_SLEW_RATE_DESIRED, AXIS4_SLEW_RATE_MINIMUM, AXIS4_ACCELERATION_TIME, AXIS4_RAPID_STOP_TIME, AXIS4_POWER_DOWN == ON, AXIS4_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 2
-  {AXIS5_DRIVER_MODEL != OFF, AXIS5_SLEW_RATE_DESIRED, AXIS5_SLEW_RATE_MINIMUM, AXIS5_ACCELERATION_TIME, AXIS5_RAPID_STOP_TIME, AXIS5_POWER_DOWN == ON},
+  {AXIS5_DRIVER_MODEL != OFF, AXIS5_SLEW_RATE_DESIRED, AXIS5_SLEW_RATE_MINIMUM, AXIS5_ACCELERATION_TIME, AXIS5_RAPID_STOP_TIME, AXIS5_POWER_DOWN == ON, AXIS5_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 3
-  {AXIS6_DRIVER_MODEL != OFF, AXIS6_SLEW_RATE_DESIRED, AXIS6_SLEW_RATE_MINIMUM, AXIS6_ACCELERATION_TIME, AXIS6_RAPID_STOP_TIME, AXIS6_POWER_DOWN == ON},
+  {AXIS6_DRIVER_MODEL != OFF, AXIS6_SLEW_RATE_DESIRED, AXIS6_SLEW_RATE_MINIMUM, AXIS6_ACCELERATION_TIME, AXIS6_RAPID_STOP_TIME, AXIS6_POWER_DOWN == ON, AXIS6_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 4
-  {AXIS7_DRIVER_MODEL != OFF, AXIS7_SLEW_RATE_DESIRED, AXIS7_SLEW_RATE_MINIMUM, AXIS7_ACCELERATION_TIME, AXIS7_RAPID_STOP_TIME, AXIS7_POWER_DOWN == ON},
+  {AXIS7_DRIVER_MODEL != OFF, AXIS7_SLEW_RATE_DESIRED, AXIS7_SLEW_RATE_MINIMUM, AXIS7_ACCELERATION_TIME, AXIS7_RAPID_STOP_TIME, AXIS7_POWER_DOWN == ON, AXIS7_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 5
-  {AXIS8_DRIVER_MODEL != OFF, AXIS8_SLEW_RATE_DESIRED, AXIS8_SLEW_RATE_MINIMUM, AXIS8_ACCELERATION_TIME, AXIS8_RAPID_STOP_TIME, AXIS8_POWER_DOWN == ON},
+  {AXIS8_DRIVER_MODEL != OFF, AXIS8_SLEW_RATE_DESIRED, AXIS8_SLEW_RATE_MINIMUM, AXIS8_ACCELERATION_TIME, AXIS8_RAPID_STOP_TIME, AXIS8_POWER_DOWN == ON, AXIS8_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 6
-  {AXIS9_DRIVER_MODEL != OFF, AXIS9_SLEW_RATE_DESIRED, AXIS9_SLEW_RATE_MINIMUM, AXIS9_ACCELERATION_TIME, AXIS9_RAPID_STOP_TIME, AXIS9_POWER_DOWN == ON},
+  {AXIS9_DRIVER_MODEL != OFF, AXIS9_SLEW_RATE_DESIRED, AXIS9_SLEW_RATE_MINIMUM, AXIS9_ACCELERATION_TIME, AXIS9_RAPID_STOP_TIME, AXIS9_POWER_DOWN == ON, AXIS9_POWER_DOWN_TIME},
 #endif
 };
 
@@ -54,37 +55,37 @@ void Focuser::init() {
 
   // get the motion controllers ready
   #if AXIS4_DRIVER_MODEL != OFF
-    if (!axis4.init(&motor4)) { initError.driver = true; DLF("ERR: Axis4, no motion controller skipping!"); } else {
+    if (!axis4.init(&motor4)) { initError.driver = true; DLF("ERR: Axis4, no motion controller!"); } else {
       VLF("MSG: Focuser1, init (Axis4)");
       axes[0] = &axis4;
     }
   #endif
   #if AXIS5_DRIVER_MODEL != OFF
-    if (!axis5.init(&motor5)) { initError.driver = true; DLF("ERR: Axis5, no motion controller skipping!"); } else {
+    if (!axis5.init(&motor5)) { initError.driver = true; DLF("ERR: Axis5, no motion controller!"); } else {
       VLF("MSG: Focuser2, init (Axis5)");
       axes[1] = &axis5;
     }
   #endif
   #if AXIS6_DRIVER_MODEL != OFF
-    if (!axis6.init(&motor6)) { initError.driver = true; DLF("ERR: Axis6, no motion controller skipping!"); } else {
+    if (!axis6.init(&motor6)) { initError.driver = true; DLF("ERR: Axis6, no motion controller!"); } else {
       VLF("MSG: Focuser3, init (Axis6)");
       axes[2] = &axis6;
     }
   #endif
   #if AXIS7_DRIVER_MODEL != OFF
-    if (!axis7.init(&motor7)) { initError.driver = true; DLF("ERR: Axis7, no motion controller skipping!"); } else {
+    if (!axis7.init(&motor7)) { initError.driver = true; DLF("ERR: Axis7, no motion controller!"); } else {
       VLF("MSG: Focuser4, init (Axis7)");
       axes[3] = &axis7;
     }
   #endif
   #if AXIS8_DRIVER_MODEL != OFF
-    if (!axis8.init(&motor8)) { initError.driver = true; DLF("ERR: Axis8, no motion controller skipping!"); } else {
+    if (!axis8.init(&motor8)) { initError.driver = true; DLF("ERR: Axis8, no motion controller!"); } else {
       VLF("MSG: Focuser5, init (Axis8)");
       axes[4] = &axis8;
     }
   #endif
   #if AXIS9_DRIVER_MODEL != OFF
-    if (!axis9.init(&motor9)) { initError.driver = true; DLF("ERR: Axis9, no motion controller skipping!"); } else {
+    if (!axis9.init(&motor9)) { initError.driver = true; DLF("ERR: Axis9, no motion controller!"); } else {
       VLF("MSG: Focuser6, init (Axis9)");
       axes[5] = &axis9;
     }
@@ -146,7 +147,7 @@ void Focuser::init() {
         axes[index]->setFrequencySlew(configuration[index].slewRateDesired);
         axes[index]->setSlewAccelerationTime(configuration[index].accelerationTime);
         axes[index]->setSlewAccelerationTimeAbort(configuration[index].rapidStopTime);
-        if (configuration[index].powerDown) axes[index]->setPowerDownTime(DEFAULT_POWER_DOWN_TIME);
+        if (configuration[index].powerDown) axes[index]->setPowerDownTime(configuration[index].powerDownTime);
 
         unpark(index);
       }

@@ -60,16 +60,6 @@ Axis::Axis(uint8_t axisNumber, const AxisPins *pins, const AxisSettings *setting
 bool Axis::init(Motor *motor) {
   this->motor = motor;
 
-  // start monitor
-  V(axisPrefix); VF("start monitor task (rate "); V(FRACTIONAL_SEC_US); VF("us priority 1)... ");
-  uint8_t taskHandle = 0;
-  char taskName[] = "Ax_Mtr";
-  taskName[2] = axisNumber + '0';
-  taskHandle = tasks.add(0, 0, true, 1, callback, taskName);
-  tasks.setPeriodMicros(taskHandle, FRACTIONAL_SEC_US);
-  if (taskHandle) { VLF("success"); } else { VLF("FAILED!"); }
-  motor->monitorHandle = taskHandle;
-
   // check for reverting axis settings in NV
   if (!nv.hasValidKey()) {
     V(axisPrefix); VLF("writing defaults to NV");
@@ -122,6 +112,16 @@ bool Axis::init(Motor *motor) {
   motor->setParameters(settings.param1, settings.param2, settings.param3, settings.param4, settings.param5, settings.param6);
   motor->setReverse(settings.reverse);
   motor->setBacklashFrequencySteps(backlashFreq*settings.stepsPerMeasure);
+
+  // start monitor
+  V(axisPrefix); VF("start monitor task (rate "); V(FRACTIONAL_SEC_US); VF("us priority 1)... ");
+  uint8_t taskHandle = 0;
+  char taskName[] = "Ax_Mtr";
+  taskName[2] = axisNumber + '0';
+  taskHandle = tasks.add(0, 0, true, 1, callback, taskName);
+  tasks.setPeriodMicros(taskHandle, FRACTIONAL_SEC_US);
+  if (taskHandle) { VLF("success"); } else { VLF("FAILED!"); }
+  motor->monitorHandle = taskHandle;
 
   return true;
 }
@@ -436,6 +436,22 @@ void Axis::poll() {
   // make sure we're ready
   if (axisNumber == 0) return;
 
+  // let the user know if the associated senses change state
+  #if DEBUG == VERBOSE
+    if (sense.changed(homeSenseHandle)) {
+      V(axisPrefix); VF("home sense state changed ");
+      if (sense.isOn(homeSenseHandle)) { VLF("ON"); } else { VLF("OFF"); }
+    }
+    if (sense.changed(minSenseHandle)) {
+      V(axisPrefix); VF("min sense state changed ");
+      if (sense.isOn(minSenseHandle)) { VLF("ON"); } else { VLF("OFF"); }
+    }
+    if (sense.changed(maxSenseHandle)) {
+      V(axisPrefix); VF("max sense state changed ");
+      if (sense.isOn(maxSenseHandle)) { VLF("ON"); } else { VLF("OFF"); }
+    }
+  #endif
+
   // check physical limit switches
   errors.minLimitSensed = sense.isOn(minSenseHandle);
   errors.maxLimitSensed = sense.isOn(maxSenseHandle);
@@ -590,7 +606,6 @@ void Axis::setFrequency(float frequency) {
         if ((long)(millis() - powerDownTime) > 0) {
           poweredDown = true;
           motor->power(false);
-          V(axisPrefix); VLF("driver powered down");
         }
       }
     }
@@ -598,7 +613,6 @@ void Axis::setFrequency(float frequency) {
     if (poweredDown) {
       poweredDown = false;
       motor->power(true);
-      V(axisPrefix); VLF("driver powered up");
     }
     powerDownTime = millis() + powerDownDelay;
   }

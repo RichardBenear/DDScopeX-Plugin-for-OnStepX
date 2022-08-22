@@ -184,6 +184,7 @@ bool StepDirMotor::validateParameters(float param1, float param2, float param3, 
 // sets motor power on/off (if possible)
 void StepDirMotor::power(bool state) {
   if (Pins->enable != OFF && Pins->enable != SHARED) {
+    V(axisPrefix); VF("driver powered "); if (state) { VF("up"); } else { VF("down"); } VF(" using pin "); VL(Pins->enable);
     digitalWriteEx(Pins->enable, state ? Pins->enabledState : !Pins->enabledState);
   } else {
     driver->power(state);
@@ -362,7 +363,7 @@ IRAM_ATTR void StepDirMotor::move(const int16_t stepPin) {
   long lastTargetSteps = targetSteps;
   if (synchronized && !inBacklash) targetSteps += step;
 
-  if (motorSteps > targetSteps) {
+  if (motorSteps > targetSteps || (inBacklash && direction == dirRev)) {
     if (direction != dirRev) {
       targetSteps = lastTargetSteps;
       #ifdef GPIO_DIRECTION_PINS
@@ -388,7 +389,7 @@ IRAM_ATTR void StepDirMotor::move(const int16_t stepPin) {
     digitalWriteF(stepPin, stepSet);
   } else
 
-  if (motorSteps < targetSteps) {
+  if (motorSteps < targetSteps || (inBacklash && direction == dirFwd)) {
     if (direction != dirFwd) {
       targetSteps = lastTargetSteps;
       #ifdef GPIO_DIRECTION_PINS
