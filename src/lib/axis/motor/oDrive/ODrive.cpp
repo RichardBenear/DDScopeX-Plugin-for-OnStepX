@@ -37,6 +37,14 @@ ODriveMotor::ODriveMotor(uint8_t axisNumber, const ODriveDriverSettings *Setting
   this->useFastHardwareTimers = useFastHardwareTimers;
   driverType = ODRIVER;
 
+  if (axisNumber == 1) { // only do once since motor 2 object creation could
+    #if ODRIVE_COMM_MODE == OD_UART
+      _oDriveDriver = new ODriveArduino(ODRIVE_SERIAL);
+    #elif ODRIVE_COMM_MODE == OD_CAN
+      _oDriveDriver = new ODriveTeensyCAN(250000);
+    #endif
+  }
+
   // attach the function pointers to the callbacks
   odriveMotorInstance[this->axisNumber - 1] = this;
   switch (this->axisNumber) {
@@ -54,11 +62,10 @@ bool ODriveMotor::init() {
     delay(1000);  // allow time for ODrive to boot
     
     #if ODRIVE_COMM_MODE == OD_UART
-      _oDriveDriver = new ODriveArduino(ODRIVE_SERIAL);
       ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
       VLF("MSG: ODrive, SERIAL channel init");
     #elif ODRIVE_COMM_MODE == OD_CAN
-      _oDriveDriver = new ODriveTeensyCAN(250000); // constructor does the .begin
+      // .begin is done by the constructor
       VLF("MSG: ODrive, CAN channel init");
     #endif
   }
