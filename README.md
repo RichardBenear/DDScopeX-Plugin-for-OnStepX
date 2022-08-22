@@ -7,7 +7,7 @@
 The DDScopeX firmware implementation is a Plugin containing 17 different **Screens** (Pages)
 for **Control** and **Status** using OnStepX core FW authored by Howard Dutton. 
 OnStepX is firmware for a GoTo telescope controller running on many possible hardware platforms.
-OnStepX provides the capability of adding Plugins to take advantage of the core firmware. 
+OnStepX provides the capability of adding Plugins to take advantage of the core firmware which is what DDScopeX does. 
 
 >[OnStep README](./OnStep_README.md)
 
@@ -16,8 +16,10 @@ of the Smart Hand Controller also authored by Howard Dutton.
 
 DDScopeX hardware uses Direct Drive motor technology by using 3-phase Axial Flux Permanent Magnet DC Motors (AFPMDC Motor). There is closed loop Servo control of motor positions using an ODrive subsystem and 2^14 (16,384 tick absolute encoders. The Motors,
 Electronics, and Mechanics were designed and constructed by the author.
-Motor closed-loop control is handled by the ODrive subsystem using a serial
-command channel from DDScopeX.
+
+Motor closed-loop control is handled by the ODrive subsystem using either a serial
+command channel or the CAN bus from DDScopeX. The config.h file contains the switch to select which communications mode is desired.  
+For example: ``#define ODRIVE_COMM_MODE OD_CAN``
 
 A menu and screens (pages) structure using a 3.5" LCD touchscreen is implemented.
 The 3.5" Display is an electrically modified Rasperry Pi TFT LCD using the
@@ -87,6 +89,8 @@ These are listed to provide clarity of where the specific files are located for 
     PROJECT Website: (http://rduinoscope.byethost24.com)  
     Original file has been formatted differently for DDScopeX
 * _Adafruit_ILI9486_Teensy_ by Steve Strong & Richard Palmer
+* FlexCAN_T4 library by Antonio Alexander Brewer (https://github.com/tonton81/FlexCAN_T4)
+* ODriveTeensyCAN library by Diablo Malaphor (/https://github.com/Malaphor/ODriveTeensyCAN.git). This library was forked from G-Levine. There is a local copy included in the DDScope fileset since it has been modified.
 
 ### ``.pio\libdeps\teensy41`` (imported libraries)
 
@@ -99,6 +103,7 @@ These are listed to provide clarity of where the specific files are located for 
 * ODriveArduino
 * PID
 * TinyGPSPlus
+* FlexCAN_T4
 
 ## DDScopeX Features
 
@@ -145,6 +150,7 @@ DDScopeX provides 17 (touch)screens that support the functions of OnStepX and th
 * 22.2 VDC LiPo Battery 5200 mAh
 * Custom PC Board designed with KiCAD with spares pinned out for later additions
 * 3.5" TFT LCD (Rpi) display with Touchscreen (modified to work on 3.3V and 16 bit SPI interface)
+* CAN bus
 
 ### Other DDScope features
 
