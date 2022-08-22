@@ -30,17 +30,10 @@ enum Component
   COMP_LAST
 };
 
-typedef struct ODriveVersion {
-  uint8_t hwMajor;
-  uint8_t hwMinor;
-  uint8_t hwVar;
-  uint8_t fwMajor;
-  uint8_t fwMinor;
-  uint8_t fwRev;
-} ODriveVersion;
-
 class ODriveExt : public Display {
   public:
+    
+
     // getters
     int getMotorPositionCounts(int axis);
     uint8_t getODriveCurrentState(int axis);
@@ -54,7 +47,6 @@ class ODriveExt : public Display {
     float getODriveVelIntGain(int axis);
     float getODrivePosGain(int axis);
     float getODriveBusVoltage();
-    void getODriveVersion(ODriveVersion);
 
     uint32_t getODriveErrors(int axis, Component component);
     void demoMode();
@@ -71,6 +63,7 @@ class ODriveExt : public Display {
     bool oDserialAvail = false;
 
     Component component = COMP_FIRST;
+   
 
     bool AZgainHigh;
     bool ALTgainHigh;

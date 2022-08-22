@@ -64,36 +64,6 @@ void ODriveExt::setODrivePosGain(int axis, float level) {
   #endif
 }
 
-// ================ ODrive "reads" ======================
-void ODriveExt::getODriveVersion(ODriveVersion oDversion) {
-  #if ODRIVE_COMM_MODE == OD_UART
-    ODRIVE_SERIAL << "r hw_version_major\n";
-    oDversion.hwMajor = _oDriveDriver->readInt();
-
-    ODRIVE_SERIAL << "r hw_version_minor\n";
-    oDversion.hwMinor = _oDriveDriver->readInt();
-
-    ODRIVE_SERIAL << "r hw_version_variant\n";
-    oDversion.hwVar = _oDriveDriver->readInt();
-
-    ODRIVE_SERIAL << "r fw_version_major\n";
-    oDversion.fwMajor = _oDriveDriver->readInt();
-
-    ODRIVE_SERIAL << "r fw_version_minor\n";
-    oDversion.fwMinor = _oDriveDriver->readInt(); 
-
-    ODRIVE_SERIAL << "r fw_version_revision\n";
-    oDversion.fwRev = _oDriveDriver->readInt();
-  #elif ODRIVE_COMM_MODE == OD_CAN
-  // needs implemented
-    oDversion.hwMajor = 0;
-    oDversion.hwMinor = 6;
-    oDversion.hwVar   = 4;
-    oDversion.fwMajor = 9;
-    oDversion.fwMinor = 9;
-    oDversion.fwRev   = 9;
-  #endif
-}
 
 // NOTE: Since the ODriveArduino library has up to 1000ms timeout waiting for a RX character,
 // a tasks.yield() is added after every read command.
@@ -231,7 +201,7 @@ float ODriveExt::getODriveVelGain(int axis) {
   if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_gain\n"; Y;
-    float velGain = _oDriveDriver->readFloat();
+    return _oDriveDriver->readFloat();
   #elif ODRIVE_COMM_MODE == OD_CAN
     // not a commmand that is implemented with "CAN Simple" on ODrive so just return built-in constants
     if (axis == 0) {
@@ -246,7 +216,7 @@ float ODriveExt::getODriveVelIntGain(int axis) {
   if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.vel_integrator_gain\n"; Y;
-    float velIntGain = _oDriveDriver->readFloat();
+    return _oDriveDriver->readFloat();
   #elif ODRIVE_COMM_MODE == OD_CAN
     // not a commmand that is implemented with "CAN Simple" on ODrive so just return built-in constants
     if (axis == 0) {
@@ -261,12 +231,10 @@ float ODriveExt::getODrivePosGain(int axis) {
   if (oDriveRXoff) return -9.9;
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis"<<axis<<".controller.config.pos_gain\n"; Y;
-    float posGain = _oDriveDriver->readFloat();
+    return _oDriveDriver->readFloat();
   #elif ODRIVE_COMM_MODE == OD_CAN
-    //float posGain = _oDriveDriver->??();
-    float posGain = 99; // need to put something here
+    return 99; // not implemented
   #endif
-  return posGain;
 }
 
 // ========  Get the ODRIVE errors ========
@@ -285,7 +253,7 @@ uint32_t ODriveExt::getODriveErrors(int axis, Component component) {
   } else {
     // ODrive Errors (Axis, Controller, Motor, or Encoder)
     #if ODRIVE_COMM_MODE == OD_UART
-      if (component = NO_COMP) { // axis error
+      if (component == NO_COMP) { // axis error
         ODRIVE_SERIAL << "r odrive.axis"<<axis<<".error\n"; Y;
         return axisErr = (uint32_t)_oDriveDriver->readInt();
       } else { // component of the Axis error
