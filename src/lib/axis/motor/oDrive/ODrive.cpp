@@ -6,6 +6,8 @@
 
 #ifdef ODRIVE_MOTOR_PRESENT
 
+#include "ODriveEnums.h"
+
 #include "../../../tasks/OnTask.h"
 
 extern int _hardwareTimersAllocated;
