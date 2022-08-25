@@ -270,7 +270,7 @@ float ODriveTeensyCAN::GetPosition(int axis_id) {
   *((uint8_t *)(&output) + 1) = msg_data[1];
   *((uint8_t *)(&output) + 2) = msg_data[2];
   *((uint8_t *)(&output) + 3) = msg_data[3];
-  //Serial.print(output);
+  //Serial.println(output);
   return output;
 }
 
