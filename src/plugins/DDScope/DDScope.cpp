@@ -97,8 +97,8 @@ void DDScope::init() {
   if (rs_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   // check for General Errors
-  VF("MSG: Setup, General Error check (rate 2500 ms priority 6)... ");
-  uint8_t ge_handle = tasks.add(2500, 0, true, 6, generalErrorWrapper, "GeneralErrors");
+  VF("MSG: Setup, General Error check (rate 1500 ms priority 6)... ");
+  uint8_t ge_handle = tasks.add(1500, 0, true, 6, generalErrorWrapper, "GeneralErrors");
   if (ge_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   #ifdef ODRIVE_MOTOR_PRESENT
