@@ -116,27 +116,27 @@ void ODriveScreen::showGains() {
   // Show AZM Velocity Gain - AZ is motor 1
   tft.setFont();
   float temp = oDriveExt.getODriveVelGain(AZM_MOTOR);
-  tft.setCursor(208,282); tft.print("AZM Vel  Gain:");
-  tft.fillRect(293,282, 39, 10, pgBackground); 
-  tft.setCursor(293,282); tft.print(temp);
+  tft.setCursor(203,282); tft.print("AZM Vel  Gain:");
+  tft.fillRect(285,282, 39, 10, pgBackground); 
+  tft.setCursor(285,282); tft.print(temp);
   
   // Show AZM Velocity Integrator Gain
   temp = oDriveExt.getODriveVelIntGain(AZM_MOTOR);
-  tft.setCursor(208,292); tft.print("AZM VelI Gain:");
-  tft.fillRect(293,292, 39, 10, pgBackground); 
-  tft.setCursor(293,292); tft.print(temp);
+  tft.setCursor(203,292); tft.print("AZM VelI Gain:");
+  tft.fillRect(285,292, 39, 10, pgBackground); 
+  tft.setCursor(285,292); tft.print(temp);
 
   // Show ALT Velocity Gain - ALT is motor 0
   temp = oDriveExt.getODriveVelGain(ALT_MOTOR);
-  tft.setCursor(208,302); tft.print("ALT Vel  Gain:");
-  tft.fillRect(293,302, 39, 10, pgBackground); 
-  tft.setCursor(293,302); tft.print(temp);
+  tft.setCursor(203,302); tft.print("ALT Vel  Gain:");
+  tft.fillRect(285,302, 39, 10, pgBackground); 
+  tft.setCursor(285,302); tft.print(temp);
 
   // Show ALT Velocity Integrator Gain
   temp = oDriveExt.getODriveVelIntGain(ALT_MOTOR);
-  tft.setCursor(208,312); tft.print("ALT VelI Gain:");
-  tft.fillRect(293,312, 39, 10, pgBackground); 
-  tft.setCursor(293,312); tft.print(temp);
+  tft.setCursor(203,312); tft.print("ALT VelI Gain:");
+  tft.fillRect(285,312, 39, 10, pgBackground); 
+  tft.setCursor(285,312); tft.print(temp);
   tft.setFont(&Inconsolata_Bold8pt7b);
 }
 

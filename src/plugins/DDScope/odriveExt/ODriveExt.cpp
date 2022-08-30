@@ -178,7 +178,7 @@ float ODriveExt::getMotorPositionDelta(int axis) {
       if (axis == ALT_MOTOR) currentTarget = axis1.getTargetCoordinate();
       if (axis == AZM_MOTOR) currentTarget = axis2.getTargetCoordinate();
     }
-    // the following variables are in "turns"
+    // the following variables are in fractional "turns"
     target = ((float)currentTarget*RAD_DEG_RATIO)/360;
     //int32_t enc_actual = _oDriveDriver->GetEncoderShadowCount(axis); // 2^14 = 16384 counts per revolution
     //actual = (float)enc_actual/16384;
@@ -201,23 +201,20 @@ float ODriveExt::getMotorPositionDelta(int axis) {
 
 // Check encoders to see if positions are too far outside range of requested position inferring that there are interfering forces
 // This will warn that the motors may be getting too hot since more current is required trying to move them to the requested position
-// Beeping occurs at higher frequency as position delta from target increases
 void ODriveExt::MotorEncoderDelta() {
   if (oDriveRXoff) return;
   if (axis1.isEnabled()) {
     float AZposDelta = getMotorPositionDelta(AZM_MOTOR);
-    if (AZposDelta > 0.0010 && AZposDelta < 0.03) soundFreq(AZposDelta * 60000, 15);
-    else if (AZposDelta > 0.03) soundFreq(3000, 20); // saturated
+    if (AZposDelta > 0.0020 && AZposDelta < 0.03) 
+      soundFreq(1200, 25);
+    else if (AZposDelta > 0.03) soundFreq(2000, 45); // saturated
   }
   
   if (axis2.isEnabled()) {
     float ALTposDelta = getMotorPositionDelta(ALT_MOTOR);
-    if (ALTposDelta > .0010 && ALTposDelta < 0.03) {
-      soundFreq(ALTposDelta * 70000, 20);
-    
-      soundFreq(ALTposDelta * 50000, 20); // double beep to distinguish ALT from AZM
-    }
-    else if (ALTposDelta > 0.03) soundFreq(3000, 30); 
+    if (ALTposDelta > .0050 && ALTposDelta < 0.03) {
+      soundFreq(2500, 35);
+    } else if (ALTposDelta > 0.03) soundFreq(2500, 45); 
   }
 }
 
