@@ -8,7 +8,7 @@
 
 #ifdef MOTOR_PRESENT
 
-// there are four hardware timers possible in OnTask #1,2,3,4
+// there are four hardware timers possible in OnTask #1-4
 // this keeps track of which have been allocated in the Axis class and decendants
 int _hardwareTimersAllocated = AXIS_HARDWARE_TIMER_BASE - 1;
 
@@ -110,6 +110,7 @@ bool Axis::init(Motor *motor) {
   // special ODrive case, a way to pass the stepsPerMeasure to it
   if (motor->getParameterTypeCode() == 'O') settings.param6 = settings.stepsPerMeasure;
   motor->setParameters(settings.param1, settings.param2, settings.param3, settings.param4, settings.param5, settings.param6);
+  motor->enable(false);
   motor->setReverse(settings.reverse);
   motor->setBacklashFrequencySteps(backlashFreq*settings.stepsPerMeasure);
 
@@ -133,7 +134,7 @@ void Axis::enable(bool state) {
     if (!enabled && state == true) { V(axisPrefix); VLF("enabled"); }
   #endif
   enabled = state;
-  motor->power(enabled & !poweredDown);
+  motor->enable(enabled & !poweredDown);
 }
 
 // time (in ms) before automatic power down at standstill, use 0 to disable
@@ -338,18 +339,17 @@ CommandError Axis::autoSlew(Direction direction, float frequency) {
 
   if (!isnan(frequency)) setFrequencySlew(frequency);
 
-  V(axisPrefix);
   if (autoRate == AR_NONE) {
     motor->setSynchronized(true);
     motor->setSlewing(true);
-    VF("autoSlew start ");
+    V(axisPrefix); VF("autoSlew start ");
   } else { VF("autoSlew resum "); }
   if (direction == DIR_FORWARD) {
     autoRate = AR_RATE_BY_TIME_FORWARD;
-    VF("fwd@ ");
+    V(axisPrefix); VF("fwd@ ");
   } else {
     autoRate = AR_RATE_BY_TIME_REVERSE;
-    VF("rev@ ");
+    V(axisPrefix); VF("rev@ ");
   }
   #if DEBUG == VERBOSE
     if (unitsRadians) V(radToDeg(slewFreq)); else V(slewFreq);
@@ -605,14 +605,14 @@ void Axis::setFrequency(float frequency) {
         powerDownOverride = false;
         if ((long)(millis() - powerDownTime) > 0) {
           poweredDown = true;
-          motor->power(false);
+          motor->enable(false);
         }
       }
     }
   } else {
     if (poweredDown) {
       poweredDown = false;
-      motor->power(true);
+      motor->enable(true);
     }
     powerDownTime = millis() + powerDownDelay;
   }

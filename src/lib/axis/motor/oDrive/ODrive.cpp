@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------------
-// axis servo motor
+// axis odrive servo motor
 
 #include "ODrive.h"
 #include "ODriveEnums.h"
@@ -72,7 +72,7 @@ bool ODriveMotor::init() {
     #endif
   }
 
-  power(false);
+  enable(false);
 
   // start the motor timer
   V(axisPrefix);
@@ -128,8 +128,8 @@ bool ODriveMotor::validateParameters(float param1, float param2, float param3, f
   return true;
 }
 
-// sets motor power on/off (if possible)
-void ODriveMotor::power(bool state) {
+// sets motor enable on/off (if possible)
+void ODriveMotor::enable(bool state) {
   int requestedState = AXIS_STATE_IDLE;
   if (state) requestedState = AXIS_STATE_CLOSED_LOOP_CONTROL;
   
