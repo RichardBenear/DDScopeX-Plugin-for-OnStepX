@@ -1,7 +1,7 @@
 // =====================================================
 // DDScope.cpp
 //
-// Title:  DDScope (Plugin for OnStepX)
+// Title:  DDScope (Direct Drive Plugin for OnStepX)
 // Author: Richard Benear
 //
 // Description:
@@ -26,8 +26,8 @@
 
 // Firmware version -------------------------------------------------------------------------
 #define PluginName                "DDScope"
-#define PluginFWVersionMajor       1
-#define PluginFWVersionMinor       01    // minor version 00 to 99
+#define DDScopeFwVersionMajor       1
+#define DDScopeFwVersionMinor       01    // minor version 00 to 99
 
 #include <Arduino.h>
 #include "DDScope.h"
@@ -97,8 +97,8 @@ void DDScope::init() {
   if (rs_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   // check for General Errors
-  VF("MSG: Setup, General Error check (rate 1500 ms priority 6)... ");
-  uint8_t ge_handle = tasks.add(1500, 0, true, 6, generalErrorWrapper, "GeneralErrors");
+  VF("MSG: Setup, General Error check (rate 1200 ms priority 6)... ");
+  uint8_t ge_handle = tasks.add(1200, 0, true, 6, generalErrorWrapper, "GeneralErrors");
   if (ge_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   #ifdef ODRIVE_MOTOR_PRESENT
