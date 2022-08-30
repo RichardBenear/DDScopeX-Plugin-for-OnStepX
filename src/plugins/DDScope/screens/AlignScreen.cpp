@@ -511,10 +511,10 @@ bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // Enable the Motors
     digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-    motor1.power(true); // AZ motor on
+    motor1.enable(true); // AZ motor on
     
     digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-    motor2.power(true); // ALT motor on
+    motor2.enable(true); // ALT motor on
     return true;
   } 
 

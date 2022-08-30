@@ -427,10 +427,10 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     if (!axis1.isEnabled()) { // if not On, toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-      motor1.power(true);
+      motor1.enable(true);
     } else { // since already ON, toggle OFF
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-      motor1.power(false);
+      motor1.enable(false);
     }
     return true;
   }
@@ -441,10 +441,10 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     if (axis2.isEnabled()) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-      motor2.power(true);
+      motor2.enable(true);
     } else { // toggle OFF
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
-      motor2.power(false); // turn off ODrive motor
+      motor2.enable(false); // turn off ODrive motor
     }
     return true;
   }
@@ -457,9 +457,9 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     if (!OdStopButton) {
       setLocalCmd(":Q#"); // stops move
-      motor1.power(false); // turn off the motors
+      motor1.enable(false); // turn off the motors
       axis1.enable(false);
-      motor2.power(false);
+      motor2.enable(false);
       axis2.enable(false);
       OdStopButton = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED

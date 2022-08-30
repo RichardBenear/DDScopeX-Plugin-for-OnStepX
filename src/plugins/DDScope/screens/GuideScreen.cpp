@@ -437,10 +437,10 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
       BEEP;
         setLocalCmd(":Q#");
         digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
-        motor1.power(false);
+        motor1.enable(false);
         axis1.enable(false);
         digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
-        motor2.power(false);
+        motor2.enable(false);
         axis2.enable(false);
         setLocalCmd(":Td#"); // Disable Tracking
         

@@ -448,9 +448,9 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     soundFreq(1500, 200);
     abortPgBut = true;
     setLocalCmd(":Q#"); // stops move
-    motor1.power(false); // do this for safety reasons...mount may be colliding with something
+    motor1.enable(false); // do this for safety reasons...mount may be colliding with something
     axis1.enable(false);
-    motor2.power(false);
+    motor2.enable(false);
     axis2.enable(false);
     return true;
   }

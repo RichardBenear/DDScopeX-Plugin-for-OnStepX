@@ -400,9 +400,9 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!axis1.isEnabled()) { // if not On, toggle ON
-      motor1.power(true);
+      motor1.enable(true);
     } else { // since already ON, toggle OFF
-      motor1.power(false);
+      motor1.enable(false);
     }
     return false;
   }
@@ -412,9 +412,9 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!axis2.isEnabled()) { // toggle ON 
-      motor2.power(true);
+      motor2.enable(true);
     } else { // toggle OFF
-      motor2.power(false); // Idle the ODrive motor
+      motor2.enable(false); // Idle the ODrive motor
     }
     return false;
   }
@@ -427,10 +427,10 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
       setLocalCmd(":Q#");
       stopButton = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
-      motor1.power(false);
+      motor1.enable(false);
       axis1.enable(false);
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
-      motor2.power(false);
+      motor2.enable(false);
       axis2.enable(false);
       setLocalCmd(":Td#"); // Disable Tracking
     }
