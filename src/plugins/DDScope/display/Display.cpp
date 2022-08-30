@@ -10,6 +10,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SPITFT.h>
 #include <gfxfont.h>
+#include <TinyGPS++.h> // http://arduiniana.org/libraries/tinygpsplus/
+#include "TimeLib.h"
 
 // OnStepX
 #include "src/telescope/mount/Mount.h"
@@ -18,7 +20,6 @@
 #include "src/telescope/mount/goto/Goto.h"
 #include "src/telescope/mount/site/Site.h"
 #include "src/lib/tasks/OnTask.h"
-//#include "src/libApp/commands/ProcessCmds.h"
 
 // Fonts
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -127,6 +128,7 @@ Screen Display::currentScreen = HOME_SCREEN;
 bool Display::_nightMode = false;
 bool Display::_redrawBut = false;
 Adafruit_ILI9486_Teensy tft;
+TinyGPSPlus dgps;
 
 uint16_t pgBackground = XDARK_MAROON;
 uint16_t butBackground = BLACK;
@@ -341,8 +343,28 @@ void Display::showGpsStatus() {
       flash = false;
       tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, DIM_YELLOW);
     }
-  } else {
+
+    if (firstRTC) { 
+      // use the Teensy RTC until GPS is locked
+      unsigned long TeensyTime = Teensy3Clock.get(); // get time from Teensy RTC
+      setTime(TeensyTime);    // set system time
+      firstRTC = false;
+    }                       
+
+  } else { // GPS is ready
+    if (firstGPS) {
+      // set the RTC in Teensy to the latest GPS reading
+      if (dgps.time.age() < 500) {
+        setTime(dgps.time.hour(), dgps.time.minute(), dgps.time.second(), dgps.date.day(), dgps.date.month(), dgps.date.year());
+        char tempReply[4]="0";
+        getLocalCmdTrim(":GG#", tempReply); // get timezone
+        adjustTime((atoi(tempReply)) * -1* SECS_PER_HOUR);
+        unsigned long TeensyTime = now();              // get time in epoch
+        Teensy3Clock.set(TeensyTime);                  // set Teensy time
+      }
+    firstGPS = false;
     tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, DIM_YELLOW);
+    }
   }
 }
 

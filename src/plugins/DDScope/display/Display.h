@@ -194,6 +194,7 @@ class Display {
     uint8_t _lastError = 0;
     char lastCmdErr[4] = "";
     bool firstGPS = true;
+    bool firstRTC = true;
     bool trackLedOn = false;
     bool flash = false;
 };
