@@ -132,7 +132,7 @@
 #define PROD_ABV                    "OnStepX"
 
 // task manager
-#define TASKS_MAX                   48     // up to 48 tasks
+#define TASKS_MAX                   72     // up to 48 tasks
 #define TASKS_SKIP_MISSED
 #define TASKS_HWTIMER1_ENABLE
 #define TASKS_HWTIMER2_ENABLE
