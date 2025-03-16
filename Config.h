@@ -29,7 +29,7 @@
 #define SERIAL_D_BAUD_DEFAULT         OFF //    OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
 #define SERIAL_E_BAUD_DEFAULT         OFF //    OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
 #define SERIAL_GPS                Serial4 //    For 
-#define SERIAL_GPS_BAUD              9600
+#define SERIAL_GPS_BAUD            115200
 #define SERIAL_B                  Serial1 //    For ESP32
 
 #define STATUS_LED                    OFF //    OFF, Steady illumination if no error, blinks w/error code otherwise.          Option
@@ -157,7 +157,7 @@
 
 // USER FEEDBACK -------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#USER_FEEDBACK
 #define STATUS_MOUNT_LED              OFF //    OFF, ON Flashes proportional to rate of movement or solid on for slews.       Option
-#define STATUS_BUZZER                1200 //    OFF, ON, n. Where n=100..6000 (Hz freq.) for speaker. ON for piezo buzzer.    Option
+#define STATUS_BUZZER                1000 //    OFF, ON, n. Where n=100..6000 (Hz freq.) for speaker. ON for piezo buzzer.    Option
 #define STATUS_BUZZER_DEFAULT          ON //    OFF, ON default starts w/buzzer enabled.                                      Option
 #define STATUS_BUZZER_MEMORY           ON //    OFF, ON to remember buzzer setting across power cycles.                       Option
 
