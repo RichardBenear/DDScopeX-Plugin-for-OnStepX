@@ -56,7 +56,7 @@ IRAM_ATTR void clockTickWrapper() { fracLAST++; }
       tasks.setDurationComplete(tasks.getHandleByName("gpsPoll"));
       initError.tls = true; 
     }
-  }
+ 
 #endif
 
 #if TIME_LOCATION_SOURCE == NTP
@@ -85,6 +85,7 @@ IRAM_ATTR void clockTickWrapper() { fracLAST++; }
     }
   }
 #endif
+}
 
 void Site::init() {
   // get location
@@ -128,7 +129,7 @@ void Site::init() {
   setSiderealTime(ut1);
 
   VF("MSG: Mount, site start sidereal timer task (rate 10ms priority 0)... ");
-  delay(1000);
+  //delay(1000);
   // period ms (0=idle), duration ms (0=forever), repeat, priority (highest 0..7 lowest), task_handle
   handle = tasks.add(0, 0, true, 0, clockTickWrapper, "ClkTick");
   if (handle) {
