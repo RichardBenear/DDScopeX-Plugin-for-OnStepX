@@ -135,7 +135,7 @@ void GotoScreen::draw() {
 
 // task update for this screen
 void GotoScreen::updateGotoStatus() {
-  updateCommonStatus();
+  
 }
 
 // assign label to pressed button field
@@ -272,19 +272,19 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
     gotoLargeButton.draw(GOTO_BUTTON_X, GOTO_BUTTON_Y,  GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Go To", BUT_OFF);
   }
   
-  // Abort GoTo Button
+  // Stop move GoTo Button
   if (abortPgBut) {
-    gotoLargeButton.draw(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Aborting", BUT_ON);
+    gotoLargeButton.draw(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Stopping", BUT_ON);
     abortPgBut = false;
   } else {
-    gotoLargeButton.draw(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Abort", BUT_OFF);
+    gotoLargeButton.draw(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Stop", BUT_OFF);
   }
   tft.setFont(&Inconsolata_Bold8pt7b); 
 }
 
 // ==== TouchScreen was touched, determine which button ====
 bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
-  char cmd[10] = "";
+  char cmd[14] = "";
 
   //were number Pad buttons pressed?
   for(int i=0; i<4; i++) { 
@@ -378,6 +378,8 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     abortPgBut = true;
     setLocalCmd(":Q#"); // stops move
+    digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
+    digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
     return true;
   }
 
@@ -391,6 +393,10 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     else if (rateRatio >= 0.66F && rateRatio <= 0.85F) {setLocalCmd(":SX93,3#"); return true;} // if 0.75 then 1.00
     else return false; 
   }
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+
   return false;
 }
 

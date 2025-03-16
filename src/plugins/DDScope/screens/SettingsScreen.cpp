@@ -52,10 +52,15 @@
 #define LO_CLEAR_X           T_CLEAR_X
 #define LO_CLEAR_Y           LO_SELECT_Y
 
-#define S_SEND_BUTTON_X      217
+#define S_SEND_BUTTON_X      220
 #define S_SEND_BUTTON_Y      282
-#define S_SEND_BOXSIZE_X     80
+#define S_SEND_BOXSIZE_X     78
 #define S_SEND_BOXSIZE_Y     25
+
+#define SET_LATLONG_BUTTON_X 200
+#define SET_LATLONG_BUTTON_Y 310
+#define SET_LATLONG_BOXSIZE_X 120
+#define SET_LATLONG_BOXSIZE_Y 25
 
 #define SITE_BUTTON_X        210
 #define SITE_BUTTON_Y        321
@@ -93,7 +98,6 @@ void SettingsScreen::draw() {
   drawMenuButtons();
   tft.setFont(&Inconsolata_Bold8pt7b);
   drawCommonStatusLabels(); // status common to many pages
-  updateCommonStatus();
   updateSettingsButtons(false);
   getOnStepCmdErr(); // show error bar
 
@@ -148,8 +152,6 @@ void SettingsScreen::draw() {
 
 // task update for this screen
 void SettingsScreen::updateSettingsStatus() {
-  // Get and show the Time and Location status
-  updateCommonStatus();
 
   char tempReply[10];
   // show Local Time 24 Hr format
@@ -182,7 +184,7 @@ void SettingsScreen::setProcessNumPadButton() {
       tft.setCursor(TXT_FIELD_X+TtextIndex*CHAR_WIDTH, TXT_FIELD_Y);
       tft.print(Ttext[TtextIndex]); 
       TtextIndex++;
-      if (TtextIndex == 2 || TtextIndex == 5) {
+      if (TtextIndex == 2 || TtextIndex == 5) { // these positions are where the ':'s are
         tft.setCursor(TXT_FIELD_X+TtextIndex*CHAR_WIDTH, TXT_FIELD_Y);
         tft.print(':'); 
         TtextIndex++;
@@ -375,6 +377,14 @@ void SettingsScreen::updateSettingsButtons(bool redrawBut) {
   } else {
     settingsButton.draw(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, "Send", BUT_OFF); 
   }
+
+  // Set LAT/LONG Button
+  if (setLatLongOn) {
+    settingsButton.draw(SET_LATLONG_BUTTON_X, SET_LATLONG_BUTTON_Y, SET_LATLONG_BOXSIZE_X, SET_LATLONG_BOXSIZE_Y, " Settting  ", BUT_ON);
+    setLatLongOn = false; 
+  } else {
+    settingsButton.draw(SET_LATLONG_BUTTON_X, SET_LATLONG_BUTTON_Y, SET_LATLONG_BOXSIZE_X, SET_LATLONG_BOXSIZE_Y, "My Lat/Long", BUT_OFF); 
+  }
 }
 
 // **** TouchScreen was touched, determine which button *****
@@ -505,34 +515,61 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     LaTextIndex = 0;
     LoTextIndex = 0;
     sButtonPosition = 12; 
-    static char sLaMin[3] = "";
-    static char sLoMin[3] = "";
+    static char sLaMin[6] = "";
+    static char sLoMin[6] = "";
     BEEP;
     
+    char sCmd[16] = "";
     if (Tselect) {
       // Set Local Time :SL[HH:MM:SS]# 24Hr format
-      sprintf(sCmd, ":SL%c%c:%c%c:%c%c#", Ttext[0], Ttext[1], Ttext[2], Ttext[3], Ttext[4], Ttext[5]);
+      VL(Ttext[0]);VL(Ttext[1]);VL(Ttext[2]);VL(Ttext[3]);VL(Ttext[4]);VL(Ttext[5]);
+      sprintf(sCmd, ":SL%c%c%c%c%c%c%c%c#", Ttext[0], Ttext[1], Ttext[2], Ttext[3], Ttext[4], Ttext[5], Ttext[6], Ttext[7]);
       setLocalCmd(sCmd);
-      delay(70);
+      //delay(70);
     } else if (Dselect) { // :SC[MM/DD/YY]# 
-      sprintf(sCmd, ":SC%c%c/%c%c/%c%c#", Dtext[0], Dtext[1], Dtext[2], Dtext[3], Dtext[4], Dtext[5]);
+      sprintf(sCmd, ":SC%c%c%c%c%c%c%c%c#", Dtext[0], Dtext[1], Dtext[2], Dtext[3], Dtext[4], Dtext[5], Dtext[6], Dtext[7]);
       setLocalCmd(sCmd);
     } else if (Tzselect) { // :SG[sHH]# // Time Zone
       sprintf(sCmd, ":SG%c%c%c#", Tztext[0], Tztext[1], Tztext[2]);
       setLocalCmd(sCmd);
     } else if (LaSelect) { // :St[sDD*MM]#  Latitude
       uint8_t laMin = LaText[4] - '0';  //digit after decimal point
-      sprintf(sLaMin, "%02d\n", laMin * 6); // convert fractional degrees to string minutes
+      snprintf(sLaMin, sizeof(sLaMin), "%02d\n", laMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":St%c%c%c*%2s#", LaText[0], LaText[1], LaText[2], sLaMin);
       setLocalCmd(sCmd);
     } else if (LoSelect) { // :Sg[(s)DDD*MM]#  Longitude
       uint8_t loMin = LoText[5] - '0'; //digit after decimal point
-      sprintf(sLoMin, "%02d\n", loMin * 6); // convert fractional degrees to string minutes
+      snprintf(sLoMin, sizeof(sLoMin), "%02d\n", loMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":Sg%c%c%c%c*%2s#", LoText[0], LoText[1], LoText[2], LoText[3], sLoMin);
       setLocalCmd(sCmd);
     }
     return true;
   }
+ 
+  // Load default Lat Long
+  if (py > SET_LATLONG_BUTTON_Y && py < (SET_LATLONG_BUTTON_Y + SET_LATLONG_BOXSIZE_Y) && px > SET_LATLONG_BUTTON_X && px < (SET_LATLONG_BUTTON_X + SET_LATLONG_BOXSIZE_X)) {
+    static char sLaDef[6] = "";
+    static char sLoDef[6] = "";
+    char sCmd[16] = "";
+    BEEP;
+
+    // set Default Latitude
+    uint8_t laDef = DefLat[2] - '0';  //digit after decimal point
+    snprintf(sLaDef, sizeof(sLaDef), "%02d\n", laDef * 6); // convert fractional degrees to string minutes
+    sprintf(sCmd, ":St+%c%c*%2s#", DefLat[0], DefLat[1], sLaDef);
+    setLocalCmd(sCmd);
+
+    uint8_t loDef = DefLong[3] - '0'; //digit after decimal point
+    snprintf(sLoDef, sizeof(sLoDef), "%02d\n", loDef * 6); // convert fractional degrees to string minutes
+    sprintf(sCmd, ":Sg-%c%c%c*%2s#", DefLong[0], DefLong[1], DefLong[2], sLoDef);
+    setLocalCmd(sCmd);
+    
+    return true; 
+  }
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+  
   return false;
 }
 

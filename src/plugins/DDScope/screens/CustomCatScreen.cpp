@@ -425,6 +425,10 @@ bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
     drawCustomCat(); 
     return false; // no need to redraw, skip
   }  
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+  
   return false; 
 }
 

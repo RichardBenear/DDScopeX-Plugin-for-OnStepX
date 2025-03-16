@@ -54,10 +54,6 @@
 #define GOTO_BOXSIZE_W      BIG_BOX_W
 #define GOTO_BOXSIZE_H      BIG_BOX_H 
 
-// ABORT Button
-#define ABORT_X             115
-#define ABORT_Y             WRITE_ALIGN_Y
-
 // ALIGN/SYNC this Star Button
 #define ALIGN_X             HOME_X
 #define ALIGN_Y             GOTO_Y+GOTO_BOXSIZE_H+5
@@ -75,6 +71,12 @@
 #define START_ALIGN_Y       WRITE_ALIGN_Y
 #define ST_BOXSIZE_W        BIG_BOX_W
 #define ST_BOXSIZE_H        BIG_BOX_H 
+
+// ABORT Button
+#define AS_ABORT_X          115
+#define AS_ABORT_Y          WRITE_ALIGN_Y
+#define AS_ABT_BOXSIZE_W    BIG_BOX_W
+#define AS_ABT_BOXSIZE_H    BIG_BOX_H 
 
 AlignStates Current_State = Idle_State;
 AlignStates Next_State = Idle_State;
@@ -122,7 +124,6 @@ void AlignScreen::draw() {
 
 // task update for this screen
 void AlignScreen::updateAlignStatus() {
-  updateCommonStatus();
   stateMachine();
 }
 
@@ -234,14 +235,14 @@ void AlignScreen::updateAlignButtons(bool redrawBut) {
     alignButton.draw(START_ALIGN_X, START_ALIGN_Y, ST_BOXSIZE_W, ST_BOXSIZE_H, "START", BUT_OFF);
   }
   
-  // Abort Alignment Button
+  // Stop Alignment Button
   if (abortBut) {
-    alignButton.draw(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "Abort'd", BUT_ON);
+    alignButton.draw(AS_ABORT_X, AS_ABORT_Y, AS_ABT_BOXSIZE_W, AS_ABT_BOXSIZE_H, "Stop'd", BUT_ON);
     abortBut = false;
-    delay(500);
-    alignButton.draw(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "ABORT", BUT_OFF);
+    delay(50);
+    alignButton.draw(AS_ABORT_X, AS_ABORT_Y, AS_ABT_BOXSIZE_W, AS_ABT_BOXSIZE_H, "STOP", BUT_OFF);
   } else {
-    alignButton.draw(ABORT_X, ABORT_Y, GOTO_BOXSIZE_W, GOTO_BOXSIZE_H, "ABORT", BUT_OFF);
+    alignButton.draw(AS_ABORT_X, AS_ABORT_Y, AS_ABT_BOXSIZE_W, AS_ABT_BOXSIZE_H, "STOP", BUT_OFF);
   }
   updateGuideButtons(); // draw the guide buttons
 }
@@ -302,7 +303,8 @@ void AlignScreen::stateMachine() {
 
       case Num_Stars_State: {
         if (numAlignStars>0) {
-          char s[6]; sprintf (s, ":A%d#", numAlignStars); // set number of align stars
+          char s[10]; 
+          sprintf (s, ":A%d#", numAlignStars); // set number of align stars
           setLocalCmd(s);
           Next_State = Select_Catalog_State; 
         } else {
@@ -415,9 +417,14 @@ void AlignScreen::stateMachine() {
 // -- return true if touched --
 bool AlignScreen::touchPoll(uint16_t px, uint16_t py) { 
   // ==== ABORT GOTO  Button ====
-  if (py > ABORT_Y && py < (ABORT_Y + GOTO_BOXSIZE_H) && px > ABORT_X && px < (ABORT_X + GOTO_BOXSIZE_W)) {
+  if (py > AS_ABORT_Y && py < (AS_ABORT_Y + AS_ABT_BOXSIZE_H) && px > AS_ABORT_X && px < (AS_ABORT_X + AS_ABT_BOXSIZE_W)) {
     BEEP;
     setLocalCmd(":Q#"); // stops move
+    digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
+    //axis1.enable(false);
+    digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
+    //axis2.enable(false);
+    setLocalCmd(":Td#"); // Disable Tracking
 
     // clear all button states since not sure which was active
     numAlignStars = 0;
@@ -511,10 +518,10 @@ bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
 
     // Enable the Motors
     digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-    motor1.enable(true); // AZ motor on
+    axis1.enable(true); // AZ motor on
     
     digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-    motor2.enable(true); // ALT motor on
+    axis2.enable(true); // ALT motor on
     return true;
   } 
 
@@ -581,6 +588,10 @@ bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     }
     return true;
   }
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+  
   return false;
 }
 
@@ -666,6 +677,7 @@ void AlignScreen::showCorrections() {
   int acorr_w = 100;
   int acorr_h = 15;
   char _reply[10];
+  char acorr[20];
 
   tft.drawRect(acorr_x, acorr_y, acorr_w, 5*acorr_h, pgBackground); // clear background
   tft.setCursor(acorr_x+20, acorr_y); tft.print("Calculated Corrections");

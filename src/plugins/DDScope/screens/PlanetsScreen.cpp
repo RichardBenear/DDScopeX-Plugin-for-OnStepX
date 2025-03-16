@@ -209,7 +209,7 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
 
     // Print date, time, latitude, longitude
     int x = 5; int y=365; int y_off=0; int y_spc=12; int w = 180; int h=17;
-    char d[14], t[14], la[14], lg[14];
+    char d[22], t[21], la[21], lg[21];
 
     tft.fillRect(x, y-y_spc, w, h,  butBackground);
     tft.setCursor(x, y);
@@ -269,7 +269,7 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
 
     int hr,mi;
     float sec;
-    char strg[14];
+    char strg[20];
     Eph.floatingHoursToHoursMinutesSeconds(Eph.floatingHoursWithUTCOffset(obj.rise, utc), &hr, &mi, &sec); 
     tft.fillRect(x1,  y1+=y1_spc-y1_off, w1, h1,  butBackground);
     tft.setCursor(x1, y1+=y1_spc);
@@ -298,11 +298,11 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     setLocalCmd(cmd);
     
     // the following 5 lines are displayed on the Catalog/More page
-    snprintf(moreScreen.catSelectionStr1, 16, "Name-:%-16s", PlanetNames[planetButSelPos]);
-    snprintf(moreScreen.catSelectionStr2, 12, "AZM--:%-12f", obj.horiCoordinates.azi);
-    snprintf(moreScreen.catSelectionStr3, 12, "ALT--:%-12f", obj.horiCoordinates.alt);
-    snprintf(moreScreen.catSelectionStr4, 16, "RA---:%-16s", raPrint);
-    snprintf(moreScreen.catSelectionStr5, 16, "DEC--:%-16s", decPrint);
+    snprintf(moreScreen.catSelectionStr1, 23, "Name-:%-16s", PlanetNames[planetButSelPos]);
+    snprintf(moreScreen.catSelectionStr2, 19, "AZM--:%-12f", obj.horiCoordinates.azi);
+    snprintf(moreScreen.catSelectionStr3, 19, "ALT--:%-12f", obj.horiCoordinates.alt);
+    snprintf(moreScreen.catSelectionStr4, 23, "RA---:%-16s", raPrint);
+    snprintf(moreScreen.catSelectionStr5, 23, "DEC--:%-16s", decPrint);
 
     moreScreen.objectSelected = true;
 }
@@ -359,6 +359,10 @@ bool PlanetsScreen::touchPoll(uint16_t px, uint16_t py) {
     moreScreen.draw();
     return false; // don't update this screen since going back
   }
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+  
   return false;
 }
 

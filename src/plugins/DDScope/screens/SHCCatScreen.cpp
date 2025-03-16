@@ -225,13 +225,20 @@ void SHCCatScreen::drawShcCat() {
     tft.setCursor(CAT_X+CAT_W+SUB_STR_X_OFF, CAT_Y+shcRow*(CAT_H+CAT_Y_SPACING)+FONT_Y_OFF); 
     tft.print(catLine);
 
-    // fill the RA array for this row on the current page
+    // Fill the RA array for this row on the current page
     // RA in Hrs:Min:Sec
     cat_mgr.raHMS(*shcRaHrs[shcRow], *shcRaMin[shcRow], *shcRaSec[shcRow]);
+
     // shcRACustLine is used by the "Save to custom" catalog feature
-    snprintf(shcRACustLine[shcRow], 9, "%02u:%02u:%02u", (unsigned int)*shcRaHrs[shcRow], (unsigned int)*shcRaMin[shcRow], (unsigned int)*shcRaSec[shcRow]);
-    snprintf(shcRaSrCmd[shcRow], 14, ":Sr%s#", shcRACustLine[shcRow]); // written to the controller for GoTo coordinates
-    
+    snprintf(shcRACustLine[shcRow], 12, "%02u:%02u:%02u", (unsigned int)*shcRaHrs[shcRow], (unsigned int)*shcRaMin[shcRow], (unsigned int)*shcRaSec[shcRow]);
+
+    // Create a temporary buffer to avoid overlap
+    char temp[10];
+    strncpy(temp, shcRACustLine[shcRow], 9);
+
+    // Written to the controller for GoTo coordinates
+    snprintf(shcRaSrCmd[shcRow], 14, ":Sr%s#", temp);
+
     // fill the DEC array for this Row on the current page
     // DEC in Deg:Min:Sec
     cat_mgr.decDMS(*shcDecDeg[shcRow], *shcDecMin[shcRow], *shcDecSec[shcRow]);
@@ -240,8 +247,14 @@ void SHCCatScreen::drawShcCat() {
     cat_mgr.EquToHor(cat_mgr.ra(), cat_mgr.dec(), &shcAlt[shcRow], &shcAzm[shcRow]);
 
     // shcDECCustLine is used later by the "Save to custom catalog" feature
-    snprintf(shcDECCustLine[shcRow], 10, "%+03d*%02u:%02u", (int)*shcDecDeg[shcRow], (unsigned int)*shcDecMin[shcRow], (unsigned int)*shcDecSec[shcRow]);
-    snprintf(shcDecSrCmd[shcRow], 15, ":Sd%s#", shcDECCustLine[shcRow]); // written to the controller for GoTo coordinates
+    snprintf(shcDECCustLine[shcRow], 15, "%+03d*%02u:%02u", (int)*shcDecDeg[shcRow], (unsigned int)*shcDecMin[shcRow], (unsigned int)*shcDecSec[shcRow]);
+    
+    // avoid possible overlapping regions
+    char bufTemp[12];
+    strncpy(bufTemp, shcDECCustLine[shcRow], sizeof(bufTemp) - 1);
+    bufTemp[sizeof(bufTemp) - 1] = '\0';
+    snprintf(shcDecSrCmd[shcRow], 16, ":Sd%s#", bufTemp);
+    //snprintf(shcDecSrCmd[shcRow], 16, ":Sd%s#", shcDECCustLine[shcRow]); // written to the controller for GoTo coordinates
     
     shcPrevRowIndex = cat_mgr.getIndex();
     shcRow++; // increments through the number of lines on screen
@@ -415,6 +428,10 @@ bool SHCCatScreen::touchPoll(uint16_t px, uint16_t py) {
     saveTouched = true;
     return true;
   }   
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+  
   return false;
 }
 

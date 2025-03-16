@@ -116,7 +116,6 @@ void DCFocuserScreen::draw() {
 
 // task update for this screen
 void DCFocuserScreen::updateFocuserStatus() {
-  updateCommonStatus();
 
   int y_offset = 0;
   canvFocuserInsPrint.printRJ(FOC_LABEL_X+FOC_LABEL_OFFSET_X, FOC_LABEL_Y+y_offset, C_WIDTH, C_HEIGHT, focMaxPosition, false);
@@ -476,6 +475,10 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
     focReset = true;
     return true;
   }
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+  
   return false;
 }
 

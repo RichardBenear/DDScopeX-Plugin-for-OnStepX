@@ -33,7 +33,6 @@ enum Component
 class ODriveExt : public Display {
   public:
     
-
     // getters
     int getMotorPositionCounts(int axis);
     uint8_t getODriveCurrentState(int axis);
@@ -46,7 +45,7 @@ class ODriveExt : public Display {
     float getODriveVelGain(int axis);
     float getODriveVelIntGain(int axis);
     float getODrivePosGain(int axis);
-    float getODriveBusVoltage();
+    float getODriveBusVoltage(int axis);
 
     uint32_t getODriveErrors(int axis, Component component);
     void demoMode();
@@ -54,17 +53,16 @@ class ODriveExt : public Display {
     // other actions
     void setODriveVelGains(int axis, float level, float intLevel);
     void setODrivePosGain(int axis, float level);
-    void updateODriveMotorPositions();
+    //void updateODriveMotorPositions();
     void MotorEncoderDelta();
-    void clearODriveErrors(int axis, int comp);
-    void setHigherBaud();
+    //void clearODriveErrors(int axis, int comp);
+    //void setHigherBaud();
     void clearAllODriveErrors();
 
     bool oDserialAvail = false;
 
     Component component = COMP_FIRST;
    
-
     bool AZgainHigh;
     bool ALTgainHigh;
     bool AZgainDefault;   

@@ -11,8 +11,8 @@
 #include "src/lib/tasks/OnTask.h"
 
 #define OD_ERR_OFFSET_X           4 
-#define OD_ERR_OFFSET_Y         188
-#define OD_ERR_SPACING           14 
+#define OD_ERR_OFFSET_Y         190
+#define OD_ERR_SPACING           11 
 #define OD_BUTTONS_OFFSET        45 
 
 // Buttons for actions that are not page selections
@@ -64,11 +64,10 @@ void ODriveScreen::draw() {
   drawMenuButtons();
   drawTitle(120, TITLE_TEXT_Y, "ODrive");
   tft.setFont(&Inconsolata_Bold8pt7b);
-
   drawCommonStatusLabels();
+  showGains();
   updateOdriveButtons(false);
   showODriveErrors();
-  showGains();
 
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r hw_version_major\n";
@@ -98,16 +97,22 @@ void ODriveScreen::draw() {
     oDversion.fwRev   = 4;
   #endif
 
+  // Entering the ODrive screen will always set the gains back to default
+  oDriveExt.AZgainHigh = false;
+  oDriveExt.AZgainDefault = true;
+  oDriveExt.ALTgainHigh = false;
+  oDriveExt.ALTgainDefault = true;
+
   tft.setFont(); // default
   tft.setCursor(92, 164);
   tft.print("HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
-  tft.setCursor(92, 176);
+  tft.setCursor(92, 175);
   tft.print("FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
 }
 
 // status update for this screen
 void ODriveScreen::updateOdriveStatus() {
-  updateCommonStatus();
+  //showODriveErrors();
   getOnStepCmdErr(); // show error bar
 }
 
@@ -140,156 +145,177 @@ void ODriveScreen::showGains() {
   tft.setFont(&Inconsolata_Bold8pt7b);
 }
 
-// ===== Decode all ODrive Errors =====
-void ODriveScreen::decodeODriveErrors(int axis, Component comp, uint32_t errorCode) {
+  // ===== Decode all ODrive Errors =====
+uint8_t ODriveScreen::decodeODriveErrors(int axis, Component comp, uint32_t errorCode) {
+  uint8_t errorCount = 0;  // Counter for number of errors detected. Always have at least 1 message, though.
+  tft.setFont();
 
-  if (axis == -1) { //then ODrive top level decode, not axis specific
-    if      (errorCode == ODRIVE_ERROR_NONE)                          tft.println("ERROR_NONE");
-    else if (errorCode == ODRIVE_ERROR_CONTROL_ITERATION_MISSED)      tft.println("ERROR_CONTROL_ITERATION_MISSED");
-    else if (errorCode == ODRIVE_ERROR_DC_BUS_UNDER_VOLTAGE)          tft.println("ERROR_DC_BUS_UNDER_VOLTAGE");
-    else if (errorCode == ODRIVE_ERROR_DC_BUS_OVER_VOLTAGE)           tft.println("ERROR_DC_BUS_OVER_VOLTAGE");
-    else if (errorCode == ODRIVE_ERROR_DC_BUS_OVER_REGEN_CURRENT)     tft.println("ERROR_DC_BUS_OVER_REGEN_CURRENT");
-    else if (errorCode == ODRIVE_ERROR_DC_BUS_OVER_CURRENT)           tft.println("ERROR_DC_BUS_OVER_CURRENT");
-    else if (errorCode == ODRIVE_ERROR_BRAKE_DEADTIME_VIOLATION)      tft.println("ERROR_BRAKE_DEADTIME_VIOLATION");
-    else if (errorCode == ODRIVE_ERROR_BRAKE_DUTY_CYCLE_NAN)          tft.println("ERROR_BRAKE_DUTY_CYCLE_NAN");
-    else if (errorCode == ODRIVE_ERROR_INVALID_BRAKE_RESISTANCE)      tft.println("ERROR_INVALID_BRAKE_RESISTANCE");
-    else if (errorCode == 88)                                         tft.println("NOT_IMPLEMENTED");
-    else                                                              tft.println("ERROR_UNKNOWN");
-    return;
+  if (axis == -1) { // ODrive top-level errors, not axis-specific
+      if (errorCode & ODRIVE_ERROR_CONTROL_ITERATION_MISSED)   { tft.println("ERROR_CONTROL_ITERATION_MISSED"); errorCount++; }
+      if (errorCode & ODRIVE_ERROR_DC_BUS_UNDER_VOLTAGE)       { tft.println("ERROR_DC_BUS_UNDER_VOLTAGE"); errorCount++; }
+      if (errorCode & ODRIVE_ERROR_DC_BUS_OVER_VOLTAGE)        { tft.println("ERROR_DC_BUS_OVER_VOLTAGE"); errorCount++; }
+      if (errorCode & ODRIVE_ERROR_DC_BUS_OVER_REGEN_CURRENT)  { tft.println("ERROR_DC_BUS_OVER_REGEN_CURRENT"); errorCount++; }
+      if (errorCode & ODRIVE_ERROR_DC_BUS_OVER_CURRENT)        { tft.println("ERROR_DC_BUS_OVER_CURRENT"); errorCount++; }
+      if (errorCode & ODRIVE_ERROR_BRAKE_DEADTIME_VIOLATION)   { tft.println("ERROR_BRAKE_DEADTIME_VIOLATION"); errorCount++; }
+      if (errorCode & ODRIVE_ERROR_BRAKE_DUTY_CYCLE_NAN)       { tft.println("ERROR_BRAKE_DUTY_CYCLE_NAN"); errorCount++; }
+      if (errorCode & ODRIVE_ERROR_INVALID_BRAKE_RESISTANCE)   { tft.println("ERROR_INVALID_BRAKE_RESISTANCE"); errorCount++; }
+
+      if (errorCode == 0x88) { // Special case: "Not Implemented"
+          tft.println("NOT_IMPLEMENTED");
+          errorCount++;
+      }
+
+      if (errorCount == 0) {
+          tft.println("TOP_LEVEL_ERR_NONE");  // No errors found
+      }
   }
-
+  
+  // Axis Errors
   if (axis != -1 && comp == AXIS) {
-    if      (errorCode == AXIS_ERROR_NONE)                            tft.println("AX_ERROR_NONE");
-    else if (errorCode == AXIS_ERROR_INVALID_STATE)                   tft.println("AX_ERROR_INVALID_STATE");
-    else if (errorCode == AXIS_ERROR_WATCHDOG_TIMER_EXPIRED)          tft.println("AX_ERROR_WATCHDOG_TIMER_EXPIRED");
-    else if (errorCode == AXIS_ERROR_MIN_ENDSTOP_PRESSED)             tft.println("AX_ERROR_MIN_ENDSTOP_PRESSED");
-    else if (errorCode == AXIS_ERROR_MAX_ENDSTOP_PRESSED)             tft.println("AX_ERROR_MAX_ENDSTOP_PRESSED");
-    else if (errorCode == AXIS_ERROR_ESTOP_REQUESTED)                 tft.println("AX_ERROR_ESTOP_REQUESTED");
-    else if (errorCode == AXIS_ERROR_HOMING_WITHOUT_ENDSTOP)          tft.println("AX_ERROR_HOMING_WITHOUT_ENDSTOP");
-    else if (errorCode == AXIS_ERROR_OVER_TEMP)                       tft.println("AX_ERROR_OVER_TEMP");
-    else if (errorCode == AXIS_ERROR_UNKNOWN_POSITION)                tft.println("AX_ERROR_UNKNOWN_POSITION");
-    else                                                              tft.println("AX_ERROR_UNKNOWN");
-    return;
+    if (errorCode & AXIS_ERROR_INVALID_STATE)           { tft.println("AX_ERROR_INVALID_STATE"); errorCount++; }
+    if (errorCode & AXIS_ERROR_WATCHDOG_TIMER_EXPIRED)  { tft.println("AX_ERROR_WATCHDOG_TIMER_EXPIRED"); errorCount++; }
+    if (errorCode & AXIS_ERROR_MIN_ENDSTOP_PRESSED)     { tft.println("AX_ERROR_MIN_ENDSTOP_PRESSED"); errorCount++; }
+    if (errorCode & AXIS_ERROR_MAX_ENDSTOP_PRESSED)     { tft.println("AX_ERROR_MAX_ENDSTOP_PRESSED"); errorCount++; }
+    if (errorCode & AXIS_ERROR_ESTOP_REQUESTED)         { tft.println("AX_ERROR_ESTOP_REQUESTED"); errorCount++; }
+    if (errorCode & AXIS_ERROR_HOMING_WITHOUT_ENDSTOP)  { tft.println("AX_ERROR_HOMING_WITHOUT_ENDSTOP"); errorCount++; }
+    if (errorCode & AXIS_ERROR_OVER_TEMP)               { tft.println("AX_ERROR_OVER_TEMP"); errorCount++; }
+    if (errorCode & AXIS_ERROR_UNKNOWN_POSITION)        { tft.println("AX_ERROR_UNKNOWN_POSITION"); errorCount++; }
+
+    if (errorCount == 0) { tft.println("AXIS_ERROR_NONE"); }
   }
 
+  // Motor Errors
   if (axis != -1 && comp == MOTOR) {
-    if      (errorCode == MOTOR_ERROR_NONE)                           tft.println("M_ERR_NONE");
-    else if (errorCode == MOTOR_ERROR_PHASE_RESISTANCE_OUT_OF_RANGE)  tft.println("M_ERR_PHASE_RESISTANCE_OUT_OF_RANGE");
-    else if (errorCode == MOTOR_ERROR_PHASE_INDUCTANCE_OUT_OF_RANGE)  tft.println("M_ERR_PHASE_INDUCTANCE_OUT_OF_RANGE");
-    else if (errorCode == MOTOR_ERROR_DRV_FAULT)                      tft.println("M_ERR_DRV_FAULT");
-    else if (errorCode == MOTOR_ERROR_CONTROL_DEADLINE_MISSED)        tft.println("M_ERR_CONTROL_DEADLINE_MISSED");
-    else if (errorCode == MOTOR_ERROR_MODULATION_MAGNITUDE)           tft.println("M_ERR_MODULATION_MAGNITUDE");
-    else if (errorCode == MOTOR_ERROR_CURRENT_SENSE_SATURATION)       tft.println("M_ERR_CURRENT_SENSE_SATURATION");
-    else if (errorCode == MOTOR_ERROR_CURRENT_LIMIT_VIOLATION)        tft.println("M_ERR_CURRENT_LIMIT_VIOLATION");
-    else if (errorCode == MOTOR_ERROR_MODULATION_IS_NAN)              tft.println("M_ERR_MODULATION_IS_NAN");
-    else if (errorCode == MOTOR_ERROR_MOTOR_THERMISTOR_OVER_TEMP)     tft.println("M_ERR_MOTOR_THERMISTOR_OVER_TEMP");
-    else if (errorCode == MOTOR_ERROR_FET_THERMISTOR_OVER_TEMP)       tft.println("M_ERR_FET_THERMISTOR_OVER_TEMP");
-    else if (errorCode == MOTOR_ERROR_TIMER_UPDATE_MISSED)            tft.println("M_ERR_TIMER_UPDATE_MISSED");
-    else if (errorCode == MOTOR_ERROR_CURRENT_MEASUREMENT_UNAVAILABLE) tft.println("M_ERR_CURRENT_MEASUREMENT_UNAVAIL");
-    else if (errorCode == MOTOR_ERROR_CONTROLLER_FAILED)              tft.println("M_ERR_CONTROLLER_FAILED");
-    else if (errorCode == MOTOR_ERROR_I_BUS_OUT_OF_RANGE)             tft.println("M_ERR_I_BUS_OUT_OF_RANGE");
-    else if (errorCode == MOTOR_ERROR_BRAKE_RESISTOR_DISARMED)        tft.println("M_ERR_BRAKE_RESISTOR_DISARMED"); 
-    else if (errorCode == MOTOR_ERROR_SYSTEM_LEVEL)                   tft.println("M_ERR_SYSTEM_LEVEL");
-    else if (errorCode == MOTOR_ERROR_BAD_TIMING)                     tft.println("M_ERR_BAD_TIMING");
-    else if (errorCode == MOTOR_ERROR_UNKNOWN_PHASE_ESTIMATE)         tft.println("M_ERR_UNKNOWN_PHASE_ESTIMATE");
-    else if (errorCode == MOTOR_ERROR_UNKNOWN_PHASE_VEL)              tft.println("M_ERR_UNKNOWN_PHASE_VEL");
-    else if (errorCode == MOTOR_ERROR_UNKNOWN_TORQUE)                 tft.println("M_ERR_UNKNOWN_TORQUE");  
-    else if (errorCode == MOTOR_ERROR_UNKNOWN_CURRENT_COMMAND)        tft.println("M_ERR_UNKNOWN_CURRENT_COMMAND");
-    else if (errorCode == MOTOR_ERROR_UNKNOWN_CURRENT_MEASUREMENT)    tft.println("M_ERR_UNKNOWN_CURRENT_MEASUREMENT");
-    else if (errorCode == MOTOR_ERROR_UNKNOWN_VBUS_VOLTAGE)           tft.println("M_ERR_UNKNOWN_VBUS_VOLTAGE");
-    else if (errorCode == MOTOR_ERROR_UNKNOWN_VOLTAGE_COMMAND)        tft.println("M_ERR_UNKNOWN_VOLTAGE_COMMAND"); 
-    else if (errorCode == MOTOR_ERROR_UNKNOWN_GAINS)                  tft.println("M_ERR_UNKNOWN_GAINS");  
-    else if (errorCode == MOTOR_ERROR_CONTROLLER_INITIALIZING)        tft.println("M_ERR_CONTROLLER_INITIALIZING"); 
-    else if (errorCode == MOTOR_ERROR_UNBALANCED_PHASES)              tft.println("M_ERR_UNBALANCED_PHASES"); 
-    else                                                              tft.println("M_ERR_UNKNOWN");
-    return;
+    if (errorCode & MOTOR_ERROR_PHASE_RESISTANCE_OUT_OF_RANGE)  { tft.println("M_ERR_PHASE_RESISTANCE_OUT_OF_RANGE"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_PHASE_INDUCTANCE_OUT_OF_RANGE)  { tft.println("M_ERR_PHASE_INDUCTANCE_OUT_OF_RANGE"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_DRV_FAULT)                      { tft.println("M_ERR_DRV_FAULT"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_CONTROL_DEADLINE_MISSED)        { tft.println("M_ERR_CONTROL_DEADLINE_MISSED"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_MODULATION_MAGNITUDE)           { tft.println("M_ERR_MODULATION_MAGNITUDE"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_CURRENT_SENSE_SATURATION)       { tft.println("M_ERR_CURRENT_SENSE_SATURATION"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_CURRENT_LIMIT_VIOLATION)        { tft.println("M_ERR_CURRENT_LIMIT_VIOLATION"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_MODULATION_IS_NAN)              { tft.println("M_ERR_MODULATION_IS_NAN"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_MOTOR_THERMISTOR_OVER_TEMP)     { tft.println("M_ERR_MOTOR_THERMISTOR_OVER_TEMP"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_FET_THERMISTOR_OVER_TEMP)       { tft.println("M_ERR_FET_THERMISTOR_OVER_TEMP"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_TIMER_UPDATE_MISSED)            { tft.println("M_ERR_TIMER_UPDATE_MISSED"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_CURRENT_MEASUREMENT_UNAVAILABLE) { tft.println("M_ERR_CURRENT_MEASUREMENT_UNAVAIL"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_CONTROLLER_FAILED)              { tft.println("M_ERR_CONTROLLER_FAILED"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_I_BUS_OUT_OF_RANGE)             { tft.println("M_ERR_I_BUS_OUT_OF_RANGE"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_BRAKE_RESISTOR_DISARMED)        { tft.println("M_ERR_BRAKE_RESISTOR_DISARMED"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_SYSTEM_LEVEL)                   { tft.println("M_ERR_SYSTEM_LEVEL"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_BAD_TIMING)                     { tft.println("M_ERR_BAD_TIMING"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_UNKNOWN_PHASE_ESTIMATE)         { tft.println("M_ERR_UNKNOWN_PHASE_ESTIMATE"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_UNKNOWN_PHASE_VEL)              { tft.println("M_ERR_UNKNOWN_PHASE_VEL"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_UNKNOWN_TORQUE)                 { tft.println("M_ERR_UNKNOWN_TORQUE"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_UNKNOWN_CURRENT_COMMAND)        { tft.println("M_ERR_UNKNOWN_CURRENT_COMMAND"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_UNKNOWN_CURRENT_MEASUREMENT)    { tft.println("M_ERR_UNKNOWN_CURRENT_MEASUREMENT"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_UNKNOWN_VBUS_VOLTAGE)           { tft.println("M_ERR_UNKNOWN_VBUS_VOLTAGE"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_UNKNOWN_VOLTAGE_COMMAND)        { tft.println("M_ERR_UNKNOWN_VOLTAGE_COMMAND"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_UNKNOWN_GAINS)                  { tft.println("M_ERR_UNKNOWN_GAINS"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_CONTROLLER_INITIALIZING)        { tft.println("M_ERR_CONTROLLER_INITIALIZING"); errorCount++; }
+    if (errorCode & MOTOR_ERROR_UNBALANCED_PHASES)              { tft.println("M_ERR_UNBALANCED_PHASES"); errorCount++; }
+
+    if (errorCount == 0) { tft.println("MOTOR_ERR_NONE"); }
   }
 
+  #if ODRIVE_COMM_MODE == OD_UART
   if (axis != -1 && comp == CONTROLLER) {
-   #if ODRIVE_COMM_MODE == OD_UART
-    if      (errorCode == CONTROLLER_ERROR_NONE)                      tft.println("C_ERR_NONE");
-    else if (errorCode == CONTROLLER_ERROR_OVERSPEED)                 tft.println("C_ERR_OVERSPEED");
-    else if (errorCode == CONTROLLER_ERROR_INVALID_INPUT_MODE)        tft.println("C_ERR_INVALID_INPUT_MODE");
-    else if (errorCode == CONTROLLER_ERROR_UNSTABLE_GAIN)             tft.println("C_ERR_UNSTABLE_GAIN"); 
-    else if (errorCode == CONTROLLER_ERROR_INVALID_MIRROR_AXIS)       tft.println("C_ERR_INVALID_MIRROR_AXIS"); 
-    else if (errorCode == CONTROLLER_ERROR_INVALID_LOAD_ENCODER)      tft.println("C_ERR_INVALID_LOAD_ENCODER"); 
-    else if (errorCode == CONTROLLER_ERROR_INVALID_ESTIMATE)          tft.println("C_ERR_INVALID_ESTIMATE");
-    else if (errorCode == CONTROLLER_ERROR_INVALID_CIRCULAR_RANGE)    tft.println("C_ERR_INVALID_CIRCULAR_RANGE"); 
-    else if (errorCode == CONTROLLER_ERROR_SPINOUT_DETECTED)          tft.println("C_ERR_SPINOUT_DETECTED"); 
-    else                                                              tft.println("C_ERR_UNKNOWN"); 
-    return;
-   #elif ODRIVE_COMM_MODE == OD_CAN // then the code is are flags and not errors
-    if (errorCode == 128) tft.println("Controller Trajectory Done"); return;
-   #endif
+      if      (errorCode == CONTROLLER_ERROR_NONE)                   {tft.println("C_ERR_NONE"); errorCount++; }
+      else if (errorCode == CONTROLLER_ERROR_OVERSPEED)              {tft.println("C_ERR_OVERSPEED"); errorCount++; }
+      else if (errorCode == CONTROLLER_ERROR_INVALID_INPUT_MODE)     {tft.println("C_ERR_INVALID_INPUT_MODE"); errorCount++; }
+      else if (errorCode == CONTROLLER_ERROR_UNSTABLE_GAIN)          {tft.println("C_ERR_UNSTABLE_GAIN"); errorCount++; }
+      else if (errorCode == CONTROLLER_ERROR_INVALID_MIRROR_AXIS)    {tft.println("C_ERR_INVALID_MIRROR_AXIS"); errorCount++; }
+      else if (errorCode == CONTROLLER_ERROR_INVALID_LOAD_ENCODER)   {tft.println("C_ERR_INVALID_LOAD_ENCODER"); errorCount++; }
+      else if (errorCode == CONTROLLER_ERROR_INVALID_ESTIMATE)       {tft.println("C_ERR_INVALID_ESTIMATE"); errorCount++; }
+      else if (errorCode == CONTROLLER_ERROR_INVALID_CIRCULAR_RANGE) {tft.println("C_ERR_INVALID_CIRCULAR_RANGE"); errorCount++; }
+      else if (errorCode == CONTROLLER_ERROR_SPINOUT_DETECTED)       {tft.println("C_ERR_SPINOUT_DETECTED"); errorCount++; }
+      else                                                           {tft.println("C_ERR_UNKNOWN"); errorCount++; }
+      return errorCount;
   }
+#elif ODRIVE_COMM_MODE == OD_CAN // then the codes are flags and not errors
+  if (axis != -1 && comp == CONTROLLER) {
+      if (errorCode == 128) {
+          tft.println("Controller Trajectory Done");
+      }
+      if (errorCount == 0) { tft.println("CONTROLLER_ERR_NONE"); }
+  }
+#endif
 
+  // Encoder Errors
   if (axis != -1 && comp == ENCODER) {
-    if      (errorCode == ENCODER_ERROR_NONE)                         tft.println("E_ERR_NONE"); 
-    else if (errorCode == ENCODER_ERROR_UNSTABLE_GAIN)                tft.println("E_ERR_UNSTABLE_GAIN");
-    else if (errorCode == ENCODER_ERROR_CPR_POLEPAIRS_MISMATCH)       tft.println("E_ERR_CPR_POLEPAIRS_MISMATCH"); 
-    else if (errorCode == ENCODER_ERROR_NO_RESPONSE)                  tft.println("E_ERR_NO_RESPONSE");  
-    else if (errorCode == ENCODER_ERROR_UNSUPPORTED_ENCODER_MODE)     tft.println("E_ERR_UNSUPPORTED_ENCODER_MODE");  
-    else if (errorCode == ENCODER_ERROR_ILLEGAL_HALL_STATE)           tft.println("E_ERR_ILLEGAL_HALL_STATE");
-    else if (errorCode == ENCODER_ERROR_INDEX_NOT_FOUND_YET)          tft.println("E_ERR_INDEX_NOT_FOUND_YET"); 
-    else if (errorCode == ENCODER_ERROR_ABS_SPI_TIMEOUT)              tft.println("E_ERR_ABS_SPI_TIMEOUT");
-    else if (errorCode == ENCODER_ERROR_ABS_SPI_COM_FAIL)             tft.println("E_ERR_ABS_SPI_COM_FAIL");
-    else if (errorCode == ENCODER_ERROR_ABS_SPI_NOT_READY)            tft.println("E_ERR_ABS_SPI_NOT_READY");
-    else if (errorCode == ENCODER_ERROR_HALL_NOT_CALIBRATED_YET)      tft.println("E_ERR_HALL_NOT_CALIBRATED_YET"); 
-    else                                                              tft.println("E_ERR_UNKNOWN");
-    return;
-  }
-}
+    if (errorCode & ENCODER_ERROR_UNSTABLE_GAIN)             { tft.println("E_ERR_UNSTABLE_GAIN"); errorCount++; }
+    if (errorCode & ENCODER_ERROR_CPR_POLEPAIRS_MISMATCH)    { tft.println("E_ERR_CPR_POLEPAIRS_MISMATCH"); errorCount++; }
+    if (errorCode & ENCODER_ERROR_NO_RESPONSE)               { tft.println("E_ERR_NO_RESPONSE"); errorCount++; }
+    if (errorCode & ENCODER_ERROR_UNSUPPORTED_ENCODER_MODE)  { tft.println("E_ERR_UNSUPPORTED_ENCODER_MODE"); errorCount++; }
+    if (errorCode & ENCODER_ERROR_ILLEGAL_HALL_STATE)        { tft.println("E_ERR_ILLEGAL_HALL_STATE"); errorCount++; }
+    if (errorCode & ENCODER_ERROR_INDEX_NOT_FOUND_YET)       { tft.println("E_ERR_INDEX_NOT_FOUND_YET"); errorCount++; }
+    if (errorCode & ENCODER_ERROR_ABS_SPI_TIMEOUT)           { tft.println("E_ERR_ABS_SPI_TIMEOUT"); errorCount++; }
+    if (errorCode & ENCODER_ERROR_ABS_SPI_COM_FAIL)          { tft.println("E_ERR_ABS_SPI_COM_FAIL"); errorCount++; }
+    if (errorCode & ENCODER_ERROR_ABS_SPI_NOT_READY)         { tft.println("E_ERR_ABS_SPI_NOT_READY"); errorCount++; }
 
-// create enum Component operator ++
-Component& operator ++ (Component& comp) {
-  comp = Component(static_cast<std::underlying_type<Component>::type>(comp) + 1);
-  return comp;
+    if (errorCount == 0) { tft.println("ENC_ERR_NONE"); }
+  }
+  return errorCount;  // Return the number of detected errors
 }
 
 // ======== Show the ODRIVE errors ========
 void ODriveScreen::showODriveErrors() {
   int y_offset = 0;
-  tft.setFont();
-  tft.fillRect(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y, 200, 12*OD_ERR_SPACING, pgBackground);
-  tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y); 
   uint32_t err = 0;
+  uint8_t errCnt = 0;
   //char tempString[40] ="";
 
+  // clear background
+  tft.fillRect(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y, 197, 15*OD_ERR_SPACING, pgBackground);
+  tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y); 
+  
+  tft.setFont();
+
   // ODrive top level errors
-  tft.print("-------Top Level Errors-------");
-  err = oDriveExt.getODriveErrors(-1, Component::NO_COMP);
+  err = oDriveExt.getODriveErrors(-1, Component::NO_COMP); // no axis number since Top Level
+  tft.println(F("-------Top Level Errors-------"));
   //sprintf(tempString, "Top Level err=%08lX", err); VL(tempString);
-  y_offset += OD_ERR_SPACING;
+  errCnt = oDriveScreen.decodeODriveErrors(-1, Component::NO_COMP, err);
   
+  // **** enum ordering: AXIS=2, CONTROLLER=3, MOTOR=4, ENCODER=5 *****//
+  err = oDriveExt.getODriveErrors(AZM_MOTOR, AXIS);
+  y_offset += OD_ERR_SPACING + (errCnt * OD_ERR_SPACING);
+  tft.setFont();
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  oDriveScreen.decodeODriveErrors(-1, Component::NO_COMP, err);
-  
-  // enum ordering: AXIS=2, CONTROLLER=3, MOTOR=4, ENCODER=5
-  // AZM Errors
-  y_offset += OD_ERR_SPACING;
+  tft.println(F("----------AZM Errors----------"));
+  //sprintf(tempString, "AZM AXIS=%c err=%08lX", AXIS+48, err); VL(tempString);
+  errCnt += oDriveScreen.decodeODriveErrors(AZM_MOTOR, AXIS, err);
+
+  err = oDriveExt.getODriveErrors(AZM_MOTOR, CONTROLLER);
+  //sprintf(tempString, "AZM CONTROLLER=%c err=%08lX", CONTROLLER+48, err); VL(tempString);
+  errCnt += oDriveScreen.decodeODriveErrors(AZM_MOTOR, CONTROLLER, err);
+
+  err = oDriveExt.getODriveErrors(AZM_MOTOR, MOTOR);
+  //sprintf(tempString, "AZM MOTOR=%c err=%08lX", MOTOR+48, err); VL(tempString);
+  errCnt += oDriveScreen.decodeODriveErrors(AZM_MOTOR, MOTOR, err);
+
+  err = oDriveExt.getODriveErrors(AZM_MOTOR, ENCODER);
+  //sprintf(tempString, "AZM ENCODER=%c err=%08lX", ENCODER+48, err); VL(tempString);
+  errCnt += oDriveScreen.decodeODriveErrors(AZM_MOTOR, ENCODER, err);
+
+  y_offset += OD_ERR_SPACING + (errCnt+5 * OD_ERR_SPACING);
+  err = oDriveExt.getODriveErrors(ALT_MOTOR, AXIS);
+  tft.setFont();
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  tft.print("----------AZM Errors----------");
+  tft.println(F("----------ALT Errors----------"));
+  //sprintf(tempString, "ALT AXIS=%c err=%08lX", AXIS+48, err); VL(tempString);
+  errCnt += oDriveScreen.decodeODriveErrors(ALT_MOTOR, AXIS, err);
 
-  for (Component comp = AXIS; comp != COMP_LAST; ++comp) {
-    y_offset +=OD_ERR_SPACING;
-    tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-    err = oDriveExt.getODriveErrors(AZM_MOTOR, comp);
-    //sprintf(tempString, "AZM comp=%c err=%08lX", comp+48, err); VL(tempString);
-    oDriveScreen.decodeODriveErrors(AZM_MOTOR, comp, err);
-  }
+  err = oDriveExt.getODriveErrors(ALT_MOTOR, CONTROLLER);
+  //sprintf(tempString, "ALT CONTROLLER=%c err=%08lX", CONTROLLER+48, err); VL(tempString);
+  errCnt += oDriveScreen.decodeODriveErrors(ALT_MOTOR, CONTROLLER, err);
 
-  // ALT Errors
-  y_offset += OD_ERR_SPACING;
-  tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-  tft.print("----------ALT Errors----------");
+  err = oDriveExt.getODriveErrors(ALT_MOTOR, MOTOR);
+  //sprintf(tempString, "ALT MOTOR=%c err=%08lX", MOTOR+48, err); VL(tempString);
+  errCnt += oDriveScreen.decodeODriveErrors(AZM_MOTOR, MOTOR, err);
 
-  for (Component comp = AXIS; comp != COMP_LAST; ++comp) {
-    y_offset +=OD_ERR_SPACING;
-    tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
-    err = oDriveExt.getODriveErrors(ALT_MOTOR, comp);
-    //sprintf(tempString, "ALT comp=%c err=%08lX", comp+48, err); VL(tempString);
-    decodeODriveErrors(ALT_MOTOR, comp, err);
-  }
+  err = oDriveExt.getODriveErrors(ALT_MOTOR, ENCODER);
+  //sprintf(tempString, "ALT ENCODER=%c err=%08lX", ENCODER+48, err); VL(tempString);
+  errCnt += oDriveScreen.decodeODriveErrors(ALT_MOTOR, ENCODER, err);
 }
 
 bool ODriveScreen::odriveButStateChange() {
@@ -342,7 +368,7 @@ void ODriveScreen::updateOdriveButtons(bool redrawBut) {
     odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "All Stop'd", BUT_ON);
     OdStopButton = false;
   } else { 
-    odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "STOP!", BUT_OFF);
+    odriveButton.draw(OD_ACT_COL_2_X, OD_ACT_COL_2_Y + y_offset, "Motors OFF", BUT_OFF);
   }
 
   y_offset +=OD_ACT_BOXSIZE_Y + OD_ACT_Y_SPACING;
@@ -427,10 +453,10 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     if (!axis1.isEnabled()) { // if not On, toggle ON
       digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
-      motor1.enable(true);
+      axis1.enable(true);
     } else { // since already ON, toggle OFF
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-      motor1.enable(false);
+      axis1.enable(false);
     }
     return true;
   }
@@ -439,12 +465,12 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
   // Enable Altitude motor
   if (px > OD_ACT_COL_1_X + x_offset && px < OD_ACT_COL_1_X + x_offset + OD_ACT_BOXSIZE_X && py > OD_ACT_COL_1_Y + y_offset && py <  OD_ACT_COL_1_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     BEEP;
-    if (axis2.isEnabled()) { // toggle ON
+    if (!axis2.isEnabled()) { // toggle ON
       digitalWrite(ALT_ENABLED_LED_PIN, LOW); // Turn On ALT LED
-      motor2.enable(true);
+      axis2.enable(true);
     } else { // toggle OFF
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
-      motor2.enable(false); // turn off ODrive motor
+      axis2.enable(false); // turn off ODrive motor
     }
     return true;
   }
@@ -457,13 +483,12 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     if (!OdStopButton) {
       setLocalCmd(":Q#"); // stops move
-      motor1.enable(false); // turn off the motors
       axis1.enable(false);
-      motor2.enable(false);
       axis2.enable(false);
       OdStopButton = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
+      setLocalCmd(":Td#"); // Disable Tracking
     }
     return true;
   }
@@ -474,6 +499,7 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     VLF("MSG: Clearing ODrive Errors");
     oDriveExt.clearAllODriveErrors();
+    showODriveErrors();
     return true;
   }
 
@@ -582,6 +608,10 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     }
     return false;
   }  
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+  
   return true;
 }    
 

@@ -7,6 +7,7 @@
 
 #include "ExtStatusScreen.h"
 #include "src/telescope/mount/site/Site.h"
+#include "./src/lib/tasks/OnTask.h"
 
 #define STATUS_BOXSIZE_X         53 
 #define STATUS_BOXSIZE_Y         27 

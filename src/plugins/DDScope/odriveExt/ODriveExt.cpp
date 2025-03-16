@@ -64,7 +64,6 @@ void ODriveExt::setODrivePosGain(int axis, float level) {
   #endif
 }
 
-
 // NOTE: Since the ODriveArduino library has up to 1000ms timeout waiting for a RX character,
 // a tasks.yield() is added after every read command.
 // NOTE: if the RX data from ODrive drops out or the ODrive is off during debug, then just return
@@ -72,30 +71,32 @@ void ODriveExt::setODrivePosGain(int axis, float level) {
 
 // Read ODrive bus voltage which is approx. the battery voltage
 // Battery Low LED is only on when battery is below low threashold
-float ODriveExt::getODriveBusVoltage() {
+float ODriveExt::getODriveBusVoltage(int axis) {
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r vbus_voltage\n";
     float battery_voltage = _oDriveDriver->readFloat();
   #elif ODRIVE_COMM_MODE == OD_CAN
-    float battery_voltage = _oDriveDriver->GetVbusVoltage(0);  //Can be sent to either axis
+    float battery_voltage = _oDriveDriver->GetVbusVoltage(axis);  //Can be sent to either axis
   #endif
-  if (battery_voltage <= 0.20F) {
-    oDriveRXoff = true; 
-    return battery_voltage;
-  } else { 
-    oDriveRXoff = false;
-  }
-  
-  // 3 volt qualification keeps ALERT from happening when under development without ODrive powered
-  if (battery_voltage < BATTERY_LOW_VOLTAGE && battery_voltage > 3) { 
+
+  // Handle timeout condition
+  // if (battery_voltage == 0.0F) {
+  //   digitalWrite(BATTERY_LOW_LED_PIN, LOW); // LED on
+  //   batLowLED = true;
+  //   oDriveRXoff = true; 
+  //   return battery_voltage = 0.0F;  // Set to a valid value like 0
+  // } else if (battery_voltage < BATTERY_LOW_VOLTAGE) { 
+  if (battery_voltage < BATTERY_LOW_VOLTAGE) { 
     digitalWrite(BATTERY_LOW_LED_PIN, LOW); // LED on
     batLowLED = true;
-    ALERT;
-  } else { // battery ok
+    oDriveRXoff = false; 
+    return battery_voltage;
+  } else {
     digitalWrite(BATTERY_LOW_LED_PIN, HIGH); // LED off
+    oDriveRXoff = false;
     batLowLED = false;
-  }
-  return battery_voltage;
+    return battery_voltage;
+  } 
 }
 
 // get absolute Encoder positions in degrees
@@ -159,11 +160,7 @@ uint8_t ODriveExt::getODriveCurrentState(int axis) {
 
 // Get the difference between ODrive setpoint and the encoder
 float ODriveExt::getMotorPositionDelta(int axis) {
-  double currentTarget = 0.0000;
-  float target = 0.0000;
-  float actual = 0.0000;
-  float deltaPos = 0.0000;
- 
+  
   #if ODRIVE_COMM_MODE == OD_UART
     ODRIVE_SERIAL << "r axis" << axis << ".controller.pos_setpoint\n";
     float reqPos = _oDriveDriver->readFloat();   
@@ -171,6 +168,10 @@ float ODriveExt::getMotorPositionDelta(int axis) {
     float posEst = _oDriveDriver->readFloat(); 
     float deltaPos = fabs(reqPos - posEst);
   #elif ODRIVE_COMM_MODE == OD_CAN
+    double currentTarget = 0.0000;
+    float target = 0.0000;
+    float actual = 0.0000;
+    float deltaPos = 0.0000;
     if (ODRIVE_SWAP_AXES == ON) {
       if (axis == ALT_MOTOR) currentTarget = axis2.getTargetCoordinate();
       if (axis == AZM_MOTOR) currentTarget = axis1.getTargetCoordinate();
@@ -206,14 +207,14 @@ void ODriveExt::MotorEncoderDelta() {
   if (axis1.isEnabled()) {
     float AZposDelta = getMotorPositionDelta(AZM_MOTOR);
     if (AZposDelta > 0.0020 && AZposDelta < 0.03) 
-      soundFreq(1200, 25);
+      soundFreq(800, 45);
     else if (AZposDelta > 0.03) soundFreq(2000, 45); // saturated
   }
   
   if (axis2.isEnabled()) {
     float ALTposDelta = getMotorPositionDelta(ALT_MOTOR);
     if (ALTposDelta > .0050 && ALTposDelta < 0.03) {
-      soundFreq(2500, 35);
+      soundFreq(1000, 65);
     } else if (ALTposDelta > 0.03) soundFreq(2500, 45); 
   }
 }

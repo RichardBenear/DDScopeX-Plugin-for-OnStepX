@@ -68,10 +68,10 @@
 #define COL_2_ROW_6_S_STR "ALT MotTemp:"
 
 // Column 1 Command strings
-#define COL_1_ROW_1_C_STR ":GL#"
-#define COL_1_ROW_2_C_STR ":GS#"
-#define COL_1_ROW_3_C_STR ":Gt#"
-#define COL_1_ROW_4_C_STR ":Gg#"
+#define COL_1_ROW_1_C_STR ":GL#  "
+#define COL_1_ROW_2_C_STR ":GS#  "
+#define COL_1_ROW_3_C_STR ":Gt#  "
+#define COL_1_ROW_4_C_STR ":Gg#  "
 #define COL_1_ROW_5_C_STR ":GX9A#" // temperature deg C
 #define COL_1_ROW_6_C_STR ":GX9C#" // humidity
 #define COL_1_ROW_7_C_STR ":GX9E#" // dew point deg C
@@ -138,8 +138,6 @@ void HomeScreen::draw() {
   // draw and initialize buttons, labels, and status upon entry to this screen
   updateHomeButtons(false);
   drawCommonStatusLabels();
-  updateHomeStatus(); 
-  updateCommonStatus(); 
   getOnStepCmdErr(); // show error bar
 }
 
@@ -153,12 +151,8 @@ void HomeScreen::updateHomeStatus() {
   float currentALTMotorCur  = 00.0;
   float currentALTMotorTemp = 00.0;
   float currentAZMotorTemp  = 00.0;
-  char curCol1[11][8];
-
-  // update the common status block that is on most screens
-  updateCommonStatus(); 
-
-  char xchReply[12]="";
+  char curCol1[11][8] = { {0} };
+  char xchReply[13]="";
   int y_offset = 0;
 
   // Loop through Column 1 poll updates
@@ -170,12 +164,15 @@ void HomeScreen::updateHomeStatus() {
       sprintf(xchReply, "%3.1f F", tempF); // convert back to string to right justify
     }
 
+    // only update screen if value is different
     if (strcmp(curCol1[i], xchReply) != 0) {
       canvHomeInsPrint.printRJ(COL1_DATA_X, COL1_DATA_Y+y_offset, C_WIDTH-5, C_HEIGHT, xchReply, false);
       strcpy(curCol1[i], xchReply);
     }
     y_offset +=COL1_LABEL_SPACING;
   }
+
+  tasks.yield(70); // this yield() is required or lockup happen
 
   // Column 2 poll updates
   int bitmap_width_sub = 30;
@@ -216,7 +213,6 @@ void HomeScreen::updateHomeStatus() {
     canvHomeInsPrint.printRJ(COL2_DATA_X, COL2_DATA_Y+y_offset, C_WIDTH-bitmap_width_sub, C_HEIGHT, currentAZMotorCur, false);
   }
 
-  
   // ALT current
   y_offset +=COL1_LABEL_SPACING;
   #ifdef ODRIVE_MOTOR_PRESENT
@@ -295,7 +291,7 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
   // redrawBut when true forces a refresh of all buttons once more..used for a toggle effect on some buttons
   _redrawBut = redrawBut;
   int y_offset = 0;
-
+  //VLF("updating Home Buttons");
   // ============== Column 1 ===============
   // Draw Enable / Disable Azimuth Motor
   if (axis1.isEnabled()) {
@@ -400,9 +396,9 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!axis1.isEnabled()) { // if not On, toggle ON
-      motor1.enable(true);
+      axis1.enable(true);
     } else { // since already ON, toggle OFF
-      motor1.enable(false);
+      axis1.enable(false);
     }
     return false;
   }
@@ -412,9 +408,9 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!axis2.isEnabled()) { // toggle ON 
-      motor2.enable(true);
+      axis2.enable(true);
     } else { // toggle OFF
-      motor2.enable(false); // Idle the ODrive motor
+      axis2.enable(false); // Idle the ODrive motor
     }
     return false;
   }
@@ -427,10 +423,8 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
       setLocalCmd(":Q#");
       stopButton = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
-      motor1.enable(false);
       axis1.enable(false);
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
-      motor2.enable(false);
       axis2.enable(false);
       setLocalCmd(":Td#"); // Disable Tracking
     }
@@ -521,6 +515,10 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     }
     return false;
   }
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+  
   return false;
 }
 

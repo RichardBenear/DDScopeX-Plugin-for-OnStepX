@@ -30,7 +30,7 @@ class GotoScreen : public Display {
     uint8_t RAtextIndex = 0;
     uint8_t DECtextIndex = 0;
 
-    bool RAselect = false;
+    bool RAselect = true;
     bool RAclear = false;
     bool DECselect = false;
     bool DECclear = false;

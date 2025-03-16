@@ -2,10 +2,11 @@
 // This file has been modified from the original by R. Benear 8/22
 
 #include "Arduino.h"
+#include "FlexCAN_T4.h"
 #include "ODriveTeensyCAN.h"
-#include <FlexCAN_T4.h>
+#include "src/lib/tasks/OnTask.h"
 
-#define TIMEOUT 4 // msec
+#define TIMEOUT 8 // msec
 
 static const int kMotorOffsetFloat = 2;
 static const int kMotorStrideFloat = 28;
@@ -42,47 +43,61 @@ ODriveTeensyCAN::ODriveTeensyCAN(int CANBaudRate) {
   //Can0.onReceive(canSniff);
   //Can0.mailboxStatus();
 }
-
-int ODriveTeensyCAN::sendMessage(int axis_id, int cmd_id, bool remote_transmission_request, int length, byte *signal_bytes) {
+	
+bool ODriveTeensyCAN::sendMessage(int axis_id, int cmd_id, bool remote_transmission_request, int length, byte *signal_bytes) {
   CAN_message_t msg;
   CAN_message_t return_msg;
 
   msg.id = (axis_id << CommandIDLength) + cmd_id;
   msg.flags.remote = remote_transmission_request;
   msg.len = length;
-  if (!remote_transmission_request && cmd_id != CMD_ID_GET_ADC_VOLTAGE) {
-    memcpy(msg.buf, signal_bytes, length);
-    Can0.write(msg);
-    return 1;
+  if (!remote_transmission_request) {
+      memcpy(msg.buf, signal_bytes, msg.len);
+      Can0.write(msg);
+      return true;
   }
-
-	if(cmd_id == CMD_ID_GET_ADC_VOLTAGE) {
-    memcpy(msg.buf, signal_bytes, length);
-		uint32_t return_id = (axis_id << CommandIDLength) + CMD_ID_SEND_ADC_VOLTAGE;
-		
-		Can0.write(msg);
-		while (true) {
-			if (Can0.read(return_msg) && (return_msg.id == return_id)) {
-				memcpy(signal_bytes, return_msg.buf, sizeof(return_msg.buf));
-				return 1;
-			}
-		}
-	}
-	
-	Can0.write(msg);
   
-  unsigned long int startMillis;
-  startMillis = TIMEOUT ? millis() : 0;
-  while (true) {
+  Can0.write(msg);
+  unsigned long start_time = millis();
+  while (millis() - start_time < TIMEOUT) {
     if (Can0.read(return_msg) && (return_msg.id == msg.id)) {
-      memcpy(signal_bytes, return_msg.buf, sizeof(return_msg.buf));
-      return 1;
-    } else if (!TIMEOUT || (TIMEOUT<=(millis()-startMillis))) {
-      // early EXIT nothing here
-      return 0;
+        memcpy(signal_bytes, return_msg.buf, sizeof(return_msg.buf));
+        return true;
     }
-    yield();
   }
+  Serial.println("CAN read Timeout");
+
+  // Print basic info
+  Serial.print("Axis ID: 0x"); Serial.println(axis_id, HEX);
+  Serial.print("Cmd ID: 0x"); Serial.println(cmd_id, HEX);
+  Serial.print("Length: "); Serial.println(length);
+  Serial.print("msg.id: 0x"); Serial.println(msg.id, HEX);  
+  Serial.print("msg.flags.remote: "); Serial.println(msg.flags.remote ? "True" : "False");
+  Serial.print("msg.len: "); Serial.println(msg.len);
+
+  // Print `signal_bytes`
+  Serial.print("signal_bytes: ");
+  for (int i = 0; i < length; i++) {
+      Serial.print("0x");  // Add prefix
+      if (signal_bytes[i] < 0x10) Serial.print("0");  // Ensure leading zero for single-digit hex
+      Serial.print(signal_bytes[i], HEX);
+      Serial.print(" ");
+  }
+  Serial.println(); // New line after printing all bytes
+
+  // Print `msg.buf`
+  if (!msg.flags.remote) {
+      Serial.print("msg.buf: ");
+      for (int i = 0; i < msg.len; i++) {
+          Serial.print("0x");  // Add prefix
+          if (msg.buf[i] < 0x10) Serial.print("0");  // Ensure leading zero
+          Serial.print(msg.buf[i], HEX);
+          Serial.print(" ");
+      }
+      Serial.println();
+  }
+  return false;
+  //tasks.yield(); // Remove this because it causes lock ups!!!!!
 }
 
 // # 0x001 - Heartbeat 
@@ -366,7 +381,7 @@ float ODriveTeensyCAN::GetSensorlessVelocity(int axis_id) {
 }
 
 uint32_t ODriveTeensyCAN::GetMotorError(int axis_id) {
-  byte msg_data[4] = {0, 0, 0, 0};
+  byte msg_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
   sendMessage(axis_id, CMD_ID_GET_MOTOR_ERROR, true, 4, msg_data);
 
@@ -379,7 +394,7 @@ uint32_t ODriveTeensyCAN::GetMotorError(int axis_id) {
 }
 
 uint32_t ODriveTeensyCAN::GetEncoderError(int axis_id) {
-  byte msg_data[4] = {0, 0, 0, 0};
+  byte msg_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
   sendMessage(axis_id, CMD_ID_GET_ENCODER_ERROR, true, 4, msg_data);
 
@@ -391,23 +406,23 @@ uint32_t ODriveTeensyCAN::GetEncoderError(int axis_id) {
   return output;
 }
 
+// NOTE: The CAN default Heartbeat is 100 msec. 
 uint32_t ODriveTeensyCAN::GetAxisError(int axis_id) {
   byte msg_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   uint32_t output;
-
   CAN_message_t return_msg;
-
   uint32_t msg_id = (axis_id << CommandIDLength) + CMD_ID_ODRIVE_HEARTBEAT_MESSAGE;
 
-  while (true) {
-    if (Can0.read(return_msg) && (return_msg.id == msg_id)) {
-      memcpy(msg_data, return_msg.buf, sizeof(return_msg.buf));
-      *((uint8_t *)(&output) + 0) = msg_data[0];
-      *((uint8_t *)(&output) + 1) = msg_data[1];
-      *((uint8_t *)(&output) + 2) = msg_data[2];
-      *((uint8_t *)(&output) + 3) = msg_data[3];
-      return output;
-    }
+  while(true) {
+      if (Can0.read(return_msg) && (return_msg.id == msg_id)) {
+          memcpy(msg_data, return_msg.buf, sizeof(return_msg.buf));
+          *((uint8_t *)(&output) + 0) = msg_data[0];
+          *((uint8_t *)(&output) + 1) = msg_data[1];
+          *((uint8_t *)(&output) + 2) = msg_data[2];
+          *((uint8_t *)(&output) + 3) = msg_data[3];
+          return output;  // Successfully received message
+      }
+    tasks.yield();
   }
 }
 
@@ -426,8 +441,8 @@ uint8_t ODriveTeensyCAN::GetControllerFlags(int axis_id) {
       return output;
     }
   }
+  tasks.yield();
 }
-
 
 uint8_t ODriveTeensyCAN::GetCurrentState(int axis_id) {
   byte msg_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -444,19 +459,27 @@ uint8_t ODriveTeensyCAN::GetCurrentState(int axis_id) {
       return output;
     }
   }
+  tasks.yield();
 }
 
+// Documentation indicates this returns both voltage and current but only using voltage here
+// which is in first 4 bytes
 float ODriveTeensyCAN::GetVbusVoltage(int axis_id) {  //message can be sent to either axis
-  byte msg_data[4] = {0, 0, 0, 0};
+  //byte msg_data[4] = {0, 0, 0, 0};
+  byte msg_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
-  sendMessage(axis_id, CMD_ID_GET_VBUS_VOLTAGE, true, 4, msg_data);
-
-  float_t output;
-  *((uint8_t *)(&output) + 0) = msg_data[0];
-  *((uint8_t *)(&output) + 1) = msg_data[1];
-  *((uint8_t *)(&output) + 2) = msg_data[2];
-  *((uint8_t *)(&output) + 3) = msg_data[3];
-  return output;
+  //sendMessage(axis_id, CMD_ID_GET_VBUS_VOLTAGE_CURRENT, true, 4, msg_data);
+  sendMessage(axis_id, CMD_ID_GET_VBUS_VOLTAGE_CURRENT, true, 8, msg_data);
+    float_t output;
+    *((uint8_t *)(&output) + 0) = msg_data[0];
+    *((uint8_t *)(&output) + 1) = msg_data[1];
+    *((uint8_t *)(&output) + 2) = msg_data[2];
+    *((uint8_t *)(&output) + 3) = msg_data[3];
+    *((uint8_t *)(&output) + 4) = msg_data[4];
+    *((uint8_t *)(&output) + 5) = msg_data[5];
+    *((uint8_t *)(&output) + 6) = msg_data[6];
+    *((uint8_t *)(&output) + 7) = msg_data[7];
+    return output;
 }
 
 float ODriveTeensyCAN::GetADCVoltage(int axis_id, uint8_t gpio_num) {
@@ -492,6 +515,9 @@ void ODriveTeensyCAN::ClearErrors(int axis_id) {
 //////////// State helper ///////////
 
 bool ODriveTeensyCAN::RunState(int axis_id, int requested_state) {
+  //Serial.println("Motor Cmd");
+  //Serial.printf("Axis: "); Serial.println(axis_id);
+  //Serial.printf("Req State: "); Serial.println(requested_state);
   sendMessage(axis_id, CMD_ID_SET_AXIS_REQUESTED_STATE, false, 4, (byte*) &requested_state);
   return true;
 }

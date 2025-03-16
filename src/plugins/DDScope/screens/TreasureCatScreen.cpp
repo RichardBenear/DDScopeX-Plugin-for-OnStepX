@@ -428,7 +428,11 @@ bool TreasureCatScreen::touchPoll(uint16_t px, uint16_t py) {
     saveTreasure();
     saveTouched = true;
     return true;
-  }   
+  }
+  
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+  
   return false; 
 }
 

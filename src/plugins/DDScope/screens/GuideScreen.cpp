@@ -89,8 +89,8 @@ void GuideScreen::draw() {
 
 // task update for this screen
 void GuideScreen::updateGuideStatus() {
-  char cAZMposition[12] = "";
-  char cALTposition[12] = "";
+  char cAZMposition[14] = "";
+  char cALTposition[14] = "";
 
   // show the current Encoder positions
   #ifdef ODRIVE_MOTOR_PRESENT
@@ -109,9 +109,6 @@ void GuideScreen::updateGuideStatus() {
     AZEncPos = 0; // define this for non ODrive implementations
   #endif
   canvGuideInsPrint.printRJ(3, 230, 106, 16, cALTposition, false);
-
-  // show the Common coordinates area
-  updateCommonStatus();
 }
 
 bool GuideScreen::guideButStateChange() {
@@ -437,12 +434,10 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
       BEEP;
         setLocalCmd(":Q#");
         digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
-        motor1.enable(false);
-        axis1.enable(false);
+        //axis1.enable(false);
         digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
-        motor2.enable(false);
-        axis2.enable(false);
-        setLocalCmd(":Td#"); // Disable Tracking
+        //axis2.enable(false);
+        //setLocalCmd(":Td#"); // Disable Tracking
         
         stopPressed = true;
         spiralOn = false;
@@ -452,7 +447,11 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
         guidingSouth = false;
         return true;
     }
-    return false;
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+
+  return false;
 }
 
 GuideScreen guideScreen;

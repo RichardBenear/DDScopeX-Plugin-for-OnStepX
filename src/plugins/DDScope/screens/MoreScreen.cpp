@@ -54,10 +54,12 @@
 #define GOTO_BUT_X             212
 #define GOTO_BUT_Y             264
 #define GOTO_M_BOXSIZE_X       100
-#define GOTO_M_BOXSIZE_Y        40
+#define GOTO_M_BOXSIZE_Y        38
 
-#define ABORT_M_BUT_X          212
-#define ABORT_M_BUT_Y          310
+#define STOP_BUT_X             212
+#define STOP_BUT_Y             307
+#define STOP_BOXSIZE_X         100
+#define STOP_BOXSIZE_Y          38
 
 const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
 
@@ -99,7 +101,7 @@ void MoreScreen::draw() {
 
 // task update for this screen
 void MoreScreen::updateMoreStatus() {
-  updateCommonStatus();
+  
 }
 
 bool MoreScreen::moreButStateChange() {
@@ -254,25 +256,25 @@ void MoreScreen::updateMoreButtons(bool redrawBut) {
     moreButton.draw(MISC_X, MISC_Y + y_offset, MISC_BOXSIZE_X, MISC_BOXSIZE_Y, "Buzzer Off", BUT_OFF);
   }
 
-  // Larger Button Text for GoTo and Abort
+  // Larger Button Text for GoTo
   //tft.setFont(&FreeSansBold9pt7b); 
   tft.setFont(&UbuntuMono_Bold11pt7b); 
   // Go To Coordinates Button
   if (goToButton) {
-    moreLgButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Slewing", BUT_ON);
+    moreButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Slewing", BUT_ON);
     goToButton = false;
   } else {
     if (!mount.isSlewing()) { 
-      moreLgButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Go To", BUT_OFF);
+      moreButton.draw(GOTO_BUT_X, GOTO_BUT_Y,  GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Go To ", BUT_OFF);
     }
   }
   
-  // Abort GoTo Button
-  if (abortPgBut) {
-    moreLgButton.draw(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Aborting", BUT_ON);
-    abortPgBut = false;
+  // Stop the GoTo Button
+  if (stopBut) {
+    moreButton.draw(STOP_BUT_X, STOP_BUT_Y, STOP_BOXSIZE_X, STOP_BOXSIZE_Y, "STOPing", BUT_ON);
+    stopBut = false;
   } else {
-    moreLgButton.draw(ABORT_M_BUT_X, ABORT_M_BUT_Y, GOTO_M_BOXSIZE_X, GOTO_M_BOXSIZE_Y, "Abort", BUT_OFF);
+    moreButton.draw(STOP_BUT_X, STOP_BUT_Y, STOP_BOXSIZE_X, STOP_BOXSIZE_Y, " STOP  ", BUT_OFF);
   }
 
   tft.setFont(&Inconsolata_Bold8pt7b); 
@@ -442,16 +444,13 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
   return true;
   }
 
-  // **** ABORT GOTO ****
-  if (py > ABORT_M_BUT_Y && py < (ABORT_M_BUT_Y + GOTO_M_BOXSIZE_Y) && px > ABORT_M_BUT_X && px < (ABORT_M_BUT_X + GOTO_M_BOXSIZE_X)) {
+  // **** Stop GOTO ****
+  // Stop does not turn off motors
+  if (py > STOP_BUT_Y && py < (STOP_BUT_Y + MISC_BOXSIZE_Y) && px > STOP_BUT_X && px < (STOP_BUT_X + GOTO_M_BOXSIZE_X)) {
     BEEP;
-    soundFreq(1500, 200);
+    //soundFreq(1500, 200);
     abortPgBut = true;
     setLocalCmd(":Q#"); // stops move
-    motor1.enable(false); // do this for safety reasons...mount may be colliding with something
-    axis1.enable(false);
-    motor2.enable(false);
-    axis2.enable(false);
     return true;
   }
 
@@ -473,7 +472,7 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     y_offset += CAT_SEL_SPACER;
   }
 
-// Planet Catalog Select Button
+  // Planet Catalog Select Button
   if (px > CAT_SEL_X && px < CAT_SEL_X + CAT_SEL_BOXSIZE_X && py > CAT_SEL_Y+y_offset  && py < CAT_SEL_Y+y_offset + CAT_SEL_BOXSIZE_Y) {
     BEEP;
     planetsScreen.draw(); // draws the Planets Catalog page
@@ -498,7 +497,11 @@ bool MoreScreen::touchPoll(uint16_t px, uint16_t py) {
     catalogsActive = true;
     return false; // shut off flag that draws More Page buttons
   }
-  return false; // screen touched but not on a button
+
+  // Check emergeyncy ABORT button area
+  display.motorsOff(px, py);
+
+  return false; // screen touched but not on a button (exception is motorsOff())
 }
 
 MoreScreen moreScreen;

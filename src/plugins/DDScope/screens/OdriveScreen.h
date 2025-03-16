@@ -14,7 +14,7 @@ class ODriveScreen : public Display {
     void updateOdriveStatus();
     void updateOdriveButtons(bool);
     bool odriveButStateChange();
-    void decodeODriveErrors(int axis, Component, uint32_t errorCode);
+    uint8_t decodeODriveErrors(int axis, Component, uint32_t errorCode);
 
     bool demoActive       = false;
     

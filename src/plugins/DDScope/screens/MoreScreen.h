@@ -20,10 +20,10 @@ class MoreScreen : public Display {
     const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
     
     char catSelectionStr1[26];
-    char catSelectionStr2[11];
-    char catSelectionStr3[11];
-    char catSelectionStr4[16];
-    char catSelectionStr5[15];
+    char catSelectionStr2[19];
+    char catSelectionStr3[19];
+    char catSelectionStr4[23];
+    char catSelectionStr5[23];
 
   private:
     char reply[10];
@@ -32,6 +32,7 @@ class MoreScreen : public Display {
     bool catalogsActive = false;
     bool soundEnabled = true;
     bool goToButton = false;
+    bool stopBut = false;
     bool abortPgBut = false;
     bool clrCustom = false;
     bool sidereal = true;

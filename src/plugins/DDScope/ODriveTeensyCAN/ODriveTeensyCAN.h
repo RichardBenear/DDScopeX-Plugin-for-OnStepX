@@ -49,7 +49,7 @@ class ODriveTeensyCAN {
       CMD_ID_GET_IQ = 0x014,
       CMD_ID_GET_SENSORLESS_ESTIMATES = 0x015,
       CMD_ID_REBOOT_ODRIVE = 0x016,
-      CMD_ID_GET_VBUS_VOLTAGE = 0x017,
+      CMD_ID_GET_VBUS_VOLTAGE_CURRENT = 0x017,
       CMD_ID_CLEAR_ERRORS = 0x018,
       CMD_ID_SET_LINEAR_COUNT = 0x019,
       CMD_ID_SET_POS_GAIN = 0x01A,
@@ -63,7 +63,7 @@ class ODriveTeensyCAN {
     
     int CANBaudRate = 250000;  //250,000 is odrive default
 
-    int sendMessage(int axis_id, int cmd_id, bool remote_transmission_request, int length, byte *signal_bytes);
+    bool sendMessage(int axis_id, int cmd_id, bool remote_transmission_request, int length, byte *signal_bytes);
     
     // Heartbeat
     int Heartbeat();
