@@ -42,13 +42,16 @@
 
 void updateScreenWrapper() { display.updateSpecificScreen(); }
 void refreshButtonsWrapper() { display.refreshButtons(); }
-void generalErrorWrapper() { display.getOnStepGenErr(); }
+// void generalErrorWrapper() { display.getOnStepGenErr(); }
+// void commonStatusWrapper() { display.updateCommonStatus(); }
 
 void DDScope::init() {
 
   VF("MSG: Plugins, starting:"); VLF(PluginName);
 
   // Initilize custom pins...may want to move some of these to Features in future
+  pinModeEx(ODRIVE_RST_PIN, OUTPUT);
+
   pinMode(ALT_THERMISTOR_PIN, INPUT); // Analog input
   pinMode(AZ_THERMISTOR_PIN, INPUT); // Analog input
 
@@ -75,6 +78,14 @@ void DDScope::init() {
   pinMode(FOCUSER_SLEEP_PIN, OUTPUT); 
   digitalWrite(FOCUSER_SLEEP_PIN,HIGH); // Focuser motor driver not sleeping
 
+#if ODRIVE_COMM_MODE == OD_UART
+  ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
+  VLF("MSG: ODrive, SERIAL channel init");
+#elif ODRIVE_COMM_MODE == OD_CAN
+  // .begin is done by the constructor
+  VLF("MSG: ODrive, CAN channel init");
+#endif
+
   // Initialize Touchscreen *NOTE: must occur before display.init() since SPI.begin() is done here
   VLF("MSG: TouchScreen, Initializing");
   touchScreen.init();
@@ -87,24 +98,36 @@ void DDScope::init() {
   homeScreen.draw();
 
   // update currently selected screen status
-  VF("MSG: Setup, start Screen status polling task (rate 1100 ms priority 6)... ");
-  uint8_t us_handle = tasks.add(1100, 0, true, 6, updateScreenWrapper, "UpdateSpecificScreen");
+  VF("MSG: Setup, start Screen status update task (rate 1000 ms priority 6)... ");
+  uint8_t us_handle = tasks.add(1000, 0, true, 3, updateScreenWrapper, "UpdateSpecificScreen");
   if (us_handle)  { VLF("success"); } else { VLF("FAILED!"); }
 
-  // refresh Buttons
-  VF("MSG: Setup, refresh Buttons (rate 1000 ms priority 6)... ");
+  // update common screen status
+  // VF("MSG: Setup, start Common Screen status update task (rate 1000 ms priority 6)... ");
+  // uint8_t com_handle = tasks.add(1000, 0, true, 6, commonStatusWrapper, "UpdateCommonScreen");
+  // if (com_handle)  { VLF("success"); } else { VLF("FAILED!"); }
+
+  // // refresh Buttons
+  VF("MSG: Setup, refresh Buttons (rate 1000 ms priority 4)... ");
   uint8_t rs_handle = tasks.add(1000, 0, true, 6, refreshButtonsWrapper, "RefreshButtons");
   if (rs_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
-  // check for General Errors
-  VF("MSG: Setup, General Error check (rate 1200 ms priority 6)... ");
-  uint8_t ge_handle = tasks.add(1200, 0, true, 6, generalErrorWrapper, "GeneralErrors");
-  if (ge_handle) { VLF("success"); } else { VLF("FAILED!"); }
+  // // check for General Errors
+  // VF("MSG: Setup, General Error check (rate 1200 ms priority 7)... ");
+  // uint8_t ge_handle = tasks.add(1000, 0, true, 7, generalErrorWrapper, "GeneralErrors");
+  // if (ge_handle) { VLF("success"); } else { VLF("FAILED!"); }
 
   #ifdef ODRIVE_MOTOR_PRESENT
     VF("MSG: ODrive, ODRIVE_SWAP_AXES = "); if(ODRIVE_SWAP_AXES) VLF("ON"); else VLF("OFF");
     VF("MSG: ODrive, ODRIVE_COMM_MODE = "); if(ODRIVE_COMM_MODE == OD_UART) VLF("SERIAL"); else VLF("CAN bus");
   #endif
+
+  // create/start a task to show the profiler at work
+#if SHOW_TASKS_PROFILER_EVERY_SEC == ON
+profilerHandle = tasks.add(250, 0, true, 2, profiler, "Profilr");
+Serial.println("Profiler:  running every second");
+Serial.println();
+#endif
 }
 
 DDScope dDScope;
