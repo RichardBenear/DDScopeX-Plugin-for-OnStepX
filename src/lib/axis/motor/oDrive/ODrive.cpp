@@ -2,7 +2,6 @@
 // axis odrive servo motor
 
 #include "ODrive.h"
-#include "ODriveEnums.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
 
@@ -58,10 +57,12 @@ ODriveMotor::ODriveMotor(uint8_t axisNumber, const ODriveDriverSettings *Setting
 bool ODriveMotor::init() {
   if (axisNumber < 1 || axisNumber > 2) return false;
 
-  if (axisNumber == 1) {
+  //if (axisNumber == 1) {
     pinModeEx(ODRIVE_RST_PIN, OUTPUT);
+    digitalWriteEx(ODRIVE_RST_PIN, LOW); // RESET ODRIVE
+    delay(10);
     digitalWriteEx(ODRIVE_RST_PIN, HIGH); // bring ODrive out of Reset
-    delay(1000);  // allow time for ODrive to boot
+    delay(1500);  // allow time for ODrive to boot
     
     #if ODRIVE_COMM_MODE == OD_UART
       ODRIVE_SERIAL.begin(ODRIVE_SERIAL_BAUD);
@@ -70,10 +71,10 @@ bool ODriveMotor::init() {
       // .begin is done by the constructor
       VLF("MSG: ODrive, CAN channel init");
     #endif
-  }
+  // }
 
-  enable(false);
-
+  //enable(false);
+  
   // start the motor timer
   V(axisPrefix);
   VF("start task to move motor... ");
@@ -147,7 +148,6 @@ void ODriveMotor::enable(bool state) {
       return;
     }
   #endif
-
   V(axisPrefix); VF("closed loop control - ");
   if (state) { VLF("Active"); } else { VLF("Idle"); }
 }
