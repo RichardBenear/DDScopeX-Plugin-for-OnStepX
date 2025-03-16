@@ -279,7 +279,6 @@ void GeoAlign::doSearch(float sf, int p1, int p2, int p3, int p4, int p5, int p6
       if (p9 != 0) best_ohw = radToArcsec(ohw);
       if (p9 != 0) best_ohe = radToArcsec(ohe);
     }
-    
     Y;
   }
 }
