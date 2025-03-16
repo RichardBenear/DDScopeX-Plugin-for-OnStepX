@@ -62,17 +62,17 @@ void gpsPoll() {
     }
   #endif
 }
-
+uint8_t serialBuffer[128];
 // initialize
 bool TimeLocationSource::init() {
   #if defined(SERIAL_GPS_RX) && defined(SERIAL_GPS_TX) && !defined(SERIAL_GPS_RXTX_SET)
     SERIAL_GPS.begin(SERIAL_GPS_BAUD, SERIAL_8N1, SERIAL_GPS_RX, SERIAL_GPS_TX);
   #else
-    SERIAL_GPS.begin(SERIAL_GPS_BAUD);
+    SERIAL_GPS.begin(SERIAL_GPS_BAUD, 0x00);
+    SERIAL_GPS.addMemoryForRead(serialBuffer, 128);  // Extend buffer size
   #endif
 
   // check to see if the GPS is present
-  tasks.yield(500);
   if (!SERIAL_GPS.available()) {
     VLF("WRN: TLS, GPS serial RX interface is quiet!");
     return false;
@@ -88,8 +88,8 @@ bool TimeLocationSource::init() {
     }
   }
 
-  VF("MSG: TLS, GPS start monitor task (rate 10ms priority 7)... ");
-  if (tasks.add(1, 0, true, 7, gpsPoll, "gpsPoll")) { VLF("success"); active = true; } else { VLF("FAILED!"); }
+  VF("MSG: TLS, GPS start monitor task (rate 4000ms priority 7)... ");
+  if (tasks.add(4000, 0, true, 7, gpsPoll, "gpsPoll")) { VLF("success"); active = true; } else { VLF("FAILED!"); }
 
   return active;
 }
@@ -131,14 +131,48 @@ void TimeLocationSource::getSite(double &latitude, double &longitude, float &ele
 }
 
 void TimeLocationSource::poll() {
+  // // Check for the response
+  // while (SERIAL_GPS.available() > 0) {
+  //   char c = SERIAL_GPS.read();
+  //   Serial.print("0x");
+  //   if (c < 16) Serial.print("0"); // Leading zero for single-digit hex values
+  //   Serial.print(c, HEX);
+  //   Serial.print(" ");
+  // }
+
   while (SERIAL_GPS.available() > 0) {
     gps.encode(SERIAL_GPS.read());
   }
 
+  // if (gps.location.isValid()) {
+  //   Serial.print("Latitude: ");
+  //   Serial.println(gps.location.lat(), 6);
+  //   Serial.print("Longitude: ");
+  //   Serial.println(gps.location.lng(), 6);
+  //   Serial.print("Altitude: ");
+  //   Serial.println(gps.altitude.meters());
+  //   Serial.print("Satellites: ");
+  //   Serial.println(gps.satellites.value());
+  //   Serial.print("Year: ");
+  //   Serial.println(gps.date.year());
+  //   Serial.print("Month: ");
+  //   Serial.println(gps.date.month());
+  //   Serial.print("Day: ");
+  //   Serial.println(gps.date.day());
+  //   Serial.print("Hour: ");
+  //   Serial.println(gps.time.hour());
+  //   Serial.print("Min: ");
+  //   Serial.println(gps.time.minute());
+  //   Serial.print("Sec: ");
+  //   Serial.println(gps.time.second());
+  // }
+
   if (gps.location.isValid() && siteIsValid()) {
+    VLF("MSG: TLS, location and site are valid");
     if (gps.date.isValid() && gps.time.isValid() && timeIsValid()) {
+      VLF("MSG: TLS, date and time are valid");
       if (waitIsValid()) {
-        VLF("MSG: TLS, GPS date/time/location is ready");
+        //VLF("MSG: TLS, GPS date/time/location is ready");
 
         VLF("MSG: TLS, closing GPS serial port");
         SERIAL_GPS.end();
@@ -165,11 +199,21 @@ bool TimeLocationSource::waitIsValid() {
 
 bool TimeLocationSource::timeIsValid() {
   if (gps.date.year() <= 3000 && gps.date.month() >= 1 && gps.date.month() <= 12 && gps.date.day() >= 1 && gps.date.day() <= 31 &&
-      gps.time.hour() <= 23 && gps.time.minute() <= 59 && gps.time.second() <= 59) return true; else return false;
+      gps.time.hour() <= 23 && gps.time.minute() <= 59 && gps.time.second() <= 59) {
+        VLF("MSG: TLS, time is valid");
+        return true; 
+      } else {
+        return false;
+      }
 }
 
 bool TimeLocationSource::siteIsValid() {
-  if (gps.location.lat() >= -90 && gps.location.lat() <= 90 && gps.location.lng() >= -360 && gps.location.lng() <= 360) return true; else return false;
+  if (gps.location.lat() >= -90 && gps.location.lat() <= 90 && gps.location.lng() >= -360 && gps.location.lng() <= 360) {
+    VLF("MSG: TLS, site is valid");
+    return true; 
+  } else {
+    return false;
+  }
 }
 
 TimeLocationSource tls;
