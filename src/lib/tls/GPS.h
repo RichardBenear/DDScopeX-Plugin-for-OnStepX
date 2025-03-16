@@ -13,7 +13,7 @@
   #define GPS_TIMEOUT_MINUTES 10 // wait up to 10 minutes to get lock, use 0 to disable timeout
 #endif
 #ifndef GPS_MIN_WAIT_MINUTES
-  #define GPS_MIN_WAIT_MINUTES 2 // minimum wait for stabilization in minutes, use 0 to disable
+  #define GPS_MIN_WAIT_MINUTES 1 // minimum wait for stabilization in minutes, use 0 to disable
 #endif
 
 class TimeLocationSource {
