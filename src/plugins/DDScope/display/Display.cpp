@@ -20,6 +20,7 @@
 #include "src/telescope/mount/goto/Goto.h"
 #include "src/telescope/mount/site/Site.h"
 #include "src/lib/tasks/OnTask.h"
+#include "src/libApp/commands/ProcessCmds.h"
 
 // Fonts
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -137,6 +138,9 @@ uint16_t butOnBackground = MAROON;
 uint16_t textColor = DIM_YELLOW; 
 uint16_t butOutline = ORANGE; 
 
+// Local cmd channel object
+CommandProcessor processor(9600, 'L');
+
 // =========================================
 // ========= Initialize Display ============
 // =========================================
@@ -190,35 +194,61 @@ void Display::sdInit() {
 void Display::refreshButtons() {
   switch (currentScreen) {
     case HOME_SCREEN:      
-      if (homeScreen.homeButStateChange())         homeScreen.updateHomeButtons(false);         break;       
+      if (homeScreen.homeButStateChange()) 
+        homeScreen.updateHomeButtons(false); 
+      break;       
     case GUIDE_SCREEN:   
-      if (guideScreen.guideButStateChange())       guideScreen.updateGuideButtons(false);       break;        
+      if (guideScreen.guideButStateChange()) 
+        guideScreen.updateGuideButtons(false); 
+      break;        
     case FOCUSER_SCREEN:  
-      if (dCfocuserScreen.focuserButStateChange()) dCfocuserScreen.updateFocuserButtons(false); break; 
+      if (dCfocuserScreen.focuserButStateChange()) 
+        dCfocuserScreen.updateFocuserButtons(false); 
+      break; 
     case GOTO_SCREEN:     
-      if (gotoScreen.gotoButStateChange())         gotoScreen.updateGotoButtons(false);         break;          
+      if (gotoScreen.gotoButStateChange()) 
+        gotoScreen.updateGotoButtons(false); 
+      break;          
     case MORE_SCREEN:     
-      if (moreScreen.moreButStateChange())         moreScreen.updateMoreButtons(false);         break;          
+      if (moreScreen.moreButStateChange()) 
+        moreScreen.updateMoreButtons(false); 
+      break;          
     case SETTINGS_SCREEN:  
-      if (settingsScreen.settingsButStateChange()) settingsScreen.updateSettingsButtons(false); break;
+      if (settingsScreen.settingsButStateChange()) 
+        settingsScreen.updateSettingsButtons(false); 
+      break;
     case ALIGN_SCREEN:     
-      if (moreScreen.moreButStateChange())         alignScreen.updateAlignButtons(false);       break;     
+      if (moreScreen.moreButStateChange()) 
+        alignScreen.updateAlignButtons(false); 
+      break;     
     case PLANETS_SCREEN:   
-      if (planetsScreen.planetsButStateChange())   planetsScreen.updatePlanetsButtons(false);   break;
+      if (planetsScreen.planetsButStateChange()) 
+        planetsScreen.updatePlanetsButtons(false); 
+      break;
     case TREASURE_SCREEN:   
-      if (treasureCatScreen.catalogButStateChange()) treasureCatScreen.updateTreasureButtons(false); break; 
+      if (treasureCatScreen.catalogButStateChange()) 
+        treasureCatScreen.updateTreasureButtons(false); 
+      break; 
     case CUSTOM_SCREEN:   
-      if (customCatScreen.catalogButStateChange()) customCatScreen.updateCustomButtons(false);  break; 
+      if (customCatScreen.catalogButStateChange()) 
+        customCatScreen.updateCustomButtons(false); 
+      break; 
     case SHC_CAT_SCREEN:   
-      if (shcCatScreen.catalogButStateChange()) shcCatScreen.updateShcButtons(false);           break; 
-    case XSTATUS_SCREEN:                                                                        break; // no buttons here
+      if (shcCatScreen.catalogButStateChange()) 
+        shcCatScreen.updateShcButtons(false); 
+      break; 
+    case XSTATUS_SCREEN:  
+      // No buttons here
+      break; 
 
     #ifdef ODRIVE_MOTOR_PRESENT
-      case ODRIVE_SCREEN: 
-        if (oDriveScreen.odriveButStateChange())   oDriveScreen.updateOdriveButtons(false);     break;
+    case ODRIVE_SCREEN: 
+      if (oDriveScreen.odriveButStateChange()) 
+        oDriveScreen.updateOdriveButtons(false); 
+      break;
     #endif
   }
-};
+}
 
 // screen selection
 void Display::setCurrentScreen(Screen curScreen) {
@@ -227,8 +257,6 @@ currentScreen = curScreen;
 
 // select which screen to update
 void Display::updateSpecificScreen() {
-  oDriveExt.updateBatVoltage(); // do this first in case ODrive powered down or serial RX stopped, which will set appropriate flags
-
   switch (currentScreen) {
     case HOME_SCREEN:       homeScreen.updateHomeStatus();            break;
     case GUIDE_SCREEN:      guideScreen.updateGuideStatus();          break;
@@ -245,16 +273,28 @@ void Display::updateSpecificScreen() {
     #ifdef ODRIVE_MOTOR_PRESENT
       case ODRIVE_SCREEN:   oDriveScreen.updateOdriveStatus();        break;
     #endif
-    default: break;
+    default: homeScreen.updateHomeStatus(); break;
   }
+
+  // don't do the following updates on these screens
+  if (currentScreen == CUSTOM_SCREEN || 
+    currentScreen == SHC_CAT_SCREEN ||
+    currentScreen == PLANETS_SCREEN ||
+    currentScreen == XSTATUS_SCREEN ||
+    currentScreen == TREASURE_SCREEN) return;
+  Y;
+  display.updateCommonStatus();
+  Y;
+  display.getOnStepGenErr(); 
 }
 
 // ======= Local Command Channel Support ========
 void Display::setLocalCmd(char *command) {
+  //VL(command);
   SERIAL_LOCAL.transmit(command);
-  tasks.yield(50);
+  tasks.yield(10);
   // you must always do a matching receive() on the local channel or the xmit_index for xmit buffer doesn't increment
-  // this will add leading 1's to your receive data because of the bool-only reply's from some previous commands
+  // this will add leading 1's to your receive data because of a bool-only reply from some previous commands
   SERIAL_LOCAL.receive();
   getOnStepCmdErr();
 }
@@ -263,17 +303,54 @@ void Display::setLocalCmd(const char *command) {
   setLocalCmd((char *)command);
 }
 
-void Display::getLocalCmd(const char *command, char *reply) {
-  SERIAL_LOCAL.transmit(command);
-  tasks.yield(70);
-  strcpy(reply, SERIAL_LOCAL.receive()); 
-}
-
+// Local Cmd channel
+// Instead of using SERIAL_LOCAL this function uses parts of that for quicker access
+// Also, there was "anomalous" behavior and hangs using SERIAL_LOCAL for reading data
 void Display::getLocalCmdTrim(const char *command, char *reply) {
-  SERIAL_LOCAL.transmit(command); 
-  tasks.yield(70);
-  strcpy(reply, SERIAL_LOCAL.receive()); 
+  char cmdReply[60] = "";
+  char parameter[4] = "";
+  bool supressFrame = false;
+  bool numericReply = true;
+  char cmd[5] = "";
+ //CommandError commandError = CE_NONE;
+  char mutableCommand[6]; 
+  strcpy(mutableCommand, command);  // Copy command to a mutable buffer
+
+  // Extract command (drop the ':')
+  cmd[0] = mutableCommand[1];  // First command character
+  if (mutableCommand[2] == '#') {  
+    cmd[1] = '\0';  // 1-character command (e.g., ":Q#")
+  } else {
+    cmd[1] = mutableCommand[2];  // Second command character
+    if (mutableCommand[3] == '#') {
+      cmd[2] = '\0';  // 2-character command (e.g., ":GA#")
+    } else {
+      cmd[2] = '\0';  // Ensure cmd is always null-terminated
+      // Extract parameter (if any)
+      parameter[0] = mutableCommand[3];
+      parameter[1] = mutableCommand[4];
+      parameter[2] = '\0';  // Null-terminate parameter
+    }
+  }
+
+  //V(cmd);
+  //V(parameter);
+  //V(" ");
+ 
+  CommandError cmdErr = processor.command(cmdReply, cmd, parameter, &supressFrame, &numericReply);
+  if (cmdErr != CE_NONE) {
+    VL(cmdErr); 
+  }
+
+  if (numericReply) {
+    if (cmdErr != CE_NONE && cmdErr != CE_1) strcpy(reply,"0"); else strcpy(reply,"1");
+    supressFrame = true;
+  } else {
+
+  strcpy(reply, cmdReply); 
+  // get rid of '#'
   if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
+  }
 }
 
 // Draw the Title block
@@ -312,11 +389,12 @@ bool Display::getNightMode() {
 }
 
 // Update Battery Voltage
-void Display::updateBatVoltage() {
-  float currentBatVoltage = oDriveExt.getODriveBusVoltage();
-  char bvolts[12]="-- v";
+void Display::updateBatVoltage(int axis) {
+  float currentBatVoltage = oDriveExt.getODriveBusVoltage(axis);
+  //VF("Bat Voltage:"); Serial.print(currentBatVoltage);
+  char bvolts[12]="00.0 v";
   sprintf(bvolts, "%4.1f v", currentBatVoltage);
-  if (previousBatVoltage == currentBatVoltage) return;
+  //if (previousBatVoltage == currentBatVoltage) return;
   if (currentBatVoltage < BATTERY_LOW_VOLTAGE) { 
     tft.fillRect(135, 26, 50, 14, butOnBackground);
   } else {
@@ -325,15 +403,31 @@ void Display::updateBatVoltage() {
   tft.setFont(&Inconsolata_Bold8pt7b);
   tft.setCursor(135, 38);
   tft.print(bvolts);
-  previousBatVoltage = currentBatVoltage;
+  //previousBatVoltage = currentBatVoltage;
+}
+
+// Define Hidden Motors OFF button
+// Hidden button is GPS ICON area and will turn off current to both Motors
+// This hidden area is on ALL screens for Saftey in case of mount collision
+void Display::motorsOff(uint16_t px, uint16_t py) {
+  if (py > ABORT_Y && py < (ABORT_Y + ABORT_BOXSIZE_Y) && px > ABORT_X && px < (ABORT_X + ABORT_BOXSIZE_X)) {
+    BEEP;
+    soundFreq(1500, 200);
+    setLocalCmd(":Q#"); // stops move
+    axis1.enable(false); // turn off Motor
+    axis2.enable(false); // turn off Motor
+    setLocalCmd(":Td#"); // Disable Tracking
+  }
 }
 
 // Show GPS Status ICON
 void Display::showGpsStatus() {
+  // not on these screens
   if (currentScreen == CUSTOM_SCREEN || 
-      currentScreen == SHC_CAT_SCREEN ||
-      currentScreen == PLANETS_SCREEN ||
-      currentScreen == TREASURE_SCREEN) return;
+    currentScreen == SHC_CAT_SCREEN ||
+    currentScreen == PLANETS_SCREEN ||
+    currentScreen == XSTATUS_SCREEN ||
+    currentScreen == TREASURE_SCREEN) return;
   uint8_t extern gps_icon[];
   if (!tls.isReady()) {
     if (!flash) {
@@ -357,6 +451,7 @@ void Display::showGpsStatus() {
       if (dgps.time.age() < 500) {
         setTime(dgps.time.hour(), dgps.time.minute(), dgps.time.second(), dgps.date.day(), dgps.date.month(), dgps.date.year());
         char tempReply[4]="0";
+        //char error[100]="";
         getLocalCmdTrim(":GG#", tempReply); // get timezone
         adjustTime((atoi(tempReply)) * -1* SECS_PER_HOUR);
         unsigned long TeensyTime = now();              // get time in epoch
@@ -397,14 +492,16 @@ bool Display::getGeneralErrorMessage(char message[]) {
 
 // ========== OnStep Command Errors =============
 void Display::getOnStepCmdErr() {
+  //VLF("getting Cmd Err");
   char cmdErr[60] = "";
   char temp[60] = "Command Error: ";
+  // not on these screens
   if (currentScreen == CUSTOM_SCREEN || 
-      currentScreen == SHC_CAT_SCREEN ||
-      currentScreen == PLANETS_SCREEN ||
-      currentScreen == TREASURE_SCREEN) return;
+    currentScreen == SHC_CAT_SCREEN ||
+    currentScreen == PLANETS_SCREEN ||
+    currentScreen == XSTATUS_SCREEN ||
+    currentScreen == TREASURE_SCREEN) return;
 
-  // get and show any command errors
   getLocalCmdTrim(":GE#", cmdErr);
   strcat(temp, cmdErrStr[atoi(cmdErr)]);
   canvDisplayInsPrint.printLJ(2, 454, 317, C_HEIGHT+2, temp, false);
@@ -412,10 +509,12 @@ void Display::getOnStepCmdErr() {
 
 // ========== OnStep General Errors =============
 void Display::getOnStepGenErr() {
+  // not on these screens
   if (currentScreen == CUSTOM_SCREEN || 
-      currentScreen == SHC_CAT_SCREEN ||
-      currentScreen == PLANETS_SCREEN ||
-      currentScreen == TREASURE_SCREEN) return;
+    currentScreen == SHC_CAT_SCREEN ||
+    currentScreen == PLANETS_SCREEN ||
+    currentScreen == XSTATUS_SCREEN ||
+    currentScreen == TREASURE_SCREEN) return;
 
   char genErr[60] = "";
   char temp[60] = "";
@@ -425,13 +524,6 @@ void Display::getOnStepGenErr() {
   getGeneralErrorMessage(temp);
   strcat(temp1, temp);
   canvDisplayInsPrint.printLJ(2, 473, 317, C_HEIGHT+2, temp1, false);
-  
-  #ifdef ODRIVE_MOTOR_PRESENT
-    // frequency varying alarm if Motor and Encoders positions are too far apart indicating unbalanced loading or hitting obstruction
-    oDriveExt.MotorEncoderDelta();
-  #endif
-
-  showGpsStatus();
 }
 
 // Draw the Menu buttons
@@ -646,7 +738,7 @@ void Display::drawMenuButtons() {
 }
 
 // ==============================================
-// ====== Draw multi-page status labels =========
+// ====== Draw multi-screen status labels =========
 // ==============================================
 // These particular status labels are placed near the top of most Screens.
 void Display::drawCommonStatusLabels() {
@@ -700,6 +792,9 @@ void Display::drawCommonStatusLabels() {
 // UpdateCommon Status - Real time data update for the particular labels printed above
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
+  //VLF("updating common status");
+  oDriveExt.updateBatVoltage(1); // do this first in case ODrive powered down or serial RX stopped, which will set appropriate flags
+  showGpsStatus();
 
   // If the GPS (or other TLS) is locked, then send LST and Latitude to the cat_mgr module
   if (tls.isReady() && firstGPS) {
@@ -722,13 +817,29 @@ void Display::updateCommonStatus() {
   if (mount.isTracking()) {
     if (trackLedOn) {
       digitalWrite(STATUS_TRACK_LED_PIN, HIGH); // LED OFF, active low
+      tft.setFont(&Inconsolata_Bold8pt7b);
+      tft.fillRect(50, 28, 72, 14, BLACK); 
+      tft.setCursor(50, 38);
+      tft.print("        ");
       trackLedOn = false;
     } else {
       digitalWrite(STATUS_TRACK_LED_PIN, LOW); // LED ON
+      tft.setFont(&Inconsolata_Bold8pt7b);
+      tft.setCursor(50, 38);
+      tft.print("Tracking");
       trackLedOn = true;
     }
+  #ifdef ODRIVE_MOTOR_PRESENT
+  // frequency varying alarm if Motor and Encoders positions are too far apart indicating unbalanced loading or hitting obstruction
+    oDriveExt.MotorEncoderDelta();
+  #endif
   } else { // not tracking 
     digitalWrite(STATUS_TRACK_LED_PIN, HIGH); // LED OFF
+    tft.setFont(&Inconsolata_Bold8pt7b);
+    tft.fillRect(50, 28, 72, 14, BLACK); 
+    tft.setCursor(50, 38);
+    tft.print("        ");
+    trackLedOn = false;
   }
 
   if (currentScreen == CUSTOM_SCREEN || 
@@ -761,7 +872,7 @@ void Display::updateCommonStatus() {
   y_offset +=COM_LABEL_Y_SPACE;  
   getLocalCmdTrim(":Gd#", tdec_dms); 
   canvDisplayInsPrint.printRJ(COM_COL1_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH, C_HEIGHT, tdec_dms, false);
-  
+  //VLF("common column 1 check point complete");
   // ----- Column 2 -----
   y_offset =0;
 
@@ -794,6 +905,7 @@ void Display::updateCommonStatus() {
   //getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
   //convert.dmsToDouble(&tAlt_d, tAltDMS, true, PM_LOW);
   canvDisplayInsPrint.printRJ(COM_COL2_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH-20, C_HEIGHT, radToDeg(dispTarget.a), false);
+  //VLF("column 2 complete");
 }
 
 // draw a picture -This member function is a copy from rDUINOScope but with 
