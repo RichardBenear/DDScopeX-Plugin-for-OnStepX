@@ -58,8 +58,12 @@ Axis::Axis(uint8_t axisNumber, const AxisPins *pins, const AxisSettings *setting
 
 // sets up the driver step/dir/enable pins and any associated driver mode control
 bool Axis::init(Motor *motor) {
+  if (motor == nullptr) {
+    DLF("ERR: Axis::init(); Motor pointer is NULL!");
+    return false;
+  }
   this->motor = motor;
-
+  
   // check for reverting axis settings in NV
   if (!nv.hasValidKey()) {
     V(axisPrefix); VLF("writing defaults to NV");
@@ -73,6 +77,7 @@ bool Axis::init(Motor *motor) {
   if (AxisStoredSettingsSize < sizeof(AxisStoredSettings)) { nv.initError = true; DLF("ERR: Axis::init(); AxisStoredSettingsSize error"); return false; }
   uint16_t axesToRevert = nv.readUI(NV_AXIS_SETTINGS_REVERT);
   if (!(axesToRevert & 1)) bitSet(axesToRevert, axisNumber);
+  
   if (bitRead(axesToRevert, axisNumber)) {
     V(axisPrefix); VLF("reverting settings to Config.h defaults");
     motor->getDefaultParameters(&settings.param1, &settings.param2, &settings.param3, &settings.param4, &settings.param5, &settings.param6);
@@ -80,14 +85,14 @@ bool Axis::init(Motor *motor) {
   }
   bitClear(axesToRevert, axisNumber);
   nv.write(NV_AXIS_SETTINGS_REVERT, axesToRevert);
-
+  
   // read axis settings from NV
   nv.readBytes(NV_AXIS_SETTINGS_BASE + (axisNumber - 1)*AxisStoredSettingsSize, &settings, sizeof(AxisStoredSettings));
   if (!validateAxisSettings(axisNumber, settings)) {
     DLF("ERR: Axis::init(); settings validation failed exiting!");
     return false;
   }
-
+  
   #if DEBUG == VERBOSE
     V(axisPrefix); VF("stepsPerMeasure="); V(settings.stepsPerMeasure);
     V(", reverse="); if (settings.reverse == OFF) VLF("OFF"); else if (settings.reverse == ON) VLF("ON"); else VLF("?");
@@ -95,7 +100,7 @@ bool Axis::init(Motor *motor) {
     if (unitsRadians) V(radToDegF(backlashFreq)); else V(backlashFreq);
     V(unitsStr); VLF("/s");
   #endif
-
+  
   // activate home and limit sense
   V(axisPrefix); VLF("adding any home and/or limit senses");
   homeSenseHandle = sense.add(pins->home, pins->axisSense.homeInit, pins->axisSense.homeTrigger);
@@ -104,16 +109,18 @@ bool Axis::init(Motor *motor) {
   #if LIMIT_SENSE_STRICT != ON
     commonMinMaxSense = pins->min != OFF && pins->min == pins->max;
   #endif
-
+  
   // setup motor
   if (!motor->init()) { DLF("ERR: Axis::init(); no motor exiting!"); return false; }
   // special ODrive case, a way to pass the stepsPerMeasure to it
+  
   if (motor->getParameterTypeCode() == 'O') settings.param6 = settings.stepsPerMeasure;
+  
   motor->setParameters(settings.param1, settings.param2, settings.param3, settings.param4, settings.param5, settings.param6);
   motor->enable(false);
   motor->setReverse(settings.reverse);
   motor->setBacklashFrequencySteps(backlashFreq*settings.stepsPerMeasure);
-
+  
   // start monitor
   V(axisPrefix); VF("start monitor task (rate "); V(FRACTIONAL_SEC_US); VF("us priority 1)... ");
   uint8_t taskHandle = 0;
@@ -129,10 +136,12 @@ bool Axis::init(Motor *motor) {
 
 // enables or disables the associated step/dir driver
 void Axis::enable(bool state) {
+  
   #if DEBUG == VERBOSE
     if (enabled && state != true) { V(axisPrefix); VLF("disabled"); }
     if (!enabled && state == true) { V(axisPrefix); VLF("enabled"); }
   #endif
+  
   enabled = state;
   motor->enable(enabled & !poweredDown);
 }
