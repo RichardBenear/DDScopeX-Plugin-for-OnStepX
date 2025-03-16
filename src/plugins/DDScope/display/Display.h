@@ -27,6 +27,12 @@
 
 #define TITLE_TEXT_Y       22
 
+// Emergency ABORT button
+#define ABORT_X           266
+#define ABORT_Y             3
+#define ABORT_BOXSIZE_X    52
+#define ABORT_BOXSIZE_Y    42
+
 // Screen Selection buttons
 #define MENU_X              3
 #define MENU_Y             46
@@ -142,9 +148,8 @@ class Display {
   // Local Command Channel support
     void setLocalCmd(char *command);
     void setLocalCmd(const char *command);
-    void getLocalCmd(const char *command, char *reply);
+    //void getLocalCmd(const char *command, char *reply);
     void getLocalCmdTrim(const char *command, char *reply);
-    void getLocalCmdTrim(const char *command, String reply);
 
   // Colors, Buttons, BitMap printing
     
@@ -167,10 +172,12 @@ class Display {
     void updateCommonStatus();  
     void getOnStepCmdErr();
     void getOnStepGenErr();
+    //void showTracking();
 
     #ifdef ODRIVE_MOTOR_PRESENT
       void showGpsStatus();
-      void updateBatVoltage();
+      void updateBatVoltage(int axis);
+      void motorsOff(uint16_t px, uint16_t py);
     #endif
 
     // Day or Night Modes
@@ -183,7 +190,7 @@ class Display {
     static Screen currentScreen;
     static bool _nightMode;
     static bool _redrawBut;
-    float previousBatVoltage = 0.7;
+    //float previousBatVoltage = 0.7;
 
     // Default Font Arial 6x8 is NULL
     const GFXfont *default_font = (const GFXfont *)__null;
