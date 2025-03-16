@@ -96,7 +96,8 @@
 #endif
 #ifdef SERIAL_LOCAL
   CommandProcessor processCommandsLocal(9600,'L');
-  void processCmdsLocal() { ::yield(); processCommandsLocal.poll(); }
+  void processCmdsLocal() { processCommandsLocal.poll(); }
+  //void processCmdsLocal() { ::yield(); processCommandsLocal.poll(); }
 #endif
 
 CommandProcessor::CommandProcessor(long baud, char channel) {
@@ -110,7 +111,10 @@ CommandProcessor::~CommandProcessor() {
 
 void CommandProcessor::poll() {
   if (!serialReady) { delay(200); SerialPort.begin(serialBaud); serialReady = true; }
-  if (SerialPort.available()) buffer.add(SerialPort.read()); else return;
+  //if (!serialReady) { SerialPort.begin(serialBaud); serialReady = true; }
+
+  unsigned long tout = micros() + 500;
+  while (SerialPort.available()) { char c = SerialPort.read(); buffer.add(c); if (buffer.ready() || (long)(micros() - tout) > 0) break; }
 
   if (buffer.ready()) {
     char reply[80] = "";
@@ -134,6 +138,9 @@ void CommandProcessor::poll() {
     }
 
     // debug, log errors and/or commands
+    #ifdef DEBUG_ECHO_COMMANDS_CH
+      if (DEBUG_ECHO_COMMANDS_CH == channel) {
+    #endif
     #if DEBUG_ECHO_COMMANDS != OFF
       if (DEBUG_ECHO_COMMANDS == ON || commandError > CE_0) {
         DF("MSG: cmd"); D(channel); D(" = "); D(buffer.getCmd()); D(buffer.getParameter()); DF(", reply = "); D(reply);
@@ -148,9 +155,13 @@ void CommandProcessor::poll() {
     #if DEBUG_ECHO_COMMANDS != OFF
       if (DEBUG_ECHO_COMMANDS == ON || commandError > CE_0) { DL(""); }
     #endif
-
-    buffer.flush();
+    #ifdef DEBUG_ECHO_COMMANDS_CH
+      }
+    #endif
+  } else {
+    //VF("LOC_SERIAL_TIME OUT");
   }
+  buffer.flush();
 }
 
 CommandError CommandProcessor::command(char *reply, char *command, char *parameter, bool *supressFrame, bool *numericReply) {
@@ -161,6 +172,20 @@ CommandError CommandProcessor::command(char *reply, char *command, char *paramet
 
   // silent bool "errors" allow processing commands more than once
   if (commandError == CE_0 || commandError == CE_1) return commandError;
+
+  // (char)6 - Special
+  if (command[0] == (char)6) {
+    if (command[1] == '0') {
+      reply[0] = command[1];
+      strcpy(reply,"CK_FAIL");  // last cmd checksum failed
+    } else {
+      reply[0] = command[1];
+      reply[1] = 0;             // Equatorial or Horizon mode, A or P
+      *supressFrame = true;
+    }
+    *numericReply = false;
+    return commandError;
+  } else
 
   // :SB[n]#    Set Baud Rate where n is an ASCII digit (1..9) with the following interpertation
   //            B=460.8K, A=230.4K, 0=115.2K, 1=56.7K, 2=38.4K, 3=28.8K, 4=19.2K, 5=14.4K, 6=9600, 7=4800, 8=2400, 9=1200
@@ -189,14 +214,6 @@ CommandError CommandProcessor::command(char *reply, char *command, char *paramet
     return commandError;
   } else
 
-  // :GX9F#     Get internal MCU temperature in deg. C
-  //            Returns: +/-n.n
-  if (command[0] == 'G' && command[1] == 'X' && parameter[0] == '9' && parameter[1] == 'F' && parameter[2] == 0) {
-    float t = HAL_TEMP();
-    if (!isnan(t)) sprintF(reply, "%1.0f", t); else { *numericReply = true; commandError = CE_0; }
-    return commandError;
-  } else
-
   // :GE#       Get last command error numeric code
   //            Returns: CC#
   if (command[0] == 'G' && command[1] == 'E' && parameter[0] == 0) {
@@ -221,72 +238,73 @@ void commandChannelInit() {
   // period ms (0=idle), duration ms (0=forever), repeat, priority (highest 0..7 lowest), task_handle
   uint8_t handle;
   #ifdef HAL_SLOW_PROCESSOR
-    long comPollRate = 2000;
+    long comPollRate = 5000;
   #else
-    long comPollRate = 500;
+    long comPollRate = 2500;
   #endif
   #ifdef SERIAL_A
-    VF("MSG: Setup, start command channel A task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsA, "PrcCmdA");
+    VF("MSG: System, start command channel A task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsA, "SysCmdA");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_B
-    VF("MSG: Setup, start command channel B task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsB, "PrcCmdB");
+    VF("MSG: System, start command channel B task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsB, "SysCmdB");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_C
-    VF("MSG: Setup, start command channel C task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsC, "PrcCmdC");
+    VF("MSG: System, start command channel C task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsC, "SysCmdC");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_D
-    VF("MSG: Setup, start command channel D task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsD, "PrcCmdD");
+    VF("MSG: System, start command channel D task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsD, "SysCmdD");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_ST4
-    VF("MSG: Setup, start command channel ST4 task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsST4, "CmdS");
+    VF("MSG: System, start command channel ST4 task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsST4, "SysCmdS");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate*4);
   #endif
   #if SERIAL_BT_MODE == SLAVE
-    VF("MSG: Setup, start command channel BT task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsBT, "CmdT");
+    VF("MSG: System, start command channel BT task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsBT, "SysCmdT");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_PIP1
-    VF("MSG: Setup, start command channel PIP1 task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsPIP1, "CmdP1");
+    VF("MSG: System, start command channel PIP1 task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsPIP1, "SysCmd1");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_PIP2
-    VF("MSG: Setup, start command channel PIP2 task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsPIP2, "CmdP2");
+    VF("MSG: System, start command channel PIP2 task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsPIP2, "SysCmd2");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_PIP3
-    VF("MSG: Setup, start command channel PIP3 task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsPIP3, "CmdP3");
+    VF("MSG: System, start command channel PIP3 task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsPIP3, "SysCmd3");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_SIP
-    VF("MSG: Setup, start command channel IP task (priority 5)... ");
-    handle = tasks.add(0, 0, true, 5, processCmdsIP, "CmdI");
+    VF("MSG: System, start command channel IP task (priority 5)... ");
+    handle = tasks.add(0, 0, true, 5, processCmdsIP, "SysCmdI");
     if (handle) { VLF("success"); } else { VLF("FAILED!"); }
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_LOCAL
-    VF("MSG: Setup, start command channel Local task (priority 5)... ");
-    if (tasks.add(3, 0, true, 5, processCmdsLocal, "CmdL")) { VLF("success"); } else { VLF("FAILED!"); }
+    // changing this from priority 5 in OnStepX original to priority 4
+    VF("MSG: System, start command channel Local task (priority 4)... ");
+    if (tasks.add(3, 0, true, 4, processCmdsLocal, "SysCmdL")) { VLF("success"); } else { VLF("FAILED!"); }
   #endif
 }
