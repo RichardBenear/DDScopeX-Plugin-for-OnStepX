@@ -538,12 +538,33 @@ float CatMgr::magnitude() {
 // Secondary magnitude of an star.  For double stars this is the magnitude of the secondary.  For variables this is the minimum brightness.
 // 99.9 = Unknown
 float CatMgr::magnitude2() {
-  if (_selected<0) return 99.9;
-  if (catalogType()==CAT_DBL_STAR)       return _dblStarCatalog[catalog[_selected].Index].Mag2/100.0; else
-  if (catalogType()==CAT_DBL_STAR_COMP)  { int m=_dblStarCompCatalog[catalog[_selected].Index].Mag2; if (m==255) return 99.9; else return (m/10.0)-2.5; } else
-  if (catalogType()==CAT_VAR_STAR)       return _varStarCatalog[catalog[_selected].Index].Mag2/100.0; else
-  if (catalogType()==CAT_VAR_STAR_COMP)  { int m=_varStarCompCatalog[catalog[_selected].Index].Mag2; if (m==255) return 99.9; else return (m/10.0)-2.5; } return 99.9;
+  if (_selected < 0) {
+    return 99.9;
+  }
+  
+  if (catalogType() == CAT_DBL_STAR) {
+    return _dblStarCatalog[catalog[_selected].Index].Mag2 / 100.0;
+  } else if (catalogType() == CAT_DBL_STAR_COMP) {
+    int m = _dblStarCompCatalog[catalog[_selected].Index].Mag2;
+    if (m == 255) {
+      return 99.9;
+    } else {
+      return (m / 10.0) - 2.5;
+    }
+  } else if (catalogType() == CAT_VAR_STAR) {
+    return _varStarCatalog[catalog[_selected].Index].Mag2 / 100.0;
+  } else if (catalogType() == CAT_VAR_STAR_COMP) {
+    int m = _varStarCompCatalog[catalog[_selected].Index].Mag2;
+    if (m == 255) {
+      return 99.9;
+    } else {
+      return (m / 10.0) - 2.5;
+    }
+  }
+  
+  return 99.9;
 }
+
 
 // Constellation number
 // 89 = Unknown
@@ -708,7 +729,7 @@ int CatMgr::bayerFlam() {
 // For Bayer designated Stars return greek letter or Flamsteed designated stars return number
 const char* CatMgr::bayerFlamStr() {
   if (_selected<0) return "";
-  static char bfStr[3]="";
+  static char bfStr[11]="";
   int bfNum=bayerFlam();
   if ((bfNum>=0) && (bfNum<24)) {
     sprintf(bfStr,"%d",bfNum);
