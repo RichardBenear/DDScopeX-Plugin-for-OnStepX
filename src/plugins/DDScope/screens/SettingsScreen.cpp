@@ -91,6 +91,9 @@ CanvasPrint canvSettingsInsPrint(&Inconsolata_Bold8pt7b);
 // ===== Draw the SETTINGS Page =====
 void SettingsScreen::draw() {
   setCurrentScreen(SETTINGS_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   
@@ -148,6 +151,14 @@ void SettingsScreen::draw() {
   tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*2+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
   tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*3+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
   tft.fillRect(TXT_FIELD_X, TXT_FIELD_Y+TXT_SPACING_Y*4+CUSTOM_FONT_OFFSET, TXT_FIELD_WIDTH, TXT_FIELD_HEIGHT, butBackground);
+
+  updateCommonStatus();
+  showGpsStatus();
+  updateSettingsStatus();
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("Settings");
+  #endif
 } // end initialize
 
 // task update for this screen
@@ -522,7 +533,7 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     char sCmd[16] = "";
     if (Tselect) {
       // Set Local Time :SL[HH:MM:SS]# 24Hr format
-      VL(Ttext[0]);VL(Ttext[1]);VL(Ttext[2]);VL(Ttext[3]);VL(Ttext[4]);VL(Ttext[5]);
+      //VL(Ttext[0]);VL(Ttext[1]);VL(Ttext[2]);VL(Ttext[3]);VL(Ttext[4]);VL(Ttext[5]);
       sprintf(sCmd, ":SL%c%c%c%c%c%c%c%c#", Ttext[0], Ttext[1], Ttext[2], Ttext[3], Ttext[4], Ttext[5], Ttext[6], Ttext[7]);
       setLocalCmd(sCmd);
       //delay(70);

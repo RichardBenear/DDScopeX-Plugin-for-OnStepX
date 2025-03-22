@@ -58,6 +58,9 @@ ODriveVersion oDversion;
 //****** Draw ODrive Screen ******
 void ODriveScreen::draw() {
   setCurrentScreen(ODRIVE_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   
@@ -103,11 +106,21 @@ void ODriveScreen::draw() {
   oDriveExt.ALTgainHigh = false;
   oDriveExt.ALTgainDefault = true;
 
-  tft.setFont(); // default
+  tft.setFont(0); // default
   tft.setCursor(92, 164);
   tft.print("HW Version:"); tft.print(oDversion.hwMajor); tft.print("."); tft.print(oDversion.hwMinor); tft.print("."); tft.print(oDversion.hwVar);
   tft.setCursor(92, 175);
   tft.print("FW Version:"); tft.print(oDversion.fwMajor); tft.print("."); tft.print(oDversion.fwMinor); tft.print("."); tft.print(oDversion.fwRev);
+
+  updateCommonStatus();
+  showGpsStatus();
+  updateOdriveStatus();
+  showODriveErrors();
+  showGains();
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("ODrive");
+  #endif
 }
 
 // status update for this screen
@@ -118,8 +131,8 @@ void ODriveScreen::updateOdriveStatus() {
 
 // ====== Show the Gains ======
 void ODriveScreen::showGains() {
-  // Show AZM Velocity Gain - AZ is motor 1
-  tft.setFont();
+  // Show AZM Velocity Gain - AZ is motor=1, ALT is motor=0
+  tft.setFont(0);
   float temp = oDriveExt.getODriveVelGain(AZM_MOTOR);
   tft.setCursor(203,282); tft.print("AZM Vel  Gain:");
   tft.fillRect(285,282, 39, 10, pgBackground); 
@@ -148,7 +161,7 @@ void ODriveScreen::showGains() {
   // ===== Decode all ODrive Errors =====
 uint8_t ODriveScreen::decodeODriveErrors(int axis, Component comp, uint32_t errorCode) {
   uint8_t errorCount = 0;  // Counter for number of errors detected. Always have at least 1 message, though.
-  tft.setFont();
+  tft.setFont(0);
 
   if (axis == -1) { // ODrive top-level errors, not axis-specific
       if (errorCode & ODRIVE_ERROR_CONTROL_ITERATION_MISSED)   { tft.println("ERROR_CONTROL_ITERATION_MISSED"); errorCount++; }
@@ -268,7 +281,7 @@ void ODriveScreen::showODriveErrors() {
   tft.fillRect(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y, 197, 15*OD_ERR_SPACING, pgBackground);
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y); 
   
-  tft.setFont();
+  tft.setFont(0);
 
   // ODrive top level errors
   err = oDriveExt.getODriveErrors(-1, Component::NO_COMP); // no axis number since Top Level
@@ -279,7 +292,7 @@ void ODriveScreen::showODriveErrors() {
   // **** enum ordering: AXIS=2, CONTROLLER=3, MOTOR=4, ENCODER=5 *****//
   err = oDriveExt.getODriveErrors(AZM_MOTOR, AXIS);
   y_offset += OD_ERR_SPACING + (errCnt * OD_ERR_SPACING);
-  tft.setFont();
+  tft.setFont(0);
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
   tft.println(F("----------AZM Errors----------"));
   //sprintf(tempString, "AZM AXIS=%c err=%08lX", AXIS+48, err); VL(tempString);
@@ -299,7 +312,7 @@ void ODriveScreen::showODriveErrors() {
 
   y_offset += OD_ERR_SPACING + (errCnt+5 * OD_ERR_SPACING);
   err = oDriveExt.getODriveErrors(ALT_MOTOR, AXIS);
-  tft.setFont();
+  tft.setFont(0);
   tft.setCursor(OD_ERR_OFFSET_X, OD_ERR_OFFSET_Y + y_offset);
   tft.println(F("----------ALT Errors----------"));
   //sprintf(tempString, "ALT AXIS=%c err=%08lX", AXIS+48, err); VL(tempString);
@@ -512,6 +525,7 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     oDriveExt.AZgainDefault = false;
     oDriveExt.setODriveVelGains(AZM_MOTOR, AZM_VEL_GAIN_HI, AZM_VEL_INT_GAIN_HI); // Set Velocity Gain
     delay(1);
+    showGains();
     return true;
   }
 
@@ -523,6 +537,7 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     oDriveExt.AZgainDefault = true;
     oDriveExt.setODriveVelGains(AZM_MOTOR, AZM_VEL_GAIN_DEF, AZM_VEL_INT_GAIN_DEF);
     delay(1);
+    showGains();
     return true;
   }
 
@@ -534,6 +549,7 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     oDriveExt.ALTgainDefault = false;
     oDriveExt.setODriveVelGains(ALT_MOTOR, ALT_VEL_GAIN_HI, ALT_VEL_INT_GAIN_HI); // Set Velocity Gain, Integrator gain
     delay(1);
+    showGains();
     return true;
   }
 
@@ -545,6 +561,7 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
     oDriveExt.ALTgainDefault = true;
     oDriveExt.setODriveVelGains(ALT_MOTOR, ALT_VEL_GAIN_DEF, ALT_VEL_INT_GAIN_DEF);
     delay(1);
+    showGains();
     return true;
   }
 

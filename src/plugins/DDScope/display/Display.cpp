@@ -128,7 +128,7 @@ CanvasPrint canvDisplayInsPrint(&Inconsolata_Bold8pt7b);
 Screen Display::currentScreen = HOME_SCREEN;
 bool Display::_nightMode = false;
 bool Display::_redrawBut = false;
-Adafruit_ILI9486_Teensy tft;
+
 TinyGPSPlus dgps;
 
 uint16_t pgBackground = XDARK_MAROON;
@@ -141,16 +141,18 @@ uint16_t butOutline = ORANGE;
 // Local cmd channel object
 CommandProcessor processor(9600, 'L');
 
+Adafruit_ILI9486_Teensy tft;
+
 // =========================================
 // ========= Initialize Display ============
 // =========================================
 void Display::init() {
   VLF("MSG: Display, started"); 
   tft.begin(); delay(1);
+  sdInit(); // initialize the SD card and draw start screen
+
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
   setNightMode(false); // always start up in Day Mode
-
-  sdInit(); // initialize the SD card and draw start screen
   delay(1500); // let start screen show for 1.5 sec
 
   // set some defaults
@@ -339,7 +341,7 @@ void Display::getLocalCmdTrim(const char *command, char *reply) {
  
   CommandError cmdErr = processor.command(cmdReply, cmd, parameter, &supressFrame, &numericReply);
   if (cmdErr != CE_NONE) {
-    VL(cmdErr); 
+    VF("CmdErr="); VL(cmdErr); 
   }
 
   if (numericReply) {
@@ -793,7 +795,7 @@ void Display::drawCommonStatusLabels() {
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
   //VLF("updating common status");
-  oDriveExt.updateBatVoltage(1); // do this first in case ODrive powered down or serial RX stopped, which will set appropriate flags
+  //oDriveExt.updateBatVoltage(1); // do this first in case ODrive powered down or serial RX stopped, which will set appropriate flags
   showGpsStatus();
 
   // If the GPS (or other TLS) is locked, then send LST and Latitude to the cat_mgr module

@@ -45,6 +45,9 @@ Button planetsButton(
 // Initialize the PLANETS page
 void PlanetsScreen::draw() {
   setCurrentScreen(PLANETS_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawTitle(110, TITLE_TEXT_Y, "Planets");
@@ -69,6 +72,11 @@ void PlanetsScreen::draw() {
   }
   planetsButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
   updatePlanetsButtons(false);
+
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("Plant");
+  #endif
 }
 
 // task update for this screen

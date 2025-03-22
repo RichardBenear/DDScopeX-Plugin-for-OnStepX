@@ -86,6 +86,9 @@ extern const char* Txt_Bayer[];
 void SHCCatScreen::init(uint8_t catSelected) {
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(SHC_CAT_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 
@@ -108,7 +111,7 @@ void SHCCatScreen::init(uint8_t catSelected) {
   drawTitle(110, TITLE_TEXT_Y, title); 
 
   // Sub title
-  tft.setFont(); // revert to basic Arial font
+  tft.setFont(0); // revert to basic Arial font
   tft.setCursor(9,25); 
   strcpy(title,cat_mgr.catalogSubMenu()); 
   tft.print(title); 
@@ -128,6 +131,7 @@ void SHCCatScreen::init(uint8_t catSelected) {
   shcCatButton.draw(NEXT_X, NEXT_Y, BACK_W, BACK_H, "NEXT", BUT_OFF);
   shcCatButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
   shcCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, "SAVE LIB", BUT_OFF);
+
 }
 
 //========= draw a Screen of SHC catalog data ===================
@@ -140,7 +144,7 @@ void SHCCatScreen::drawShcCat() {
   // Show Page number and total Pages
   tft.fillRect(6, 9, 70, 12,  butBackground); // erase page numbers
   tft.fillRect(0,60,319,353, pgBackground); // clear lower screen
-  tft.setFont(); // basic Arial default
+  tft.setFont(0); // basic Arial default
   tft.setCursor(6, 9); 
   tft.printf("Page "); 
   tft.print(shcCurrentPage+1);
@@ -300,13 +304,13 @@ void SHCCatScreen::updateShcButtons(bool redrawBut) {
   } else { 
     shcCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, "SaveToCat", BUT_OFF);
   }
-  tft.setFont();
+  tft.setFont(0);
 }
 
 // =============== Update buttons and text ================
 void SHCCatScreen::updateScreen() {
   // Toggle off previous selected button and toggle on current selected button
-  tft.setFont();
+  tft.setFont(0);
   shcCatDefButton.drawLJ(CAT_X, CAT_Y+pre_shcIndex*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, shcObjName[pre_shcIndex], BUT_OFF);
   shcCatDefButton.drawLJ(CAT_X, CAT_Y+catButSelPos*(CAT_H+CAT_Y_SPACING), CAT_W, CAT_H, shcObjName[catButSelPos], BUT_ON);
   pre_shcIndex = catButSelPos;
@@ -327,7 +331,7 @@ void SHCCatScreen::updateScreen() {
   } else {
       canvShcInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
   }
-  tft.setFont();
+  tft.setFont(0);
 
   writeSHCTarget(catButSelPos); // write RA and DEC as target for GoTo
   tasks.yield(70);
@@ -411,10 +415,18 @@ bool SHCCatScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     moreScreen.objectSelected = objSel; 
     if (returnToPage == ALIGN_SCREEN) {
+      #ifdef ENABLE_TFT_CAPTURE
+      tft.enableLogging(false);
+      tft.saveBufferToSD(title);
+    #endif
       setCurrentScreen(ALIGN_SCREEN);
       alignScreen.draw();
       return false; // don't update this screen since returing to ALIGN
     } else if (returnToPage == MORE_SCREEN) {
+    #ifdef ENABLE_TFT_CAPTURE
+      tft.enableLogging(false);
+      tft.saveBufferToSD(title);
+    #endif
       setCurrentScreen(MORE_SCREEN);
       moreScreen.draw();
       return false; // don't return this screen since returning to MORE

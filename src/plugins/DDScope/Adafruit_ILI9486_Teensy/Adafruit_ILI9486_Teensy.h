@@ -56,7 +56,6 @@ class Adafruit_ILI9486_Teensy : public Adafruit_GFX
     
     void begin(void);
     void setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
-    void pushColor(uint16_t color);
     void fillScreen(uint16_t color);
     void drawLine(int16_t x0, int16_t y0,int16_t x1, int16_t y1, uint16_t color);
     void drawPixel(int16_t x, int16_t y, uint16_t color);
@@ -65,9 +64,11 @@ class Adafruit_ILI9486_Teensy : public Adafruit_GFX
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
     void setRotation(uint8_t r);
     void invertDisplay(boolean i);
-    void reset(void);
     
     uint16_t color565(uint8_t r, uint8_t g, uint8_t b);
+    void saveBufferToSD(const char* screenName);
+    void enableLogging(bool enable);
+    bool loggingEnabled = false;
 
  private:
     void writecommand(uint8_t c);
@@ -75,6 +76,8 @@ class Adafruit_ILI9486_Teensy : public Adafruit_GFX
     void writedata16(uint16_t d);
     void writedata16(uint16_t d, uint32_t num);
     void commandList(uint8_t *addr);
+    void bufferedTransfer(uint16_t color);
+    void captureSetAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
 };
 
 #endif

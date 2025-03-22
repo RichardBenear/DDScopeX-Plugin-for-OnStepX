@@ -90,6 +90,9 @@ CanvasPrint canvAlignInsPrint(&Inconsolata_Bold8pt7b);
 // ---- Draw Alignment Page ----
 void AlignScreen::draw() {
   setCurrentScreen(ALIGN_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawTitle(100, TITLE_TEXT_Y, "Alignment");
@@ -120,6 +123,12 @@ void AlignScreen::draw() {
   canvAlignInsPrint.printLJ(250, 240, 65, 15, guideRateText, false);
   showCorrections();
   getOnStepCmdErr(); // show error bar
+  updateAlignStatus();
+  updateCommonStatus();
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("Align");
+  #endif
 }
 
 // task update for this screen

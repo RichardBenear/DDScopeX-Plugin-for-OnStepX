@@ -4,20 +4,20 @@
 //#if ODRIVE_COMM_MODE == OD_UART
   //#include <ODriveArduino.h>
 //#endif
-
+ 
 #include "../display/Display.h"
 
 #ifndef ODRIVEEXT_H
 #define ODRIVEEXT_H
 
-#define AZM_VEL_GAIN_DEF      1.5 // do not change unless changed in ODrive FW
+#define AZM_VEL_GAIN_DEF      1.5 // do not change unless changed in ODrive setup, default value
 #define AZM_VEL_GAIN_HI       1.8
-#define ALT_VEL_GAIN_DEF      0.3 // do not change unless changed in ODrive FW
-#define ALT_VEL_GAIN_HI       0.5
-#define AZM_VEL_INT_GAIN_DEF  2.0 // do not change unless changed in ODrive FW
+#define ALT_VEL_GAIN_DEF      0.3 // do not change unless changed in ODrive setup, default value
+#define ALT_VEL_GAIN_HI       0.5 //
+#define AZM_VEL_INT_GAIN_DEF  2.0 // do not change unless changed in ODrive setup, default value
 #define AZM_VEL_INT_GAIN_HI   2.3
-#define ALT_VEL_INT_GAIN_DEF  0.4 // do not change unless changed in ODrive FW
-#define ALT_VEL_INT_GAIN_HI   0.7
+#define ALT_VEL_INT_GAIN_DEF  0.4 // do not change unless changed in ODrive setup, default value
+#define ALT_VEL_INT_GAIN_HI   0.2 // 0.7
 
 enum Component
 {

@@ -76,6 +76,9 @@ CanvasPrint canvGuideInsPrint(&Inconsolata_Bold8pt7b);
 // Draw the GUIDE Page
 void GuideScreen::draw() { 
   setCurrentScreen(GUIDE_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
@@ -85,6 +88,14 @@ void GuideScreen::draw() {
   drawCommonStatusLabels();
   updateGuideButtons(false);
   getOnStepCmdErr(); // show error bar
+
+  updateCommonStatus();
+  showGpsStatus();
+  updateGuideStatus();
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("Guide");
+  #endif
 }
 
 // task update for this screen

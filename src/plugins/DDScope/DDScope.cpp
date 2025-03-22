@@ -42,7 +42,7 @@
 
 void updateScreenWrapper() { display.updateSpecificScreen(); }
 void refreshButtonsWrapper() { display.refreshButtons(); }
-// void generalErrorWrapper() { display.getOnStepGenErr(); }
+void getBatVoltageWrapper() { display.updateBatVoltage(1); }
 // void commonStatusWrapper() { display.updateCommonStatus(); }
 
 void DDScope::init() {
@@ -96,16 +96,16 @@ void DDScope::init() {
 
   VLF("MSG: Draw HomeScreen");
   homeScreen.draw();
-
+  
   // update currently selected screen status
   VF("MSG: Setup, start Screen status update task (rate 1000 ms priority 6)... ");
   uint8_t us_handle = tasks.add(1000, 0, true, 3, updateScreenWrapper, "UpdateSpecificScreen");
   if (us_handle)  { VLF("success"); } else { VLF("FAILED!"); }
 
-  // update common screen status
-  // VF("MSG: Setup, start Common Screen status update task (rate 1000 ms priority 6)... ");
-  // uint8_t com_handle = tasks.add(1000, 0, true, 6, commonStatusWrapper, "UpdateCommonScreen");
-  // if (com_handle)  { VLF("success"); } else { VLF("FAILED!"); }
+  // update Battery Voltage
+  VF("MSG: Setup, start Battery Voltage status update task (rate 5000 ms priority 6)... ");
+  uint8_t bat_handle = tasks.add(5000, 0, true, 6, getBatVoltageWrapper, "UpdateBatteryVoltage");
+  if (bat_handle)  { VLF("success"); } else { VLF("FAILED!"); }
 
   // // refresh Buttons
   VF("MSG: Setup, refresh Buttons (rate 1000 ms priority 4)... ");

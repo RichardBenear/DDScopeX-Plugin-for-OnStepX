@@ -79,7 +79,9 @@ float ODriveExt::getODriveBusVoltage(int axis) {
     float battery_voltage = _oDriveDriver->GetVbusVoltage(axis);  //Can be sent to either axis
   #endif
 
-  // Handle timeout condition
+  // Handle timeout condition:
+  // ----Post Note: seems that even when ODrive is off that CAN returns something once a 
+  // ----shorter timeout of 10 msec was included in the sendMessage so the following is commented out.
   // if (battery_voltage == 0.0F) {
   //   digitalWrite(BATTERY_LOW_LED_PIN, LOW); // LED on
   //   batLowLED = true;
@@ -227,7 +229,7 @@ float ODriveExt::getODriveVelGain(int axis) {
     return _oDriveDriver->readFloat();
   #elif ODRIVE_COMM_MODE == OD_CAN
     // not a commmand that is implemented with "CAN Simple" on ODrive so just return built-in constants
-    if (axis == 0) {
+    if (axis == 1) { // 1=AZM motor, 0=ALT Motor
       if (!AZgainHigh) return AZM_VEL_GAIN_DEF; else return AZM_VEL_GAIN_HI;    
     } else {
       if (!ALTgainHigh) return ALT_VEL_GAIN_DEF; else return ALT_VEL_GAIN_HI;    
@@ -242,7 +244,7 @@ float ODriveExt::getODriveVelIntGain(int axis) {
     return _oDriveDriver->readFloat();
   #elif ODRIVE_COMM_MODE == OD_CAN
     // not a commmand that is implemented with "CAN Simple" on ODrive so just return built-in constants
-    if (axis == 0) {
+    if (axis == 1) { //1=AZM Motor, 0=ALT Motor
       if (!AZgainHigh) return AZM_VEL_INT_GAIN_DEF; else return AZM_VEL_INT_GAIN_HI;    
     } else {
       if (!ALTgainHigh) return ALT_VEL_INT_GAIN_DEF; else return ALT_VEL_INT_GAIN_HI;    

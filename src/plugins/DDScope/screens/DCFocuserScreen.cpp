@@ -71,6 +71,9 @@ CanvasPrint canvFocuserInsPrint(&Inconsolata_Bold8pt7b);
 void DCFocuserScreen::draw() {
   tasks.yield(10);
   setCurrentScreen(FOCUSER_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   
@@ -112,6 +115,14 @@ void DCFocuserScreen::draw() {
   y_offset +=FOC_LABEL_Y_SPACING;
   tft.setCursor(FOC_LABEL_X, FOC_LABEL_Y + y_offset);
   tft.print(" Target Delta:");
+
+  updateCommonStatus();
+  updateFocuserStatus();
+
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("Focus");
+  #endif
 }
 
 // task update for this screen

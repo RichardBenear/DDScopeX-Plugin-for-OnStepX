@@ -65,6 +65,9 @@ CanvasPrint canvTreasureInsPrint(&Inconsolata_Bold8pt7b);
 void TreasureCatScreen::init() { 
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(TREASURE_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   moreScreen.objectSelected = false;
@@ -88,6 +91,9 @@ void TreasureCatScreen::init() {
   treasureCatButton.draw(NEXT_X, NEXT_Y, BACK_W, BACK_H, "NEXT", BUT_OFF);
   treasureCatButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
   treasureCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, "SAVE LIB", BUT_OFF);
+
+  updateTreasureButtons(true);
+  
 }
 
 bool TreasureCatScreen::loadTreasureArray() {
@@ -163,7 +169,7 @@ void TreasureCatScreen::drawTreasureCat() {
   // Show Page number and total Pages
   tft.fillRect(6, 9, 77, 32,  butBackground); // erase page numbers
   tft.fillRect(0,60,319,353, pgBackground); // clear lower screen
-  tft.setFont(); // basic Arial font
+  tft.setFont(0); // basic Arial font
   tft.setCursor(6, 9); 
   tft.printf("Page "); 
   tft.print(tCurrentPage+1);
@@ -306,14 +312,14 @@ void TreasureCatScreen::updateTreasureButtons(bool redrawBut) {
   } else { 
     treasureCatButton.draw(SAVE_LIB_X, SAVE_LIB_Y, SAVE_LIB_W, SAVE_LIB_H, "SaveToCat", BUT_OFF);
   }
-  tft.setFont();
+  tft.setFont(0);
 }
 
 //==================================================
 // =====  Update Screen buttons and text ===========
 //==================================================
 void TreasureCatScreen::updateScreen() {
-  tft.setFont();
+  tft.setFont(0);
   uint16_t tRelIndex = catButSelPos; // save the relative-to-this-screen-index of button pressed
   uint16_t tAbsIndex = tFiltArray[catButSelPos]; // this is absolute full array index
 
@@ -341,7 +347,7 @@ void TreasureCatScreen::updateScreen() {
   } else {
       canvTreasureInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
   }
-  tft.setFont();
+  tft.setFont(0);
 
   writeTreasureTarget(tAbsIndex); // write RA and DEC as target for GoTo
   tasks.yield(70);
@@ -417,6 +423,10 @@ bool TreasureCatScreen::touchPoll(uint16_t px, uint16_t py) {
   // RETURN page button - reuse BACK button box size
   if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
     BEEP;
+    #ifdef ENABLE_TFT_CAPTURE
+      tft.enableLogging(false);
+      tft.saveBufferToSD("Treas");
+    #endif
     moreScreen.objectSelected = objSel; 
     moreScreen.draw();
     return false; // don't update this screen since returning to MORE

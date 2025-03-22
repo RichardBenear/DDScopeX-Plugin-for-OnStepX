@@ -64,6 +64,9 @@ CanvasPrint canvCustomInsPrint(&Inconsolata_Bold8pt7b);
 void CustomCatScreen::init() { 
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(CUSTOM_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   moreScreen.objectSelected = false;
@@ -93,6 +96,7 @@ void CustomCatScreen::init() {
   customCatButton.draw(BACK_X, BACK_Y, BACK_W, BACK_H, "BACK", BUT_OFF);
   customCatButton.draw(NEXT_X, NEXT_Y, BACK_W, BACK_H, "NEXT", BUT_OFF);
   customCatButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
+
 }
 
 // The Custom catalog is a selection of User objects that have been saved on the SD card.
@@ -161,7 +165,7 @@ void CustomCatScreen::drawCustomCat() {
   // Show Page number and total Pages
   tft.fillRect(6, 9, 77, 32,  butBackground); // erase page numbers
   tft.fillRect(0,60,319,353, pgBackground); // clear lower screen
-  tft.setFont(); //revert to basic Arial font
+  tft.setFont(0); //revert to basic Arial font
   tft.setCursor(6, 9); 
   tft.printf("Page "); 
   tft.print(cCurrentPage+1);
@@ -269,14 +273,14 @@ void CustomCatScreen::updateCustomButtons(bool redrawBut) {
   _redrawBut = redrawBut;  
   
   if (catButDetected) updateScreen();  
-  tft.setFont(); // basic Arial
+  tft.setFont(0); // basic Arial
 }
 
 //==================================================
 // =====  Update Screen buttons and text ===========
 //==================================================
 void CustomCatScreen::updateScreen() {
-  tft.setFont();
+  tft.setFont(0);
   uint16_t cRelIndex = catButSelPos; // save the relative-to-this "screen/page" index of button pressed
   uint16_t cAbsIndex = cFiltArray[catButSelPos]; // this is absolute full array index
 
@@ -302,7 +306,7 @@ void CustomCatScreen::updateScreen() {
   } else {
       canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
   }
-  tft.setFont();
+  tft.setFont(0);
 
   writeCustomTarget(cAbsIndex); // write RA and DEC as target for GoTo
   tasks.yield(70);
@@ -413,6 +417,10 @@ bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
   // RETURN page button - reuse BACK button box size
   if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
     BEEP;
+    #ifdef ENABLE_TFT_CAPTURE
+      tft.enableLogging(false);
+      tft.saveBufferToSD("CustCat");
+    #endif
     moreScreen.objectSelected = objSel; 
     moreScreen.draw();
     return false; // don't update this screen since returning to MORE

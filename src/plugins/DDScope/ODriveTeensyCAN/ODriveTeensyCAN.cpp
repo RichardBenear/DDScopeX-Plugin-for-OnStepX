@@ -6,7 +6,7 @@
 #include "ODriveTeensyCAN.h"
 #include "src/lib/tasks/OnTask.h"
 
-#define TIMEOUT 8 // msec
+#define TIMEOUT 5 // msec
 
 static const int kMotorOffsetFloat = 2;
 static const int kMotorStrideFloat = 28;
@@ -22,7 +22,7 @@ static const int CommandIDLength = 5;
 
 static const float feedforwardFactor = 1 / 0.001;
 
-//static const int CANBaudRate = 250000;
+//static const int CANBaudRate = 250000; // set elsewhere
 
 // Print with stream operator
 template<class T> inline Print& operator <<(Print &obj,     T arg) { obj.print(arg);    return obj; }
@@ -44,6 +44,20 @@ ODriveTeensyCAN::ODriveTeensyCAN(int CANBaudRate) {
   //Can0.mailboxStatus();
 }
 	
+// ******CAN Frame******
+// At its most basic, the CAN Simple frame looks like this:
+// Upper 6 bits - Node ID (motor Number) - max 0x3F (or 0xFFFFFF when using extended CAN IDs)
+// Lower 5 bits - Command ID - max 0x1F
+// To understand how the Node ID and Command ID interact, let’s look at an example
+// The 11-bit Arbitration ID is setup as follows:
+// can_id = axis_id << 5 | cmd_id
+// For example: an Axis ID of 0x01 with a command of 0x0C would be result in 0x2C:
+//              0x01 << 5 | 0x0C = 0x2C
+// Some of the ones used here:
+// CMD ID |     Name       | Sender |       Signals          | Start byte|        Signal Type           | Bits | Factor|Offset
+// 0x014  |    Get IQ*     | Axis   | Iq Setpoint Iq Measured|   0 4     | IEEE 754 Float IEEE 754 Float| 32 32|  1 1  | 0 0
+// 0x017  |Get Vbus Voltage| Master | Vbus VoltageIEEE       |     0     | 754 Float                    | 32   |  1    | 0
+
 bool ODriveTeensyCAN::sendMessage(int axis_id, int cmd_id, bool remote_transmission_request, int length, byte *signal_bytes) {
   CAN_message_t msg;
   CAN_message_t return_msg;
@@ -65,18 +79,16 @@ bool ODriveTeensyCAN::sendMessage(int axis_id, int cmd_id, bool remote_transmiss
         return true;
     }
   }
+  // Show timeout info
   Serial.println("CAN read Timeout");
-
-  // Print basic info
   Serial.print("Axis ID: 0x"); Serial.println(axis_id, HEX);
   Serial.print("Cmd ID: 0x"); Serial.println(cmd_id, HEX);
-  Serial.print("Length: "); Serial.println(length);
-  Serial.print("msg.id: 0x"); Serial.println(msg.id, HEX);  
-  Serial.print("msg.flags.remote: "); Serial.println(msg.flags.remote ? "True" : "False");
-  Serial.print("msg.len: "); Serial.println(msg.len);
-
-  // Print `signal_bytes`
+  //Serial.print("Length: "); Serial.println(length);
+  //Serial.print("msg.id: 0x"); Serial.println(msg.id, HEX);  
+  //Serial.print("msg.flags.remote: "); Serial.println(msg.flags.remote ? "True" : "False");
+  //Serial.print("msg.len: "); Serial.println(msg.len);
   Serial.print("signal_bytes: ");
+
   for (int i = 0; i < length; i++) {
       Serial.print("0x");  // Add prefix
       if (signal_bytes[i] < 0x10) Serial.print("0");  // Ensure leading zero for single-digit hex
@@ -85,17 +97,17 @@ bool ODriveTeensyCAN::sendMessage(int axis_id, int cmd_id, bool remote_transmiss
   }
   Serial.println(); // New line after printing all bytes
 
-  // Print `msg.buf`
-  if (!msg.flags.remote) {
-      Serial.print("msg.buf: ");
-      for (int i = 0; i < msg.len; i++) {
-          Serial.print("0x");  // Add prefix
-          if (msg.buf[i] < 0x10) Serial.print("0");  // Ensure leading zero
-          Serial.print(msg.buf[i], HEX);
-          Serial.print(" ");
-      }
-      Serial.println();
-  }
+  // Print msg.buf
+  // if (!msg.flags.remote) {
+  //     Serial.print("msg.buf: ");
+  //     for (int i = 0; i < msg.len; i++) {
+  //         Serial.print("0x");  // Add prefix
+  //         if (msg.buf[i] < 0x10) Serial.print("0");  // Ensure leading zero
+  //         Serial.print(msg.buf[i], HEX);
+  //         Serial.print(" ");
+  //     }
+  //     Serial.println();
+  // }
   return false;
   //tasks.yield(); // Remove this because it causes lock ups!!!!!
 }
@@ -462,8 +474,8 @@ uint8_t ODriveTeensyCAN::GetCurrentState(int axis_id) {
   tasks.yield();
 }
 
-// Documentation indicates this returns both voltage and current but only using voltage here
-// which is in first 4 bytes
+// Some Documentation indicates this returns both voltage and current but only using voltage here
+// which is in first 4 bytes. May be the difference between version 3 and newer versions of ODrive
 float ODriveTeensyCAN::GetVbusVoltage(int axis_id) {  //message can be sent to either axis
   //byte msg_data[4] = {0, 0, 0, 0};
   byte msg_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};

@@ -76,6 +76,9 @@ CanvasPrint canvMoreInsPrint(&Inconsolata_Bold8pt7b);
 // ============= Initialize the Catalog & More page ==================
 void MoreScreen::draw() {
   setCurrentScreen(MORE_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
 
@@ -97,6 +100,12 @@ void MoreScreen::draw() {
   drawCommonStatusLabels(); // Common status at top of most screens
   updateMoreButtons(false); // Draw initial More Page Buttons; false=no redraw
   getOnStepCmdErr(); // show error bar
+  updateCommonStatus();
+  showGpsStatus();
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("More");
+  #endif
 }
 
 // task update for this screen

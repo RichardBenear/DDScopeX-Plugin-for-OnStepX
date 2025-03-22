@@ -4,7 +4,6 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-
 #include <Arduino.h>
 #include <SD.h>
 #include "src/Common.h"
@@ -52,7 +51,7 @@
 #define MAXPRESSU        1000
 #define PENRADIUS           3
 
-// Color definitions-565 format
+// Color definitions-565 format    Red, Grn, Blu
 #define BLACK       0x0000      /*   0,   0,   0 */
 #define NAVY        0x000F      /*   0,   0, 128 */
 #define DARKGREEN   0x03E0      /*   0, 128,   0 */
@@ -68,13 +67,13 @@
 #define RED         0xF800      /* 255,   0,   0 */
 #define MAGENTA     0xF81F      /* 255,   0, 255 */
 #define YELLOW      0xFFE0      /* 255, 255,   0 */
-#define DIM_YELLOW  0xFE60
+#define DIM_YELLOW  0xFE60      /* 255, 237, 102 */
 #define WHITE       0xFFFF      /* 255, 255, 255 */
 #define ORANGE      0xFD20      /* 255, 165,   0 */
-#define GREENYELLOW 0xAFE5      /* 173, 255,  47 */
+#define GREENYELLOW 0xAFE5      /* 173, 255, 172 */
 #define PINK        0xF81F		
-#define XDARK_MAROON 0x1800      
-#define DARK_MAROON 0x3000   
+#define XDARK_MAROON 0x1800     /*  99,   0,   0 */   
+#define DARK_MAROON 0x3000      /* 197,   0,   0*/
 #define GRAY_BLACK  0x0840
 
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
@@ -83,6 +82,11 @@
 // sound control of both duration and frequency
 #define BEEP tone(STATUS_BUZZER_PIN, 1400UL, 30ULL); // both in milliseconds
 #define ALERT tone(STATUS_BUZZER_PIN, 700UL, 80ULL); // both in milliseconds
+
+//========================================================================
+// COMPILE-TIME SWITCH to enable capture of bitmaps of each Screen for documentation purposes
+//#define ENABLE_TFT_CAPTURE  // Comment this line to disable screen capture
+//========================================================================
 
 enum Screen
 {
@@ -115,6 +119,7 @@ enum SelectedCatalog
 
 // Display objects
 extern Adafruit_ILI9486_Teensy tft;
+
 static XPT2046_Touchscreen ts(TS_CS, TS_IRQ); // Use Interrupts for touchscreen
 static TS_Point p;
 

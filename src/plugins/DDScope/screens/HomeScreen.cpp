@@ -104,15 +104,19 @@ CanvasPrint canvHomeInsPrint(&Inconsolata_Bold8pt7b);
 // ======= Draw Initial content of HOME PAGE =====
 // ===============================================
 void HomeScreen::draw() {
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
+  
   setCurrentScreen(HOME_SCREEN);
   tft.setTextSize(1);
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
-  drawMenuButtons();
+  
   drawTitle(48, TITLE_TEXT_Y, "Direct-Drive Scope");
   tft.setFont(&Inconsolata_Bold8pt7b);
   tft.drawFastVLine(TFTWIDTH/2, 172, 141, textColor);
-
+  
   // Draw the FAN Icon bitmap
   uint8_t extern fan_icon[];
   tft.drawBitmap(7, 7, fan_icon, 30, 30,  butBackground, ORANGE);
@@ -126,7 +130,7 @@ void HomeScreen::draw() {
     tft.print(colOneStatusStr[i]);
     y_offset +=COL1_LABEL_SPACING;
   }
-
+  
   // ---- Column 2 ----
   y_offset = 0;
   for (int i=0; i<COL_2_NUM_ROWS; i++) {
@@ -134,11 +138,21 @@ void HomeScreen::draw() {
     tft.print(colTwoStatusStr[i]);
     y_offset +=COL1_LABEL_SPACING;
   }
-
+ 
+  drawMenuButtons();
+  
   // draw and initialize buttons, labels, and status upon entry to this screen
   updateHomeButtons(false);
   drawCommonStatusLabels();
   getOnStepCmdErr(); // show error bar
+  getOnStepGenErr(); // and the next one
+  updateHomeStatus();
+  updateCommonStatus();
+  showGpsStatus();
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("Home");
+  #endif
 }
 
 // =================================================

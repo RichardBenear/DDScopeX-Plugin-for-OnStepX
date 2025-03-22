@@ -6,6 +6,7 @@
 
 #include "Display.h"
 #include "UIelements.h"
+#include "Adafruit_GFX.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 
 // =======================================================================

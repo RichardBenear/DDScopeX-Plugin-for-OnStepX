@@ -95,6 +95,9 @@ char numLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", 
 // Draw the Go To Page
 void GotoScreen::draw() {
   setCurrentScreen(GOTO_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawTitle(120, TITLE_TEXT_Y, "Go To");
@@ -131,6 +134,13 @@ void GotoScreen::draw() {
   // show number input fields
   tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9,  butBackground);
   tft.fillRect(TEXT_FIELD_X, TEXT_FIELD_Y+TEXT_SPACING_Y+CUSTOM_FONT_OFFSET, TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT-9,  butBackground);
+  
+  updateCommonStatus();
+  showGpsStatus();
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("Goto");
+  #endif
 } // end initialize
 
 // task update for this screen
@@ -369,11 +379,13 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > GOTO_BUTTON_Y && py < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && px > GOTO_BUTTON_X && px < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
     BEEP;
     goToButton = true;
+    setLocalCmd(":Te#"); // Enable Tracking
     getLocalCmdTrim(":MS#", cmd);
     return true;
   }
 
   // ==== ABORT GOTO ====
+  // If tracking, will continue to track
   if (py > ABORT_BUTTON_Y && py < (ABORT_BUTTON_Y + GOTO_BOXSIZE_Y) && px > ABORT_BUTTON_X && px < (ABORT_BUTTON_X + GOTO_BOXSIZE_X)) {
     BEEP;
     abortPgBut = true;

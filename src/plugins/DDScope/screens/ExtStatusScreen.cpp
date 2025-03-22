@@ -20,6 +20,9 @@
 // ========== Draw the Extended Status Screen ==========
 void ExtStatusScreen::draw() {
   setCurrentScreen(XSTATUS_SCREEN);
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(true);
+  #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   drawMenuButtons();
@@ -41,6 +44,11 @@ void ExtStatusScreen::draw() {
   mountStatus();
   tlsStatus();
   limitsStatus();
+
+  #ifdef ENABLE_TFT_CAPTURE
+  tft.enableLogging(false);
+  tft.saveBufferToSD("xStatus");
+  #endif
 }
   
   // status update for this screen
