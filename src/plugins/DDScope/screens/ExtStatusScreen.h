@@ -4,7 +4,7 @@
 #ifndef EXTSTATUS_S_H
 #define EXTSTATUS_S_H
 
-#include "../display/Display.h"
+class Display;
 
 class ExtStatusScreen : public Display {
   public:

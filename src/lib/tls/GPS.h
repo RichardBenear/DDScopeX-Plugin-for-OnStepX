@@ -10,7 +10,7 @@
 #include "../calendars/Calendars.h"
 
 #ifndef GPS_TIMEOUT_MINUTES
-  #define GPS_TIMEOUT_MINUTES 10 // wait up to 10 minutes to get lock, use 0 to disable timeout
+  #define GPS_TIMEOUT_MINUTES 30 // wait up to 10 minutes to get lock, use 0 to disable timeout
 #endif
 #ifndef GPS_MIN_WAIT_MINUTES
   #define GPS_MIN_WAIT_MINUTES 1 // minimum wait for stabilization in minutes, use 0 to disable

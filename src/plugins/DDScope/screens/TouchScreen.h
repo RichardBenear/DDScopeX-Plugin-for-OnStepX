@@ -4,15 +4,16 @@
 #ifndef TOUCHSCREEN_H
 #define TOUCHSCREEN_H
 
-#include "../display/Display.h"
+#include "../display/Display.h" 
 
-class TouchScreen : public Display {
+class TouchScreen {
   public:
     void init();
-    void touchScreenPoll(Screen);
-
+    void touchScreenPoll(ScreenEnum tCurScreen);
+    void processTouch(ScreenEnum tCurScreen);
+    
   private:
-    Screen tCurScreen = HOME_SCREEN;
+    ScreenEnum tCurScreen = HOME_SCREEN;
 };
 
 extern TouchScreen touchScreen;

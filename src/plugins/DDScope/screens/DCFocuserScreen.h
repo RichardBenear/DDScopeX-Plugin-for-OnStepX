@@ -5,15 +5,15 @@
 #define DCFOCUSER_S_H
 
 #include <Arduino.h>
-#include "../display/Display.h"
+class Display;
 
 class DCFocuserScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
-    void updateFocuserButtons(bool);
+    void updateFocuserButtons();
     void updateFocuserStatus();
-    static bool focuserButStateChange();
+    bool focuserButStateChange();
     
   private:
     void focInit();
@@ -22,19 +22,19 @@ class DCFocuserScreen : public Display {
     void updateFocPosition();
 
     bool redrawBut = false;
-    bool focMovingIn;
-    bool gotoSetpoint;
-    bool focGoToHalf ;
-    bool setPoint ;
-    bool decSpeed ;
-    bool incSpeed ;
-    bool incMoveCt ;
-    bool decMoveCt ;
-    bool setZero ;
-    bool setMax ;
+    bool focMovingIn = false;
+    bool gotoSetpoint = false;
+    bool focGoToHalf = false;
+    bool setPoint = false;
+    bool decSpeed = false;
+    bool incSpeed = false;
+    bool incMoveCt = false;
+    bool decMoveCt = false;
+    bool setZero = false;
+    bool setMax = false;
+    bool focReset = false;
     bool revFocuser ;
     bool inwardCalState; // start with inward calibration
-    bool focReset ;
     bool calibActive ;
     bool focGoToActive ;
     int focMoveSpeed; // pulse width in microsec

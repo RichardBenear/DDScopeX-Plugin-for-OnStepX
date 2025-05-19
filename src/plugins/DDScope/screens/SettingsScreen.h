@@ -5,13 +5,13 @@
 #define SETTINGS_S_H
 
 #include <Arduino.h>
-#include "../display/Display.h"
+class Display;
 
 class SettingsScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
-    void updateSettingsButtons(bool);
+    void updateSettingsButtons();
     bool settingsButStateChange();
     void updateSettingsStatus();
   

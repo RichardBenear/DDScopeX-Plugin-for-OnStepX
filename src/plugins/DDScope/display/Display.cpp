@@ -6,21 +6,9 @@
 // SPI Interface
 // Author: Richard Benear 3/30/2021 - refactor 6/22
 
-#include <Arduino.h>
+// #include <Arduino.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_SPITFT.h>
 #include <gfxfont.h>
-#include <TinyGPS++.h> // http://arduiniana.org/libraries/tinygpsplus/
-#include "TimeLib.h"
-
-// OnStepX
-#include "src/telescope/mount/Mount.h"
-#include "src/lib/commands/CommandErrors.h"
-#include "src/libApp/commands/ProcessCmds.h"
-#include "src/telescope/mount/goto/Goto.h"
-#include "src/telescope/mount/site/Site.h"
-#include "src/lib/tasks/OnTask.h"
-#include "src/libApp/commands/ProcessCmds.h"
 
 // Fonts
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -30,6 +18,7 @@
 
 // DDScope specific
 #include "Display.h"
+#include "WifiDisplay.h"
 #include "../catalog/Catalog.h"
 #include "../screens/AlignScreen.h"
 #include "../screens/TreasureCatScreen.h"
@@ -43,6 +32,7 @@
 #include "../screens/PlanetsScreen.h"
 #include "../screens/SettingsScreen.h"
 #include "../screens/ExtStatusScreen.h"
+#include "src/telescope/mount/limits/Limits.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "../odriveExt/ODriveExt.h"
@@ -52,7 +42,7 @@
 #define TITLE_BOXSIZE_X         313
 #define TITLE_BOXSIZE_Y          43
 #define TITLE_BOX_X               3
-#define TITLE_BOX_Y               1 
+#define TITLE_BOX_Y               2 
 
 // Shared common Status 
 #define COM_LABEL_Y_SPACE        17
@@ -90,7 +80,7 @@
 #define L_CE_SLEW_ERR_UNSPECIFIED    "other"
 #define L_CE_UNK                     "unknown"
 
-static const char cmdErrStr[26][25] = {
+const char cmdErrStr[26][25] = {
 L_CE_NONE, L_CE_1, L_CE_0, L_CE_CMD_UNKNOWN, L_CE_REPLY_UNKNOWN, L_CE_PARAM_RANGE,
 L_CE_PARAM_FORM, L_CE_ALIGN_FAIL, L_CE_ALIGN_NOT_ACTIVE, L_CE_NOT_PARKED_OR_AT_HOME,
 L_CE_PARKED, L_CE_PARK_FAILED, L_CE_NOT_PARKED, L_CE_NO_PARK_POSITION_SET, L_CE_SLEW_FAIL,
@@ -125,9 +115,13 @@ Button menuButton(MENU_X, MENU_Y, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, butOnBackgroun
 // Canvas Print object Custom Font
 CanvasPrint canvDisplayInsPrint(&Inconsolata_Bold8pt7b);
                 
-Screen Display::currentScreen = HOME_SCREEN;
+ScreenEnum Display::currentScreen = HOME_SCREEN;
 bool Display::_nightMode = false;
-bool Display::_redrawBut = false;
+float previousBatVoltage = 2.1;
+char cmdErrGlobal[100] = "";
+static CommandError latchedCmdErr = CE_NONE;
+static unsigned long errorLatchStartTime = 0;
+const unsigned long errorDisplayDuration = 5000;
 
 TinyGPSPlus dgps;
 
@@ -141,7 +135,8 @@ uint16_t butOutline = ORANGE;
 // Local cmd channel object
 CommandProcessor processor(9600, 'L');
 
-Adafruit_ILI9486_Teensy tft;
+Adafruit_ILI9486_Teensy tft; 
+WifiDisplay wifiDisplay;
 
 // =========================================
 // ========= Initialize Display ============
@@ -152,16 +147,16 @@ void Display::init() {
   sdInit(); // initialize the SD card and draw start screen
 
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
-  setNightMode(false); // always start up in Day Mode
-  delay(1500); // let start screen show for 1.5 sec
+  setNightMode(true); // always start up in Night Mode
+  //delay(1500); // let start screen show for 1.5 sec
 
   // set some defaults
   // NOTE: change these for your own personal settings
   VLF("MSG: Setting up Limits, TZ, Site Name, Slew Speed");
-  setLocalCmd(":SG+07:00#"); // Set Default Time Zone
-  setLocalCmd(":Sh-02#"); //Set horizon limit -2 deg
-  setLocalCmd(":So86#"); // Set overhead limit 86 deg
-  setLocalCmd(":SMHome#"); // Set Site 0 name "Home"
+  commandBool(":SG+06:00#"); // Set Default Time Zone
+  commandBool(":Sh-02#"); //Set horizon limit -2 deg
+  commandBool(":So87#"); // Set overhead limit 87 deg
+  commandBool(":SMHome#"); // Set Site 0 name "Home"
 }
 
 // initialize the SD card and boot screen
@@ -179,65 +174,67 @@ void Display::sdInit() {
     return;
   } 
 
-  tft.fillScreen(pgBackground); 
-  tft.setTextColor(textColor);
-  drawPic(&StarMaps, 1, 0, TFTWIDTH, TFT_HEIGHT);  
-  drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
-  tft.setCursor(60, 80);
-  tft.setTextSize(2);
-  tft.printf("Initializing");
-  tft.setTextSize(1);
-  tft.setCursor(120, 120);
-  tft.printf("NGC 1566");
+  // Draw Start Page of NGC 1566 bitmap
+  // tft.fillScreen(pgBackground); 
+  // tft.setTextColor(textColor);
+  // drawPic(&StarMaps, 1, 0, TFTWIDTH, TFT_HEIGHT);  
+  // drawTitle(20, 30, "DIRECT-DRIVE SCOPE");
+  // tft.setCursor(60, 80);
+  // tft.setTextSize(2);
+  // tft.print("Initializing");
+  // tft.setTextSize(1);
+  // tft.setCursor(120, 120);
+  // tft.print("NGC 1566");
 }
 
 // Monitor any button that is waiting for a state change (other than being pressed)
 // This does not include the Menu Buttons
 void Display::refreshButtons() {
+  //Serial.print(currentScreen);
   switch (currentScreen) {
     case HOME_SCREEN:      
       if (homeScreen.homeButStateChange()) 
-        homeScreen.updateHomeButtons(false); 
+        homeScreen.updateHomeButtons(); 
       break;       
     case GUIDE_SCREEN:   
       if (guideScreen.guideButStateChange()) 
-        guideScreen.updateGuideButtons(false); 
+        guideScreen.updateGuideButtons(); 
       break;        
     case FOCUSER_SCREEN:  
       if (dCfocuserScreen.focuserButStateChange()) 
-        dCfocuserScreen.updateFocuserButtons(false); 
+        dCfocuserScreen.updateFocuserButtons(); 
       break; 
     case GOTO_SCREEN:     
       if (gotoScreen.gotoButStateChange()) 
-        gotoScreen.updateGotoButtons(false); 
+        gotoScreen.updateGotoButtons(); 
       break;          
     case MORE_SCREEN:     
       if (moreScreen.moreButStateChange()) 
-        moreScreen.updateMoreButtons(false); 
+        moreScreen.updateMoreButtons(); 
       break;          
     case SETTINGS_SCREEN:  
       if (settingsScreen.settingsButStateChange()) 
-        settingsScreen.updateSettingsButtons(false); 
+        settingsScreen.updateSettingsButtons(); 
       break;
     case ALIGN_SCREEN:     
       if (moreScreen.moreButStateChange()) 
-        alignScreen.updateAlignButtons(false); 
+        alignScreen.updateAlignButtons(); 
       break;     
     case PLANETS_SCREEN:   
       if (planetsScreen.planetsButStateChange()) 
-        planetsScreen.updatePlanetsButtons(false); 
+        planetsScreen.updatePlanetsButtons(); 
       break;
     case TREASURE_SCREEN:   
-      if (treasureCatScreen.catalogButStateChange()) 
-        treasureCatScreen.updateTreasureButtons(false); 
+      if (treasureCatScreen.trCatalogButStateChange()) 
+        treasureCatScreen.updateTreasureButtons(); 
       break; 
     case CUSTOM_SCREEN:   
-      if (customCatScreen.catalogButStateChange()) 
-        customCatScreen.updateCustomButtons(false); 
+      if (customCatScreen.cusCatalogButStateChange()) 
+        customCatScreen.updateCustomButtons(); 
       break; 
     case SHC_CAT_SCREEN:   
-      if (shcCatScreen.catalogButStateChange()) 
-        shcCatScreen.updateShcButtons(false); 
+      if (shcCatScreen.shCatalogButStateChange()) 
+        shcCatScreen.updateShcButtons(); 
       break; 
     case XSTATUS_SCREEN:  
       // No buttons here
@@ -246,19 +243,22 @@ void Display::refreshButtons() {
     #ifdef ODRIVE_MOTOR_PRESENT
     case ODRIVE_SCREEN: 
       if (oDriveScreen.odriveButStateChange()) 
-        oDriveScreen.updateOdriveButtons(false); 
+        oDriveScreen.updateOdriveButtons(); 
       break;
     #endif
   }
 }
 
 // screen selection
-void Display::setCurrentScreen(Screen curScreen) {
+void Display::setCurrentScreen(ScreenEnum curScreen) {
 currentScreen = curScreen;
 };
 
-// select which screen to update
+// select which screen to update at the Update task rate 
 void Display::updateSpecificScreen() {
+#ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(true); 
+#endif
   switch (currentScreen) {
     case HOME_SCREEN:       homeScreen.updateHomeStatus();            break;
     case GUIDE_SCREEN:      guideScreen.updateGuideStatus();          break;
@@ -273,48 +273,67 @@ void Display::updateSpecificScreen() {
     case PLANETS_SCREEN:    planetsScreen.updatePlanetsStatus();      break;
     case XSTATUS_SCREEN:    extStatusScreen.updateExStatus();         break;
     #ifdef ODRIVE_MOTOR_PRESENT
-      case ODRIVE_SCREEN:   oDriveScreen.updateOdriveStatus();        break;
+    case ODRIVE_SCREEN:     oDriveScreen.updateOdriveStatus();        break;
     #endif
-    default: homeScreen.updateHomeStatus(); break;
+    default:  break;
   }
+
+  display.refreshButtons();
 
   // don't do the following updates on these screens
   if (currentScreen == CUSTOM_SCREEN || 
     currentScreen == SHC_CAT_SCREEN ||
     currentScreen == PLANETS_SCREEN ||
     currentScreen == XSTATUS_SCREEN ||
-    currentScreen == TREASURE_SCREEN) return;
-  Y;
+    currentScreen == TREASURE_SCREEN) {
+    #ifdef ENABLE_TFT_MIRROR
+      wifiDisplay.enableScreenCapture(false);
+      wifiDisplay.sendFrameToEsp(FRAME_TYPE_DEF);
+    #endif
+    
+    return;
+  }
+
   display.updateCommonStatus();
-  Y;
-  display.getOnStepGenErr(); 
+  display.showOnStepGenErr(); 
+  //display.showOnStepCmdErr();
+  display.updateBatVoltage(1);
+  
+#ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(false);
+  wifiDisplay.sendFrameToEsp(FRAME_TYPE_DEF);
+#endif
 }
 
 // ======= Local Command Channel Support ========
-void Display::setLocalCmd(char *command) {
+// Use for LX200 commands that only expect a bool returned
+bool Display::commandBool(char *command) {
   //VL(command);
+  char *serStatus = nullptr;
+  char resp[80] = "";
   SERIAL_LOCAL.transmit(command);
   tasks.yield(10);
-  // you must always do a matching receive() on the local channel or the xmit_index for xmit buffer doesn't increment
-  // this will add leading 1's to your receive data because of a bool-only reply from some previous commands
-  SERIAL_LOCAL.receive();
-  getOnStepCmdErr();
+  serStatus = SERIAL_LOCAL.receive();
+  strcpy(resp, serStatus);
+  int l = strlen(resp) - 1; 
+  if (l >= 0 && resp[l] == '#') resp[l] = 0; // removes the #
+  //Serial.print(resp);
+  return (resp);
 }
 
-void Display::setLocalCmd(const char *command) {
-  setLocalCmd((char *)command);
+bool Display::commandBool(const char *command) {
+  return commandBool((char *)command);
 }
 
-// Local Cmd channel
-// Instead of using SERIAL_LOCAL this function uses parts of that for quicker access
-// Also, there was "anomalous" behavior and hangs using SERIAL_LOCAL for reading data
-void Display::getLocalCmdTrim(const char *command, char *reply) {
+// Local Cmd channel - use when the expected response is not bool
+// Instead of using SERIAL_LOCAL this function uses parts of that code for quicker access
+// There was "anomalous" behavior and hangs using SERIAL_LOCAL for reading data
+void Display::commandWithReply(const char *command, char *reply) {
   char cmdReply[60] = "";
   char parameter[4] = "";
   bool supressFrame = false;
   bool numericReply = true;
   char cmd[5] = "";
- //CommandError commandError = CE_NONE;
   char mutableCommand[6]; 
   strcpy(mutableCommand, command);  // Copy command to a mutable buffer
 
@@ -335,32 +354,45 @@ void Display::getLocalCmdTrim(const char *command, char *reply) {
     }
   }
 
-  //V(cmd);
-  //V(parameter);
-  //V(" ");
- 
+    // V(cmd);
+    // V(parameter);
+    // V(" ");
   CommandError cmdErr = processor.command(cmdReply, cmd, parameter, &supressFrame, &numericReply);
-  if (cmdErr != CE_NONE) {
-    VF("CmdErr="); VL(cmdErr); 
+  
+  //VF(cmdErrStr[cmdErr]);
+  // Latch new error and start timer
+  if (cmdErr != CE_NONE && latchedCmdErr == CE_NONE) {
+      latchedCmdErr = cmdErr;
+      errorLatchStartTime = millis();
   }
 
+  // Clear after duration
+  if (latchedCmdErr != CE_NONE && millis() - errorLatchStartTime >= errorDisplayDuration) {
+      latchedCmdErr = cmdErr;
+  }
+  if (currentScreen != XSTATUS_SCREEN) {
+    snprintf(cmdErrGlobal, sizeof(cmdErrGlobal), "Cmd Error: %.88s", cmdErrStr[latchedCmdErr]);
+    canvDisplayInsPrint.printLJ(3, 453, 314, C_HEIGHT + 2, cmdErrGlobal, false);
+  }
+
+  // handle numeric Replies
   if (numericReply) {
     if (cmdErr != CE_NONE && cmdErr != CE_1) strcpy(reply,"0"); else strcpy(reply,"1");
     supressFrame = true;
   } else {
-
-  strcpy(reply, cmdReply); 
-  // get rid of '#'
-  if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
+    strcpy(reply, cmdReply); 
+    // get rid of '#'
+    if ((strlen(reply)>0) && (reply[strlen(reply)-1]=='#')) reply[strlen(reply)-1]=0;
   }
 }
 
 // Draw the Title block
 void Display::drawTitle(int text_x, int text_y, const char* label) {
+  tft.drawRect(1, 1, 319, 479, butOutline); // draw screen outline
   tft.setFont(&FreeSansBold12pt7b);
   tft.setTextColor(textColor);
   tft.fillRect(TITLE_BOX_X, TITLE_BOX_Y, TITLE_BOXSIZE_X, TITLE_BOXSIZE_Y, titleBackground);
-  tft.drawRect(TITLE_BOX_X, TITLE_BOX_Y, TITLE_BOXSIZE_X, TITLE_BOXSIZE_Y, butOutline);
+  //tft.drawRect(TITLE_BOX_X, TITLE_BOX_Y, TITLE_BOXSIZE_X, TITLE_BOXSIZE_Y, butOutline);
   tft.setCursor(TITLE_BOX_X + text_x, TITLE_BOX_Y + text_y);
   tft.print(label);
   tft.setFont(&Inconsolata_Bold8pt7b);
@@ -393,19 +425,19 @@ bool Display::getNightMode() {
 // Update Battery Voltage
 void Display::updateBatVoltage(int axis) {
   float currentBatVoltage = oDriveExt.getODriveBusVoltage(axis);
-  //VF("Bat Voltage:"); Serial.print(currentBatVoltage);
-  char bvolts[12]="00.0 v";
-  sprintf(bvolts, "%4.1f v", currentBatVoltage);
-  //if (previousBatVoltage == currentBatVoltage) return;
-  if (currentBatVoltage < BATTERY_LOW_VOLTAGE) { 
-    tft.fillRect(135, 26, 50, 14, butOnBackground);
-  } else {
-    tft.fillRect(135, 26, 50, 14, butBackground);
-  }
-  tft.setFont(&Inconsolata_Bold8pt7b);
-  tft.setCursor(135, 38);
-  tft.print(bvolts);
-  //previousBatVoltage = currentBatVoltage;
+  //VF("Bat Voltage:"); SERIAL_DEBUG.print(currentBatVoltage);
+    char bvolts[12]="00.0 v";
+    sprintf(bvolts, "%4.1f v", currentBatVoltage);
+    //if (previousBatVoltage == currentBatVoltage) return;
+    if (currentBatVoltage < BATTERY_LOW_VOLTAGE) { 
+      tft.fillRect(135, 29, 50, 14, butOnBackground);
+    } else {
+      tft.fillRect(135, 29, 50, 14, butBackground);
+    }
+    tft.setFont(&Inconsolata_Bold8pt7b);
+    tft.setCursor(135, 40);
+    tft.print(bvolts);
+  previousBatVoltage = currentBatVoltage;
 }
 
 // Define Hidden Motors OFF button
@@ -413,12 +445,12 @@ void Display::updateBatVoltage(int axis) {
 // This hidden area is on ALL screens for Saftey in case of mount collision
 void Display::motorsOff(uint16_t px, uint16_t py) {
   if (py > ABORT_Y && py < (ABORT_Y + ABORT_BOXSIZE_Y) && px > ABORT_X && px < (ABORT_X + ABORT_BOXSIZE_X)) {
-    BEEP;
+    ALERT;
     soundFreq(1500, 200);
-    setLocalCmd(":Q#"); // stops move
-    axis1.enable(false); // turn off Motor
-    axis2.enable(false); // turn off Motor
-    setLocalCmd(":Td#"); // Disable Tracking
+    commandBool(":Q#"); // stops move
+    axis1.enable(false); // turn off Motor1
+    axis2.enable(false); // turn off Motor2
+    commandBool(":Td#"); // Disable Tracking
   }
 }
 
@@ -432,6 +464,7 @@ void Display::showGpsStatus() {
     currentScreen == TREASURE_SCREEN) return;
   uint8_t extern gps_icon[];
   if (!tls.isReady()) {
+    firstGPS = true; // turn on One-shot trigger
     if (!flash) {
       flash = true;
       tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, RED);
@@ -446,54 +479,68 @@ void Display::showGpsStatus() {
       setTime(TeensyTime);    // set system time
       firstRTC = false;
     }                       
-
   } else { // GPS is ready
-    if (firstGPS) {
+    //if (firstGPS) {
+      // If the GPS (or other TLS) is locked, then send LST and Latitude to the cat_mgr module
+      double f=0;
+      char reply[12];
+
+      // Set LST for the cat_mgr 
+      display.commandWithReply(":GS#", reply);
+      convert.hmsToDouble(&f, reply);
+      cat_mgr.setLstT0(f);
+
+      // Set Latitude for cat_mgr
+      display.commandWithReply(":Gt#", reply);
+      convert.dmsToDouble(&f, reply, true);
+      cat_mgr.setLat(f);
+    
       // set the RTC in Teensy to the latest GPS reading
-      if (dgps.time.age() < 500) {
-        setTime(dgps.time.hour(), dgps.time.minute(), dgps.time.second(), dgps.date.day(), dgps.date.month(), dgps.date.year());
-        char tempReply[4]="0";
-        //char error[100]="";
-        getLocalCmdTrim(":GG#", tempReply); // get timezone
-        adjustTime((atoi(tempReply)) * -1* SECS_PER_HOUR);
-        unsigned long TeensyTime = now();              // get time in epoch
-        Teensy3Clock.set(TeensyTime);                  // set Teensy time
-      }
-    firstGPS = false;
+      // if (dgps.time.age() < 500) {
+      //   setTime(dgps.time.hour(), dgps.time.minute(), dgps.time.second(), dgps.date.day(), dgps.date.month(), dgps.date.year());
+      //   char tempReply[4]="0";
+      //   //char error[100]="";
+      //   commandWithReply(":GG#", tempReply); // get timezone
+      //   adjustTime((atoi(tempReply)) * -1* SECS_PER_HOUR);
+      //   unsigned long TeensyTime = now();              // get time in epoch
+      //   Teensy3Clock.set(TeensyTime);                  // set Teensy time
+      // }
+    //firstGPS = false;
     tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, DIM_YELLOW);
-    }
+    //}
   }
 }
 
-bool Display::getGeneralErrorMessage(char message[]) {
+bool Display::getGeneralErrorMessage(char message[], uint8_t error) {
+  uint8_t lastError = error;
   enum GeneralErrors: uint8_t {
   ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT_MIN, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM,
   ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC, ERR_PARK, ERR_GOTO_SYNC, ERR_UNSPECIFIED,
   ERR_ALT_MAX, ERR_WEATHER_INIT, ERR_SITE_INIT, ERR_NV_INIT};
   strcpy(message,"");
 
-  if (_lastError == ERR_NONE) strcpy(message, L_GE_NONE); else
-  if (_lastError == ERR_MOTOR_FAULT) strcpy(message, L_GE_MOTOR_FAULT); else
-  if (_lastError == ERR_ALT_MIN) strcpy(message, L_GE_ALT_MIN); else
-  if (_lastError == ERR_LIMIT_SENSE) strcpy(message, L_GE_LIMIT_SENSE); else
-  if (_lastError == ERR_DEC) strcpy(message, L_GE_DEC); else
-  if (_lastError == ERR_AZM) strcpy(message, L_GE_AZM); else
-  if (_lastError == ERR_UNDER_POLE) strcpy(message, L_GE_UNDER_POLE); else
-  if (_lastError == ERR_MERIDIAN) strcpy(message, L_GE_MERIDIAN); else
-  if (_lastError == ERR_SYNC) strcpy(message, L_GE_SYNC); else
-  if (_lastError == ERR_PARK) strcpy(message, L_GE_PARK); else
-  if (_lastError == ERR_GOTO_SYNC) strcpy(message, L_GE_GOTO_SYNC); else
-  if (_lastError == ERR_UNSPECIFIED) strcpy(message, L_GE_UNSPECIFIED); else
-  if (_lastError == ERR_ALT_MAX) strcpy(message, L_GE_ALT_MAX); else
-  if (_lastError == ERR_WEATHER_INIT) strcpy(message, L_GE_WEATHER_INIT); else
-  if (_lastError == ERR_SITE_INIT) strcpy(message, L_GE_SITE_INIT); else
-  if (_lastError == ERR_NV_INIT) strcpy(message, L_GE_NV_INIT); else
-  sprintf(message, L_GE_OTHER " %d", (int)_lastError);
+  if (lastError == ERR_NONE) strcpy(message, L_GE_NONE); else
+  if (lastError == ERR_MOTOR_FAULT) strcpy(message, L_GE_MOTOR_FAULT); else
+  if (lastError == ERR_ALT_MIN) strcpy(message, L_GE_ALT_MIN); else
+  if (lastError == ERR_LIMIT_SENSE) strcpy(message, L_GE_LIMIT_SENSE); else
+  if (lastError == ERR_DEC) strcpy(message, L_GE_DEC); else
+  if (lastError == ERR_AZM) strcpy(message, L_GE_AZM); else
+  if (lastError == ERR_UNDER_POLE) strcpy(message, L_GE_UNDER_POLE); else
+  if (lastError == ERR_MERIDIAN) strcpy(message, L_GE_MERIDIAN); else
+  if (lastError == ERR_SYNC) strcpy(message, L_GE_SYNC); else
+  if (lastError == ERR_PARK) strcpy(message, L_GE_PARK); else
+  if (lastError == ERR_GOTO_SYNC) strcpy(message, L_GE_GOTO_SYNC); else
+  if (lastError == ERR_UNSPECIFIED) strcpy(message, L_GE_UNSPECIFIED); else
+  if (lastError == ERR_ALT_MAX) strcpy(message, L_GE_ALT_MAX); else
+  if (lastError == ERR_WEATHER_INIT) strcpy(message, L_GE_WEATHER_INIT); else
+  if (lastError == ERR_SITE_INIT) strcpy(message, L_GE_SITE_INIT); else
+  if (lastError == ERR_NV_INIT) strcpy(message, L_GE_NV_INIT); else
+  sprintf(message, L_GE_OTHER " %d", (int)lastError);
   return message[0];
 }
 
 // ========== OnStep Command Errors =============
-void Display::getOnStepCmdErr() {
+void Display::showOnStepCmdErr() {
   //VLF("getting Cmd Err");
   char cmdErr[60] = "";
   char temp[60] = "Command Error: ";
@@ -504,13 +551,13 @@ void Display::getOnStepCmdErr() {
     currentScreen == XSTATUS_SCREEN ||
     currentScreen == TREASURE_SCREEN) return;
 
-  getLocalCmdTrim(":GE#", cmdErr);
+  commandWithReply(":GE#", cmdErr);
   strcat(temp, cmdErrStr[atoi(cmdErr)]);
-  canvDisplayInsPrint.printLJ(2, 454, 317, C_HEIGHT+2, temp, false);
+  canvDisplayInsPrint.printLJ(3, 453, 314, C_HEIGHT+2, temp, false);
 }
 
 // ========== OnStep General Errors =============
-void Display::getOnStepGenErr() {
+void Display::showOnStepGenErr() {
   // not on these screens
   if (currentScreen == CUSTOM_SCREEN || 
     currentScreen == SHC_CAT_SCREEN ||
@@ -518,14 +565,14 @@ void Display::getOnStepGenErr() {
     currentScreen == XSTATUS_SCREEN ||
     currentScreen == TREASURE_SCREEN) return;
 
-  char genErr[60] = "";
-  char temp[60] = "";
-  char temp1[60] = "General Error: ";
-  getLocalCmdTrim(":GU#", genErr);
-  _lastError = (genErr[strlen(genErr) - 1] - '0');
-  getGeneralErrorMessage(temp);
+  char temp[80] = "";
+  char temp1[80] = "General Error: ";
+  
+  //commandWithReply(":GU#", genErr);
+  //error = (genErr[strlen(genErr) - 1] - '0');
+  getGeneralErrorMessage(temp, limits.errorCode());
   strcat(temp1, temp);
-  canvDisplayInsPrint.printLJ(2, 473, 317, C_HEIGHT+2, temp1, false);
+  canvDisplayInsPrint.printLJ(3, 470, 314, C_HEIGHT+2, temp1, false);
 }
 
 // Draw the Menu buttons
@@ -568,7 +615,7 @@ void Display::drawMenuButtons() {
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "CTLGS", BUT_OFF);
       break;
 
    case GUIDE_SCREEN:
@@ -583,7 +630,7 @@ void Display::drawMenuButtons() {
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ALIGN", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "CATLGS", BUT_OFF);
       break;
 
    case FOCUSER_SCREEN:
@@ -598,7 +645,7 @@ void Display::drawMenuButtons() {
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GO TO", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "CATLGS", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
       break;
@@ -615,7 +662,7 @@ void Display::drawMenuButtons() {
       menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "GUIDE", BUT_OFF);
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "CATLGS", BUT_OFF);
       break;
       
    case MORE_SCREEN:
@@ -692,7 +739,7 @@ void Display::drawMenuButtons() {
       #ifdef ODRIVE_MOTOR_PRESENT
         menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", BUT_OFF);
       #elif
-        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "CATLGS", BUT_OFF);
       #endif  
       break;
 
@@ -711,7 +758,7 @@ void Display::drawMenuButtons() {
       #ifdef ODRIVE_MOTOR_PRESENT
         menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "ODRIV", BUT_OFF);
       #elif
-        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
+        menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "CATLGS", BUT_OFF);
       #endif  
       break;
 
@@ -730,7 +777,7 @@ void Display::drawMenuButtons() {
      
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
-      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, ".MORE.", BUT_OFF);
+      menuButton.draw(MENU_X + x_offset, MENU_Y + y_offset, "CATLGS", BUT_OFF);
      
       x_offset = x_offset + MENU_X_SPACING;
       y_offset +=MENU_Y_SPACING;
@@ -744,6 +791,7 @@ void Display::drawMenuButtons() {
 // ==============================================
 // These particular status labels are placed near the top of most Screens.
 void Display::drawCommonStatusLabels() {
+  tft.setFont(&Inconsolata_Bold8pt7b);
   int y_offset = 0;
 
   // Column 1
@@ -795,25 +843,24 @@ void Display::drawCommonStatusLabels() {
 // This Common Status is found at the top of most pages.
 void Display::updateCommonStatus() { 
   //VLF("updating common status");
-  //oDriveExt.updateBatVoltage(1); // do this first in case ODrive powered down or serial RX stopped, which will set appropriate flags
   showGpsStatus();
 
-  // If the GPS (or other TLS) is locked, then send LST and Latitude to the cat_mgr module
-  if (tls.isReady() && firstGPS) {
-    double f=0;
-    char reply[12];
+  // // If the GPS (or other TLS) is locked, then send LST and Latitude to the cat_mgr module
+  // if (tls.isReady() && firstGPS) {
+  //   double f=0;
+  //   char reply[12];
 
-    // Set LST for the cat_mgr 
-    display.getLocalCmdTrim(":GS#", reply);
-    convert.hmsToDouble(&f, reply);
-    cat_mgr.setLstT0(f);
+  //   // Set LST for the cat_mgr 
+  //   display.commandWithReply(":GS#", reply);
+  //   convert.hmsToDouble(&f, reply);
+  //   cat_mgr.setLstT0(f);
 
-    // Set Latitude for cat_mgr
-    display.getLocalCmdTrim(":Gt#", reply);
-    convert.dmsToDouble(&f, reply, true);
-    cat_mgr.setLat(f);
-    firstGPS = false;
-  }
+  //   // Set Latitude for cat_mgr
+  //   display.commandWithReply(":Gt#", reply);
+  //   convert.dmsToDouble(&f, reply, true);
+  //   cat_mgr.setLat(f);
+  //   firstGPS = false;
+  // }
 
   // Flash tracking LED if mount is tracking
   if (mount.isTracking()) {
@@ -857,22 +904,22 @@ void Display::updateCommonStatus() {
   int y_offset = 0;
   // ----- Column 1 -----
   // Current RA, Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-  getLocalCmdTrim(":GR#", ra_hms);
+  commandWithReply(":GR#", ra_hms);
   canvDisplayInsPrint.printRJ(COM_COL1_DATA_X, COM_COL1_DATA_Y, C_WIDTH, C_HEIGHT, ra_hms, false);
 
   // Target RA, Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
   y_offset +=COM_LABEL_Y_SPACE; 
-  getLocalCmdTrim(":Gr#", tra_hms);
+  commandWithReply(":Gr#", tra_hms);
   canvDisplayInsPrint.printRJ(COM_COL1_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH, C_HEIGHT, tra_hms, false);
 
   // Current DEC
    y_offset +=COM_LABEL_Y_SPACE; 
-  getLocalCmdTrim(":GD#", dec_dms);
+  commandWithReply(":GD#", dec_dms);
   canvDisplayInsPrint.printRJ(COM_COL1_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH, C_HEIGHT, dec_dms, false);
 
   // Target DEC
   y_offset +=COM_LABEL_Y_SPACE;  
-  getLocalCmdTrim(":Gd#", tdec_dms); 
+  commandWithReply(":Gd#", tdec_dms); 
   canvDisplayInsPrint.printRJ(COM_COL1_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH, C_HEIGHT, tdec_dms, false);
   //VLF("common column 1 check point complete");
   // ----- Column 2 -----
@@ -883,28 +930,28 @@ void Display::updateCommonStatus() {
   transform.equToHor(&dispTarget);
 
   // Get CURRENT AZM
-  //getLocalCmdTrim(":GZ#", cAzmDMS); // DDD*MM'SS# 
+  //commandWithReply(":GZ#", cAzmDMS); // DDD*MM'SS# 
   //convert.dmsToDouble(&cAzm_d, cAzmDMS, false, PM_LOW);
   double temp = NormalizeAzimuth(radToDeg(mount.getPosition(CR_MOUNT_HOR).z));
   canvDisplayInsPrint.printRJ(COM_COL2_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH-20, C_HEIGHT, temp, false);
 
   // Get TARGET AZM
   y_offset +=COM_LABEL_Y_SPACE;  
-  //getLocalCmdTrim(":Gz#", tAzmDMS); // DDD*MM'SS# 
+  //commandWithReply(":Gz#", tAzmDMS); // DDD*MM'SS# 
   //convert.dmsToDouble(&tAzm_d, tAzmDMS, false, PM_LOW);
   temp = NormalizeAzimuth(radToDeg(dispTarget.z));
   canvDisplayInsPrint.printRJ(COM_COL2_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH-20, C_HEIGHT, temp, false);
 
   // Get CURRENT ALT
   y_offset +=COM_LABEL_Y_SPACE;  
-  //getLocalCmdTrim(":GA#", cAltDMS);	// sDD*MM'SS#
+  //commandWithReply(":GA#", cAltDMS);	// sDD*MM'SS#
   //convert.dmsToDouble(&cAlt_d, cAltDMS, true, PM_LOW);
   temp = radToDeg(mount.getPosition(CR_MOUNT_ALT).a);
   canvDisplayInsPrint.printRJ(COM_COL2_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH-20, C_HEIGHT, temp, false);
   
   // Get TARGET ALT
   y_offset +=COM_LABEL_Y_SPACE;  
-  //getLocalCmdTrim(":Gal#", tAltDMS);	// sDD*MM'SS#
+  //commandWithReply(":Gal#", tAltDMS);	// sDD*MM'SS#
   //convert.dmsToDouble(&tAlt_d, tAltDMS, true, PM_LOW);
   canvDisplayInsPrint.printRJ(COM_COL2_DATA_X, COM_COL1_DATA_Y+y_offset, C_WIDTH-20, C_HEIGHT, radToDeg(dispTarget.a), false);
   //VLF("column 2 complete");

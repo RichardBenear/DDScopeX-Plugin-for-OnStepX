@@ -4,12 +4,66 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+//=====================================================================================
+// COMPILE-TIME SWITCH to enable capture of bitmaps of each Screen for documentation purposes
+//#define ENABLE_TFT_CAPTURE  // Comment this line to disable screen capture to SD card
+//=====================================================================================
+
+//=====================================================================================
+// COMPILE-TIME SWITCH to enable redirect of pixel commands of each Screen to a WiFi client
+#define ENABLE_TFT_MIRROR  // Comment this line to disable screen redirect
+#define FRAME_TYPE_RAW  0x00 // Raw frame of 307600 bytes
+#define FRAME_TYPE_RLE  0x01 // Run Length encoding
+#define FRAME_TYPE_LZ4  0x02 // removed this because native JavaScript support limited
+#define FRAME_TYPE_DIF  0x03 // Differential pixel encoding...removed due to complexity
+#define FRAME_TYPE_DEF  0x04 // Deflate compression is a lossless data compression algorithm 
+                             // that combines the LZ77 algorithm and Huffman coding to 
+                             // reduce the size of data. Has Native browser support.
+//=====================================================================================
+
 #include <Arduino.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SPITFT.h>
+#include <gfxfont.h>
+#include <TinyGPS++.h> // http://arduiniana.org/libraries/tinygpsplus/
+#include "TimeLib.h"
+
+// OnStepX
+#include "src/telescope/mount/Mount.h"
+#include "src/lib/commands/CommandErrors.h"
+#include "src/libApp/commands/ProcessCmds.h"
+#include "src/telescope/mount/goto/Goto.h"
+#include "src/telescope/mount/site/Site.h"
+#include "src/lib/tasks/OnTask.h"
+#include "src/libApp/commands/ProcessCmds.h"
+#include "UIelements.h"
+
+class AlignScreen;
+class Catalog;
+class TreasureCatScreen;
+class CustomCatScreen;
+class SHCCatScreen;
+class DCFocuserScreen;
+class GotoScreen;
+class GudideScreen;
+class HomeScreen;
+class MoreScreen;
+class PlanetsScreen;
+class SettingsScreen;
+class ExtStatusScreen;
+class TouchScreen;
+class WifiDisplay;
+
+ #ifdef ODRIVE_MOTOR_PRESENT
+   class ODriveExt;
+   class ODriveScreen;
+ #endif
+
 #include <SD.h>
 #include "src/Common.h"
 #include <XPT2046_Touchscreen.h>
 #include "../Adafruit_ILI9486_Teensy/Adafruit_ILI9486_Teensy.h"
-#include "UIelements.h"
+#include "WifiDisplay.h"
 
 #define TFTWIDTH 320
 #define TFT_HEIGHT 480
@@ -35,7 +89,7 @@
 // Screen Selection buttons
 #define MENU_X              3
 #define MENU_Y             46
-#define MENU_X_SPACING     80
+#define MENU_X_SPACING     81
 #define MENU_Y_SPACING      0
 #define MENU_BOXSIZE_X     72
 #define MENU_BOXSIZE_Y     45
@@ -80,15 +134,10 @@
 #define BATTERY_LOW_VOLTAGE   21.0  
 
 // sound control of both duration and frequency
-#define BEEP tone(STATUS_BUZZER_PIN, 1400UL, 30ULL); // both in milliseconds
-#define ALERT tone(STATUS_BUZZER_PIN, 700UL, 80ULL); // both in milliseconds
+#define BEEP tone(STATUS_BUZZER_PIN, 2000UL, 50ULL); // both in milliseconds
+#define ALERT tone(STATUS_BUZZER_PIN, 2500UL, 200ULL); // both in milliseconds
 
-//========================================================================
-// COMPILE-TIME SWITCH to enable capture of bitmaps of each Screen for documentation purposes
-//#define ENABLE_TFT_CAPTURE  // Comment this line to disable screen capture
-//========================================================================
-
-enum Screen
+enum ScreenEnum
 {
   HOME_SCREEN,     // 0
   GUIDE_SCREEN,    // 1
@@ -117,8 +166,12 @@ enum SelectedCatalog
   CUSTOM,
 };
 
-// Display objects
+// Display object
 extern Adafruit_ILI9486_Teensy tft;
+extern WifiDisplay wifiDisplay;
+
+extern Button menuButton;
+extern CanvasPrint canvDisplayInsPrint;
 
 static XPT2046_Touchscreen ts(TS_CS, TS_IRQ); // Use Interrupts for touchscreen
 static TS_Point p;
@@ -148,26 +201,15 @@ class Display {
     void init();
     void sdInit();
     void refreshButtons();
-    void setCurrentScreen(Screen);
+    void setCurrentScreen(ScreenEnum);
  
   // Local Command Channel support
-    void setLocalCmd(char *command);
-    void setLocalCmd(const char *command);
-    //void getLocalCmd(const char *command, char *reply);
-    void getLocalCmdTrim(const char *command, char *reply);
+    bool commandBool(char *command);
+    bool commandBool(const char *command);
+    void commandWithReply(const char *command, char *reply);
 
   // Colors, Buttons, BitMap printing
-    
-    void drawButton(int x_start, int y_start, int w, int h, bool butOn, int text_x_offset, int text_y_offset, const char* label);
-    
     void drawTitle(int text_x_offset, int text_y_offset, const char* label);
-
-    void canvPrint(int x, int y, int y_off, int width, int height, const char* label);
-    void canvPrint(int x, int y, int y_off, int width, int height, const char* label, uint16_t textColor, uint16_t butBackgnd);
-    void canvPrint(int x, int y, int y_off, int width, int height, double label);
-    void canvPrint(int x, int y, int y_off, int width, int height, double label, uint16_t textColor, uint16_t butBackgnd);
-    void canvPrint(int x, int y, int y_off, int width, int height, int label);
-
     void drawMenuButtons();
     void drawCommonStatusLabels();
     void drawPic(File *StarMaps, uint16_t x, uint16_t y, uint16_t WW, uint16_t HH);
@@ -175,9 +217,8 @@ class Display {
     // Status and updates
     void updateSpecificScreen();
     void updateCommonStatus();  
-    void getOnStepCmdErr();
-    void getOnStepGenErr();
-    //void showTracking();
+    void showOnStepCmdErr();
+    void showOnStepGenErr();
 
     #ifdef ODRIVE_MOTOR_PRESENT
       void showGpsStatus();
@@ -192,18 +233,19 @@ class Display {
     // frequency and duration adjustable tone
     inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration); }
 
-    static Screen currentScreen;
-    static bool _nightMode;
-    static bool _redrawBut;
-    //float previousBatVoltage = 0.7;
+    bool getGeneralErrorMessage(char message[], uint8_t error);
 
+    static ScreenEnum currentScreen;
+    static bool _nightMode;
+    bool _redrawBut = false;
+    bool buttonTouched = false;
+    uint32_t resetHomeStartTime = 0;
+  
     // Default Font Arial 6x8 is NULL
     const GFXfont *default_font = (const GFXfont *)__null;
 
   private:
-    bool getGeneralErrorMessage(char message[]);
-
-    uint8_t _lastError = 0;
+    //uint8_t _lastError = 0;
     char lastCmdErr[4] = "";
     bool firstGPS = true;
     bool firstRTC = true;

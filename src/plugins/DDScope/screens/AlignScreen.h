@@ -5,20 +5,22 @@
 #define ALIGN_S_H
 
 #include <Arduino.h>
-#include "../display/Display.h"
+
+class Display;
 
 //States of the Align State machine
 typedef enum {
     Idle_State,
     Home_State,
+    Wait_For_Home_State,
     Num_Stars_State,
     Select_Catalog_State,
     Wait_Catalog_State,
     Goto_State,
     Wait_For_Slewing_State,
     Sync_State,
-    Write_State,
     Status_State,
+    Write_State,
 } AlignStates;
 
 class AlignScreen : public Display {
@@ -26,7 +28,7 @@ class AlignScreen : public Display {
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
     void updateAlignStatus();
-    void updateAlignButtons(bool);
+    void updateAlignButtons();
     bool alignButStateChange();
 
   private:
@@ -39,7 +41,7 @@ class AlignScreen : public Display {
     void updateGuideButtons();
 
     uint8_t alignCurStar = 0; // current align star number
-    uint8_t numAlignStars = 0; // number of "selected" align stars from buttons 
+    uint8_t numAlignStars = 2; // number of "selected" align stars from buttons 
 
     char numStarsCmd[3];
     char acorr[10];
@@ -48,6 +50,7 @@ class AlignScreen : public Display {
     char maxAlign[30];
     char curAlign[30];
     char lastAlign[30];
+    char alignErr[30];
 
     bool homeBut = false;
     bool catalogBut = false;

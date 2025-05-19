@@ -6,7 +6,7 @@
 #define TREASURE_S_H
 
 #include <Arduino.h>
-#include "../display/Display.h"
+class Display;
 
 #define NUM_CAT_ROWS_PER_SCREEN 16 //(370/CAT_H+CAT_Y_SPACING)
 #define SD_CARD_LINE_LEN       110 // Length of line stored to SD card for Custom Catalog
@@ -17,9 +17,9 @@
 class TreasureCatScreen : public Display {
   public:
     void init();
-    void updateTreasureButtons(bool);
+    void updateTreasureButtons();
     bool touchPoll(uint16_t px, uint16_t py);
-    bool catalogButStateChange();
+    bool trCatalogButStateChange();
     void updateTreasureStatus();
 
   private:  
@@ -45,6 +45,8 @@ class TreasureCatScreen : public Display {
     bool delSelected = false;
     bool objSel = false;
     bool saveTouched = false;
+    bool tEndOfList = false;
+    bool isLastPage = false;
 
     // ======== Arrays ==========
     char       tRaSrCmd[MAX_TREASURE_ROWS][13]; 
@@ -53,18 +55,16 @@ class TreasureCatScreen : public Display {
     char    tDECsddmmss[MAX_TREASURE_ROWS][10];
     char Treasure_Array[MAX_TREASURE_ROWS][SD_CARD_LINE_LEN];
     uint16_t tFiltArray[MAX_TREASURE_ROWS];
-    treasure_t  _tArray[MAX_TREASURE_ROWS];
+    treasure_t  tArray[MAX_TREASURE_ROWS];
     double        dtAlt[MAX_TREASURE_ROWS];
     double        dtAzm[MAX_TREASURE_ROWS];
     uint16_t tPagingArrayIndex[MAX_TREASURE_PAGES];
     char   treaCustWrSD[SD_CARD_LINE_LEN];
 
-    bool tEndOfList = false;
-    bool isLastPage = false;
+    const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
 
-    uint16_t catButDetected;
+    uint16_t trCatButDetected;
     uint16_t catButSelPos = 0;
-
     uint16_t tCurrentPage;
     uint16_t tPrevPage;
     uint16_t returnToPage;
@@ -74,14 +74,14 @@ class TreasureCatScreen : public Display {
     uint16_t curSelTIndex;
     uint16_t tPrevRowIndex;
     
+    uint16_t tAbsIndex;
     uint16_t tAbsRow;
     uint16_t tLastPage;
     uint16_t tRow;
     uint16_t treRowEntries;
     uint16_t tNumRowsLastPage;
     uint16_t tRowsPerPage = 0;
-    
-    const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
+     
 };
 
 extern TreasureCatScreen treasureCatScreen;

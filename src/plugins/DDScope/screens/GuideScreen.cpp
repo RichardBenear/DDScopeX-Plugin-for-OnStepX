@@ -4,12 +4,13 @@
 
 // Author: Richard Benear
 // initial 8/22/21 -- refactor 5/22
-
+#include "../display/Display.h"
 #include "GuideScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
 #include "src/telescope/mount/Mount.h"
 #include "src/telescope/mount/guide/Guide.h"
+#include "../screens/TouchScreen.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "../odriveExt/ODriveExt.h"
@@ -76,8 +77,8 @@ CanvasPrint canvGuideInsPrint(&Inconsolata_Bold8pt7b);
 // Draw the GUIDE Page
 void GuideScreen::draw() { 
   setCurrentScreen(GUIDE_SCREEN);
-  #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(true);
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(true);
   #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
@@ -86,14 +87,17 @@ void GuideScreen::draw() {
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   drawCommonStatusLabels();
-  updateGuideButtons(false);
-  getOnStepCmdErr(); // show error bar
+  updateGuideButtons();
+  //showOnStepCmdErr(); // show error bar
 
   updateCommonStatus();
   showGpsStatus();
   updateGuideStatus();
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(false);
+  wifiDisplay.sendFrameToEsp(FRAME_TYPE_DEF);
+  #endif
   #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(false);
   tft.saveBufferToSD("Guide");
   #endif
 }
@@ -123,20 +127,34 @@ void GuideScreen::updateGuideStatus() {
 }
 
 bool GuideScreen::guideButStateChange() {
+  bool changed = false;
+
   if (preSlewState != mount.isSlewing()) {
     preSlewState = mount.isSlewing(); 
-    return true;
-  } else if (display._redrawBut) {
-    display._redrawBut = false;
-    return true;
-  } else { 
-    return false;
+    changed = true;
   }
+
+  if (display.buttonTouched) {
+    display.buttonTouched = false;
+    if (stopPressed || syncOn) {
+      changed = true;
+    }
+
+    if (oneXisOn || eightXisOn || twentyXisOn || fourtyEightXisOn || HalfMaxisOn) {
+      changed = true;
+    }
+  }
+
+  if (display._redrawBut) {
+    display._redrawBut = false;
+    changed = true;
+  }
+  //Serial.print("changed="); Serial.println(changed);
+  return changed;
 }
 
 // ========== Update Guide Page Buttons ==========
-void GuideScreen::updateGuideButtons(bool redrawBut) {
-  _redrawBut = redrawBut;
+void GuideScreen::updateGuideButtons() {
    tft.setFont(&UbuntuMono_Bold11pt7b); 
 
   if (guidingEast && mount.isSlewing()) { 
@@ -167,11 +185,12 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
     guidingSouth = false;
   }
   
-  if (!syncOn) {
-    guideLargeButton.draw(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "SYNC", BUT_OFF);
-  } else {
+  if (syncOn) {
     guideLargeButton.draw(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "SYNCng", BUT_ON);
     syncOn = false;
+    display._redrawBut = true;
+  } else {
+    guideLargeButton.draw(SYNC_OFFSET_X, SYNC_OFFSET_Y, GUIDE_BOXSIZE_X, GUIDE_BOXSIZE_Y, "SYNC", BUT_OFF); 
   }
   tft.setFont(&Inconsolata_Bold8pt7b); 
 
@@ -200,22 +219,10 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
 
   int x_offset = 0;
   int spacer = GUIDE_R_SPACER;
-  if (halfXisOn) {   
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "0.5x", BUT_ON);
-    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_OFF);
-    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_OFF);
-    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "48x", BUT_OFF);
-    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1/2 Max", BUT_OFF); 
-  } 
-
   if (oneXisOn) {   
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "0.5x", BUT_OFF);
-    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_ON);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "8.0x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
@@ -225,9 +232,21 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
   } 
 
   if (eightXisOn) {   
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "0.5x", BUT_OFF);
-    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, " 8x", BUT_ON);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "48x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1/2 Max", BUT_OFF); 
+  } 
+
+  if (twentyXisOn) {   
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_OFF);
+    x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, " 8x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_ON);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
@@ -236,10 +255,10 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1/2 Max", BUT_OFF); 
   }   
 
-  if (twentyXisOn) {
-   guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "0.5x", BUT_OFF);
+  if (fourtyEightXisOn) {
+   guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
-    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "1.0x", BUT_OFF);
+    guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "8.0x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     guideButton.draw(GUIDE_R_X+x_offset, GUIDE_R_Y, GUIDE_R_BOXSIZE_X, GUIDE_R_BOXSIZE_Y, "20x", BUT_OFF);
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
@@ -269,6 +288,7 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
   if (stopPressed) {  
     guideButton.draw(STOP_X, STOP_Y, STOP_BOXSIZE_X, STOP_BOXSIZE_Y, "Stoppped", BUT_ON); 
     stopPressed = false;
+    display._redrawBut = true;
   } else {
     guideButton.draw(STOP_X, STOP_Y, STOP_BOXSIZE_X, STOP_BOXSIZE_Y, "STOP", BUT_OFF);
   } 
@@ -276,10 +296,11 @@ void GuideScreen::updateGuideButtons(bool redrawBut) {
 
 // Manage Touching of Guiding Buttons
 bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
+  char reply[20];
     // SYNC Button 
     if (py > SYNC_OFFSET_Y && py < (SYNC_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > SYNC_OFFSET_X && px < (SYNC_OFFSET_X + GUIDE_BOXSIZE_X)) { 
       BEEP;           
-        setLocalCmd(":CS#"); // doesn't have reply
+        commandBool(":CS#"); // doesn't have reply
         syncOn = true;
         return true;  
     }
@@ -289,16 +310,16 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
       BEEP; 
       if (!guidingWest) {
         #ifdef EAST_WEST_SWAPPED 
-          setLocalCmd(":Me#");
+          commandWithReply(":Me#", reply);
         #else
-          setLocalCmd(":Mw#");
+          commandWithReply(":Mw#", reply);
         #endif 
         guidingWest = true;
       } else if (!mount.isSlewing() || guidingWest) {
         #ifdef EAST_WEST_SWAPPED 
-          setLocalCmd(":Qe#");
+          commandBool(":Qe#");
         #else
-          setLocalCmd(":Qw#");
+          commandBool(":Qw#");
         #endif
         guidingWest = false;
       }
@@ -310,16 +331,16 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
       BEEP; 
       if (!guidingEast) {
         #ifdef EAST_WEST_SWAPPED 
-          setLocalCmd(":Mw#");
+          commandWithReply(":Mw#", reply);
         #else
-          setLocalCmd(":Me#");
+          commandWithReply(":Me#", reply);
         #endif
         guidingEast = true;
       } else if (!mount.isSlewing() || guidingEast) {
         #ifdef EAST_WEST_SWAPPED 
-          setLocalCmd(":Qw#");
+          commandBool(":Qw#");
         #else
-          setLocalCmd(":Qe#");
+          commandBool(":Qe#");
         #endif
         guidingEast = false;
       }
@@ -330,10 +351,10 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     if (py > UP_OFFSET_Y && py < (UP_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > UP_OFFSET_X && px < (UP_OFFSET_X + GUIDE_BOXSIZE_X)) {
       BEEP; 
       if (!guidingNorth) {
-        setLocalCmd(":Mn#");
+        commandWithReply(":Mn#", reply);
         guidingNorth = true;
       } else if (!mount.isSlewing() || guidingNorth) {
-        setLocalCmd(":Qn#");
+        commandBool(":Qn#");
         guidingNorth = false;
       }
       return true;
@@ -343,10 +364,10 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     if (py > DOWN_OFFSET_Y && py < (DOWN_OFFSET_Y + GUIDE_BOXSIZE_Y) && px > DOWN_OFFSET_X && px < (DOWN_OFFSET_X + GUIDE_BOXSIZE_X)) {
       BEEP; 
       if (!guidingSouth) {
-        setLocalCmd(":Ms#");
+        commandWithReply(":Ms#", reply);
         guidingSouth = true;
       } else if (!mount.isSlewing() || guidingSouth) {
-        setLocalCmd(":Qs#");
+        commandBool(":Qs#");
         guidingSouth = false;
       }
       return true;
@@ -363,27 +384,27 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     int x_offset = 0;  
     int spacer = GUIDE_R_SPACER;
     
-    // .5x Guide Rate 
+    // 1x Guide Rate 
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":R1#");
-        halfXisOn = true;
-        oneXisOn = false;
+        commandBool(":R2#");
+        oneXisOn = true;
         eightXisOn = false;
         twentyXisOn = false;
+        fourtyEightXisOn = false;
         HalfMaxisOn = false;
         return true;
     }
 
-    // 1x Guide Rate 
+    // 8x Guide Rate 
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":R2#");
-        halfXisOn = false;
-        oneXisOn = true;
-        eightXisOn = false;
+        commandBool(":R5#");
+        oneXisOn = false;
+        eightXisOn = true;
         twentyXisOn = false;
+        fourtyEightXisOn = false;
         HalfMaxisOn = false;
         return true;
     }
@@ -392,11 +413,11 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":R6#");
-        halfXisOn = false;
+        commandBool(":R6#");
         oneXisOn = false;
-        eightXisOn = true;
-        twentyXisOn = false;
+        eightXisOn = false;
+        twentyXisOn = true;
+        fourtyEightXisOn = false;
         HalfMaxisOn = false;
         return true;
     }
@@ -405,11 +426,11 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":R7#");
-        halfXisOn = false;
+        commandBool(":R7#");
         oneXisOn = false;
         eightXisOn = false;
-        twentyXisOn = true;
+        twentyXisOn = false;
+        fourtyEightXisOn = true;
         HalfMaxisOn = false;
         return true;
     }
@@ -418,11 +439,11 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     x_offset = x_offset + GUIDE_R_BOXSIZE_X+spacer;
     if (py > GUIDE_R_Y+y_offset && py < (GUIDE_R_Y+y_offset + GUIDE_R_BOXSIZE_Y) && px > GUIDE_R_X+x_offset && px < (GUIDE_R_X+x_offset + GUIDE_R_BOXSIZE_X)) {
       BEEP;
-        setLocalCmd(":R8#");
-        halfXisOn = false;
+        commandBool(":R8#");
         oneXisOn = false;
         eightXisOn = false;
         twentyXisOn = false;
+        fourtyEightXisOn = false;
         HalfMaxisOn = true;
         return true;
     }
@@ -431,10 +452,10 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     if (py > SPIRAL_Y && py < (SPIRAL_Y + SPIRAL_BOXSIZE_Y) && px > SPIRAL_X && px < (SPIRAL_X + SPIRAL_BOXSIZE_X)) {
       BEEP;
         if (!spiralOn) {
-            setLocalCmd(":Mp#");
+            commandBool(":Mp#");
             spiralOn = true;
         } else {
-            setLocalCmd(":Q#"); // stop moves
+            commandBool(":Q#"); // stop moves
             spiralOn = false;
         }
         return true;
@@ -442,13 +463,13 @@ bool GuideScreen::touchPoll(uint16_t px, uint16_t py) {
     
     // STOP moving
     if (py > STOP_Y && py < (STOP_Y + STOP_BOXSIZE_Y) && px > STOP_X && px < (STOP_X + STOP_BOXSIZE_X)) {
-      BEEP;
-        setLocalCmd(":Q#");
+      ALERT;
+        commandBool(":Q#");
         digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
         //axis1.enable(false);
         digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
         //axis2.enable(false);
-        //setLocalCmd(":Td#"); // Disable Tracking
+        //commandBool(":Td#"); // Disable Tracking
         
         stopPressed = true;
         spiralOn = false;

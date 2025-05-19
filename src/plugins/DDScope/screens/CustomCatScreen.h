@@ -5,30 +5,27 @@
 #define CUSTOM_S_H
 
 #include <Arduino.h>
-#include "../display/Display.h"
+#include "CatalogDefs.h"
 
-#define SD_CARD_LINE_LEN       110 // Length of line stored to SD card for Custom Catalog
-#define NUM_CUS_ROWS_PER_SCREEN 14 //(370/CUS_H+CUS_Y_SPACING)
-#define MAX_CUSTOM_PAGES        10 // 10 user pages should be enough
-#define MAX_CUSTOM_ROWS         MAX_CUSTOM_PAGES*NUM_CUS_ROWS_PER_SCREEN // this is arbitrary selection..could be more if needed
+class Display;
+class MoreScreen;
 
 typedef struct {
   char* cObjName;
-  char* cRAhhmmss;
-  char* cDECsddmmss;
+  char* cMag;
   char* cCons;
   char* cObjType;
-  char* cMag;
-  char* cSize;
   char* cSubId;
+  char* cRAhhmmss;
+  char* cDECsddmmss;
 } custom_t; 
 
 class CustomCatScreen : public Display {
   public:
     void init();
-    void updateCustomButtons(bool);
+    void updateCustomButtons();
     bool touchPoll(uint16_t px, uint16_t py);
-    bool catalogButStateChange();
+    bool cusCatalogButStateChange();
     void updateCustomStatus();
 
   private:
@@ -38,46 +35,35 @@ class CustomCatScreen : public Display {
     bool loadCustomArray();
     void parseCcatIntoArray();
     void drawCustomCat();
+    void deleteRow();
+    void drawPageData(uint8_t startAbsIndex);
 
     bool delSelected = false;
+    bool buttonDetected = false;
+    bool endOfList = false;
+    bool isLastPage = false;
     bool objSel = false;
 
-    bool customCatalog;
-    bool cEndOfList;
-    bool isLastPage = false;
-    bool customItemSelected;
+    uint8_t buttonSelected = 0;
+    uint8_t totalNumRows = 0;
+    uint8_t rowIndex = 0;
+    uint8_t relIndex = 0;
+    uint8_t absIndex = 0;
+    uint8_t prevAbsIndex = 0;
+    uint8_t prevRelIndex = 0;
 
-    uint16_t catButDetected;
-    uint16_t catButSelPos = 0;
-    uint16_t returnToPage;
+    // Paging
+    uint8_t currentPageNum = 0;
+    uint8_t prevPageNum = 0;
+    uint8_t returnToPage = 0;
+    uint8_t lastPageNum = 0;
+    uint8_t numRowsLastPage = 0;
+    uint8_t rowsThisPage = 0;
 
-    uint16_t pre_cAbsIndex;
-    uint16_t pre_cRelIndex;
-    uint16_t curSelCIndex;
-    uint16_t cPrevRowIndex;
-
-    uint16_t cCurrentPage;
-    uint16_t cPrevPage;
-    uint16_t cLastPage;
-
-    uint16_t cAbsRow;
-    uint16_t cRow;
-    uint16_t cusRowEntries;
-    uint16_t cNumRowsLastPage;
-    uint16_t cRowsPerPage = 0;
-
-    char          Custom_Array[MAX_CUSTOM_ROWS][SD_CARD_LINE_LEN];
-    char     Copy_Custom_Array[MAX_CUSTOM_ROWS][SD_CARD_LINE_LEN]; // save a copy for row deletion purposes
-    char              cRaSrCmd[MAX_CUSTOM_ROWS][18]; 
-    char             cDecSrCmd[MAX_CUSTOM_ROWS][18];
-    uint16_t        cFiltArray[MAX_CUSTOM_ROWS];
-    uint16_t cPagingArrayIndex[MAX_CUSTOM_PAGES];
-   
-    double dcAlt[MAX_CUSTOM_ROWS];
-    double dcAzm[MAX_CUSTOM_ROWS];
     const char *activeFilterStr[3] = {"Filt: None", "Filt: Abv Hor", "Filt: All Sky"};
 };
 
+extern custom_t cArray[MAX_CUSTOM_CATALOG_ROWS];
 extern CustomCatScreen customCatScreen;
 
 #endif

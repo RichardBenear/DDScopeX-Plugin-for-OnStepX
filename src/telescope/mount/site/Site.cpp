@@ -21,6 +21,18 @@ IRAM_ATTR void clockTickWrapper() { fracLAST++; }
 #define fsToDays(x)  ((x)/(86400.0*FRACTIONAL_SEC))
 #define daysToFs(x)  ((x)*(86400.0*FRACTIONAL_SEC))
 
+// update/apply the site latitude and longitude, necessary for LAST calculations etc.
+void Site::updateLocation() {
+  locationEx.latitude.cosine = cos(location.latitude);
+  locationEx.latitude.sine   = sin(location.latitude);
+  locationEx.latitude.absval = fabs(location.latitude);
+  if (location.latitude >= 0.0) locationEx.latitude.sign = 1.0; else locationEx.latitude.sign = -1.0;
+
+  // same date and time, just calculates the sidereal time again
+  ut1.hour = getTime();
+  setSiderealTime(ut1);
+}
+
 #if TIME_LOCATION_SOURCE == GPS
   void gpsCheck() {
     if (tls.isReady()) {
@@ -47,7 +59,7 @@ IRAM_ATTR void clockTickWrapper() { fracLAST++; }
 
       VLF("MSG: Mount, stopping GPS monitor task");
       tasks.setDurationComplete(tasks.getHandleByName("gpsChk"));
-    } else
+    } else 
 
     if ((long)(millis() - site.updateTimeoutTime) > 0) {
       VLF("MSG: Mount, GPS timed out stopping monitor task");
@@ -129,7 +141,6 @@ void Site::init() {
   setSiderealTime(ut1);
 
   VF("MSG: Mount, site start sidereal timer task (rate 10ms priority 0)... ");
-  //delay(1000);
   // period ms (0=idle), duration ms (0=forever), repeat, priority (highest 0..7 lowest), task_handle
   handle = tasks.add(0, 0, true, 0, clockTickWrapper, "ClkTick");
   if (handle) {
@@ -142,18 +153,6 @@ void Site::init() {
   #if TIME_LOCATION_PPS_SENSE != OFF
     pps.init();
   #endif
-}
-
-// update/apply the site latitude and longitude, necessary for LAST calculations etc.
-void Site::updateLocation() {
-  locationEx.latitude.cosine = cos(location.latitude);
-  locationEx.latitude.sine   = sin(location.latitude);
-  locationEx.latitude.absval = fabs(location.latitude);
-  if (location.latitude >= 0.0) locationEx.latitude.sign = 1.0; else locationEx.latitude.sign = -1.0;
-
-  // same date and time, just calculates the sidereal time again
-  ut1.hour = getTime();
-  setSiderealTime(ut1);
 }
 
 // update the TLS 

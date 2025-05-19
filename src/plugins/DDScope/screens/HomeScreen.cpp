@@ -2,12 +2,14 @@
 // HomeScreen.cpp
 //
 // Author: Richard Benear 3/20/21
-
+#include "../display/Display.h"
 #include "HomeScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
 #include "src/lib/tasks/OnTask.h"
 #include "src/lib/axis/Axis.h"
+#include "../display/UsbBridge.h"
+#include "TouchScreen.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "../odriveExt/ODriveExt.h"
@@ -78,17 +80,20 @@
 //#define COL_1_ROW_8_C_STR ":GX9D#" // altitiude
 
 // Column One Status strings
-static const char colOneStatusStr[COL_1_NUM_ROWS][12] = {
+//static const char colOneStatusStr[COL_1_NUM_ROWS][12] = {
+const char colOneStatusStr[COL_1_NUM_ROWS][12] = {
   COL_1_ROW_1_S_STR, COL_1_ROW_2_S_STR, COL_1_ROW_3_S_STR, COL_1_ROW_4_S_STR,
   COL_1_ROW_5_S_STR, COL_1_ROW_6_S_STR, COL_1_ROW_7_S_STR};
 
 // Column Two Status strings
-static const char colTwoStatusStr[COL_2_NUM_ROWS][14] = {
+//static const char colTwoStatusStr[COL_2_NUM_ROWS][14] = {
+const char colTwoStatusStr[COL_2_NUM_ROWS][14] = {
   COL_2_ROW_1_S_STR, COL_2_ROW_2_S_STR, COL_2_ROW_3_S_STR, COL_2_ROW_4_S_STR,
   COL_2_ROW_5_S_STR, COL_2_ROW_6_S_STR};
 
 // Column One Status commands
-static const char colOneCmdStr[COL_1_NUM_ROWS][8] = {
+//static const char colOneCmdStr[COL_1_NUM_ROWS][8] = {
+const char colOneCmdStr[COL_1_NUM_ROWS][8] = {
   COL_1_ROW_1_C_STR, COL_1_ROW_2_C_STR, COL_1_ROW_3_C_STR, COL_1_ROW_4_C_STR,
   COL_1_ROW_5_C_STR, COL_1_ROW_6_C_STR, COL_1_ROW_7_C_STR};
 
@@ -104,15 +109,15 @@ CanvasPrint canvHomeInsPrint(&Inconsolata_Bold8pt7b);
 // ======= Draw Initial content of HOME PAGE =====
 // ===============================================
 void HomeScreen::draw() {
-  #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(true);
+  setCurrentScreen(HOME_SCREEN);
+
+  #ifdef ENABLE_TFT_MIRROR
+    wifiDisplay.enableScreenCapture(true);
   #endif
   
-  setCurrentScreen(HOME_SCREEN);
   tft.setTextSize(1);
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
-  
   drawTitle(48, TITLE_TEXT_Y, "Direct-Drive Scope");
   tft.setFont(&Inconsolata_Bold8pt7b);
   tft.drawFastVLine(TFTWIDTH/2, 172, 141, textColor);
@@ -142,15 +147,19 @@ void HomeScreen::draw() {
   drawMenuButtons();
   
   // draw and initialize buttons, labels, and status upon entry to this screen
-  updateHomeButtons(false);
+  updateHomeButtons();
   drawCommonStatusLabels();
-  getOnStepCmdErr(); // show error bar
-  getOnStepGenErr(); // and the next one
+  //showOnStepCmdErr(); // show error bar
+  //getOnStepGenErr(); // and the next one
   updateHomeStatus();
   updateCommonStatus();
   showGpsStatus();
+  
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(false); // stop first
+  wifiDisplay.sendFrameToEsp(FRAME_TYPE_DEF);
+  #endif
   #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(false);
   tft.saveBufferToSD("Home");
   #endif
 }
@@ -171,7 +180,7 @@ void HomeScreen::updateHomeStatus() {
 
   // Loop through Column 1 poll updates
   for (int i=0; i<COL_1_NUM_ROWS; i++) {
-    getLocalCmdTrim(colOneCmdStr[i], xchReply); 
+    commandWithReply(colOneCmdStr[i], xchReply); 
 
     if (i == (int)4) { // handle special case....convert C to F
       double tempF = ((atof(xchReply)*9)/5) + 32;
@@ -186,7 +195,7 @@ void HomeScreen::updateHomeStatus() {
     y_offset +=COL1_LABEL_SPACING;
   }
 
-  tasks.yield(70); // this yield() is required or lockup happen
+  //tasks.yield(70); // this yield() is required or lockup happen
 
   // Column 2 poll updates
   int bitmap_width_sub = 30;
@@ -272,38 +281,62 @@ void HomeScreen::updateHomeStatus() {
 }
 
 bool HomeScreen::homeButStateChange() {
+  
+  bool changed = false;
+
   if (preAzmState != axis1.isEnabled()) {
-    preAzmState = axis1.isEnabled(); 
-    return true; 
-  } else if (preAltState != axis2.isEnabled()) {
-    preAltState = axis2.isEnabled(); 
-    return true; 
-  } else if (preTrackState != mount.isTracking()) {
-    preTrackState = mount.isTracking(); 
-    return true;
-  } else if (preSlewState != mount.isSlewing()) {
-    preSlewState = mount.isSlewing(); 
-    return true;
-  } else if (preHomeState != mount.isHome()) {
-    preHomeState = mount.isHome(); 
-    return true;
-  } else if (preParkState != park.state) {
-    preParkState = park.state; 
-    return true;
-  } else if (display._redrawBut) {
-    display._redrawBut = false;
-    return true;
-  } else {
-    return false;
+    preAzmState = axis1.isEnabled();
+    changed = true;
   }
+
+  if (preAltState != axis2.isEnabled()) {
+    preAltState = axis2.isEnabled();
+    changed = true;
+  }
+
+  if (preTrackState != mount.isTracking()) {
+    preTrackState = mount.isTracking();
+    changed = true;
+  }
+
+  if (preSlewState != mount.isSlewing()) {
+    preSlewState = mount.isSlewing();
+    changed = true;
+  }
+
+  if (preHomeState != mount.isHome()) {
+    preHomeState = mount.isHome();
+    changed = true;
+  }
+
+  if (preParkState != park.state) {
+    preParkState = park.state;
+    changed = true;
+  }
+  
+  if (display.buttonTouched) {
+    display.buttonTouched = false;
+    if (resetHome || stopButton || parkWasSet) {
+      changed = true;
+    }
+  }
+
+  // forces one more redraw of buttons if true
+  if (display._redrawBut) {
+    display._redrawBut = false;
+    changed = true;
+  }
+  
+  return changed;
 }
 
 // ===============================================
 // ============ Update Home Buttons ==============
 // ===============================================
-void HomeScreen::updateHomeButtons(bool redrawBut) {
-  // redrawBut when true forces a refresh of all buttons once more..used for a toggle effect on some buttons
-  _redrawBut = redrawBut;
+// This function gets called on inital draw and only after a Touchscreen event with state change
+// to prevent TFT display "flickering"
+void HomeScreen::updateHomeButtons() {
+  
   int y_offset = 0;
   //VLF("updating Home Buttons");
   // ============== Column 1 ===============
@@ -329,10 +362,11 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
   // Stop all movement
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (stopButton) {
-    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "All Stopped", BUT_ON);
     stopButton = false;
+    display._redrawBut = true;
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "All Stopped", BUT_ON);
   } else { 
-    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "STOP!", BUT_OFF);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "STOP", BUT_OFF);
   }
 
   // ============== Column 2 ===============
@@ -343,23 +377,24 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
   } else if(mount.isTracking()) { 
     homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Tracking", BUT_ON);
   }
-
+  
   // Reset Home Telescope
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (resetHome) {
-    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Resetting", BUT_ON);  
-    resetHome = false;      
+     resetHome = false;
+     display._redrawBut = true;
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Resetting", BUT_ON);     
   } else {
     homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Reset Home", BUT_OFF);
   }  
   
   // Find Home Telescope
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
-  if (mount.isSlewing()) {
-    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Slewing", BUT_ON);
-  } else if (mount.isHome()) {
+  if (mount.isHome()) {
     homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "At Home", BUT_ON);
     gotoHome = false;             
+  } else if (mount.isSlewing()) {
+    homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Slewing", BUT_ON);
   } else {
     homeButton.draw(ACTION_COL_2_X, ACTION_COL_2_Y + y_offset, "Go Home", BUT_OFF);
   }  
@@ -393,6 +428,7 @@ void HomeScreen::updateHomeButtons(bool redrawBut) {
   if (parkWasSet) {
     homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "ParkIsSet", true);
     parkWasSet = false;
+    display._redrawBut = true;
   } else {
     homeButton.draw(ACTION_COL_3_X, ACTION_COL_3_Y + y_offset, "Set Park", BUT_OFF);
   }
@@ -414,7 +450,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     } else { // since already ON, toggle OFF
       axis1.enable(false);
     }
-    return false;
+    return true;
   }
             
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
@@ -426,21 +462,21 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     } else { // toggle OFF
       axis2.enable(false); // Idle the ODrive motor
     }
-    return false;
+    return true;
   }
 
   // STOP everthing requested
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_1_X && px < ACTION_COL_1_X + ACTION_BOXSIZE_X && py > ACTION_COL_1_Y + y_offset && py <  ACTION_COL_1_Y + y_offset + ACTION_BOXSIZE_Y) {
-    BEEP;
+    ALERT;
     if (!stopButton) {
-      setLocalCmd(":Q#");
+      commandBool(":Q#");
       stopButton = true;
       digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
       axis1.enable(false);
       digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
       axis2.enable(false);
-      setLocalCmd(":Td#"); // Disable Tracking
+      commandBool(":Td#"); // Disable Tracking
     }
     return true;
   }
@@ -451,12 +487,12 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     if (!mount.isTracking()) {
-      setLocalCmd(":Te#"); // Enable Tracking
+      commandBool(":Te#"); // Enable Tracking
     } else {
       // disabling Tracking does not disable motors so leave motor power flags ON
-      setLocalCmd(":Td#"); // Disable Tracking
+      commandBool(":Td#"); // Disable Tracking
     }
-    return false; 
+    return true; 
   }
 
   // Reset Home Telescope 
@@ -465,7 +501,7 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     BEEP;
     _oDriveDriver->SetPosition(0, 0.0);
     _oDriveDriver->SetPosition(1, 0.0);
-    setLocalCmd(":hF#"); // home Reset
+    commandBool(":hF#"); // home Reset
     resetHome = true;
     return true;
   }
@@ -474,7 +510,12 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    setLocalCmd(":hC#"); // go home
+    // Set the Target
+    //  :Sa[sDD*MM]# or :Sa[sDD*MM'SS]# or :Sa[sDD*MM'SS.SSS]#
+    //  :Sz[DDD*MM]# or :Sz[DDD*MM'SS]# or :Sz[DDD*MM'SS.SSS]#
+    //commandBool(":Sz00:00:01#");
+    //commandBool(":Sa+00:00:01#"); 
+    commandBool(":hC#"); // go home
     gotoHome = true;
     return true;
   }
@@ -501,18 +542,18 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     BEEP;
     // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING}
     if (park.state == PS_UNPARKED) {
-      setLocalCmd(":hP#"); // go Park
+      commandBool(":hP#"); // go Park
     } else if (park.state == PS_PARKED) { // only unpark if already parked
-      setLocalCmd(":hR#"); // Un park position
+      commandBool(":hR#"); // Un park position
     }
-    return false;
+    return true;
   }
 
   // Set Park Position to Current
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    setLocalCmd(":hQ#"); // Set Park Position
+    commandBool(":hQ#"); // Set Park Position
     parkWasSet = true;
     return true;
   }
@@ -530,10 +571,9 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
     return false;
   }
 
-  // Check emergeyncy ABORT button area
+  // Check emergency ABORT button area in upper right of screen
   display.motorsOff(px, py);
-  
   return false;
 }
 
-HomeScreen homeScreen;
+HomeScreen homeScreen; 

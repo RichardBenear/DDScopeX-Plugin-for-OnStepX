@@ -6,14 +6,15 @@
 
 #include <Arduino.h>
 #include <Ephemeris.h>
-#include "../display/Display.h"
+
+class Display;
 
 class PlanetsScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
     void updatePlanetsStatus();
-    void updatePlanetsButtons(bool);
+    void updatePlanetsButtons();
     bool planetsButStateChange();
 
   private:
@@ -38,8 +39,8 @@ class PlanetsScreen : public Display {
     //Neptune    = 8,
     //EarthsMoon = 9
     char planetSelectionStr[9];
-    bool planetButDetected;
-    int planetButSelPos;
+    bool planetButDetected = false;
+    int planetButSelPos = 4; // default to Mars
     int planetPrevSel;
     int utc;
 };

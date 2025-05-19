@@ -107,11 +107,11 @@ void CanvasPrint::printRJ(int x, int y, uint16_t width, uint16_t height, const c
   } else {
     y_box_offset = 10; // custom font offset
   }
-  GFXcanvas1 canvas(width, height);
+  GFXcanvas1 canvas(width, height); // creates buffer
   canvas.setFont(c_font); 
   canvas.setCursor(0, (height-y_box_offset)/2 + y_box_offset); // offset from top left corner of canvas box
   sprintf(ch_label, "%9s", c_label);
-  canvas.print(ch_label);
+  canvas.print(ch_label); // print to buffer
   if (warning) { // show warning background
     tft.drawBitmap(x, y - y_box_offset, canvas.getBuffer(), width, height, textColor, butOnBackground);
   } else {

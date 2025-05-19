@@ -2,7 +2,7 @@
 // GotoScreen.cpp
 //
 // Author: Richard Benear 2021
-
+#include "../display/Display.h"
 #include "GotoScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "../fonts/UbuntuMono_Bold11pt7b.h"
@@ -95,8 +95,8 @@ char numLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", 
 // Draw the Go To Page
 void GotoScreen::draw() {
   setCurrentScreen(GOTO_SCREEN);
-  #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(true);
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(true);
   #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
@@ -105,8 +105,8 @@ void GotoScreen::draw() {
   tft.setFont(&Inconsolata_Bold8pt7b);
 
   drawCommonStatusLabels();
-  updateGotoButtons(false);
-  getOnStepCmdErr(); // show error bar
+  updateGotoButtons();
+  //showOnStepCmdErr(); // show error bar
 
   RAtextIndex = 0; 
   DECtextIndex = 0; 
@@ -137,15 +137,18 @@ void GotoScreen::draw() {
   
   updateCommonStatus();
   showGpsStatus();
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(false);
+  wifiDisplay.sendFrameToEsp(FRAME_TYPE_DEF);
+  #endif
   #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(false);
   tft.saveBufferToSD("Goto");
   #endif
 } // end initialize
 
 // task update for this screen
 void GotoScreen::updateGotoStatus() {
-  
+  //
 }
 
 // assign label to pressed button field
@@ -172,20 +175,34 @@ void GotoScreen::processNumPadButton() {
 }
 
 bool GotoScreen::gotoButStateChange() {
+  bool changed = false;
+
   if (preSlewState != mount.isSlewing()) {
     preSlewState = mount.isSlewing(); 
-    return true;
-  } else if (display._redrawBut) {
-    display._redrawBut = false;
-    return true;
-  } else { 
-    return false;
+    changed = true;
   }
+  
+  if (display.buttonTouched) {
+    display.buttonTouched = false;
+    if (abortPgBut || setPolOn || sendOn || DECclear || RAclear) {
+      changed = true;
+    }
+
+    if (RAselect || DECselect){
+      changed = true;
+    }
+  }
+  
+  if (display._redrawBut) {
+    display._redrawBut = false;
+    changed = true;
+  }
+
+  return changed;
 }
 
 // ==== Update any changing Status for GO TO Page ====
-void GotoScreen::updateGotoButtons(bool redrawBut) {
-  _redrawBut = redrawBut;
+void GotoScreen::updateGotoButtons() {
     
   // Get button and print label
   switch (buttonPosition) {
@@ -201,6 +218,7 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
     case 9:  processNumPadButton(); break;
     case 10: processNumPadButton(); break;
     case 11: processNumPadButton(); break;
+    display._redrawBut = true;
     default: break;
   }
 
@@ -220,6 +238,7 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
     RAtextIndex = 0;
     buttonPosition = 12;
     RAclear = false;
+    display._redrawBut = true;
   } else {
     gotoButton.draw(RA_CLEAR_X,   RA_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "RaClr", BUT_OFF);
   }
@@ -240,6 +259,7 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
     DECtextIndex = 0;
     buttonPosition = 12;
     DECclear = false;
+    display._redrawBut = true;
   } else {
     gotoButton.draw(DEC_CLEAR_X,  DEC_CLEAR_Y, CO_BOXSIZE_X, CO_BOXSIZE_Y, "DeClr", BUT_OFF);
   }
@@ -247,16 +267,17 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
   // Send Coordinates Button
   if (sendOn) {
     gotoButton.draw(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, "Sent", BUT_ON);
-    sendOn = false; 
+    sendOn = false;
+    display._redrawBut = true; 
   } else {
     gotoButton.draw(SEND_BUTTON_X, SEND_BUTTON_Y, SEND_BOXSIZE_X, SEND_BOXSIZE_Y, "Send", BUT_OFF);
   }
 
   // Slew Rate Button
   char temp[16]="";
-  getLocalCmdTrim(":GX92#", cRate); // get current rate 
+  commandWithReply(":GX92#", cRate); // get current rate 
   cRateF = atol(cRate);
-  getLocalCmdTrim(":GX93#", bRate); // get base rate
+  commandWithReply(":GX93#", bRate); // get base rate
   bRateF = atol(bRate);
   rateRatio = bRateF/cRateF;
   rateRatio = roundf(rateRatio * 100) / 100; // get rid of extra digits
@@ -266,7 +287,8 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
   // Quick Set Polaris Target Button
   if (setPolOn) {
     gotoButton.draw(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, "Setting", BUT_ON);
-    setPolOn = false; 
+    setPolOn = false;
+    display._redrawBut = true; 
   } else {
     gotoButton.draw(POL_BUTTON_X, POL_BUTTON_Y, POL_BOXSIZE_X, POL_BOXSIZE_Y, "Set Polaris", BUT_OFF);
   }
@@ -286,6 +308,7 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
   if (abortPgBut) {
     gotoLargeButton.draw(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Stopping", BUT_ON);
     abortPgBut = false;
+    display._redrawBut = true;
   } else {
     gotoLargeButton.draw(ABORT_BUTTON_X, ABORT_BUTTON_Y, GOTO_BOXSIZE_X, GOTO_BOXSIZE_Y, "Stop", BUT_OFF);
   }
@@ -294,7 +317,7 @@ void GotoScreen::updateGotoButtons(bool redrawBut) {
 
 // ==== TouchScreen was touched, determine which button ====
 bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
-  char cmd[14] = "";
+  char temp[14] = "";
 
   //were number Pad buttons pressed?
   for(int i=0; i<4; i++) { 
@@ -357,12 +380,12 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
     
     if (RAselect) {
       //:Sr[HH:MM.T]# or :Sr[HH:MM:SS]# 
-      sprintf(cmd, ":Sr%c%c:%c%c:%c%c#", RAtext[0], RAtext[1], RAtext[2], RAtext[3], RAtext[4], RAtext[5]);
-      setLocalCmd(cmd);
+      sprintf(temp, ":Sr%c%c:%c%c:%c%c#", RAtext[0], RAtext[1], RAtext[2], RAtext[3], RAtext[4], RAtext[5]);
+      commandBool(temp);
     } else if (DECselect) {
       //:Sd[sDD*MM]# or :Sd[sDD*MM:SS]# 
-      sprintf(cmd, ":Sd%c%c%c:%c%c:%c%c#", DECtext[0], DECtext[1], DECtext[2], DECtext[3], DECtext[4], DECtext[5], DECtext[6]);
-      setLocalCmd(cmd);
+      sprintf(temp, ":Sd%c%c%c:%c%c:%c%c#", DECtext[0], DECtext[1], DECtext[2], DECtext[3], DECtext[4], DECtext[5], DECtext[6]);
+      commandBool(temp);
     }
     return true;
   }
@@ -379,17 +402,17 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
   if (py > GOTO_BUTTON_Y && py < (GOTO_BUTTON_Y + GOTO_BOXSIZE_Y) && px > GOTO_BUTTON_X && px < (GOTO_BUTTON_X + GOTO_BOXSIZE_X)) {
     BEEP;
     goToButton = true;
-    setLocalCmd(":Te#"); // Enable Tracking
-    getLocalCmdTrim(":MS#", cmd);
+    commandBool(":Te#"); // Enable Tracking
+    commandWithReply(":MS#", temp);
     return true;
   }
 
   // ==== ABORT GOTO ====
   // If tracking, will continue to track
   if (py > ABORT_BUTTON_Y && py < (ABORT_BUTTON_Y + GOTO_BOXSIZE_Y) && px > ABORT_BUTTON_X && px < (ABORT_BUTTON_X + GOTO_BOXSIZE_X)) {
-    BEEP;
+    ALERT;
     abortPgBut = true;
-    setLocalCmd(":Q#"); // stops move
+    commandBool(":Q#"); // stops move
     digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZM LED
     digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn Off ALT LED
     return true;
@@ -398,11 +421,11 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
   // SLew Rate Button, circular selection each button press (.5X, 1X, 2X) - default 1X
   if (py > SLEW_R_BUTTON_Y && py < (SLEW_R_BUTTON_Y + SLEW_R_BOXSIZE_Y) && px > SLEW_R_BUTTON_X && px < (SLEW_R_BUTTON_X + SLEW_R_BOXSIZE_X)) {
     BEEP;
-    if      (rateRatio >= 0.86F && rateRatio <= 1.35F) {setLocalCmd(":SX93,2#"); return true;} // if 1 then 1.5
-    else if (rateRatio >= 1.36F && rateRatio <= 1.75F) {setLocalCmd(":SX93,1#"); return true;} // if 1.5 then 2.0
-    else if (rateRatio >= 1.76F && rateRatio <= 2.35F) {setLocalCmd(":SX93,5#"); return true;} // if 2.0 then 0.5
-    else if (rateRatio >= 0.30F && rateRatio <= 0.65F) {setLocalCmd(":SX93,4#"); return true;} // if 0.5 then 0.75
-    else if (rateRatio >= 0.66F && rateRatio <= 0.85F) {setLocalCmd(":SX93,3#"); return true;} // if 0.75 then 1.00
+    if      (rateRatio >= 0.86F && rateRatio <= 1.35F) {commandBool(":SX93,2#"); return true;} // if 1 then 1.5
+    else if (rateRatio >= 1.36F && rateRatio <= 1.75F) {commandBool(":SX93,1#"); return true;} // if 1.5 then 2.0
+    else if (rateRatio >= 1.76F && rateRatio <= 2.35F) {commandBool(":SX93,5#"); return true;} // if 2.0 then 0.5
+    else if (rateRatio >= 0.30F && rateRatio <= 0.65F) {commandBool(":SX93,4#"); return true;} // if 0.5 then 0.75
+    else if (rateRatio >= 0.66F && rateRatio <= 0.85F) {commandBool(":SX93,3#"); return true;} // if 0.75 then 1.00
     else return false; 
   }
 
@@ -415,8 +438,8 @@ bool GotoScreen::touchPoll(uint16_t px, uint16_t py) {
  // Quick set the target to Polaris
 void GotoScreen::setTargPolaris() {
   // Polaris location RA=02:31:49.09, Dec=+89:15:50.8 (2.5303, 89.2641)
-  setLocalCmd(":Sr02:31:49#");
-  setLocalCmd(":Sd+89:15:50#"); 
+  commandBool(":Sr02:31:49#");
+  commandBool(":Sd+89:15:50#"); 
 }
 
 GotoScreen gotoScreen;

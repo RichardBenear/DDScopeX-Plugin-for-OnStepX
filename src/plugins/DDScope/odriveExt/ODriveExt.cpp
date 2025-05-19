@@ -7,6 +7,7 @@
 // ODrive communication via Teensy 4.0 serial
 // Uses GitHub ODrive Arduino library
 
+#include "../display/Display.h"
 #include "ODriveExt.h"
 #include "src/lib/axis/motor/oDrive/ODrive.h"
 #include "../../../telescope/mount/Mount.h"
@@ -209,15 +210,15 @@ void ODriveExt::MotorEncoderDelta() {
   if (axis1.isEnabled()) {
     float AZposDelta = getMotorPositionDelta(AZM_MOTOR);
     if (AZposDelta > 0.0020 && AZposDelta < 0.03) 
-      soundFreq(800, 45);
-    else if (AZposDelta > 0.03) soundFreq(2000, 45); // saturated
+      display.soundFreq(1700, 65);
+    else if (AZposDelta > 0.03) display.soundFreq(1800, 65); // saturated
   }
   
   if (axis2.isEnabled()) {
     float ALTposDelta = getMotorPositionDelta(ALT_MOTOR);
     if (ALTposDelta > .0050 && ALTposDelta < 0.03) {
-      soundFreq(1000, 65);
-    } else if (ALTposDelta > 0.03) soundFreq(2500, 45); 
+      display.soundFreq(1500, 35);
+    } else if (ALTposDelta > 0.03) display.soundFreq(1600, 35); 
   }
 }
 

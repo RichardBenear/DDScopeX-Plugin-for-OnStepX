@@ -2,7 +2,7 @@
 // SettingsScreen.cpp
 
 // Author: Richard Benear 2/13/22
-
+#include "../display/Display.h"
 #include "SettingsScreen.h"
 #include "../catalog/Catalog.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
@@ -91,8 +91,8 @@ CanvasPrint canvSettingsInsPrint(&Inconsolata_Bold8pt7b);
 // ===== Draw the SETTINGS Page =====
 void SettingsScreen::draw() {
   setCurrentScreen(SETTINGS_SCREEN);
-  #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(true);
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(true);
   #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
@@ -101,8 +101,8 @@ void SettingsScreen::draw() {
   drawMenuButtons();
   tft.setFont(&Inconsolata_Bold8pt7b);
   drawCommonStatusLabels(); // status common to many pages
-  updateSettingsButtons(false);
-  getOnStepCmdErr(); // show error bar
+  updateSettingsButtons();
+  //showOnStepCmdErr(); // show error bar
 
   TtextIndex = 0; 
   DtextIndex = 0; 
@@ -155,8 +155,11 @@ void SettingsScreen::draw() {
   updateCommonStatus();
   showGpsStatus();
   updateSettingsStatus();
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(false);
+  wifiDisplay.sendFrameToEsp(FRAME_TYPE_DEF);
+  #endif
   #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(false);
   tft.saveBufferToSD("Settings");
   #endif
 } // end initialize
@@ -166,23 +169,23 @@ void SettingsScreen::updateSettingsStatus() {
 
   char tempReply[10];
   // show Local Time 24 Hr format
-  getLocalCmdTrim(":GL#", tempReply); 
+  commandWithReply(":GL#", tempReply); 
   canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y, 80, 16, tempReply, false);
 
   // show Current Date
-  getLocalCmdTrim(":GC#", tempReply); 
+  commandWithReply(":GC#", tempReply); 
   canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y, 80, 16, tempReply, false);
 
   // show TZ Offset
-  getLocalCmdTrim(":GG#", tempReply); 
+  commandWithReply(":GG#", tempReply); 
   canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*2, 80, 16, tempReply, false);
 
   // show Latitude
-  getLocalCmdTrim(":Gt#", tempReply); 
+  commandWithReply(":Gt#", tempReply); 
   canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*3, 80, 16, tempReply, false);
 
   // show Longitude
-  getLocalCmdTrim(":Gg#", tempReply); 
+  commandWithReply(":Gg#", tempReply); 
   canvSettingsInsPrint.printRJ(TDU_DISP_X+TDU_OFFSET_X, TDU_DISP_Y+TDU_OFFSET_Y*4, 80, 16, tempReply, false);
 }
 
@@ -258,17 +261,28 @@ void SettingsScreen::setProcessNumPadButton() {
 }
 
 bool SettingsScreen::settingsButStateChange() {
+  bool changed = false;
+
+  if (display.buttonTouched) {
+    display.buttonTouched = false;
+    if (Tselect || Tclear || Dselect || Dclear || Tzclear || Tzselect || LaSelect || LaClear) {
+      changed = true;
+    }
+    if (LoSelect || LoClear || sSendOn || setLatLongOn || sNumDetected) {
+      changed = true;
+    }
+  }
+
   if (display._redrawBut) {
     display._redrawBut = false;
-    return true;
-  } else { 
-    return false;
+    changed = true;
   }
+  return changed;
 }
 
 // Update the buttons for the Settings Screen
-void SettingsScreen::updateSettingsButtons(bool redrawBut) {
-  _redrawBut = redrawBut;
+void SettingsScreen::updateSettingsButtons() {
+
   // Get button and print label
   switch (sButtonPosition) {
     case 0:  setProcessNumPadButton(); break;
@@ -385,6 +399,7 @@ void SettingsScreen::updateSettingsButtons(bool redrawBut) {
   if (sSendOn) {
     settingsButton.draw(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, "Sent", BUT_ON);
     sSendOn = false; 
+    display._redrawBut = true;
   } else {
     settingsButton.draw(S_SEND_BUTTON_X, S_SEND_BUTTON_Y, S_SEND_BOXSIZE_X, S_SEND_BOXSIZE_Y, "Send", BUT_OFF); 
   }
@@ -431,6 +446,10 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
   // Clear Time field
   if (py > T_CLEAR_Y && py < (T_CLEAR_Y + CO_BOXSIZE_Y) && px > T_CLEAR_X && px < (T_CLEAR_X + CO_BOXSIZE_X)) {
     Tclear = true; 
+    Dclear = false; 
+    Tzclear = false;
+    LaClear = false;
+    LoClear = false;
     TtextIndex = 0;
     sButtonPosition = 12; 
     BEEP;
@@ -450,7 +469,11 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Clear DEC field
   if (py > D_CLEAR_Y && py < (D_CLEAR_Y + CO_BOXSIZE_Y) && px > D_CLEAR_X && px < (D_CLEAR_X + CO_BOXSIZE_X)) {
+    Tclear = false; 
     Dclear = true; 
+    Tzclear = false;
+    LaClear = false;
+    LoClear = false;
     DtextIndex = 0;
     sButtonPosition = 12;
     BEEP;
@@ -470,7 +493,11 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Clear TZ field
   if (py > U_CLEAR_Y && py < (U_CLEAR_Y + CO_BOXSIZE_Y) && px > U_CLEAR_X && px < (U_CLEAR_X + CO_BOXSIZE_X)) {
-    Tzclear = true; 
+    Tclear = false; 
+    Dclear = false; 
+    Tzclear = true;
+    LaClear = false;
+    LoClear = false;
     TztextIndex = 0;
     sButtonPosition = 12;
     BEEP;
@@ -490,7 +517,11 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Clear Latitude field
   if (py > LA_CLEAR_Y && py < (LA_CLEAR_Y + CO_BOXSIZE_Y) && px > LA_CLEAR_X && px < (LA_CLEAR_X + CO_BOXSIZE_X)) {
-    LaClear = true; 
+    Tclear = false; 
+    Dclear = false; 
+    Tzclear = false;
+    LaClear = true;
+    LoClear = false;
     LaTextIndex = 0;
     sButtonPosition = 12;
     BEEP;
@@ -510,7 +541,11 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
 
   // Clear Longitude field
   if (py > LO_CLEAR_Y && py < (LO_CLEAR_Y + CO_BOXSIZE_Y) && px > LO_CLEAR_X && px < (LO_CLEAR_X + CO_BOXSIZE_X)) {
-    LoClear = true; 
+    Tclear = false; 
+    Dclear = false; 
+    Tzclear = false;
+    LaClear = false;
+    LoClear = true;
     LoTextIndex = 0;
     sButtonPosition = 12;
     BEEP;
@@ -535,25 +570,50 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
       // Set Local Time :SL[HH:MM:SS]# 24Hr format
       //VL(Ttext[0]);VL(Ttext[1]);VL(Ttext[2]);VL(Ttext[3]);VL(Ttext[4]);VL(Ttext[5]);
       sprintf(sCmd, ":SL%c%c%c%c%c%c%c%c#", Ttext[0], Ttext[1], Ttext[2], Ttext[3], Ttext[4], Ttext[5], Ttext[6], Ttext[7]);
-      setLocalCmd(sCmd);
-      //delay(70);
-    } else if (Dselect) { // :SC[MM/DD/YY]# 
+      commandBool(sCmd);
+    } 
+
+    if (Dselect) { // :SC[MM/DD/YY]# 
       sprintf(sCmd, ":SC%c%c%c%c%c%c%c%c#", Dtext[0], Dtext[1], Dtext[2], Dtext[3], Dtext[4], Dtext[5], Dtext[6], Dtext[7]);
-      setLocalCmd(sCmd);
-    } else if (Tzselect) { // :SG[sHH]# // Time Zone
+      commandBool(sCmd);
+    }
+
+    if (Tzselect) { // :SG[sHH]# // Time Zone
       sprintf(sCmd, ":SG%c%c%c#", Tztext[0], Tztext[1], Tztext[2]);
-      setLocalCmd(sCmd);
-    } else if (LaSelect) { // :St[sDD*MM]#  Latitude
+      commandBool(sCmd);
+    }
+
+    if (LaSelect) { // :St[sDD*MM]#  Latitude
       uint8_t laMin = LaText[4] - '0';  //digit after decimal point
       snprintf(sLaMin, sizeof(sLaMin), "%02d\n", laMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":St%c%c%c*%2s#", LaText[0], LaText[1], LaText[2], sLaMin);
-      setLocalCmd(sCmd);
-    } else if (LoSelect) { // :Sg[(s)DDD*MM]#  Longitude
+      commandBool(sCmd);
+    }
+
+    if (LoSelect) { // :Sg[(s)DDD*MM]#  Longitude
       uint8_t loMin = LoText[5] - '0'; //digit after decimal point
       snprintf(sLoMin, sizeof(sLoMin), "%02d\n", loMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":Sg%c%c%c%c*%2s#", LoText[0], LoText[1], LoText[2], LoText[3], sLoMin);
-      setLocalCmd(sCmd);
+      commandBool(sCmd);
     }
+
+    site.updateTLS(); // set UT1
+    site.updateLocation();
+
+    // The SHCC catalogs require the cat manager to have latitude updated to get correct coordinates displayed
+    double f=0;
+    char reply[12];
+
+    // Set LST for the cat_mgr 
+    commandWithReply(":GS#", reply);
+    convert.hmsToDouble(&f, reply);
+    cat_mgr.setLstT0(f);
+
+    // Set Latitude for cat_mgr
+    commandWithReply(":Gt#", reply);
+    convert.dmsToDouble(&f, reply, true);
+    cat_mgr.setLat(f);
+
     return true;
   }
  
@@ -568,13 +628,14 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     uint8_t laDef = DefLat[2] - '0';  //digit after decimal point
     snprintf(sLaDef, sizeof(sLaDef), "%02d\n", laDef * 6); // convert fractional degrees to string minutes
     sprintf(sCmd, ":St+%c%c*%2s#", DefLat[0], DefLat[1], sLaDef);
-    setLocalCmd(sCmd);
+    commandBool(sCmd);
 
     uint8_t loDef = DefLong[3] - '0'; //digit after decimal point
     snprintf(sLoDef, sizeof(sLoDef), "%02d\n", loDef * 6); // convert fractional degrees to string minutes
     sprintf(sCmd, ":Sg-%c%c%c*%2s#", DefLong[0], DefLong[1], DefLong[2], sLoDef);
-    setLocalCmd(sCmd);
+    commandBool(sCmd);
     
+    site.updateLocation();
     return true; 
   }
 

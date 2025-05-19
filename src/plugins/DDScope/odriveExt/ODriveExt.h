@@ -5,7 +5,9 @@
   //#include <ODriveArduino.h>
 //#endif
  
-#include "../display/Display.h"
+//#include "../display/Display.h"
+// Forward declaration to avoid circular dependency
+//class Display;
 
 #ifndef ODRIVEEXT_H
 #define ODRIVEEXT_H
@@ -30,7 +32,7 @@ enum Component
   COMP_LAST
 };
 
-class ODriveExt : public Display {
+class ODriveExt {
   public:
     
     // getters

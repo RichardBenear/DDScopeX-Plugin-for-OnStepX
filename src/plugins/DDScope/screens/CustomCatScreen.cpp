@@ -1,58 +1,73 @@
 // =====================================================
 // CustomCatScreen.cpp
 // Custom User Catalog Screen
-// This catalog can hold various saved objects and their coordinates from other catalogs
+// This catalog can hold various saved objects and their coordinates from other
+// catalogs
 //
 // Author: Richard Benear 6/22
-
+// Refactored 5/19/25
+#include <Arduino.h>
+#include "../display/Display.h"
 #include "CustomCatScreen.h"
 #include "MoreScreen.h"
 #include "../catalog/Catalog.h"
 #include "../catalog/CatalogTypes.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
-#include "src/telescope/mount/Mount.h"
-#include "src/lib/tasks/OnTask.h"
-#include "src/telescope/mount/goto/Goto.h"
+#include "src/lib/Macros.h"
+//#include "src/telescope/mount/Mount.h"
+//#include "src/telescope/mount/goto/Goto.h"
 
-#define CUS_X               1
-#define CUS_Y               50
-#define CUS_W               112
-#define CUS_H               24
-#define CUS_Y_SPACING       2
+#define CUS_X 3
+#define CUS_Y 50
+#define CUS_W 112
+#define CUS_H 24
+#define CUS_Y_SPACING 2
 
-#define BACK_X              5
-#define BACK_Y              445
-#define BACK_W              60
-#define BACK_H              35
+#define BACK_X 5
+#define BACK_Y 445
+#define BACK_W 60
+#define BACK_H 35
 
-#define NEXT_X              255
-#define NEXT_Y              BACK_Y
+#define NEXT_X 255
+#define NEXT_Y BACK_Y
 
-#define RETURN_X            165
-#define RETURN_Y            BACK_Y
-#define RETURN_W            80
+#define RETURN_X 165
+#define RETURN_Y BACK_Y
+#define RETURN_W 80
 
-#define SAVE_LIB_X          75
-#define SAVE_LIB_Y          BACK_Y
-#define SAVE_LIB_W          80
-#define SAVE_LIB_H          BACK_H
+#define SAVE_LIB_X 75
+#define SAVE_LIB_Y BACK_Y
+#define SAVE_LIB_W 80
+#define SAVE_LIB_H BACK_H
 
-#define STATUS_STR_X        3
-#define STATUS_STR_Y        430
-#define STATUS_STR_W        150
-#define STATUS_STR_H        16
+#define STATUS_STR_X 3
+#define STATUS_STR_Y 430
+#define STATUS_STR_W 150
+#define STATUS_STR_H 16
 
-#define WIDTH_OFF           40 // negative width offset
-#define SUB_STR_X_OFF       2
-#define FONT_Y_OFF          7
+#define WIDTH_OFF 40 // negative width offset
+#define SUB_STR_X_OFF 2
+#define FONT_Y_OFF 7
 
-custom_t _cArray[MAX_CUSTOM_ROWS];
+custom_t cArray[MAX_CUSTOM_CATALOG_ROWS];
+
+EXTMEM char customArray[MAX_CUSTOM_CATALOG_ROWS][SD_CARD_LINE_LENGTH];
+EXTMEM char copyCustomArray[MAX_CUSTOM_CATALOG_ROWS][SD_CARD_LINE_LENGTH]; //save a copy for row deletion purposes
+EXTMEM char cRaSrCmd[MAX_CUSTOM_CATALOG_ROWS][18];
+EXTMEM char cDecSrCmd[MAX_CUSTOM_CATALOG_ROWS][18];
+EXTMEM uint8_t cFiltArray[MAX_CUSTOM_CATALOG_ROWS];
+
+Coordinate cusTarget[MAX_CUSTOM_CATALOG_ROWS];
+double dcAlt[MAX_CUSTOM_CATALOG_ROWS];
+double dcAzm[MAX_CUSTOM_CATALOG_ROWS];
 
 // Catalog Button object for default Arial font
-Button customDefButton(0, 0, 0, 0, butOnBackground, butBackground, butOutline, defFontWidth, defFontHeight, "");
+Button customDefButton(0, 0, 0, 0, butOnBackground, butBackground, butOutline,
+                       defFontWidth, defFontHeight, "");
 
 // Catalog Button object for custom font
-Button customCatButton(0, 0 ,0, 0, butOnBackground, butBackground, butOutline, mainFontWidth, mainFontHeight, "");
+Button customCatButton(0, 0, 0, 0, butOnBackground, butBackground, butOutline,
+                       mainFontWidth, mainFontHeight, "");
 
 // Canvas Print object default Arial 6x9 font
 CanvasPrint canvCustomDefPrint(display.default_font);
@@ -61,219 +76,288 @@ CanvasPrint canvCustomDefPrint(display.default_font);
 CanvasPrint canvCustomInsPrint(&Inconsolata_Bold8pt7b);
 
 // ========== Initialize and draw Custom Catalog ===============
-void CustomCatScreen::init() { 
-  returnToPage = display.currentScreen; // save page from where this function was called so we can return
-  setCurrentScreen(CUSTOM_SCREEN);
-  #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(true);
-  #endif
+void CustomCatScreen::init() {
+  returnToPage = display.currentScreen; // save page from where this function
+                                        // was called so we can return
+  display.setCurrentScreen(CUSTOM_SCREEN);
+
+#ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(true);
+#endif
+
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
   moreScreen.objectSelected = false;
-  cCurrentPage = 0;
-  cPrevPage = 0;
-  cEndOfList = false;
-  cAbsRow = 0; // initialize the absolute index into total array
+  currentPageNum = 0;
+  prevPageNum = 0;
+  endOfList = false;
+  totalNumRows = 0; // total number of rows
 
   drawTitle(86, TITLE_TEXT_Y, "User Catalog");
-  customCatalog = true;
 
-  if (!loadCustomArray()) {
-      canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "ERR:Loading Custom", true); 
-      moreScreen.draw();
-      return;
-  } else {
-      parseCcatIntoArray();
-  }
- 
-  // Draw the Trash can/Delete Icon bitmap; used to delete an entry in only the CUSTOM USER catalog
+  // Draw the Trash can/Delete Icon bitmap; used to delete an entry in only the
+  // CUSTOM USER catalog
   uint8_t extern trash_icon[];
-  tft.drawBitmap(270, 5, trash_icon, 28, 32, butBackground, ORANGE);
-
-  drawCustomCat(); // draw first page of the selected catalog
+  tft.drawBitmap(100, 445, trash_icon, 28, 32, butBackground, ORANGE);
 
   tft.setFont(&Inconsolata_Bold8pt7b);
   customCatButton.draw(BACK_X, BACK_Y, BACK_W, BACK_H, "BACK", BUT_OFF);
   customCatButton.draw(NEXT_X, NEXT_Y, BACK_W, BACK_H, "NEXT", BUT_OFF);
   customCatButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
 
+  // load the array from SD and parse it
+  if (loadCustomArray()) {
+    parseCcatIntoArray();
+  } else {
+    canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W,
+                               STATUS_STR_H, "ERR:Loading Custom", true);
+    moreScreen.draw(); // go back to the More screen
+    return;
+  }
+  drawCustomCat(); // draw first page of the selected catalog
 }
 
 // The Custom catalog is a selection of User objects that have been saved on the SD card.
-//      When using any of the catalogs, the SaveToCat button will store the objects info
-//      in the Custom Catalog.
+//      When using any of the catalogs, the SaveToCat button will store the
+//      objects info in the Custom Catalog in the SD Flash.
 // Load the custom.csv file from SD into an RAM array of text lines
-// success = 1, fail = 0
 bool CustomCatScreen::loadCustomArray() {
-  //============== Load from Custom File ==========================
-  // Load RAM array from SD catalog file
-  char rdChar;
-  char rowString[SD_CARD_LINE_LEN]=""; // temp row buffer
-  int rowNum=0;
-  int charNum=0;
   File rdFile = SD.open("custom.csv");
-
-  if (rdFile) {
-    // load data from SD into array
-    while (rdFile.available()) {
-      rdChar = rdFile.read();
-      rowString[charNum] = rdChar;
-      charNum++;
-      if (rdChar == '\n') {
-          strcpy(Custom_Array[rowNum], rowString);
-          strcpy(Copy_Custom_Array[rowNum], rowString);
-          rowNum++;
-          memset(&rowString, 0, SD_CARD_LINE_LEN);
-          charNum = 0;
-      }
-    }
-    cusRowEntries = rowNum-1; // actual number since rowNum was already incremented; start at 0
-  } else {
-    VLF("SD Cust read error");
+  if (!rdFile) {
+    SERIAL_DEBUG.println("SD Cust read error: File open failed");
     return false;
   }
+
+  char rowString[SD_CARD_LINE_LENGTH] = "";
+  int rowNum = 0;
+  int charNum = 0;
+
+  while (rdFile.available() && rowNum < MAX_CUSTOM_CATALOG_ROWS) {
+    char rdChar = rdFile.read();
+
+    // Prevent charNum overflow
+    if (charNum >= SD_CARD_LINE_LENGTH - 1) {
+      rowString[SD_CARD_LINE_LENGTH - 1] = '\0'; // Null-terminate just in case
+      SERIAL_DEBUG.println("Warning: Line too long, truncating");
+      // Save truncated line anyway
+      strncpy(customArray[rowNum], rowString, SD_CARD_LINE_LENGTH);
+      strncpy(copyCustomArray[rowNum], rowString, SD_CARD_LINE_LENGTH);
+      rowNum++;
+      charNum = 0;
+      memset(rowString, 0, SD_CARD_LINE_LENGTH);
+      continue;
+    }
+
+    // Append character to current row
+    rowString[charNum++] = rdChar;
+
+    // On newline, save the full row
+    if (rdChar == '\n') {
+      rowString[charNum] = '\0'; // Null-terminate line
+      strncpy(customArray[rowNum], rowString, SD_CARD_LINE_LENGTH);
+      strncpy(copyCustomArray[rowNum], rowString, SD_CARD_LINE_LENGTH);
+      //SERIAL_DEBUG.print("Row "); SERIAL_DEBUG.print(rowNum); SERIAL_DEBUG.print(": "); SERIAL_DEBUG.println(rowString);
+      rowNum++;
+      charNum = 0;
+      memset(rowString, 0, SD_CARD_LINE_LENGTH);
+    }
+  }
+
+  // If last line didn't end with newline, still save it
+  if (charNum > 0 && rowNum < MAX_CUSTOM_CATALOG_ROWS) {
+    rowString[charNum] = '\0';
+    strncpy(customArray[rowNum], rowString, SD_CARD_LINE_LENGTH);
+    strncpy(copyCustomArray[rowNum], rowString, SD_CARD_LINE_LENGTH);
+    SERIAL_DEBUG.print("Row "); SERIAL_DEBUG.print(rowNum); SERIAL_DEBUG.print(" (no newline): ");
+    SERIAL_DEBUG.println(rowString);
+    rowNum++;
+  }
   rdFile.close();
+
+  // Final count: rows actually loaded
+  // 1st ROW is row 0
+  totalNumRows = rowNum;
+  if (totalNumRows < 0) {
+    totalNumRows = 0;
+  }
   return true;
 }
 
 // Parse the custom.csv line data into individual fields in an array
 // custom.csv file format = ObjName;Mag;Cons;ObjType;SubId;cRahhmmss;cDecsddmmss\n
 void CustomCatScreen::parseCcatIntoArray() {
-  for (int i=0; i<=cusRowEntries; i++) {
-    _cArray[i].cObjName      = strtok(Custom_Array[i], ";"); //VL(_cArray[i].cObjName);
-    _cArray[i].cMag          = strtok(NULL, ";");            //VL(_cArray[i].cMag);
-    _cArray[i].cCons         = strtok(NULL, ";");            //VL(_cArray[i].cCons);
-    _cArray[i].cObjType      = strtok(NULL, ";");            //VL(_cArray[i].cObjType);
-    _cArray[i].cSubId        = strtok(NULL, ";");            //VL(_cArray[i].cSubId);
-    _cArray[i].cRAhhmmss     = strtok(NULL, ";");            //VL(_cArray[i].cRAhhmmss);
-    _cArray[i].cDECsddmmss   = strtok(NULL, "\n");           //VL(_cArray[i].cDECsddmmss);
+  for (int i = 0; i < totalNumRows; i++) {
+    cArray[i].cObjName      = strtok(customArray[i], ";"); //VL(cArray[i].cObjName);
+    cArray[i].cMag          = strtok(NULL, ";");           //VL(cArray[i].cMag);
+    cArray[i].cCons         = strtok(NULL, ";");           //VL(cArray[i].cCons);
+    cArray[i].cObjType      = strtok(NULL, ";");           //VL(cArray[i].cObjType);
+    cArray[i].cSubId        = strtok(NULL, ";");           //VL(cArray[i].cSubId);
+    cArray[i].cRAhhmmss     = strtok(NULL, ";");           //VL(cArray[i].cRAhhmmss);
+    cArray[i].cDECsddmmss   = strtok(NULL, "\n");          //VL(cArray[i].cDECsddmmss);
   }
+  // SERIAL_DEBUG.print("Final totalNumRows = ");
+  // SERIAL_DEBUG.println(totalNumRows);
+
+  // for (int i = 0; i < totalNumRows; i++) {
+  //   SERIAL_DEBUG.print("cArray["); SERIAL_DEBUG.print(i); SERIAL_DEBUG.print("] = ");
+  //   SERIAL_DEBUG.println(cArray[i].cObjName);
+  // }
 }
 
 // ========== draw CUSTOM Screen of catalog data ========
 void CustomCatScreen::drawCustomCat() {
-  cRow = 0;
-  pre_cAbsIndex=0;
-  char catLine[47]=""; //hold the string that is displayed beside the button on each page
+  // write the top and bottom areas of screen
+  tft.fillRect(6, 9, 77, 32, butBackground);   // erase page numbers
+  tft.fillRect(2, 60, 317, 353, pgBackground); // clear lower screen
+  tft.setFont(0);                              // revert to basic Arial font
+  prevAbsIndex = 0;
 
-  cAbsRow = (cPagingArrayIndex[cCurrentPage]); // array of indexes for 1st row of each page
-  cLastPage = (cusRowEntries / NUM_CUS_ROWS_PER_SCREEN)+1;
-  VF("cusRowEntries="); VL(cusRowEntries);
-  cNumRowsLastPage = (cusRowEntries % NUM_CUS_ROWS_PER_SCREEN) +1;
-  if (cCurrentPage+1 == cLastPage) isLastPage = cNumRowsLastPage <= NUM_CUS_ROWS_PER_SCREEN; else isLastPage = false;
+  lastPageNum = max(1, (totalNumRows + NUM_CATALOG_ROWS_PER_SCREEN - 1) / NUM_CATALOG_ROWS_PER_SCREEN);
+  numRowsLastPage = (totalNumRows % NUM_CATALOG_ROWS_PER_SCREEN);
+  if (numRowsLastPage == 0 && totalNumRows > 0) {
+    numRowsLastPage = NUM_CATALOG_ROWS_PER_SCREEN;
+  }
 
-  // Show Page number and total Pages
-  tft.fillRect(6, 9, 77, 32,  butBackground); // erase page numbers
-  tft.fillRect(0,60,319,353, pgBackground); // clear lower screen
-  tft.setFont(0); //revert to basic Arial font
-  tft.setCursor(6, 9); 
-  tft.printf("Page "); 
-  tft.print(cCurrentPage+1);
-  tft.printf(" of "); 
-  if (moreScreen.activeFilter == FM_ABOVE_HORIZON) 
-    tft.print("??"); 
-  else 
-    tft.print(cLastPage); 
-  tft.setCursor(6, 25); 
-  tft.print(activeFilterStr[moreScreen.activeFilter]);
+  //SERIAL_DEBUG.println("drawCustomCat()");
+  SERIAL_DEBUG.print("totalNumRows="); SERIAL_DEBUG.println(totalNumRows);
+  SERIAL_DEBUG.print("lastPageNum="); SERIAL_DEBUG.println(lastPageNum);
+  SERIAL_DEBUG.print("currentPageNum="); SERIAL_DEBUG.println(currentPageNum);
+  SERIAL_DEBUG.print("numRowsLastPage="); SERIAL_DEBUG.println(numRowsLastPage);
+  SERIAL_DEBUG.println(" ");
 
-  // TO DO: add code for case when filter enabled and screen contains fewer than NUM_CUS_ROWS_PER_SCREEN
-  while ((cRow < NUM_CUS_ROWS_PER_SCREEN) && (cAbsRow != MAX_CUSTOM_ROWS)) { 
+  
+  tft.setCursor(6, 9);
+  tft.print("Page ");
+  tft.print(currentPageNum + 1);
+  tft.print(" of ");
+  if (moreScreen.activeFilter == FM_ABOVE_HORIZON) {
+    tft.print("??");
+  } else {
+    tft.print(lastPageNum);
+    tft.setCursor(6, 25);
+    tft.print(activeFilterStr[moreScreen.activeFilter]);
+  }
+
+  // Compute how many rows to draw on this page
+  rowsThisPage = NUM_CATALOG_ROWS_PER_SCREEN;
+  if (currentPageNum + 1 == lastPageNum) {
+    rowsThisPage = numRowsLastPage;
+  }
+
+  // Start drawing from absolute row index based on page
+  uint8_t startAbsIndex = currentPageNum * NUM_CATALOG_ROWS_PER_SCREEN;
+
+  SERIAL_DEBUG.print("startAbsIndex="); SERIAL_DEBUG.println(startAbsIndex);
+  SERIAL_DEBUG.print("rowsThisPage="); SERIAL_DEBUG.println(rowsThisPage);
+
+  drawPageData(startAbsIndex);
+}
+
+void CustomCatScreen::drawPageData(uint8_t startAbsIndex) {
+  char catLine[50] = "";
+
+  for (uint8_t i = 0; i < rowsThisPage; ++i) {
+    uint8_t absIndex = startAbsIndex + i;
+    if (absIndex >= totalNumRows) break;
+    rowIndex = i;
+
+    //SERIAL_DEBUG.print("rowIndex="); SERIAL_DEBUG.println(rowIndex);
     // ======== process RA/DEC ===========
     double cRAdouble;
     double cDECdouble;
-
-    // RA in Hrs:Min:Sec
-    snprintf(cRaSrCmd[cAbsRow], 16, ":Sr%11s#", _cArray[cAbsRow].cRAhhmmss);
-    snprintf(cDecSrCmd[cAbsRow], 17, ":Sd%12s#", _cArray[cAbsRow].cDECsddmmss);
-
     // to get Altitude, first convert RAh and DEC to double
     // Note: PM_HIGH is required for the format used here
-    convert.hmsToDouble(&cRAdouble, _cArray[cAbsRow].cRAhhmmss, PM_HIGH);
-    convert.dmsToDouble(&cDECdouble, _cArray[cAbsRow].cDECsddmmss, true, PM_HIGH);
-    
-    // NOTE: next 2 line were old version now replace by Coordinate transform cusTarget
-    //double cHAdouble=haRange(LST()*15.0-cRAdouble);
-    //cat_mgr.EquToHor(cRAdouble*15, cDECdouble, &dcAlt[cAbsRow], &dcAzm[cAbsRow]);
+    convert.hmsToDouble(&cRAdouble, cArray[absIndex].cRAhhmmss, PM_HIGH);
+    convert.dmsToDouble(&cDECdouble, cArray[absIndex].cDECsddmmss, true, PM_HIGH);
 
-    // dcAlt[cAbsRow] is used by filter to check if above Horizon
+    // dcAlt[absIndex] is used by filter to check if above Horizon
     // Coordinate calculation using OnStep transforms
-    Coordinate cusTarget;
-    cusTarget.r = hrsToRad(cRAdouble);
-    cusTarget.d = degToRad(cDECdouble);
-    transform.rightAscensionToHourAngle(&cusTarget);
-    transform.equToAlt(&cusTarget);
-    dcAlt[cAbsRow] = radToDeg(cusTarget.a);
+    // First, convert RA hours and DEC degrees to Radians
+    cusTarget[absIndex].r = hrsToRad(cRAdouble);
+    cusTarget[absIndex].d = degToRad(cDECdouble);
 
-    //VF("activeFilter="); VL(activeFilter);
-    if (((moreScreen.activeFilter == FM_ABOVE_HORIZON) && (dcAlt[cAbsRow] > 10.0)) || moreScreen.activeFilter == FM_NONE) { // filter out elements below 10 deg if filter enabled
-      //VF("printing row="); VL(cAbsRow);
-      // Erase text background
-      tft.setCursor(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING));
-      tft.fillRect(CUS_X+CUS_W+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), 215, 17,  butBackground);
+    // Then, transform RA to hour angle and equ to Altitude in radians
+    transform.rightAscensionToHourAngle(&cusTarget[absIndex]);
+    transform.equToAlt(&cusTarget[absIndex]);
+    transform.equToHor(&cusTarget[absIndex]);
 
-      // get object names and put them on the buttons
-      customDefButton.drawLJ(CUS_X, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING), CUS_W, CUS_H, _cArray[cAbsRow].cObjName, BUT_OFF);
-                  
-      // format and print the text field for this row next to the button
-      // 7 - objName
-      // 8 - RA
-      // 7 - DEC
-      // 4 - Cons
-      // 9 - ObjType
-      // 4 - Mag
-      // 9 - Size ( Not used )
-      // 18 - SubId
-      // select some data fields to show beside the button
-      snprintf(catLine, 42, "%-4s |%-4s |%-9s |%-18s",  // 35 + 6 + NULL = 42
-                                              _cArray[cAbsRow].cMag, 
-                                              _cArray[cAbsRow].cCons, 
-                                              _cArray[cAbsRow].cObjType, 
-                                              _cArray[cAbsRow].cSubId);
-      tft.setCursor(CUS_X+CUS_W+SUB_STR_X_OFF+2, CUS_Y+cRow*(CUS_H+CUS_Y_SPACING)+FONT_Y_OFF); 
-      tft.print(catLine);
-      cFiltArray[cRow] = cAbsRow;
-      //VF("cFiltArray[cRow]="); VL(cFiltArray[cRow]);
-      cRow++; // increments only through the number of lines displayed on screen per page
-      //VF("ceRow="); VL(cRow);
-    } 
-    cPrevRowIndex = cAbsRow;
-    cAbsRow++; // increments through all lines in the catalog
+    // Then, convert back to AZM and ALT degrees
+    dcAlt[absIndex] = radToDeg(cusTarget[absIndex].a);
+    dcAzm[absIndex] = NormalizeAzimuth(radToDeg(cusTarget[absIndex].z));
 
-    // stop printing data if last row on the last page
-    if (cAbsRow == cusRowEntries+1) {
-      cEndOfList = true; 
-      if (cRow == 0) {canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "None above 10 deg", true);}
-      //VF("endOfList");
-      return; 
+    // Generate the Command strings for later use
+    snprintf(cRaSrCmd[absIndex], sizeof(cRaSrCmd[absIndex]), ":Sr%11s#", cArray[absIndex].cRAhhmmss);
+    snprintf(cDecSrCmd[absIndex], sizeof(cDecSrCmd[absIndex]), ":Sd%12s#", cArray[absIndex].cDECsddmmss);
+
+    // filter out elements below 10 deg if filter enabled
+    //SERIAL_DEBUG.print("activeFilter="); SERIAL_DEBUG.println(moreScreen.activeFilter);
+    if ((moreScreen.activeFilter == FM_ABOVE_HORIZON && dcAlt[absIndex] <= 10.0) &&
+        moreScreen.activeFilter != FM_NONE) {
+      continue;
     }
-  }
-  // cPagingArrayIndex holds index of first element of page to help with NEXT and BACK paging
-  cPagingArrayIndex[cCurrentPage+1] = cAbsRow; 
-  //VF("PagingArrayIndex+1="); VL(cPagingArrayIndex[cCurrentPage+1]);
-}
 
+    // Draw row content
+    uint16_t y = CUS_Y + (rowIndex * (CUS_H + CUS_Y_SPACING));
+    //SERIAL_DEBUG.print("y="); SERIAL_DEBUG.println(y);
+    tft.fillRect(CUS_X + CUS_W + 2, y, 197, 17, butBackground);
+    //tft.setCursor(CUS_X + CUS_W + 2, y);
+    customDefButton.drawLJ(CUS_X, y, CUS_W, CUS_H, cArray[absIndex].cObjName, BUT_OFF);
+
+    snprintf(catLine, sizeof(catLine), "%-4s|%-4s|%-14s|%-7s",
+             cArray[absIndex].cMag,
+             cArray[absIndex].cCons,
+             cArray[absIndex].cObjType,
+             cArray[absIndex].cSubId);
+
+    tft.setCursor(CUS_X + CUS_W + SUB_STR_X_OFF + 2, y + FONT_Y_OFF);
+    tft.print(catLine);
+    //SERIAL_DEBUG.print("catLine["); SERIAL_DEBUG.print(rowIndex); SERIAL_DEBUG.print("] = "); SERIAL_DEBUG.println(catLine);
+
+    // Store mapping of screen row to absolute index
+    cFiltArray[rowIndex] = absIndex;
+    rowIndex++;
+  }
+
+  if (rowIndex == 0) {
+    canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "None above 10 deg", true);
+  }
+
+  // Mark end of list if no further rows
+  endOfList = ((startAbsIndex + rowsThisPage) >= totalNumRows);
+}
+    
 // show status changes on tasks timer tick
 void CustomCatScreen::updateCustomStatus() {
-  // do nothing currently
+  //updateScreen();
 }
 
 // redraw screen to show state change
-bool CustomCatScreen::catalogButStateChange() {
+bool CustomCatScreen::cusCatalogButStateChange() {
+  bool changed = false;
+
+  if (display.buttonTouched) {
+    display.buttonTouched = false;
+    if (buttonDetected) {
+      changed = true;
+    }
+
+    if (delSelected) {
+      changed = true;
+    }
+  }
+
   if (display._redrawBut) {
     display._redrawBut = false;
-    return true;
-  } else { 
-    return false;
+    changed = true;
   }
+  return changed;
 }
 
-// update buttons and rest of screen
-void CustomCatScreen::updateCustomButtons(bool redrawBut) { 
-  _redrawBut = redrawBut;  
-  
-  if (catButDetected) updateScreen();  
-  tft.setFont(0); // basic Arial
+void CustomCatScreen::updateCustomButtons() { 
+  if (buttonDetected) {
+    buttonDetected = false;
+    updateScreen();
+  }
 }
 
 //==================================================
@@ -281,223 +365,271 @@ void CustomCatScreen::updateCustomButtons(bool redrawBut) {
 //==================================================
 void CustomCatScreen::updateScreen() {
   tft.setFont(0);
-  uint16_t cRelIndex = catButSelPos; // save the relative-to-this "screen/page" index of button pressed
-  uint16_t cAbsIndex = cFiltArray[catButSelPos]; // this is absolute full array index
 
-  if (cPrevPage == cCurrentPage) { //erase previous selection
-    customDefButton.drawLJ(CUS_X, CUS_Y+pre_cRelIndex*(CUS_H+CUS_Y_SPACING), 
-      CUS_W, CUS_H, _cArray[pre_cAbsIndex].cObjName, BUT_OFF); 
+  relIndex = buttonSelected; // save the relative-to-this "screen/page" index of button pressed
+  absIndex = cFiltArray[buttonSelected]; // this is absolute full array index
+
+  //SERIAL_DEBUG.println("updateScreen()");
+  //SERIAL_DEBUG.print("ButSelPos="); SERIAL_DEBUG.println(buttonSelected);
+  //SERIAL_DEBUG.print("absIndex="); SERIAL_DEBUG.println(absIndex);
+  //SERIAL_DEBUG.println(" ");
+
+  if (prevPageNum == currentPageNum) { // erase previous selection
+    customDefButton.drawLJ(CUS_X, CUS_Y + prevRelIndex * (CUS_H + CUS_Y_SPACING), CUS_W, CUS_H,
+                          cArray[prevAbsIndex].cObjName, BUT_OFF);
   }
-  // highlight selected by settting background ON color 
-  customDefButton.drawLJ(CUS_X, CUS_Y+cRelIndex*(CUS_H+CUS_Y_SPACING), 
-    CUS_W, CUS_H, _cArray[cAbsIndex].cObjName, BUT_ON); 
+  // highlight selected by settting background ON color
+  customDefButton.drawLJ(CUS_X, CUS_Y + relIndex * (CUS_H + CUS_Y_SPACING),
+                         CUS_W, CUS_H, cArray[absIndex].cObjName, BUT_ON);
 
-  // the following 5 lines are displayed on the Catalog/More page
-  snprintf(moreScreen.catSelectionStr1, 26, "Name-:%-19s", _cArray[cAbsIndex].cObjName);  //VF("c_objName="); //VL(_cArray[cAbsIndex].cObjName);
-  snprintf(moreScreen.catSelectionStr2, 11, "Mag--:%-4s",  _cArray[cAbsIndex].cMag);      //VF("c_Mag=");     //VL(_cArray[cAbsIndex].cMag);
-  snprintf(moreScreen.catSelectionStr3, 11, "Const:%-4s",  _cArray[cAbsIndex].cCons);     //VF("c_constel="); //VL(_cArray[cAbsIndex].cCons);
-  snprintf(moreScreen.catSelectionStr4, 16, "Type-:%-9s",  _cArray[cAbsIndex].cObjType);  //VF("c_objType="); //VL(_cArray[cAbsIndex].cObjType);
-  snprintf(moreScreen.catSelectionStr5, 15, "Id---:%-7s",  _cArray[cAbsIndex].cSubId);    //VF("c_subID=");   //VL(_cArray[cAbsIndex].cSubId);
-  
+  snprintf(moreScreen.catSelectionStr1, sizeof(moreScreen.catSelectionStr1),
+           "Name-:%-18s", cArray[absIndex].cObjName);
+  // SERIAL_DEBUG.print("c_objName="); //SERIAL_DEBUG.println(cArray[absIndex].cObjName);
+  snprintf(moreScreen.catSelectionStr2, sizeof(moreScreen.catSelectionStr2),
+           "Mag--:%-4s", cArray[absIndex].cMag);
+  // SERIAL_DEBUG.print("c_Mag=");     //SERIAL_DEBUG.println(cArray[absIndex].cMag);
+  snprintf(moreScreen.catSelectionStr3, sizeof(moreScreen.catSelectionStr3),
+           "Const:%-4s", cArray[absIndex].cCons);
+  // SERIAL_DEBUG.print("c_constel="); //SERIAL_DEBUG.println(cArray[absIndex].cCons);
+  snprintf(moreScreen.catSelectionStr4, sizeof(moreScreen.catSelectionStr4),
+           "Type-:%-14s", cArray[absIndex].cObjType);
+  // SERIAL_DEBUG.print("c_objType="); //SERIAL_DEBUG.println(cArray[absIndex].cObjType);
+  snprintf(moreScreen.catSelectionStr5, sizeof(moreScreen.catSelectionStr5),
+           "Id---:%-6s", cArray[absIndex].cSubId);
+  // SERIAL_DEBUG.print("c_subID=");   //SERIAL_DEBUG.println(cArray[absIndex].cSubId);
+
   // show if we are above and below visible limits
-  tft.setFont(&Inconsolata_Bold8pt7b); 
-  if (dcAlt[cAbsIndex] > 10.0) {      // minimum 10 degrees altitude
-      canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
+  tft.setFont(&Inconsolata_Bold8pt7b);
+  if (dcAlt[absIndex] > 10.0) { // minimum 10 degrees altitude
+    canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Above +10 deg", false);
   } else {
-      canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
+    canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "Below +10 deg", true);
   }
   tft.setFont(0);
 
-  writeCustomTarget(cAbsIndex); // write RA and DEC as target for GoTo
-  tasks.yield(70);
-  showTargetCoords(); // display the target coordinates that were just written
+  writeCustomTarget(absIndex); // write RA and DEC as target for GoTo
+  showTargetCoords(); // get and display the target coordinates that were just
+                      // written
 
   // Support for deleting a object row from the Custom library screen
-  pre_cRelIndex = cRelIndex;
-  pre_cAbsIndex = cAbsIndex;
-  curSelCIndex = cAbsIndex;
-  cPrevPage = cCurrentPage;
-  catButDetected = false;
-  customItemSelected = true;
+  prevRelIndex = relIndex;
+  prevAbsIndex = absIndex;
+  prevPageNum = currentPageNum;
+}
 
-  // DELETE CUSTOM USER library ROW check
-  // Delete the row and shift other rows up, write back to storage media
-  if (delSelected && customItemSelected) {
+// Delete a Row button by clicking the Trashcan ICON
+void CustomCatScreen::deleteRow() {
+  if (delSelected) {
+    SERIAL_DEBUG.print("Deleting Row=");
+    SERIAL_DEBUG.println(buttonSelected);
     delSelected = false;
 
-    // delIndex is Row to delete in full array
-    cAbsIndex = cFiltArray[catButSelPos];
-    uint16_t delIndex = cAbsIndex;
-    if (cusRowEntries == 0) { // check if delete of only one entry in catalog, if so, just delete catalog
+    // Absolute index of the row to delete
+    absIndex = cFiltArray[buttonSelected];
+    uint8_t delIndex = absIndex;
+
+    if (totalNumRows == 0) { // first entry is number 0
+      // Only one row in the file — just delete the whole file
       File rmFile = SD.open("/custom.csv");
-        if (rmFile) {
-            SD.remove("/custom.csv");
-        }
-      rmFile.close(); 
-      return;
-    } else { // copy rows after the one to be deleted over rows -1
-      //VF("cAbsIndex="); VL(cAbsIndex);
-      while (delIndex <= cusRowEntries-1) {
-        strcpy(Copy_Custom_Array[delIndex], Copy_Custom_Array[delIndex+1]);
-        delIndex++;
-      }
-      memset(Copy_Custom_Array[cusRowEntries], '\0', SD_CARD_LINE_LEN); // null terminate row left over at the end
-      //for (int i = 0; i<=cusRowEntries-1; i++) { VL(Copy_Custom_Array[i]); }
-    }
-
-    // delete old SD file
-    File rmFile = SD.open("/custom.csv");
-      if (rmFile) {
-          SD.remove("/custom.csv");
-      }
-    rmFile.close(); 
-
-    // write new array into SD File
-    File cWrFile;
-    if ((cWrFile = SD.open("custom.csv", FILE_WRITE)) == 0) {
-      canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "SD open ERROR", true);
+      SD.remove("/custom.csv");
+      rmFile.close();
       return;
     } else {
-      if (cWrFile) {
-        for(uint16_t i=0; i<=cusRowEntries-1; i++) {
-            cWrFile.print(Copy_Custom_Array[i]);
-            delay(5);
-        }
-        //VF("cWrsize="); VL(cWrFile.size());
-        cWrFile.close();
+      if (delIndex >= totalNumRows) {
+        SERIAL_DEBUG.println("Invalid deletion index — skipping.");
+        return;
       }
+
+      // Shift remaining rows up one position
+      memmove(&copyCustomArray[delIndex], &copyCustomArray[delIndex + 1], (totalNumRows - delIndex) * SD_CARD_LINE_LENGTH);
+
+      // Clear last row
+      memset(copyCustomArray[totalNumRows], '\0', SD_CARD_LINE_LENGTH);
+
+      // Decrease total count of entries
+      totalNumRows--;
     }
-  } // end Custom row delete
-} // end updateScreen
+
+    // Delete existing file
+    File rmFile = SD.open("/custom.csv");
+    if (rmFile) {
+      SD.remove("/custom.csv");
+    }
+    rmFile.close();
+
+    // Rewrite trimmed array to SD
+    File cWrFile = SD.open("custom.csv", FILE_WRITE);
+    if (!cWrFile) {
+      canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W, STATUS_STR_H, "SD open ERROR", true);
+      return;
+    }
+
+    for (uint8_t i = 0; i < totalNumRows; i++) {
+      cWrFile.print(copyCustomArray[i]);
+    }
+    cWrFile.close();
+  }
+  prevRelIndex = 0;
+  prevAbsIndex = 0;
+  buttonSelected = 0;
+}
 
 //=====================================================
 // **** Handle any buttons that have been pressed *****
 //=====================================================
 bool CustomCatScreen::touchPoll(uint16_t px, uint16_t py) {
-  // TO DO: add code for case when filter enabled and screen contains fewer than NUM_CUS_ROWS_PER_SCREEN
-  if (isLastPage) cRowsPerPage = cNumRowsLastPage; else cRowsPerPage = NUM_CUS_ROWS_PER_SCREEN;
-   VF("islastpage="); VL(isLastPage);
-   VF("cRowsPerpage="); VL(cRowsPerPage);
-    VF("cNumRowLastPage="); VL(cNumRowsLastPage);
-  for (int i=0; i < cRowsPerPage; i++) {
-    if (py > CUS_Y+(i*(CUS_H+CUS_Y_SPACING)) && py < (CUS_Y+(i*(CUS_H+CUS_Y_SPACING))) + CUS_H 
-          && px > CUS_X && px < (CUS_X+CUS_W)) {
+  // SERIAL_DEBUG.println("touchPoll()");
+  // SERIAL_DEBUG.print("numRowsLastpage=");
+  // SERIAL_DEBUG.println(numRowsLastPage);
+  // SERIAL_DEBUG.print("numRowsLastPage=");
+  // SERIAL_DEBUG.println(numRowsLastPage);
+  // SERIAL_DEBUG.print("totalNumRows=");
+  // SERIAL_DEBUG.println(totalNumRows);
+  // SERIAL_DEBUG.print("rowIndex=");
+  // SERIAL_DEBUG.println(rowIndex);
+  // SERIAL_DEBUG.println(" ");
+  for (int i = 0; i <= rowsThisPage; i++) {
+    if (py > CUS_Y + (i * (CUS_H + CUS_Y_SPACING)) &&
+        py < (CUS_Y + (i * (CUS_H + CUS_Y_SPACING))) + CUS_H && px > CUS_X &&
+        px < (CUS_X + CUS_W)) {
       BEEP;
-      if (cAbsRow <= 1 || (cAbsRow > cusRowEntries+1)) return false; 
-      catButSelPos = i;
-      catButDetected = true;
-      updateScreen();
-      return false; // update screen by redrawing buttons
+      buttonSelected = i;
+      buttonDetected = true;
+      if (buttonSelected >= rowIndex) {
+        SERIAL_DEBUG.print("Invalid buttonSelected=");
+        SERIAL_DEBUG.println(buttonSelected);
+        return false;
+      } else {
+        return true;
+      }
     }
   }
 
   // BACK button
-  if (py > BACK_Y && py < (BACK_Y + BACK_H) && px > BACK_X && px < (BACK_X + BACK_W)) {
+  if (py > BACK_Y && py < (BACK_Y + BACK_H) && px > BACK_X &&
+      px < (BACK_X + BACK_W)) {
     BEEP;
-    if (cCurrentPage > 0) {
-      cPrevPage = cCurrentPage;
-      cEndOfList = false;
-      cCurrentPage--;
+    if (currentPageNum > 0) {
+      prevPageNum = currentPageNum;
+      endOfList = false;
+      currentPageNum--;
       drawCustomCat();
+      buttonDetected = true;
     }
-    return false; // skip update since redrawing full screen again
+    return false;
   }
 
   // NEXT page button - reuse BACK button box size
-  if (py > NEXT_Y && py < (NEXT_Y + BACK_H) && px > NEXT_X && px < (NEXT_X + BACK_W)) {
+  if (py > NEXT_Y && py < (NEXT_Y + BACK_H) && px > NEXT_X &&
+      px < (NEXT_X + BACK_W)) {
     BEEP;
-    if (!cEndOfList) {
-      cPrevPage = cCurrentPage;
-      cCurrentPage++;
+    if (!endOfList) {
+      prevPageNum = currentPageNum;
+      currentPageNum++;
       drawCustomCat();
+      buttonDetected = true;
     }
-    return false; // skip update since redrawing full screen again
+    return false;
   }
 
   // RETURN page button - reuse BACK button box size
-  if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X && px < (RETURN_X + RETURN_W)) {
+  if (py > RETURN_Y && py < (RETURN_Y + BACK_H) && px > RETURN_X &&
+      px < (RETURN_X + RETURN_W)) {
     BEEP;
-    #ifdef ENABLE_TFT_CAPTURE
-      tft.enableLogging(false);
-      tft.saveBufferToSD("CustCat");
-    #endif
-    moreScreen.objectSelected = objSel; 
+    moreScreen.objectSelected = objSel;
     moreScreen.draw();
-    return false; // don't update this screen since returning to MORE
+    return false;
   }
 
-  // Trash Can pressed, Delete custom library item that is selected 
-  if (py > 3 && py < 42 && px > 282 && px < 317) {
+  // Trash Can pressed, Delete custom library item that is selected
+  if (py > 445 && py < 465 && px > 100 && px < 125) {
     BEEP;
     delSelected = true;
-    drawCustomCat(); 
-    return false; // no need to redraw, skip
-  }  
+    buttonDetected = true;
+    deleteRow();
+    // load the array from SD and parse it
+    if (loadCustomArray()) {
+      parseCcatIntoArray();
+    } else {
+    canvCustomInsPrint.printRJ(STATUS_STR_X, STATUS_STR_Y, STATUS_STR_W,
+                               STATUS_STR_H, "ERR:Loading Custom", true);
+    moreScreen.draw(); // go back to the More screen
+    return false;
+    }
+    drawCustomCat();
+    return false;
+  }
 
   // Check emergeyncy ABORT button area
   display.motorsOff(px, py);
-  
-  return false; 
+
+  return false;
 }
 
 // ======= write Target Coordinates to controller =========
 void CustomCatScreen::writeCustomTarget(uint16_t index) {
-  //:Sr[HH:MM.T]# or :Sr[HH:MM:SS]# 
-  setLocalCmd(cRaSrCmd[index]);
-      
-  //:Sd[sDD*MM]# or :Sd[sDD*MM:SS]#
-  setLocalCmd(cDecSrCmd[index]);
+
+  //: Sr[HH:MM.T]# or :Sr[HH:MM:SS]#
+  //SERIAL_DEBUG.print("index=");
+  //SERIAL_DEBUG.println(index);
+  commandBool(cRaSrCmd[index]);
+  //SERIAL_DEBUG.println(cRaSrCmd[index]);
+
+  //: Sd[sDD*MM]# or :Sd[sDD*MM:SS]#
+  commandBool(cDecSrCmd[index]);
+  //SERIAL_DEBUG.println(cDecSrCmd[index]);
   objSel = true;
 }
 
 // Show target coordinates RA/DEC and ALT/AZM
 void CustomCatScreen::showTargetCoords() {
-  char _reply[15]   = "";
-  uint16_t radec_x  = 155;
-  uint16_t ra_y     = 405;
-  uint16_t dec_y    = 418;
+  char _reply[15] = "";
+  uint16_t radec_x = 155;
+  uint16_t ra_y = 405;
+  uint16_t dec_y = 418;
   uint16_t altazm_x = 246;
-  uint16_t width    = 85;
-  uint16_t height   = 12;
+  uint16_t width = 83;
+  uint16_t height = 12;
 
-  // The following used the local command channel
-  // Decided to change to direct access to transfroms method since
-  //    getting target ALT and AZM didn't work as expected and transform is faster
-  //double cAzm_d     = 0.0;
-  //double cAlt_d     = 0.0;
-  //char reply[15]    = "";
-  
+  // The following used the local command channel but decided
+  // to just access the current calculated array values
+  // double cAzm_d     = 0.0;
+  // double cAlt_d     = 0.0;
+  // char reply[15]    = "";
+
   // Get Target RA: Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
-  //getLocalCmdTrim(":Gr#", reply);
+  // commandWithReply(":Gr#", reply);
 
   // Get Target DEC: sDD*MM# or sDD*MM:SS# (based on precision setting)
-  //getLocalCmdTrim(":Gd#", reply); 
+  // commandWithReply(":Gd#", reply);
 
   // Get Target ALT and AZ and display them as Double
-  //getLocalCmdTrim(":Gz#", reply); // DDD*MM'SS# 
-  //convert.dmsToDouble(&tAzm_d, reply, false, PM_LOW);
+  // commandWithReply(":Gz#", reply); // DDD*MM'SS#
+  // convert.dmsToDouble(&tAzm_d, reply, false, PM_LOW);
 
-  //getLocalCmdTrim(":Gal#", reply);	// sDD*MM'SS#
-  //convert.dmsToDouble(&tAlt_d, reply, true, PM_LOW);
+  // commandWithReply(":Gal#", reply);	// sDD*MM'SS#
+  // convert.dmsToDouble(&tAlt_d, reply, true, PM_LOW);
 
-  //sprintf(_reply, "AZM: %6.1f", cAzm_d); 
-  //canvCustomDefPrint(altazm_x, ra_y, width-10, height, _reply, false);    
+  // sprintf(_reply, "AZM: %6.1f", cAzm_d);
+  // canvCustomDefPrint(altazm_x, ra_y, width-10, height, _reply, false);
 
-  //sprintf(_reply, "ALT: %6.1f", cAlt_d);
-  //canvCustomDefPrint(altazm_x, dec_y, width-10, height, _reply, false); 
+  // sprintf(_reply, "ALT: %6.1f", cAlt_d);
+  // canvCustomDefPrint(altazm_x, dec_y, width-10, height, _reply, false);
 
-  Coordinate catTarget = goTo.getGotoTarget();
-  transform.rightAscensionToHourAngle(&catTarget);
-  transform.equToHor(&catTarget);
-
-  sprintf(_reply, "RA: %6.1f", radToHrs(catTarget.r));
+  // Using the values stored in master array during drawCustomCat()
+  // RA and DEC settings
+  sprintf(_reply, "RA : %s", cArray[absIndex].cRAhhmmss);
+  //sprintf(_reply, "RA: %6.1f", cusTarget[absIndex].r);
   canvCustomDefPrint.printRJ(radec_x, ra_y, width, height, _reply, false);
-  sprintf(_reply, "DEC: %6.1f", radToDeg(catTarget.d));
+  sprintf(_reply, "DEC: %s", cArray[absIndex].cDECsddmmss);
+  //sprintf(_reply, "DEC: %6.1f", cusTarget[absIndex].d);
   canvCustomDefPrint.printRJ(radec_x, dec_y, width, height, _reply, false);
-  sprintf(_reply, "AZM: %6.1f", (double)NormalizeAzimuth(radToDeg(catTarget.z))); 
-  canvCustomDefPrint.printRJ(altazm_x, ra_y, width-10, height, _reply, false);    
-  sprintf(_reply, "ALT: %6.1f", radToDeg(catTarget.a));
-  canvCustomDefPrint.printRJ(altazm_x, dec_y, width-10, height, _reply, false); 
+  
+  // Alt Azm settings
+  sprintf(_reply, "AZM: %6.1f", dcAzm[absIndex]);
+  canvCustomDefPrint.printRJ(altazm_x, ra_y, width - 10, height, _reply, false);
+  sprintf(_reply, "ALT: %6.1f", dcAlt[absIndex]);
+  canvCustomDefPrint.printRJ(altazm_x, dec_y, width - 10, height, _reply, false);
 }
 
 CustomCatScreen customCatScreen;

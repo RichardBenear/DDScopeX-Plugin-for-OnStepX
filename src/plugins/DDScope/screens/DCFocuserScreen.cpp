@@ -20,7 +20,7 @@
 // my own A4988 driver for the DC Motor control where I could tweak the 
 // parameters more directly. These functions are found near the end 
 // of this file.
-
+#include "../display/Display.h"
 #include "DCFocuserScreen.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include <Fonts/FreeSansBold12pt7b.h>
@@ -71,8 +71,8 @@ CanvasPrint canvFocuserInsPrint(&Inconsolata_Bold8pt7b);
 void DCFocuserScreen::draw() {
   tasks.yield(10);
   setCurrentScreen(FOCUSER_SCREEN);
-  #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(true);
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(true);
   #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
@@ -82,8 +82,8 @@ void DCFocuserScreen::draw() {
 
   tft.setFont(&Inconsolata_Bold8pt7b);
   drawCommonStatusLabels();
-  updateFocuserButtons(false);
-  getOnStepCmdErr(); // show error bar
+  updateFocuserButtons();
+  //showOnStepCmdErr(); // show error bar
   
   int y_offset = 0;
 
@@ -119,8 +119,11 @@ void DCFocuserScreen::draw() {
   updateCommonStatus();
   updateFocuserStatus();
 
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(false);
+  wifiDisplay.sendFrameToEsp(FRAME_TYPE_DEF);
+  #endif
   #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(false);
   tft.saveBufferToSD("Focus");
   #endif
 }
@@ -152,12 +155,28 @@ void DCFocuserScreen::updateFocuserStatus() {
 }
 
 bool DCFocuserScreen::focuserButStateChange() {
+  bool changed = false;
+
+  if (display.buttonTouched) {
+    display.buttonTouched = false;
+    if (setMax || focReset || setZero || incSpeed || decSpeed) {
+      changed = true;
+    }
+
+    if (setPoint || gotoSetpoint) {
+      changed = true;
+    }
+
+    if (focGoToHalf || incMoveCt || decMoveCt) {
+      changed = true;
+    }
+  }
+
   if (display._redrawBut) {
     display._redrawBut = false;
-    return true;
-  } else { 
-    return false;
+    changed = true;
   }
+  return changed;
 }
 
 // Focuser Screen Main Button object
@@ -181,8 +200,7 @@ Button focuserXLargeButton(
                 "");
 
 //***** Update Focuser Buttons ******
-void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {  
-  _redrawBut = redrawBut;
+void DCFocuserScreen::updateFocuserButtons() {  
   
   tft.setFont(&FreeSansBold12pt7b);
   if (focMovingIn && focGoToActive) {
@@ -205,6 +223,7 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   if (incSpeed) {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Inc'ing", BUT_ON);
     incSpeed = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Inc Speed", BUT_OFF);
   }
@@ -214,6 +233,7 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   if (decSpeed) {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Dec'ing", BUT_ON);
     decSpeed = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Dec Speed", BUT_OFF);
   }
@@ -223,6 +243,7 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   if (setPoint) {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Setting..", BUT_ON);
     setPoint = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Set Goto Pt", BUT_OFF);
   }
@@ -232,6 +253,7 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   if (gotoSetpoint) {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Going to SP", BUT_ON);
     gotoSetpoint = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "Goto the SP", BUT_OFF);
   }
@@ -241,6 +263,7 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   if (focGoToHalf) {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "GoingTo Half", BUT_ON);
     focGoToHalf = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(SPEED_X, SPEED_Y + y_offset, SPEED_BOXSIZE_X, SPEED_BOXSIZE_Y, "GoTo Half", BUT_OFF);
   }
@@ -263,6 +286,7 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   if (incMoveCt) {
     focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Inc'ing", BUT_ON);
     incMoveCt = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Inc Cnt", BUT_OFF);
   }
@@ -272,6 +296,7 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   if (decMoveCt) {
     focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Dec'ing", BUT_ON);
     decMoveCt = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Dec Cnt", BUT_OFF);
   }
@@ -281,6 +306,7 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   if (setZero) {
     focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Setting..", BUT_ON);
     setZero = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Set Zero", BUT_OFF);
   }
@@ -290,6 +316,7 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   if (setMax) {
     focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Setting..", BUT_ON);
     setMax = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Set Max", BUT_OFF);
   }
@@ -297,8 +324,9 @@ void DCFocuserScreen::updateFocuserButtons(bool redrawBut) {
   y_offset +=SPEED_BOXSIZE_Y + 2;
   // Reset focuser
   if (focReset) {
-    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Reseting", BUT_ON);
+    focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "Resetting", BUT_ON);
     focReset = false;
+    display._redrawBut = true;
   } else {
     focuserButton.draw(MID_X, MID_Y + y_offset, MID_BOXSIZE_X, MID_BOXSIZE_Y, "RESET", BUT_OFF);
   }
@@ -325,7 +353,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   if (py > FOC_INOUT_Y + y_offset && py < (FOC_INOUT_Y + y_offset + FOC_INOUT_BOXSIZE_Y) && px > FOC_INOUT_X && px < (FOC_INOUT_X + FOC_INOUT_BOXSIZE_X))
   {
     BEEP;
-    soundFreq(2100, 400);
+    soundFreq(2300, 400);
     if (focMovingIn) { //was moving in, change direction
         focChangeDirection();
     }
@@ -354,7 +382,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
     BEEP;
     focMoveSpeed -= FOC_SPEED_INC; // microseconds
     if (focMoveSpeed < 100) focMoveSpeed = 100;
-    decSpeed = false;
+    decSpeed = true;
     return true;
   }
 
@@ -448,7 +476,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   {
     BEEP;
     focMoveDistance -= MTR_PWR_INC_SIZE;
-    if (focMoveDistance <= 0) focMoveDistance = 5;
+    if (focMoveDistance < 0) focMoveDistance = 5;
     incMoveCt = false;
     decMoveCt = true;
     return true;
@@ -481,7 +509,7 @@ bool DCFocuserScreen::touchPoll(uint16_t px, uint16_t py)
   {
     BEEP;
     digitalWrite(FOCUSER_SLEEP_PIN,LOW); 
-    delay(2);
+    delay(1);
     digitalWrite(FOCUSER_SLEEP_PIN,HIGH); 
     focReset = true;
     return true;

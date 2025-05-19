@@ -10,7 +10,7 @@
 // Copyright (C) 2018 to 2021 Charles Lemaire, Howard Dutton, and Others
 // Author: Charles Lemaire, https://pixelstelescopes.wordpress.com/teenastro/
 // Author: Howard Dutton, http://www.stellarjourney.com, hjd1964@gmail.com
-
+#include "../display/Display.h"
 #include "PlanetsScreen.h"
 #include "MoreScreen.h"
 #include "../../../telescope/mount/site/Site.h"
@@ -24,8 +24,8 @@
 #define PLANET_H           31
 #define PLANET_Y_SPACING    6
 
-#define RETURN_X          165
-#define RETURN_Y          445
+#define RETURN_X          195
+#define RETURN_Y          400
 #define RETURN_W           80
 #define BACK_H             35
 
@@ -45,8 +45,8 @@ Button planetsButton(
 // Initialize the PLANETS page
 void PlanetsScreen::draw() {
   setCurrentScreen(PLANETS_SCREEN);
-  #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(true);
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(true);
   #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
@@ -58,23 +58,27 @@ void PlanetsScreen::draw() {
 
   // Get the UTC offset from Onstep 
   char utcOffset[4];
-  getLocalCmdTrim(":GG#", utcOffset); 
+  commandWithReply(":GG#", utcOffset); 
   utcOffset[3] = 0; // clear # character
 
   // UTC adjustment for Ephemeris code...e.g. :GG# returns 7 for my location..Ephemeris wants -6 
   // probably a result of the difference in how OnStep defines UTC and how Ephermeris defines it
   utc = (atoi(utcOffset) -1) * -1; // adjust Onstep UTC to Ephemeris expected UT
   
-  getPlanet(planetButSelPos); // init screen
-  
   for(int row=0; row<PLANET_ROWS; row++) {
     planetsButton.draw(PLANET_X, PLANET_Y+row*(PLANET_H+PLANET_Y_SPACING), PLANET_W, PLANET_H, PlanetNames[row], false);
   }
   planetsButton.draw(RETURN_X, RETURN_Y, RETURN_W, BACK_H, "RETURN", BUT_OFF);
-  updatePlanetsButtons(false);
 
+  getPlanet(planetButSelPos); // init screen
+  
+  updatePlanetsButtons();
+
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(false);
+  wifiDisplay.sendFrameToEsp(FRAME_TYPE_DEF);
+  #endif
   #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(false);
   tft.saveBufferToSD("Plant");
   #endif
 }
@@ -113,9 +117,9 @@ void PlanetsScreen::GetTime(unsigned int &hour, unsigned int &minute, unsigned i
 {
   char out[20];
   if (ut) {
-    getLocalCmdTrim(":GX80#", out);
+    commandWithReply(":GX80#", out);
   } else {
-    getLocalCmdTrim(":GL#", out);
+    commandWithReply(":GL#", out);
   }
     char2RA(out, hour, minute, second);
 }
@@ -125,9 +129,9 @@ void PlanetsScreen::GetDate(unsigned int &day, unsigned int &month, unsigned int
 {
   char out[20];
   if (ut) {
-    getLocalCmdTrim(":GX81#", out);
+    commandWithReply(":GX81#", out);
   } else {
-    getLocalCmdTrim(":GC#", out);
+    commandWithReply(":GC#", out);
   }
   char* pEnd;
   month = strtol(&out[0], &pEnd, 10);
@@ -139,7 +143,7 @@ void PlanetsScreen::GetDate(unsigned int &day, unsigned int &month, unsigned int
 void PlanetsScreen::GetLatitude(int &degree, int &minute, int &second)
 {
   char out[20];
-  getLocalCmdTrim(":Gt#", out);
+  commandWithReply(":Gt#", out);
   char* pEnd;
   degree = strtol(&out[0], &pEnd, 10);
   minute = strtol(&out[4], &pEnd, 10);
@@ -150,7 +154,7 @@ void PlanetsScreen::GetLatitude(int &degree, int &minute, int &second)
 void PlanetsScreen::GetLongitude(int &degree, int &minute, int &second)
 {
   char out[20];
-  getLocalCmdTrim(":Gg#", out);
+  commandWithReply(":Gg#", out);
   char* pEnd;
   degree = strtol(&out[0], &pEnd, 10);
   minute = strtol(&out[5], &pEnd, 10);
@@ -216,7 +220,7 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     equatorialCoordinatesToString(obj.equaCoordinates, raCoord, decCoord);
 
     // Print date, time, latitude, longitude
-    int x = 5; int y=365; int y_off=0; int y_spc=12; int w = 180; int h=17;
+    int x = 5; int y=358; int y_off=0; int y_spc=12; int w = 180; int h=17;
     char d[22], t[21], la[21], lg[21];
 
     tft.fillRect(x, y-y_spc, w, h,  butBackground);
@@ -299,37 +303,47 @@ void PlanetsScreen::getPlanet(unsigned short planetNum) {
     char raPrint[9], decPrint[10];
     sprintf(raPrint, "%02d:%02d:%02d", ivr1, ivr2, (int)fvr3);
     sprintf(cmd, ":Sr%02d:%02d:%02d#", ivr1, ivr2, (int)fvr3);
-    setLocalCmd(cmd);
+    commandBool(cmd);
 
     sprintf(decPrint, "%c%02d:%02d:%02d", sign, ivd1, ivd2, (int)fvd3);  
     sprintf(cmd, ":Sd%c%02d:%02d:%02d#", sign, ivd1, ivd2, (int)fvd3);
-    setLocalCmd(cmd);
+    commandBool(cmd);
     
     // the following 5 lines are displayed on the Catalog/More page
-    snprintf(moreScreen.catSelectionStr1, 23, "Name-:%-16s", PlanetNames[planetButSelPos]);
-    snprintf(moreScreen.catSelectionStr2, 19, "AZM--:%-12f", obj.horiCoordinates.azi);
-    snprintf(moreScreen.catSelectionStr3, 19, "ALT--:%-12f", obj.horiCoordinates.alt);
-    snprintf(moreScreen.catSelectionStr4, 23, "RA---:%-16s", raPrint);
-    snprintf(moreScreen.catSelectionStr5, 23, "DEC--:%-16s", decPrint);
+    snprintf(moreScreen.catSelectionStr1, 26, "Name-:%-16s", PlanetNames[planetButSelPos]);
+    snprintf(moreScreen.catSelectionStr2, 26, "AZM--:%-12f", obj.horiCoordinates.azi);
+    snprintf(moreScreen.catSelectionStr3, 26, "ALT--:%-12f", obj.horiCoordinates.alt);
+    snprintf(moreScreen.catSelectionStr4, 26, "RA---:%-16s", raPrint);
+    snprintf(moreScreen.catSelectionStr5, 26, "DEC--:%-16s", decPrint);
 
     moreScreen.objectSelected = true;
 }
 
 bool PlanetsScreen::planetsButStateChange() {
+  bool changed = false;
+
+  if (display.buttonTouched) {
+    display.buttonTouched = false;
+    if (planetButDetected) {
+      changed = true;
+    }
+  }
+
   if (display._redrawBut) {
     display._redrawBut = false;
-    return true;
-  } else { 
-    return false;
-  }
+    changed = true;
+  } 
+  return changed;
 }
 
 // ******************************************************
 // Update for buttons 
 // ******************************************************
-void PlanetsScreen::updatePlanetsButtons(bool redrawBut) {
-  _redrawBut = redrawBut;
-  //if (planetButDetected) {
+void PlanetsScreen::updatePlanetsButtons() {
+  
+  if (planetButDetected) {
+    planetButDetected = false;
+
     // ERASE old: set background back to unselected and replace the previous name field
     planetsButton.draw(PLANET_X, PLANET_Y+planetPrevSel*(PLANET_H+PLANET_Y_SPACING), 
             PLANET_W, PLANET_H, PlanetNames[planetPrevSel], BUT_OFF);  
@@ -340,9 +354,8 @@ void PlanetsScreen::updatePlanetsButtons(bool redrawBut) {
     
     getPlanet(planetButSelPos);
 
-    planetButDetected = false;
     planetPrevSel = planetButSelPos;
-  //}
+  }
 }
 
 // *****************************************************

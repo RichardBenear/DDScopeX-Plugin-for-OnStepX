@@ -5,17 +5,18 @@
 #include "FlexCAN_T4.h"
 #include "ODriveTeensyCAN.h"
 #include "src/lib/tasks/OnTask.h"
+#include "src/lib/debug/Debug.h"
 
 #define TIMEOUT 5 // msec
 
-static const int kMotorOffsetFloat = 2;
-static const int kMotorStrideFloat = 28;
-static const int kMotorOffsetInt32 = 0;
-static const int kMotorStrideInt32 = 4;
-static const int kMotorOffsetBool = 0;
-static const int kMotorStrideBool = 4;
-static const int kMotorOffsetUint16 = 0;
-static const int kMotorStrideUint16 = 2;
+// static const int kMotorOffsetFloat = 2;
+// static const int kMotorStrideFloat = 28;
+// static const int kMotorOffsetInt32 = 0;
+// static const int kMotorStrideInt32 = 4;
+// static const int kMotorOffsetBool = 0;
+// static const int kMotorStrideBool = 4;
+// static const int kMotorOffsetUint16 = 0;
+// static const int kMotorStrideUint16 = 2;
 
 static const int NodeIDLength = 6;
 static const int CommandIDLength = 5;
@@ -80,33 +81,33 @@ bool ODriveTeensyCAN::sendMessage(int axis_id, int cmd_id, bool remote_transmiss
     }
   }
   // Show timeout info
-  Serial.println("CAN read Timeout");
-  Serial.print("Axis ID: 0x"); Serial.println(axis_id, HEX);
-  Serial.print("Cmd ID: 0x"); Serial.println(cmd_id, HEX);
-  //Serial.print("Length: "); Serial.println(length);
-  //Serial.print("msg.id: 0x"); Serial.println(msg.id, HEX);  
-  //Serial.print("msg.flags.remote: "); Serial.println(msg.flags.remote ? "True" : "False");
-  //Serial.print("msg.len: "); Serial.println(msg.len);
-  Serial.print("signal_bytes: ");
+  SERIAL_DEBUG.println("CAN read Timeout");
+  SERIAL_DEBUG.print("Axis ID: 0x"); SERIAL_DEBUG.println(axis_id, HEX);
+  SERIAL_DEBUG.print("Cmd ID: 0x"); SERIAL_DEBUG.println(cmd_id, HEX);
+  //SERIAL_DEBUG.print("Length: "); SERIAL_DEBUG.println(length);
+  //SERIAL_DEBUG.print("msg.id: 0x"); SERIAL_DEBUG.println(msg.id, HEX);  
+  //SERIAL_DEBUG.print("msg.flags.remote: "); SERIAL_DEBUG.println(msg.flags.remote ? "True" : "False");
+  //SERIAL_DEBUG.print("msg.len: "); SERIAL_DEBUG.println(msg.len);
+  SERIAL_DEBUG.print("signal_bytes: ");
 
   for (int i = 0; i < length; i++) {
-      Serial.print("0x");  // Add prefix
-      if (signal_bytes[i] < 0x10) Serial.print("0");  // Ensure leading zero for single-digit hex
-      Serial.print(signal_bytes[i], HEX);
-      Serial.print(" ");
+      SERIAL_DEBUG.print("0x");  // Add prefix
+      if (signal_bytes[i] < 0x10) SERIAL_DEBUG.print("0");  // Ensure leading zero for single-digit hex
+      SERIAL_DEBUG.print(signal_bytes[i], HEX);
+      SERIAL_DEBUG.print(" ");
   }
-  Serial.println(); // New line after printing all bytes
+  SERIAL_DEBUG.println(); // New line after printing all bytes
 
   // Print msg.buf
   // if (!msg.flags.remote) {
-  //     Serial.print("msg.buf: ");
+  //     SERIAL_DEBUG.print("msg.buf: ");
   //     for (int i = 0; i < msg.len; i++) {
-  //         Serial.print("0x");  // Add prefix
-  //         if (msg.buf[i] < 0x10) Serial.print("0");  // Ensure leading zero
-  //         Serial.print(msg.buf[i], HEX);
-  //         Serial.print(" ");
+  //         SERIAL_DEBUG.print("0x");  // Add prefix
+  //         if (msg.buf[i] < 0x10) SERIAL_DEBUG.print("0");  // Ensure leading zero
+  //         SERIAL_DEBUG.print(msg.buf[i], HEX);
+  //         SERIAL_DEBUG.print(" ");
   //     }
-  //     Serial.println();
+  //     SERIAL_DEBUG.println();
   // }
   return false;
   //tasks.yield(); // Remove this because it causes lock ups!!!!!
@@ -297,7 +298,7 @@ float ODriveTeensyCAN::GetPosition(int axis_id) {
   *((uint8_t *)(&output) + 1) = msg_data[1];
   *((uint8_t *)(&output) + 2) = msg_data[2];
   *((uint8_t *)(&output) + 3) = msg_data[3];
-  //Serial.println(output);
+  //SERIAL_DEBUG.println(output);
   return output;
 }
 
@@ -527,9 +528,9 @@ void ODriveTeensyCAN::ClearErrors(int axis_id) {
 //////////// State helper ///////////
 
 bool ODriveTeensyCAN::RunState(int axis_id, int requested_state) {
-  //Serial.println("Motor Cmd");
-  //Serial.printf("Axis: "); Serial.println(axis_id);
-  //Serial.printf("Req State: "); Serial.println(requested_state);
+  //SERIAL_DEBUG.println("Motor Cmd");
+  //SERIAL_DEBUG.printf("Axis: "); SERIAL_DEBUG.println(axis_id);
+  //SERIAL_DEBUG.printf("Req State: "); SERIAL_DEBUG.println(requested_state);
   sendMessage(axis_id, CMD_ID_SET_AXIS_REQUESTED_STATE, false, 4, (byte*) &requested_state);
   return true;
 }

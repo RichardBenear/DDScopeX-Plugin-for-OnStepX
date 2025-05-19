@@ -5,14 +5,14 @@
 #define GOTO_S_H
 
 #include <Arduino.h>
-#include "../display/Display.h"
+class Display;
 
 class GotoScreen : public Display {
   public:
     void draw();
     bool touchPoll(uint16_t px, uint16_t py);
     void updateGotoStatus();
-    void updateGotoButtons(bool);
+    void updateGotoButtons();
     bool gotoButStateChange();
 
     float rateRatio = 1.0;

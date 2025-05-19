@@ -4,7 +4,7 @@
 // Extended Status Screen
 // Author: Richard Benear
 // 8/30/2021
-
+#include "../display/Display.h"
 #include "ExtStatusScreen.h"
 #include "src/telescope/mount/site/Site.h"
 #include "./src/lib/tasks/OnTask.h"
@@ -20,8 +20,8 @@
 // ========== Draw the Extended Status Screen ==========
 void ExtStatusScreen::draw() {
   setCurrentScreen(XSTATUS_SCREEN);
-  #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(true);
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(true);
   #endif
   tft.setTextColor(textColor);
   tft.fillScreen(pgBackground);
@@ -39,14 +39,17 @@ void ExtStatusScreen::draw() {
   // :GVT#      Get OnStepX Firmware Time
   //            Returns: HH:MM:SS#
   tft.setCursor(STATUS_X, STATUS_Y); 
-  getLocalCmdTrim(":GVN#", exReply); // Get OnStep FW Version
+  commandWithReply(":GVN#", exReply); // Get OnStep FW Version
   tft.print("OnStep FW Version: "); tft.print(exReply);
   mountStatus();
   tlsStatus();
   limitsStatus();
 
+  #ifdef ENABLE_TFT_MIRROR
+  wifiDisplay.enableScreenCapture(false);
+  wifiDisplay.sendFrameToEsp(FRAME_TYPE_DEF);
+  #endif
   #ifdef ENABLE_TFT_CAPTURE
-  tft.enableLogging(false);
   tft.saveBufferToSD("xStatus");
   #endif
 }
@@ -64,7 +67,7 @@ void ExtStatusScreen::mountStatus() {
   int y_offset = STATUS_Y;
   
   // Begin parsing :GU# status data by getting the status string via local command channel
-  getLocalCmdTrim(":GU#", exReply); // Get OnStep Status
+  commandWithReply(":GU#", exReply); // Get OnStep Status
   // process the status string
   y_offset +=STATUS_SPACING; tft.setCursor(STATUS_X, y_offset);
   tft.print("String="); tft.print(exReply);
@@ -162,33 +165,33 @@ void ExtStatusScreen::tlsStatus() {
   // Get and show the Time and Location status
   y_offset +=STATUS_SPACING; tft.setCursor(STATUS_X, y_offset);  
   // show Local Time 24 Hr format
-  getLocalCmdTrim(":GL#", exReply); 
+  commandWithReply(":GL#", exReply); 
   tft.print("Local Time = "); tft.print(exReply);
 
   y_offset +=STATUS_SPACING; tft.setCursor(STATUS_X, y_offset);  
   // show Current Date
-  getLocalCmdTrim(":GC#", exReply);
+  commandWithReply(":GC#", exReply);
   tft.print("Date = "); tft.print(exReply); 
 
   y_offset +=STATUS_SPACING; tft.setCursor(STATUS_X, y_offset);  
   // show TZ Offset
-  getLocalCmdTrim(":GG#", exReply);   
+  commandWithReply(":GG#", exReply);   
   tft.print("Time Zone = "); tft.print(exReply);
   
   y_offset +=STATUS_SPACING; tft.setCursor(STATUS_X, y_offset);  
   // show Latitude
-  getLocalCmdTrim(":Gt#", exReply); 
+  commandWithReply(":Gt#", exReply); 
   tft.print("Latitude = "); tft.print(exReply);
 
   y_offset +=STATUS_SPACING; tft.setCursor(STATUS_X, y_offset);  
   // show Longitude
-  getLocalCmdTrim(":Gg#", exReply); 
+  commandWithReply(":Gg#", exReply); 
   tft.print("Longitude = "); tft.print(exReply);
     
   y_offset +=STATUS_SPACING; tft.setCursor(STATUS_X, y_offset);  
-  getLocalCmdTrim(":GX80#", exReply); 
+  commandWithReply(":GX80#", exReply); 
   tft.print("UTC Time and Date = "); tft.print(exReply);
-  getLocalCmdTrim(":GX81#", exReply); 
+  commandWithReply(":GX81#", exReply); 
   tft.print(":"); tft.print(exReply);
 }
 
@@ -196,12 +199,12 @@ void ExtStatusScreen::limitsStatus() {
   int y_offset = 338;
   y_offset +=STATUS_SPACING; tft.setCursor(STATUS_X, y_offset);  
   // show Longitude
-  getLocalCmdTrim(":Gh#", exReply); 
+  commandWithReply(":Gh#", exReply); 
   tft.print("Horizon Limit = "); tft.print(exReply);
     
   y_offset +=STATUS_SPACING; tft.setCursor(STATUS_X, y_offset);  
   // show Longitude
-  getLocalCmdTrim(":Go#", exReply); 
+  commandWithReply(":Go#", exReply); 
   tft.print("Overhead Limit = "); tft.print(exReply);  
 }
 
