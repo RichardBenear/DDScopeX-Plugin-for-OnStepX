@@ -2,12 +2,15 @@
 // SettingsScreen.cpp
 
 // Author: Richard Benear 2/13/22
+//    - added support for WiFi Screens 3/25
+//    - bug fixes 5/22
 #include "../display/Display.h"
 #include "SettingsScreen.h"
 #include "../catalog/Catalog.h"
 #include "../fonts/Inconsolata_Bold8pt7b.h"
 #include "src/telescope/mount/Mount.h"
 #include "../../../lib/tasks/OnTask.h"
+#include "src/plugins/DDScope/lx200/LX200Handler.h"
 
 #define PAD_BUTTON_X         2
 #define PAD_BUTTON_Y         280
@@ -118,9 +121,9 @@ void SettingsScreen::draw() {
   tft.setCursor(TXT_LABEL_X, TXT_LABEL_Y+TXT_SPACING_Y*2);
   tft.print(" Time Zone (sHH):");
   tft.setCursor(TXT_LABEL_X, TXT_LABEL_Y+TXT_SPACING_Y*3);
-  tft.print("Latitude (sXX.X):");
+  tft.print("Site Lat (sDD.D):");
   tft.setCursor(TXT_LABEL_X, TXT_LABEL_Y+TXT_SPACING_Y*4);
-  tft.print("Longitud(sXXX.X):");
+  tft.print("Site Lon(sDDD.D):");
 
   tft.setCursor(TDU_DISP_X, TDU_DISP_Y);
   tft.print("     Time:");
@@ -129,9 +132,9 @@ void SettingsScreen::draw() {
   tft.setCursor(TDU_DISP_X, TDU_DISP_Y+TDU_OFFSET_Y*2);
   tft.print("       TZ:");
   tft.setCursor(TDU_DISP_X, TDU_DISP_Y+TDU_OFFSET_Y*3);
-  tft.print(" Latitude:");
+  tft.print(" Site Lat:");
   tft.setCursor(TDU_DISP_X, TDU_DISP_Y+TDU_OFFSET_Y*4);
-  tft.print("Longitude:");
+  tft.print("Site Long:");
 
   // Draw Key Pad
   int z=0;
@@ -191,7 +194,24 @@ void SettingsScreen::updateSettingsStatus() {
 
 // Numpad handler, assign label to pressed button field array slot
 void SettingsScreen::setProcessNumPadButton() {
+    
   if (sNumDetected) {
+      
+    // Special button to clear the ESP32C3 or ESP32 D1 Mini RX buffer on reboot of C3 when using SkySafari
+    if (Tselect && sButtonPosition == 9) {
+      while (SERIAL_ESP32C3.available()) SERIAL_ESP32C3.read(); 
+      while (SERIAL_B.available()) SERIAL_B.read(); 
+      SERIAL_DEBUG.println("Clearing Serial8 and Serial_B RX buffers");
+    }
+
+    // Special button to Reset the ESP32C3 via Teensy GPIO
+    if (Tselect && sButtonPosition == 11) {
+      digitalWrite(ESP32C3_RST_PIN, LOW);
+      SERIAL_DEBUG.println("Resetting ESP32C3");
+      delay(2000);
+      digitalWrite(ESP32C3_RST_PIN, HIGH);
+    }
+
     // Time Format: [HH:MM:SS]
     if (Tselect && TtextIndex < 8 && (sButtonPosition != 9 || sButtonPosition != 11)) {
       Ttext[TtextIndex] = sNumLabels[sButtonPosition][0];
@@ -200,7 +220,8 @@ void SettingsScreen::setProcessNumPadButton() {
       TtextIndex++;
       if (TtextIndex == 2 || TtextIndex == 5) { // these positions are where the ':'s are
         tft.setCursor(TXT_FIELD_X+TtextIndex*CHAR_WIDTH, TXT_FIELD_Y);
-        tft.print(':'); 
+        //tft.print(':'); 
+        tft.print(Ttext[TtextIndex]); 
         TtextIndex++;
       }
     }
@@ -213,7 +234,8 @@ void SettingsScreen::setProcessNumPadButton() {
       DtextIndex++;
       if (DtextIndex == 2 || DtextIndex == 5) {
         tft.setCursor(TXT_FIELD_X+DtextIndex*CHAR_WIDTH, TXT_FIELD_Y+TXT_SPACING_Y);
-        tft.print('/'); 
+        //tft.print('/'); 
+        tft.print(Dtext[DtextIndex]); 
         DtextIndex++;
       }
     }
@@ -261,6 +283,8 @@ void SettingsScreen::setProcessNumPadButton() {
 }
 
 bool SettingsScreen::settingsButStateChange() {
+  //VL("Entering ButStateChange");
+  
   bool changed = false;
 
   if (display.buttonTouched) {
@@ -282,7 +306,7 @@ bool SettingsScreen::settingsButStateChange() {
 
 // Update the buttons for the Settings Screen
 void SettingsScreen::updateSettingsButtons() {
-
+  //VL("Entering Update Settings Buttons");
   // Get button and print label
   switch (sButtonPosition) {
     case 0:  setProcessNumPadButton(); break;
@@ -570,36 +594,47 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
       // Set Local Time :SL[HH:MM:SS]# 24Hr format
       //VL(Ttext[0]);VL(Ttext[1]);VL(Ttext[2]);VL(Ttext[3]);VL(Ttext[4]);VL(Ttext[5]);
       sprintf(sCmd, ":SL%c%c%c%c%c%c%c%c#", Ttext[0], Ttext[1], Ttext[2], Ttext[3], Ttext[4], Ttext[5], Ttext[6], Ttext[7]);
-      commandBool(sCmd);
+      if (!commandBool(sCmd)) {
+        SERIAL_DEBUG.printf("ERR: Setting Local Time = %s\n", sCmd);
+      } 
     } 
 
+    // Local Date
     if (Dselect) { // :SC[MM/DD/YY]# 
       sprintf(sCmd, ":SC%c%c%c%c%c%c%c%c#", Dtext[0], Dtext[1], Dtext[2], Dtext[3], Dtext[4], Dtext[5], Dtext[6], Dtext[7]);
-      commandBool(sCmd);
+      if (!commandBool(sCmd)) {
+        SERIAL_DEBUG.printf("ERR: Setting Local Date = %s\n", sCmd);
+      } 
     }
 
-    if (Tzselect) { // :SG[sHH]# // Time Zone
+    // Time Zone
+    if (Tzselect) { // :SG[sHH]# 
       sprintf(sCmd, ":SG%c%c%c#", Tztext[0], Tztext[1], Tztext[2]);
-      commandBool(sCmd);
+      if (!commandBool(sCmd)) {
+        SERIAL_DEBUG.printf("ERR: Setting Time Zone = %s\n", sCmd);
+      } 
     }
 
-    if (LaSelect) { // :St[sDD*MM]#  Latitude
+    if (LaSelect) { // :St[sDD*MM]#  Site Latitude
       uint8_t laMin = LaText[4] - '0';  //digit after decimal point
       snprintf(sLaMin, sizeof(sLaMin), "%02d\n", laMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":St%c%c%c*%2s#", LaText[0], LaText[1], LaText[2], sLaMin);
-      commandBool(sCmd);
+      //SERIAL_DEBUG.print("Site Long="); SERIAL_DEBUG.println(sCmd);
+      if (!commandBool(sCmd)) {
+        SERIAL_DEBUG.printf("ERR: Setting Latitude = %s\n", sCmd);
+      } 
     }
 
-    if (LoSelect) { // :Sg[(s)DDD*MM]#  Longitude
+    if (LoSelect) { // :Sg[(s)DDD*MM]#  Site Longitude
       uint8_t loMin = LoText[5] - '0'; //digit after decimal point
       snprintf(sLoMin, sizeof(sLoMin), "%02d\n", loMin * 6); // convert fractional degrees to string minutes
       sprintf(sCmd, ":Sg%c%c%c%c*%2s#", LoText[0], LoText[1], LoText[2], LoText[3], sLoMin);
-      commandBool(sCmd);
+      //SERIAL_DEBUG.print("Site Lat="); SERIAL_DEBUG.println(sCmd);
+      if (!commandBool(sCmd)) {
+        SERIAL_DEBUG.printf("ERR: Setting Longitude = %s\n", sCmd);
+      } 
     }
-
-    site.updateTLS(); // set UT1
-    site.updateLocation();
-
+    
     // The SHCC catalogs require the cat manager to have latitude updated to get correct coordinates displayed
     double f=0;
     char reply[12];
@@ -628,12 +663,12 @@ bool SettingsScreen::touchPoll(uint16_t px, uint16_t py) {
     uint8_t laDef = DefLat[2] - '0';  //digit after decimal point
     snprintf(sLaDef, sizeof(sLaDef), "%02d\n", laDef * 6); // convert fractional degrees to string minutes
     sprintf(sCmd, ":St+%c%c*%2s#", DefLat[0], DefLat[1], sLaDef);
-    commandBool(sCmd);
+    if (!commandBool(sCmd)) SERIAL_DEBUG.printf("ERR: Setting Default Latitude = %s\n", sCmd);
 
     uint8_t loDef = DefLong[3] - '0'; //digit after decimal point
     snprintf(sLoDef, sizeof(sLoDef), "%02d\n", loDef * 6); // convert fractional degrees to string minutes
-    sprintf(sCmd, ":Sg-%c%c%c*%2s#", DefLong[0], DefLong[1], DefLong[2], sLoDef);
-    commandBool(sCmd);
+    sprintf(sCmd, ":Sg%c%c%c*%2s#", DefLong[0], DefLong[1], DefLong[2], sLoDef);
+    if (!commandBool(sCmd)) SERIAL_DEBUG.printf("ERR: Setting Default Longitude = %s\n", sCmd);
     
     site.updateLocation();
     return true; 

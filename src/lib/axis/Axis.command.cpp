@@ -62,6 +62,7 @@ bool Axis::command(char *reply, char *command, char *parameter, bool *supressFra
       if (index > 8) { *commandError = CE_PARAM_RANGE; return true; }
       if (index + 1 != axisNumber) return false; // command wasn't processed
       DriverStatus status = getStatus();
+      SERIAL_DEBUG.println(status.active);
       if (status.active) {
         strcat(reply, status.standstill ? "ST," : ",");
         strcat(reply, status.outputA.openLoad ? "OA," : ",");

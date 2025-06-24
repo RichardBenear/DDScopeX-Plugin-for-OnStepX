@@ -98,7 +98,7 @@ void CustomCatScreen::init() {
   // Draw the Trash can/Delete Icon bitmap; used to delete an entry in only the
   // CUSTOM USER catalog
   uint8_t extern trash_icon[];
-  tft.drawBitmap(100, 445, trash_icon, 28, 32, butBackground, ORANGE);
+  tft.drawBitmap(100, 445, trash_icon, 28, 32, butBackground, butOutline);
 
   tft.setFont(&Inconsolata_Bold8pt7b);
   customCatButton.draw(BACK_X, BACK_Y, BACK_W, BACK_H, "BACK", BUT_OFF);

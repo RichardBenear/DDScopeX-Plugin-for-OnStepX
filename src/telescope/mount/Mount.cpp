@@ -48,11 +48,11 @@ void Mount::init() {
   axis2.setMotionLimitsCheck(false);
   if (AXIS2_POWER_DOWN == ON) axis2.setPowerDownTime(AXIS2_POWER_DOWN_TIME);
 
-  // Added this enable to orginal code
-  VF("enable motor false");
+  // ===============================================
+  // NOTE: Added this enable(false) to orginal code
   axis1.enable(false);
   axis2.enable(false);
-  // ====================
+  // ===============================================
 
   // initialize the critical subsystems
   site.init();

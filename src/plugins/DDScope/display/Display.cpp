@@ -4,7 +4,9 @@
 // Display Support - Common Display functions
 // 3.5" RPi Touchscreen and Display
 // SPI Interface
-// Author: Richard Benear 3/30/2021 - refactor 6/22
+// Author: Richard Benear 3/30/2021 
+//   - refactored 6/22
+//   - bug fixes 4/25, 5/25
 
 // #include <Arduino.h>
 #include <Adafruit_GFX.h>
@@ -138,6 +140,8 @@ CommandProcessor processor(9600, 'L');
 Adafruit_ILI9486_Teensy tft; 
 WifiDisplay wifiDisplay;
 
+void updateScreenWrapper() { display.updateSpecificScreen(); }
+
 // =========================================
 // ========= Initialize Display ============
 // =========================================
@@ -152,11 +156,20 @@ void Display::init() {
 
   // set some defaults
   // NOTE: change these for your own personal settings
-  VLF("MSG: Setting up Limits, TZ, Site Name, Slew Speed");
-  commandBool(":SG+06:00#"); // Set Default Time Zone
+  VLF("MSG: Setting up Limits, TZ, Site Name");
+  //if (!commandBool(":SG+06:00#")) VLF("Setting TZ failed"); // Set Default Time Zone
   commandBool(":Sh-02#"); //Set horizon limit -2 deg
   commandBool(":So87#"); // Set overhead limit 87 deg
   commandBool(":SMHome#"); // Set Site 0 name "Home"
+
+  // Start Display update task
+  // Update the currently selected screen status
+  //   NOTE: this task MUST be a lower priority than the TouchScreen task to prevent
+  //   race conditions that result in the WiFi uncompressedBuffer being overwritten
+  //   when in the TFT Screen Mirror mode
+  VF("MSG: Setup, start Screen status update task (rate 1000 ms priority 5)... ");
+  uint8_t us_handle = tasks.add(1000, 0, true, 5, updateScreenWrapper, "UpdateSpecificScreen");
+  if (us_handle)  { VLF("success"); } else { VLF("FAILED!"); }
 }
 
 // initialize the SD card and boot screen
@@ -201,8 +214,8 @@ void Display::refreshButtons() {
         guideScreen.updateGuideButtons(); 
       break;        
     case FOCUSER_SCREEN:  
-      if (dCfocuserScreen.focuserButStateChange()) 
-        dCfocuserScreen.updateFocuserButtons(); 
+      if (dcFocuserScreen.focuserButStateChange()) 
+        dcFocuserScreen.updateFocuserButtons(); 
       break; 
     case GOTO_SCREEN:     
       if (gotoScreen.gotoButStateChange()) 
@@ -259,10 +272,13 @@ void Display::updateSpecificScreen() {
 #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true); 
 #endif
+
+  display.refreshButtons();
+
   switch (currentScreen) {
     case HOME_SCREEN:       homeScreen.updateHomeStatus();            break;
     case GUIDE_SCREEN:      guideScreen.updateGuideStatus();          break;
-    case FOCUSER_SCREEN:    dCfocuserScreen.updateFocuserStatus();    break;
+    case FOCUSER_SCREEN:    dcFocuserScreen.updateFocuserStatus();    break;
     case GOTO_SCREEN:       gotoScreen.updateGotoStatus();            break;
     case MORE_SCREEN:       moreScreen.updateMoreStatus();            break;
     case SETTINGS_SCREEN:   settingsScreen.updateSettingsStatus();    break;
@@ -277,8 +293,6 @@ void Display::updateSpecificScreen() {
     #endif
     default:  break;
   }
-
-  display.refreshButtons();
 
   // don't do the following updates on these screens
   if (currentScreen == CUSTOM_SCREEN || 
@@ -305,37 +319,65 @@ void Display::updateSpecificScreen() {
 #endif
 }
 
-// ======= Local Command Channel Support ========
-// Use for LX200 commands that only expect a bool returned
+// Used only if response is bool or short...mostly Setters
 bool Display::commandBool(char *command) {
-  //VL(command);
-  char *serStatus = nullptr;
-  char resp[80] = "";
+  
+  // Send the command
   SERIAL_LOCAL.transmit(command);
-  tasks.yield(10);
-  serStatus = SERIAL_LOCAL.receive();
-  strcpy(resp, serStatus);
-  int l = strlen(resp) - 1; 
-  if (l >= 0 && resp[l] == '#') resp[l] = 0; // removes the #
-  //Serial.print(resp);
-  return (resp);
+  
+  // NOTE: using Y; (yield) caused anomalus errors which were not really errors
+  // Y;
+
+  // Receive the response
+  const char* serStatus = SERIAL_LOCAL.receive();
+  if (!serStatus) return false;  // Safety check
+
+  // Make a safe, bounded copy of the response
+  char resp[4] = "";
+  strncpy(resp, serStatus, sizeof(resp) - 1); 
+
+  // Strip trailing '#'
+  size_t len = strlen(resp);
+  if (len > 0 && resp[len - 1] == '#') {
+    resp[len - 1] = '\0';
+  }
+
+  // Return true if the response is non-empty and not "0"
+  return strlen(resp) > 0 && strcmp(resp, "0") != 0;
 }
 
+// Overload
 bool Display::commandBool(const char *command) {
   return commandBool((char *)command);
 }
 
-// Local Cmd channel - use when the expected response is not bool
-// Instead of using SERIAL_LOCAL this function uses parts of that code for quicker access
+// Use for all GET commands NOT for SET
+// Local Cmd channel processing - use when the expected response is not bool
+// Expects commands that are <= 4 characters
+// Instead of using SERIAL_LOCAL this function uses parts of that code.
 // There was "anomalous" behavior and hangs using SERIAL_LOCAL for reading data
 void Display::commandWithReply(const char *command, char *reply) {
-  char cmdReply[60] = "";
+  char cmdReply[80] = "";
   char parameter[4] = "";
   bool supressFrame = false;
   bool numericReply = true;
   char cmd[5] = "";
   char mutableCommand[6]; 
   strcpy(mutableCommand, command);  // Copy command to a mutable buffer
+
+  // Handle a new Special Command used to pass the IP Address of the 
+  // Wifi Display to the OLED Display which is controlled by the ESP32C3
+  // This is not part of the OnStep Command processing
+  if (strcmp(command, ":GI#") == 0) {
+    if (wifiDisplay.wifiStaIpStr.startsWith("P:")) {
+      String ipOnly = wifiDisplay.wifiStaIpStr.substring(2);  // remove "P:"
+
+      snprintf(reply, 32, "%s", ipOnly.c_str());  // Write result to reply
+    } else {
+      reply[0] = '\0';  // Empty response if format invalid
+    }
+  return;
+  }
 
   // Extract command (drop the ':')
   cmd[0] = mutableCommand[1];  // First command character
@@ -354,12 +396,10 @@ void Display::commandWithReply(const char *command, char *reply) {
     }
   }
 
-    // V(cmd);
-    // V(parameter);
-    // V(" ");
+  // V(cmd); V(parameter); VL(" ");
   CommandError cmdErr = processor.command(cmdReply, cmd, parameter, &supressFrame, &numericReply);
   
-  //VF(cmdErrStr[cmdErr]);
+  // VF(cmdErrStr[cmdErr]);
   // Latch new error and start timer
   if (cmdErr != CE_NONE && latchedCmdErr == CE_NONE) {
       latchedCmdErr = cmdErr;
@@ -413,7 +453,7 @@ void Display::setNightMode(bool nightMode) {
     pgBackground = BLACK; 
     butBackground = DARK_MAROON;
     butOnBackground = MAROON;
-    textColor = ORANGE; 
+    textColor = ORANGE;
     butOutline = ORANGE; 
   }
 }
@@ -463,14 +503,15 @@ void Display::showGpsStatus() {
     currentScreen == XSTATUS_SCREEN ||
     currentScreen == TREASURE_SCREEN) return;
   uint8_t extern gps_icon[];
-  if (!tls.isReady()) {
+  if (tls.isReady()) {
+  //if (commandBool(":GX89#")) {
     firstGPS = true; // turn on One-shot trigger
     if (!flash) {
       flash = true;
-      tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, RED);
+      tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, butBackground);
     } else {
       flash = false;
-      tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, DIM_YELLOW);
+      tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, butOutline);
     }
 
     if (firstRTC) { 
@@ -542,8 +583,8 @@ bool Display::getGeneralErrorMessage(char message[], uint8_t error) {
 // ========== OnStep Command Errors =============
 void Display::showOnStepCmdErr() {
   //VLF("getting Cmd Err");
-  char cmdErr[60] = "";
-  char temp[60] = "Command Error: ";
+  char cmdErr[80] = "";
+  char temp[80] = "Command Error: ";
   // not on these screens
   if (currentScreen == CUSTOM_SCREEN || 
     currentScreen == SHC_CAT_SCREEN ||
@@ -553,7 +594,7 @@ void Display::showOnStepCmdErr() {
 
   commandWithReply(":GE#", cmdErr);
   strcat(temp, cmdErrStr[atoi(cmdErr)]);
-  canvDisplayInsPrint.printLJ(3, 453, 314, C_HEIGHT+2, temp, false);
+  canvDisplayInsPrint.printLJ(3, 451, 314, C_HEIGHT+2, temp, false);
 }
 
 // ========== OnStep General Errors =============

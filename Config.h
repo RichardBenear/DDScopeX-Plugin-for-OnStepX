@@ -21,28 +21,28 @@
                                           //         MaxSTM3, FYSETC_S6_2, etc.  Other boards and more info. in ~/src/Constants.h
 
 // SERIAL PORT COMMAND CHANNELS ------------------------------------ see https://onstep.groups.io/g/main/wiki/6-Configuration#SERIAL
-#define SERIAL_A_BAUD_DEFAULT      460800 //   9600, n. Where n=9600,19200,57600,115200,230400,460800 (common baud rates.)    Infreq
-#define SERIAL_B_BAUD_DEFAULT      230400 //   9600, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Option
-#define SERIAL_B_ESP_FLASHING         OFF //    OFF, ON Upload ESP8266 WiFi firmware through SERIAL_B with :ESPFLASH# cmd.    Option
+#define SERIAL_A_BAUD_DEFAULT      460800 //  9600, n. Where n=9600,19200,57600,115200,230400,460800 (common baud rates.)    Infreq
+#define SERIAL_B_BAUD_DEFAULT      230400 //  9600, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Option
+#define SERIAL_B_ESP_FLASHING         OFF //  OFF, ON Upload ESP8266 WiFi firmware through SERIAL_B with :ESPFLASH# cmd.    Option
 // SERIAL PORT COMMAND CHANNELS --------------------- see https://onstep.groups.io/g/main/wiki/Configuration_Controller#SERIAL_PORTS
-#define SERIAL_C_BAUD_DEFAULT         OFF //    OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
-#define SERIAL_D_BAUD_DEFAULT         OFF //    OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
-#define SERIAL_E_BAUD_DEFAULT         OFF //    OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
-#define SERIAL_GPS                Serial4 //    For 
+#define SERIAL_C_BAUD_DEFAULT         OFF //  OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
+#define SERIAL_D_BAUD_DEFAULT         OFF //  OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
+#define SERIAL_E_BAUD_DEFAULT         OFF //  OFF, n. Baud rate as above. See (src/pinmaps/) for Serial port assignments.   Infreq
+#define SERIAL_GPS                Serial4 //  For GPS receiver
 #define SERIAL_GPS_BAUD            115200
-#define SERIAL_B                  Serial1 //    For ESP32
+#define SERIAL_B                  Serial1 //  For ESP32 companion on Teensy board
 
-#define STATUS_LED                    OFF //    OFF, Steady illumination if no error, blinks w/error code otherwise.          Option
+#define STATUS_LED                    OFF //  OFF, Steady illumination if no error, blinks w/error code otherwise.          Option
 // STATUS --------------------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration_Controller#STATUS_LED
 
 // RETICLE CONTROL ------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration_Controller#RETICLE_CONTROL
-#define RETICLE_LED_DEFAULT           OFF //    OFF, n. Where n=0..255 (0..100%) activates feature sets default brightness.   Option
-#define RETICLE_LED_MEMORY            OFF //    OFF, ON Remember reticle brightness across power cycles.                      Option
+#define RETICLE_LED_DEFAULT           OFF //  OFF, n. Where n=0..255 (0..100%) activates feature sets default brightness.   Option
+#define RETICLE_LED_MEMORY            OFF //  OFF, ON Remember reticle brightness across power cycles.                      Option
 
 // WEATHER SENSOR ------------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#SENSORS
-#define WEATHER                    BME280 //    OFF, BME280 (I2C 0x77,) BME280_0x76, BME280_SPI (see pinmap for CS.)          Option
-                                          //         BMP280 (I2C 0x77,) BMP280_0x76, BMP280_SPI (see pinmap for CS.)
-                                          //         BME280 or BMP280 for temperature, pressure.  BME280 for humidity also.
+#define WEATHER                    BME280 //  OFF, BME280 (I2C 0x77,) BME280_0x76, BME280_SPI (see pinmap for CS.)          Option
+                                          //       BMP280 (I2C 0x77,) BMP280_0x76, BMP280_SPI (see pinmap for CS.)
+                                          //       BME280 or BMP280 for temperature, pressure.  BME280 for humidity also.
 
 #define STEP_WAVE_FORM             SQUARE // SQUARE, PULSE Step signal wave form faster rates. SQUARE best signal integrity.  Adjust
 // SIGNALING ------------------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration_Controller#SIGNALING
@@ -52,7 +52,7 @@
 #define ODRIVE_COMM_MODE           OD_CAN  // Use OD_UART or OD_CAN...I2C may be added later
 #define ODRIVE_SWAP_AXES               ON  // ODrive axis 0 = OnStep axis 2 = ALT
                                            // ODrive axis 1 = OnStep axis 1 = AZM
-#define ODRIVE_SERIAL             Serial3  // Teensy HW serial
+#define ODRIVE_SERIAL             Serial3  // Teensy HW serial port to/from ODrive
 #define ODRIVE_SERIAL_BAUD         115200  // 19200 default
 #define ODRIVE_SLEW_DIRECT            OFF  // ON=using ODrive trapezoidal move profile. OFF=using OnStep move profile
 #define ODRIVE_ABSOLUTE                ON  // using absolute encoder

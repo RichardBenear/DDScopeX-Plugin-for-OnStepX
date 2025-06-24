@@ -16,7 +16,7 @@ void usbPollTask() {
     //Serial.println("✅ ESP32 USB device connected.");
     //usbConnected = true;
     // if (userSerial.available()) {
-    //   char c = SERIAL_ESP.read();
+    //   char c = SERIAL_ESP32S3.read();
     //   Serial.println(c);
     // }
   //}
@@ -29,10 +29,10 @@ void usbBegin(void) {
 
   myusb.begin();
 
-  Serial.println("USB Host begin");
+  Serial.println("MSG: USB Host begin");
 
-  Serial.printf("MSG: Starting usbPoll task (17ms, priority 6)");
-  uint8_t usbTaskHandle = tasks.add(17, 0, true, 6, usbPollTask, "USB");
+  Serial.printf("MSG: Starting usbPoll task (10ms, priority 3)");
+  uint8_t usbTaskHandle = tasks.add(3, 0, true, 3, usbPollTask, "USB");
   if (usbTaskHandle) {
     Serial.println("USB task scheduled");
   } else {

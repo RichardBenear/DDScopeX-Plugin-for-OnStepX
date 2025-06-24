@@ -24,8 +24,8 @@ class SettingsScreen : public Display {
     char Tztext[3]= {'0','0','0'};
     char LaText[5]= {'0','0','0','0','0'};
     char LoText[6]= {'0','0','0','0','0','0'};
-    char DefLat[3] = {'4', '3', '7'};
-    char DefLong[4]= {'1', '1', '6', '4'};
+    char DefLat[3] = {'4', '3', '6'}; // decimal degrees, not sDD*MM
+    char DefLong[4]= {'1', '1', '6', '3'}; // decimal degrees, not sDDD*MM
     char sCmd[12];
 
     int sButtonPosition;

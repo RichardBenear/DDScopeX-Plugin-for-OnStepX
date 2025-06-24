@@ -13,6 +13,7 @@
 bool Site::command(char *reply, char *command, char *parameter, bool *supressFrame, bool *numericReply, CommandError *commandError) {
   *supressFrame = false;
   PrecisionMode precisionMode = convert.precision;
+  *commandError = CE_NONE;
 
   if (command[0] == 'G') {
     // :Ga#       Get standard time in 12 hour format
@@ -131,7 +132,6 @@ bool Site::command(char *reply, char *command, char *parameter, bool *supressFra
       if (parameter[1] == '9') {
         if (dateIsReady && timeIsReady) *commandError = CE_0;
       } else return false;
-
     } else return false;
   } else
 
@@ -146,17 +146,19 @@ bool Site::command(char *reply, char *command, char *parameter, bool *supressFra
         setDateTime(localToUT1(calendars.gregorianToJulian(local)));        
         updateTLS();
       } else *commandError = CE_PARAM_FORM;
-    } else
+    } else 
 
     //  :SG[sHH]# or :SG[sHH:MM]# (where MM is 00, 30, or 45)
     //            Set the number of hours added to local time to yield UT1
     //            Return: 0 failure, 1 success
     if (command[1] == 'G') {
+      //V(command); V(parameter); VL(" ");
       double hour;
       if (convert.tzToDouble(&hour, parameter)) {
         if (hour >= -13.75 || hour <= 12.0) {
           location.timezone = hour;
           nv.updateBytes(NV_SITE_BASE + locationNumber*LocationSize, &location, LocationSize);
+          *commandError = CE_NONE;
         } else *commandError = CE_PARAM_RANGE;
       } else *commandError = CE_PARAM_FORM;
     } else
@@ -183,13 +185,15 @@ bool Site::command(char *reply, char *command, char *parameter, bool *supressFra
     //            Set the local Time
     //            Return: 0 failure, 1 success
     if (command[1] == 'L') {
+      //V(command); V(parameter); VL(" ");
       GregorianDate local = calendars.julianToGregorian(UT1ToLocal(getDateTime()));
       if (convert.hmsToDouble(&local.hour, parameter, PM_HIGH) || convert.hmsToDouble(&local.hour, parameter, PM_HIGHEST)) {
         timeIsReady = true;
         setDateTime(localToUT1(calendars.gregorianToJulian(local)));
         updateTLS();
+        *commandError = CE_NONE;
       } else *commandError = CE_PARAM_FORM;
-    } else
+    } else 
 
     //  :SM[s]# or :SN[s]# or :SO[s]# or :SP[s]#
     //            Set site name, string may be up to 15 characters

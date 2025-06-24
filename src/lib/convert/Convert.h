@@ -16,7 +16,7 @@ class Convert {
   public:
     // convert timezone string  sHH:MM to double (in hours):
     // (also handles)           sHH
-    bool tzToDouble(double *value, char *hm);
+    bool tzToDouble(double *value, const char *hm);
 
     // convert string in format as follows to double (in hours):
     // HH:MM           PM_LOWEST

@@ -988,9 +988,9 @@ bool ODriveScreen::touchPoll(uint16_t px, uint16_t py) {
       py < OD_ACT_COL_3_Y + y_offset + OD_ACT_BOXSIZE_Y) {
     ALERT;
     VLF("MSG: Resetting ODrive");
-    digitalWrite(ODRIVE_RST, LOW);
+    digitalWrite(ODRIVE_RST_PIN, LOW);
     delay(1);
-    digitalWrite(ODRIVE_RST, HIGH);
+    digitalWrite(ODRIVE_RST_PIN, HIGH);
     delay(1000); // Wait for ODrive to boot
     // oDriveScreen.draw();
     // ODRIVE_SERIAL.flush();

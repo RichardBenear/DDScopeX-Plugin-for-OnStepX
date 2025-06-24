@@ -7,7 +7,6 @@ class Buffer {
     bool checksum = false;
 
     void init(int mountType);
-
     bool add(char c);
     char* getCmd();
     char* getParameter();
@@ -20,11 +19,11 @@ class Buffer {
     char channel;
     char (*reader)();
     char (*writer)(char c);
-
-    const static int bufferSize = 80;
-    char cmd[4] = "";
-    char pb[bufferSize] = "";
-    char cb[bufferSize] = "";
+    
+    enum { bufferSize = 180 };
     int  cbp = 0;
     char seq = 0;
+    char pb[bufferSize] = "";
+    char cb[bufferSize] = "";
+    char cmd[4] = "";
 };

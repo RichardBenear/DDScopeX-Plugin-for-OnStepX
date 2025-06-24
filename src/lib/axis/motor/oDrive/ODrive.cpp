@@ -95,7 +95,8 @@ bool ODriveMotor::init() {
     VLF("FAILED!");
     return false;
   }
-
+  
+  status.active = true;
   return true;
 }
 
@@ -270,7 +271,7 @@ void ODriveMotor::poll() {
   #if ODRIVE_COMM_MODE == OD_UART
     setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
   #elif ODRIVE_COMM_MODE == OD_CAN
-    _oDriveDriver->SetPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
+    _oDriveDriver->setPosition(axisNumber -1, target/(TWO_PI*stepsPerMeasure));
   #endif
 }
 

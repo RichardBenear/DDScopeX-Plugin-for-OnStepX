@@ -97,7 +97,6 @@
 #ifdef SERIAL_LOCAL
   CommandProcessor processCommandsLocal(9600,'L');
   void processCmdsLocal() { processCommandsLocal.poll(); }
-  //void processCmdsLocal() { ::yield(); processCommandsLocal.poll(); }
 #endif
 
 CommandProcessor::CommandProcessor(long baud, char channel) {
@@ -109,19 +108,50 @@ CommandProcessor::~CommandProcessor() {
   SerialPort.end();
 }
 
+// Debug helper
+const char* getAsciiLabel(uint8_t c) {
+  static char label[4];  // must be static to return a valid pointer
+
+  switch (c) {
+    case '\r': return "\\r";
+    case '\n': return "\\n";
+    case '\t': return "\\t";
+    default:
+      if (isprint(c)) {
+        label[0] = (char)c;
+        label[1] = '\0';
+        return label;
+      } else {
+        return ".";
+      }
+  }
+}
+
 void CommandProcessor::poll() {
-  //if (!serialReady) { delay(200); SerialPort.begin(serialBaud); serialReady = true; }
-  if (!serialReady) { SerialPort.begin(serialBaud); serialReady = true; }
+  if (!serialReady) { 
+    delay(200); 
+    SerialPort.begin(serialBaud); 
+    serialReady = true; 
+  }
 
   unsigned long tout = micros() + 500;
-  while (SerialPort.available()) { char c = SerialPort.read(); buffer.add(c); if (buffer.ready() || (long)(micros() - tout) > 0) break; }
+  while (SerialPort.available()) { 
+    char c = SerialPort.read(); 
+    //Serial.printf("Received byte: 0x%02X (%s)\n", (uint8_t)c, getAsciiLabel((uint8_t)c));
+    buffer.add(c); 
+    if (buffer.ready() || (long)(micros() - tout) > 0) break;
+  }
 
   if (buffer.ready()) {
     char reply[80] = "";
     bool numericReply = true;
     bool supressFrame = false;
 
+    //Serial.print("Cmd="); Serial.println(buffer.getCmd());
+    //Serial.print("Parm="); Serial.println(buffer.getParameter());
     commandError = command(reply, buffer.getCmd(), buffer.getParameter(), &supressFrame, &numericReply);
+
+    //Serial.print("Reply="); Serial.println(reply);
 
     if (numericReply) {
       if (commandError != CE_NONE && commandError != CE_1) strcpy(reply,"0"); else strcpy(reply,"1");
@@ -158,10 +188,9 @@ void CommandProcessor::poll() {
     #ifdef DEBUG_ECHO_COMMANDS_CH
       }
     #endif
-  } else {
-    //VF("LOC_SERIAL_TIME OUT");
+  
+    buffer.flush();
   }
-  buffer.flush();
 }
 
 CommandError CommandProcessor::command(char *reply, char *command, char *parameter, bool *supressFrame, bool *numericReply) {
@@ -303,8 +332,7 @@ void commandChannelInit() {
     tasks.setPeriodMicros(handle, comPollRate);
   #endif
   #ifdef SERIAL_LOCAL
-    // changing this from priority 5 in OnStepX original to priority 4
-    VF("MSG: System, start command channel Local task (priority 4)... ");
-    if (tasks.add(3, 0, true, 4, processCmdsLocal, "SysCmdL")) { VLF("success"); } else { VLF("FAILED!"); }
+    VF("MSG: System, start command channel Local task (priority 5)... ");
+    if (tasks.add(3, 0, true, 5, processCmdsLocal, "SysCmdL")) { VLF("success"); } else { VLF("FAILED!"); }
   #endif
 }

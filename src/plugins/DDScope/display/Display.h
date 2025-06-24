@@ -5,7 +5,8 @@
 #define DISPLAY_H
 
 //=====================================================================================
-// COMPILE-TIME SWITCH to enable capture of bitmaps of each Screen for documentation purposes
+// COMPILE-TIME SWITCH to enable capture of bitmaps written to the SD Flash of each 
+// Screen for documentation purposes
 //#define ENABLE_TFT_CAPTURE  // Comment this line to disable screen capture to SD card
 //=====================================================================================
 
@@ -129,6 +130,7 @@ class WifiDisplay;
 #define XDARK_MAROON 0x1800     /*  99,   0,   0 */   
 #define DARK_MAROON 0x3000      /* 197,   0,   0*/
 #define GRAY_BLACK  0x0840
+#define DARK_RED    0x8140
 
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
 #define BATTERY_LOW_VOLTAGE   21.0  
@@ -238,7 +240,7 @@ class Display {
     static ScreenEnum currentScreen;
     static bool _nightMode;
     bool _redrawBut = false;
-    bool buttonTouched = false;
+    volatile bool buttonTouched = false;
     uint32_t resetHomeStartTime = 0;
   
     // Default Font Arial 6x8 is NULL

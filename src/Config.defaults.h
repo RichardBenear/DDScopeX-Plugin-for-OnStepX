@@ -183,6 +183,18 @@
 #ifndef AXIS1_SENSE_HOME_DIST_LIMIT
 #define AXIS1_SENSE_HOME_DIST_LIMIT   180.0                       // max distance in degrees
 #endif
+#ifdef AXIS1_SYNC_THRESHOLD_DEGREES                               // maximum distance from absolute encoder pos in degrees for syncs
+#define AXIS1_SYNC_THRESHOLD lround(AXIS1_SYNC_THRESHOLD_DEGREES*AXIS1_STEPS_PER_DEGREE)
+#endif
+#ifndef AXIS1_SYNC_THRESHOLD
+#define AXIS1_SYNC_THRESHOLD          ON                         // sync threshold in counts (required for absolute encoders) or OFF
+#endif
+#ifndef AXIS1_TARGET_TOLERANCE
+#define AXIS1_TARGET_TOLERANCE        1.0F                        // distance in arc-seconds when goto is at destination
+#endif
+#ifndef AXIS1_HOME_TOLERANCE                                      // distance in arc-seconds when at home
+#define AXIS1_HOME_TOLERANCE          AXIS1_TARGET_TOLERANCE + (1800.0/AXIS1_STEPS_PER_DEGREE)
+#endif
 #ifndef AXIS1_SENSE_LIMIT_MIN
 #define AXIS1_SENSE_LIMIT_MIN         LIMIT_SENSE                 // HIGH/LOW to activate min limit
 #endif
@@ -325,6 +337,18 @@
 #endif
 #ifndef AXIS2_SENSE_HOME_DIST_LIMIT
 #define AXIS2_SENSE_HOME_DIST_LIMIT   180.0                       // max distance in degrees
+#endif
+#ifndef AXIS2_TARGET_TOLERANCE
+#define AXIS2_TARGET_TOLERANCE        1.0F                        // distance in arc-seconds when goto is at destination
+#endif
+#ifndef AXIS2_HOME_TOLERANCE                                      // distance in arc-seconds when at home
+#define AXIS2_HOME_TOLERANCE          AXIS2_TARGET_TOLERANCE + (1800.0/AXIS2_STEPS_PER_DEGREE)
+#endif
+#ifdef AXIS2_SYNC_THRESHOLD_DEGREES                               // maximum distance from absolute encoder pos in degrees for syncs
+#define AXIS2_SYNC_THRESHOLD lround(AXIS1_SYNC_THRESHOLD_DEGREES*AXIS1_STEPS_PER_DEGREE)
+#endif
+#ifndef AXIS2_SYNC_THRESHOLD
+#define AXIS2_SYNC_THRESHOLD          ON                         // sync threshold in counts (required for absolute encoders) or OFF
 #endif
 #ifndef AXIS2_SENSE_LIMIT_MIN
 #define AXIS2_SENSE_LIMIT_MIN         LIMIT_SENSE                 // HIGH/LOW to activate min limit

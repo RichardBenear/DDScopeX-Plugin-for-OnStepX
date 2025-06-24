@@ -5,7 +5,7 @@
 #include "FlexCAN_T4.h"
 #include "ODriveTeensyCAN.h"
 #include "src/lib/tasks/OnTask.h"
-#include "src/lib/debug/Debug.h"
+//#include "src/lib/debug/Debug.h"
 
 #define TIMEOUT 5 // msec
 
@@ -81,22 +81,22 @@ bool ODriveTeensyCAN::sendMessage(int axis_id, int cmd_id, bool remote_transmiss
     }
   }
   // Show timeout info
-  SERIAL_DEBUG.println("CAN read Timeout");
-  SERIAL_DEBUG.print("Axis ID: 0x"); SERIAL_DEBUG.println(axis_id, HEX);
-  SERIAL_DEBUG.print("Cmd ID: 0x"); SERIAL_DEBUG.println(cmd_id, HEX);
+  //SERIAL_DEBUG.println("CAN read Timeout");
+  //SERIAL_DEBUG.print("Axis ID: 0x"); SERIAL_DEBUG.println(axis_id, HEX);
+  //SERIAL_DEBUG.print("Cmd ID: 0x"); SERIAL_DEBUG.println(cmd_id, HEX);
   //SERIAL_DEBUG.print("Length: "); SERIAL_DEBUG.println(length);
   //SERIAL_DEBUG.print("msg.id: 0x"); SERIAL_DEBUG.println(msg.id, HEX);  
   //SERIAL_DEBUG.print("msg.flags.remote: "); SERIAL_DEBUG.println(msg.flags.remote ? "True" : "False");
   //SERIAL_DEBUG.print("msg.len: "); SERIAL_DEBUG.println(msg.len);
-  SERIAL_DEBUG.print("signal_bytes: ");
+  //SERIAL_DEBUG.print("signal_bytes: ");
 
-  for (int i = 0; i < length; i++) {
-      SERIAL_DEBUG.print("0x");  // Add prefix
-      if (signal_bytes[i] < 0x10) SERIAL_DEBUG.print("0");  // Ensure leading zero for single-digit hex
-      SERIAL_DEBUG.print(signal_bytes[i], HEX);
-      SERIAL_DEBUG.print(" ");
-  }
-  SERIAL_DEBUG.println(); // New line after printing all bytes
+  // for (int i = 0; i < length; i++) {
+  //     SERIAL_DEBUG.print("0x");  // Add prefix
+  //     if (signal_bytes[i] < 0x10) SERIAL_DEBUG.print("0");  // Ensure leading zero for single-digit hex
+  //     SERIAL_DEBUG.print(signal_bytes[i], HEX);
+  //     SERIAL_DEBUG.print(" ");
+  // }
+  // SERIAL_DEBUG.println(); // New line after printing all bytes
 
   // Print msg.buf
   // if (!msg.flags.remote) {
@@ -155,15 +155,15 @@ void ODriveTeensyCAN::SetControllerModes(int axis_id, int control_mode, int inpu
 	sendMessage(axis_id, CMD_ID_SET_CONTROLLER_MODES, false, 8, msg_data);
 }
 
-void ODriveTeensyCAN::SetPosition(int axis_id, float position) {
-  SetPosition(axis_id, position, 0.0f, 0.0f);
+void ODriveTeensyCAN::setPosition(int axis_id, float position) {
+  setPosition(axis_id, position, 0.0f, 0.0f);
 }
 
-void ODriveTeensyCAN::SetPosition(int axis_id, float position, float velocity_feedforward) {
-  SetPosition(axis_id, position, velocity_feedforward, 0.0f);
+void ODriveTeensyCAN::setPosition(int axis_id, float position, float velocity_feedforward) {
+  setPosition(axis_id, position, velocity_feedforward, 0.0f);
 }
 
-void ODriveTeensyCAN::SetPosition(int axis_id, float position, float velocity_feedforward, float current_feedforward) {
+void ODriveTeensyCAN::setPosition(int axis_id, float position, float velocity_feedforward, float current_feedforward) {
   int16_t vel_ff = (int16_t) (feedforwardFactor * velocity_feedforward);
   int16_t curr_ff = (int16_t) (feedforwardFactor * current_feedforward);
 

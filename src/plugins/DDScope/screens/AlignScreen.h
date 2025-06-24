@@ -30,11 +30,11 @@ class AlignScreen : public Display {
     void updateAlignStatus();
     void updateAlignButtons();
     bool alignButStateChange();
+    void stateMachine();
 
   private:
     void restoreAlignState();
     void saveAlignState();
-    void stateMachine();
     void showAlignStatus();
     void showCorrections();
     void drawGuideButtons();
@@ -70,8 +70,9 @@ class AlignScreen : public Display {
     bool guidingSouth = false;
     bool guidingDone = false;
 
+    // Guide button placement coordinates
     int center_x = TFTWIDTH/2 + 50;
-    int center_y = TFTHEIGHT/2+ 30;
+    int center_y = TFTHEIGHT/2+ 35;
     int box_w = 60;
     int box_h = 40;
     int but_spacer = 4;

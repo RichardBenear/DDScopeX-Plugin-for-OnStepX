@@ -23,12 +23,12 @@
 
 #define STATE_UPDATE_W      220
 #define STATE_UPDATE_H      15
-#define STATE_LABEL_X       2
-#define STATE_LABEL_Y       454
+#define STATE_LABEL_X       95
+#define STATE_LABEL_Y       217
 
 #define STATUS_LABEL_X      95
 #define STATUS_LABEL_Y      172
-#define STATUS_LABEL_W      317
+#define STATUS_LABEL_W      319-STATUS_LABEL_X
 #define STATUS_LABEL_H      15
 
 // Go to Home position button
@@ -104,7 +104,7 @@ void AlignScreen::draw() {
   drawCommonStatusLabels();
   updateAlignButtons(); // draw initial buttons
 
-  canvAlignInsPrint.printLJ(242, 225, 75, 15, "GuideRate", false);
+  canvAlignInsPrint.printLJ(242, 233, 75, 15, "GuideRate", false);
   char guideRateText[10];
   switch (guide.settings.axis1RateSelect) {
     case 0:  strcpy(guideRateText, " Quarter"); break;
@@ -120,9 +120,8 @@ void AlignScreen::draw() {
     case 10: strcpy(guideRateText, " Custom "); break;
     default: strcpy(guideRateText, "  Error "); break;
   }
-  canvAlignInsPrint.printLJ(250, 240, 65, 15, guideRateText, false);
+  canvAlignInsPrint.printLJ(247, 249, 67, 15, guideRateText, false);
   showCorrections();
-  //showOnStepCmdErr(); // show error bar
   updateAlignStatus();
   updateCommonStatus();
 
@@ -142,16 +141,16 @@ void AlignScreen::updateAlignStatus() {
   stateMachine();
 }
 
-void AlignScreen::showAlignStatus() {
-  char reply[16];
-  char aStatus[30];
-  int start_y = 215;
-  int start_x = 95;
-  commandWithReply(":A?#", reply); 
-  tft.setCursor(start_x, start_y); 
-  sprintf(aStatus,  "Align Status: %s", reply);
-  canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y, 200, 15, aStatus, false);
-}
+// void AlignScreen::showAlignStatus() {
+//   char reply[16];
+//   char aStatus[30];
+//   int start_y = 215;
+//   int start_x = 95;
+//   commandWithReply(":A?#", reply); 
+//   tft.setCursor(start_x, start_y); 
+//   sprintf(aStatus,  "Align Status: %s", reply);
+//   canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y, 200, 15, aStatus, false);
+// }
 
 // state change detection
 bool AlignScreen::alignButStateChange() {
@@ -202,8 +201,6 @@ bool AlignScreen::alignButStateChange() {
 // *********** Update Align Buttons **************
 void AlignScreen::updateAlignButtons() {
   int x_offset = 0;
-  
-  //showAlignStatus();
 
   // Go to Home Position
   if (mount.isSlewing()) {
@@ -249,7 +246,6 @@ void AlignScreen::updateAlignButtons() {
   // SYNC button; calculate alignment parameters
   if (syncBut) {
     alignButton.draw(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, "SYNC'd", BUT_ON);
-    syncBut = false;
     display._redrawBut = true;
   } else {
     alignButton.draw(ALIGN_X, ALIGN_Y, ALIGN_BOXSIZE_W, ALIGN_BOXSIZE_H, "SYNC", BUT_OFF);         
@@ -258,7 +254,6 @@ void AlignScreen::updateAlignButtons() {
   // save the alignment calculations to EEPROM
   if (saveAlignBut) {
     alignButton.draw(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, "Saved", BUT_ON);
-    saveAlignBut = false;
     display._redrawBut = true;
   } else {
     alignButton.draw(WRITE_ALIGN_X, WRITE_ALIGN_Y, SA_BOXSIZE_W, SA_BOXSIZE_H, "SAVE", BUT_OFF);
@@ -274,7 +269,6 @@ void AlignScreen::updateAlignButtons() {
   // Stop Alignment Button
   if (abortBut) {
     alignButton.draw(AS_ABORT_X, AS_ABORT_Y, AS_ABT_BOXSIZE_W, AS_ABT_BOXSIZE_H, "Stop'd", BUT_ON);
-    abortBut = false;
     display._redrawBut = true;
     alignButton.draw(AS_ABORT_X, AS_ABORT_Y, AS_ABT_BOXSIZE_W, AS_ABT_BOXSIZE_H, "STOP", BUT_OFF);
   } else {
@@ -290,24 +284,24 @@ void AlignScreen::stateMachine() {
   Current_State = Next_State;
 
   // These messages are printed at the bottom of the screen, generally only used for debug.
-  /*switch(Current_State) {
-    case 0:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Waiting For Start", false);           break;
-    case 1:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Home State", false);                  break;
-    case 2:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Waiting For Home", false);                  break;
-    case 3:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Select Number of Stars", false);      break;
-    case 4:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Select Star in Catalog", false);      break;
-    case 5:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Wait for Catalog return", false);     break;
-    case 6:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Go To Star", false);                  break;
-    case 7:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Wait For Slewing to finish", false);  break;
-    case 8:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Center & Sync", false); 
-    case 9:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Show Coords", false);                  break;
-    case 10: canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Write Coords", false);                break;
-    default: canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State = Waiting for Start", false);           break;
-  }*/
+  switch(Current_State) {
+    case 0:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Waiting For Start", false);     break;
+    case 1:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Home State", false);            break;
+    case 2:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Waiting For Home", false);      break;
+    case 3:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Select Numb of Stars", false);  break;
+    case 4:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Select Star in Catlg", false);  break;
+    case 5:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Wait for Catlg return", false); break;
+    case 6:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Go To Star", false);            break;
+    case 7:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Wait Slew to finish", false);   break;
+    case 8:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Center & Sync", false);         break;
+    case 9:  canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Show Coords", false);           break;
+    case 10: canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Write Coords", false);          break;
+    default: canvAlignInsPrint.printLJ(STATE_LABEL_X, STATE_LABEL_Y, STATUS_LABEL_W, STATUS_LABEL_H,  "State=Waiting for Start", false);     break;
+  }
   
   //if (startAlignBut) { 
     sprintf(curAlign,  "Current Star is: %d of %d", alignCurStar, numAlignStars);
-    canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+15, 200, 15, curAlign, false);
+    canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+15, 220, 15, curAlign, false);
   
     // align state machine, messages printed here are near the top half of the screen
     switch(Current_State) {
@@ -332,7 +326,7 @@ void AlignScreen::stateMachine() {
           if (commandBool(":hC#")) { //  go HOME
             Next_State = Wait_For_Home_State;   
           } else {
-            canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+20, 200, 15, "Failed: request to Home", true);
+            canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+30, 200, 15, "Failed: request to Home", true);
             Next_State = Idle_State;
           }
         } else {
@@ -366,13 +360,16 @@ void AlignScreen::stateMachine() {
         } else if (numAlignStars > 1) {
           char s[10]; 
           sprintf (s, ":A%d#", numAlignStars); // set number of align stars
-          if (commandBool(s)) {
-            Next_State = Select_Catalog_State;
-          } else {
-            canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+20, 200, 15, "Failed: Start Align", true);
-            numAlignStars = 0;
-            Next_State = Idle_State;
-          }
+          SERIAL_DEBUG.print("numAlignStars="); SERIAL_DEBUG.println(numAlignStars);
+          commandBool(s);
+          // NOTE: apparently command ":A[n]" always returns false
+          //if (commandBool(s)) {
+            //Next_State = Select_Catalog_State;
+          //} else {
+          //  canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+30, 200, 15, "Failed: Start Align", true);
+          //  numAlignStars = 0;
+          //  Next_State = Idle_State;
+          //}
           Next_State = Select_Catalog_State; 
         } else {
           canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y, STATE_UPDATE_W, STATE_UPDATE_H, "Select Number of Stars", false);
@@ -388,7 +385,7 @@ void AlignScreen::stateMachine() {
           Next_State = Idle_State;
         } else if (catalogBut) {
           catalogBut = false;
-          alignCurStar++;
+          //alignCurStar++;
           Next_State = Wait_Catalog_State;
           moreScreen.activeFilter = FM_ALIGN_ALL_SKY;
           cat_mgr.filterAdd(moreScreen.activeFilter); 
@@ -424,11 +421,8 @@ void AlignScreen::stateMachine() {
           Next_State = Idle_State;
         } else if (gotoBut) {
           commandWithReply(":MS#", reply);
-          
-            Next_State = Wait_For_Slewing_State;
-         
-            gotoBut = false;
-            
+          Next_State = Wait_For_Slewing_State;
+          gotoBut = false;
         } else { // wait for GoTo button press
           canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y, STATE_UPDATE_W, STATE_UPDATE_H, "Press GoTo", false);
           Next_State = Goto_State;
@@ -456,17 +450,21 @@ void AlignScreen::stateMachine() {
           syncBut = false;
           Next_State = Idle_State;
         } else if (syncBut) {
-          if (commandBool(":A+#")) {
+          alignCurStar++;
+          commandBool(":A+#");
+          // NOTE: apparently ":A+" always returns false
+          //if (commandBool(":A+#")) {
             syncBut = false;
+            SERIAL_DEBUG.print("CurStar="); SERIAL_DEBUG.println(alignCurStar);
             if (alignCurStar < numAlignStars) { // more stars to align? 
               Next_State = Select_Catalog_State;
             } else {
               Next_State = Status_State;
             }
-          } else {
-            canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+20, 200, 15, "Failed: Adding Star", true);;
-            Next_State = Idle_State;
-          }
+          //} else {
+            //canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+30, 200, 15, "Failed: Adding Star", true);;
+            //Next_State = Idle_State;
+          //}
         } else { 
           canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y, STATE_UPDATE_W, STATE_UPDATE_H, "Center Star then Press Sync", false);
           Next_State = Sync_State;
@@ -486,15 +484,16 @@ void AlignScreen::stateMachine() {
           saveAlignBut = false;
           Next_State = Idle_State;
         } else if (saveAlignBut) {
-          if (commandBool(":AW#")) {
+          commandBool(":AW#");
+          //if (commandBool(":AW#")) {
             canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y, STATE_UPDATE_W, STATE_UPDATE_H, "Writing Align Data", false);
             saveAlignBut = false;
             saveAlignState();
             Next_State = Idle_State;
-          } else {
-            canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+20, 200, 15, "Failed: Writing Coord's", true);;
-            Next_State = Idle_State;
-          }
+          //} else {
+            //canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y+30, 200, 15, "Failed: Writing Coord's", true);;
+            //Next_State = Idle_State;
+          //}
         } else {
           canvAlignInsPrint.printLJ(STATUS_LABEL_X, STATUS_LABEL_Y, STATE_UPDATE_W, STATE_UPDATE_H, "Waiting for Save", false);
           Next_State = Write_State;
@@ -609,7 +608,7 @@ bool AlignScreen::touchPoll(uint16_t px, uint16_t py) {
     BEEP;
     startAlignBut = true;
     alignCurStar = 0;
-    numAlignStars = 2; // number of selected align stars from buttons
+    numAlignStars = 0; // number of selected align stars from buttons
     transform.align.modelClear();
     Current_State = Idle_State;
 

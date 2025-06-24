@@ -51,9 +51,12 @@ void Goto::init() {
   if (settings.usPerStepCurrent > 1000000.0F) settings.usPerStepCurrent = usPerStepBase;
   if (settings.usPerStepCurrent < usPerStepBase/2.0F) settings.usPerStepCurrent = usPerStepBase/2.0F;
   if (settings.usPerStepCurrent > usPerStepBase*2.0F) settings.usPerStepCurrent = usPerStepBase*2.0F;
+
+  if (AXIS1_SYNC_THRESHOLD != OFF || AXIS2_SYNC_THRESHOLD != OFF) absoluteEncodersPresent = true;
+  if (AXIS1_HOME_TOLERANCE != 0.0F || AXIS2_HOME_TOLERANCE != 0.0F ||
+      AXIS1_TARGET_TOLERANCE != 0.0F || AXIS2_TARGET_TOLERANCE != 0.0F || absoluteEncodersPresent) encodersPresent = true;
   updateAccelerationRates();
 }
-
 // goto to equatorial target position (Native coordinate system) using the defaut preferredPierSide
 CommandError Goto::request() {
   return request(&target, settings.preferredPierSide);
@@ -78,6 +81,7 @@ CommandError Goto::request(Coordinate *coords, PierSideSelect pierSideSelect, bo
   limits.enabled(true);
   mount.syncToEncoders(false);
   if (mount.isHome()) mount.tracking(true);
+  
   guide.backlashEnableControl(true);
 
   // allow slewing near target for Eq modes if not too close to the poles

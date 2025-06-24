@@ -72,9 +72,9 @@ class ODriveTeensyCAN {
     void SetAxisNodeId(int axis_id, int node_id);
     void SetControllerModes(int axis_id, int control_mode, int input_mode);
     void SetControllerModes(int axis_id, int control_mode);
-    void SetPosition(int axis_id, float position);
-    void SetPosition(int axis_id, float position, float velocity_feedforward);
-    void SetPosition(int axis_id, float position, float velocity_feedforward, float current_feedforward);
+    void setPosition(int axis_id, float position);
+    void setPosition(int axis_id, float position, float velocity_feedforward);
+    void setPosition(int axis_id, float position, float velocity_feedforward, float current_feedforward);
     void SetVelocity(int axis_id, float velocity);
     void SetVelocity(int axis_id, float velocity, float current_feedforward);
     void SetTorque(int axis_id, float torque);

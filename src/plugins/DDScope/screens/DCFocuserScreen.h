@@ -49,6 +49,6 @@ class DCFocuserScreen : public Display {
     int setPointTarget;
 };
 
-extern DCFocuserScreen dCfocuserScreen;
+extern DCFocuserScreen dcFocuserScreen;
 
 #endif

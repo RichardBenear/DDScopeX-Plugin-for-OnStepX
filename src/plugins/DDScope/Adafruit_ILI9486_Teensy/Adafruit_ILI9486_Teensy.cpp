@@ -44,6 +44,7 @@ Adafruit_ILI9486_Teensy::Adafruit_ILI9486_Teensy(void)
     : Adafruit_GFX(TFTWIDTH, TFTHEIGHT) {}
 /*****************************************************************************/
 
+#ifdef ENABLE_TFT_MIRROR
 // ==================== Set Address Window (Modified) ====================
 void WifiDisplay::captureSetAddrWindow(uint16_t x0, uint16_t y0,
                                        uint16_t x1, uint16_t y1) {
@@ -52,6 +53,7 @@ void WifiDisplay::captureSetAddrWindow(uint16_t x0, uint16_t y0,
   windowX1 = x1;
   windowY1 = y1;
 }
+#endif
 
 void Adafruit_ILI9486_Teensy::writedata16(uint16_t c) {
   CD_DATA;
@@ -230,7 +232,6 @@ void Adafruit_ILI9486_Teensy::begin(void) {
 
   // toggle RST low to reset
   if (TFT_RST > 0) {
-    SERIAL_DEBUG.println("resetting display...");
     pinMode(TFT_RST, OUTPUT);
     digitalWrite(TFT_RST, HIGH);
     delay(2);
@@ -239,7 +240,7 @@ void Adafruit_ILI9486_Teensy::begin(void) {
     digitalWrite(TFT_RST, HIGH);
     delay(20);
   }
-  SERIAL_DEBUG.println(F("MSG: Reset tft"));
+  SERIAL_DEBUG.println(F("MSG: Reset TFT"));
 
   SPI.beginTransaction(SPISET); // SPISettings(36000000,MSBFIRST,MODE0))
 

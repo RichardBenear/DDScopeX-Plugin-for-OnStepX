@@ -93,7 +93,7 @@ void MoreScreen::draw() {
 
   // Draw the HOME Icon bitmap
   uint8_t extern black_house_icon[];
-  tft.drawBitmap(10, 5, black_house_icon, 39, 31,  butBackground, ORANGE);
+  tft.drawBitmap(10, 5, black_house_icon, 39, 31,  butBackground, butOutline);
 
   // Draw the labels for columns
   tft.setFont(&Inconsolata_Bold8pt7b);  

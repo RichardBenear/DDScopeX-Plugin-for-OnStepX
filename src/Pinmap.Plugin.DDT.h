@@ -14,6 +14,9 @@
 // ODrive Pins
 #define ODRIVE_RST_PIN          3     // ODrive Reset Pin
 
+// ESP32C3 LX200 Command Processor 
+#define ESP32C3_RST_PIN        36     // ESP32C3 Reset Pin - Active Low
+
 // DDScopeX Specific pins
 #define AZ_ENABLED_LED_PIN     20     // AZM Motor ON/OFF LED output active low
 #define ALT_ENABLED_LED_PIN    21     // ALT Motor ON/OFF LED output active low
@@ -21,7 +24,6 @@
 #define ALT_THERMISTOR_PIN     23     // Analog input ALT motor temperature
 #define AZ_THERMISTOR_PIN      24     // Analog input AZ motor temperature
 
-#define ODRIVE_RST              3     // RESET ODdrive output active low
 #define FAN_ON_PIN             25     // Fan enable output active high
 #define BATTERY_LOW_LED_PIN    22     // 24V battery LED output active low
 

@@ -97,10 +97,17 @@ class Goto {
 
     GotoState state = GS_NONE;
 
+    // flag to start tracking if this is the first goto
+    bool firstGoto = true;
+
     // current goto rate in radians per second
     float rate;
 
     float      usPerStepBase        = 128.0F;
+
+    // flag to indicate that encoders are present
+    bool absoluteEncodersPresent = false;
+    bool encodersPresent = false;
 
   private:
 

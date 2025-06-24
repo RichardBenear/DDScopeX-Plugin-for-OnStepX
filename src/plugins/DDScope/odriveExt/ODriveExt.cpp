@@ -343,28 +343,28 @@ void ODriveExt::demoMode() {
 
   switch(demo_pos) {
     case 0:
-      _oDriveDriver->SetPosition(ALT_MOTOR, pos_one);
-      _oDriveDriver->SetPosition(AZM_MOTOR, pos_one);
+      _oDriveDriver->setPosition(ALT_MOTOR, pos_one);
+      _oDriveDriver->setPosition(AZM_MOTOR, pos_one);
       ++demo_pos;
       break;
     case 1:
-      _oDriveDriver->SetPosition(ALT_MOTOR, pos_two);
-      _oDriveDriver->SetPosition(AZM_MOTOR, pos_two);
+      _oDriveDriver->setPosition(ALT_MOTOR, pos_two);
+      _oDriveDriver->setPosition(AZM_MOTOR, pos_two);
       ++demo_pos;
       break;
     case 2:
-      _oDriveDriver->SetPosition(ALT_MOTOR, pos_three);
-      _oDriveDriver->SetPosition(AZM_MOTOR, pos_one);
+      _oDriveDriver->setPosition(ALT_MOTOR, pos_three);
+      _oDriveDriver->setPosition(AZM_MOTOR, pos_one);
       ++demo_pos;
       break;
     case 3:
-      _oDriveDriver->SetPosition(ALT_MOTOR, pos_four);
-      _oDriveDriver->SetPosition(AZM_MOTOR, pos_five);
+      _oDriveDriver->setPosition(ALT_MOTOR, pos_four);
+      _oDriveDriver->setPosition(AZM_MOTOR, pos_five);
       demo_pos = 0;
       break;
     default:
-      _oDriveDriver->SetPosition(ALT_MOTOR, pos_one);
-      _oDriveDriver->SetPosition(AZM_MOTOR, pos_one);
+      _oDriveDriver->setPosition(ALT_MOTOR, pos_one);
+      _oDriveDriver->setPosition(AZM_MOTOR, pos_one);
       demo_pos = 0;
       break;
   }

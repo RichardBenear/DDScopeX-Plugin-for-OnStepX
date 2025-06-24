@@ -19,16 +19,16 @@
 #include "../screens/SHCCatScreen.h"
 #include "../screens/SettingsScreen.h"
 #include "../screens/TreasureCatScreen.h"
+#include "../display/WifiDisplay.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
 #include "../screens/ODriveScreen.h"
 #endif
 
-// void touchWrapper() { touchScreen.touchScreenPoll(display.currentScreen); }
+void touchWrapper() { touchScreen.touchScreenPoll(display.currentScreen); }
 
-// Initialize Touchscreen
+// ================== Initialize Touchscreen ===================
 void TouchScreen::init() {
-  // Start TouchScreen
   if (!ts.begin()) {
     VLF("MSG: TouchScreen, unable to start");
   } else {
@@ -36,24 +36,37 @@ void TouchScreen::init() {
     ts.setRotation(3);             // touchscreen rotation
     VLF("MSG: TouchScreen, started");
   }
+
+  //Start touchscreen task 
+  //300 msec has a reasonable immunity from double clicking
+  VF("MSG: Setup, start TouchScreen polling task (rate 300 ms priority 4)... ");
+  uint8_t TShandle = tasks.add(300, 0, true, 4, touchWrapper, "TouchScreen");
+  if (TShandle) {
+    VLF("success");
+  } else {
+    VLF("FAILED!");
+  }
+  tasks.setTimingMode(TShandle, TM_MINIMUM);
 }
 
 bool externalTouch = false;
-// Poll the TouchScreen
+
+// ============ Poll the TouchScreen ==================
 void TouchScreen::touchScreenPoll(ScreenEnum tCurScreen) {
     
 //Serial.print((int)tCurScreen);
 
 #ifdef ENABLE_TFT_MIRROR
+  //wifiDisplay.take_esp_lock();
   // Check for external touch input from ESP32-S3
-  if (SERIAL_ESP.available() >= 5) {
+  if (SERIAL_ESP32S3.available() >= 5) {
     static String incoming = "";
-    char c = SERIAL_ESP.read();
+    char c = SERIAL_ESP32S3.peek();
     if (c == 'T') {
-      uint16_t x = (SERIAL_ESP.read() << 8) | SERIAL_ESP.read();
-      uint16_t y = (SERIAL_ESP.read() << 8) | SERIAL_ESP.read();
+      SERIAL_ESP32S3.read(); // read the 'T'
+      uint16_t x = (SERIAL_ESP32S3.read() << 8) | SERIAL_ESP32S3.read();
+      uint16_t y = (SERIAL_ESP32S3.read() << 8) | SERIAL_ESP32S3.read();
   
-      //SERIAL_DEBUG.printf("Received Touch at x=%u, y=%u\n", x, y);
       if (x >= 0 && y >= 0) {
         p.x = x;
         p.y = y;
@@ -62,6 +75,7 @@ void TouchScreen::touchScreenPoll(ScreenEnum tCurScreen) {
        }
     } 
   }
+  //wifiDisplay.give_esp_lock();
 #endif
 
   if (externalTouch) {
@@ -94,47 +108,69 @@ void TouchScreen::processTouch(ScreenEnum tCurScreen) {
   switch (tCurScreen) {
   
   case HOME_SCREEN:
-    display.buttonTouched = homeScreen.touchPoll(p.x, p.y);
+    if (homeScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on HOME_SCREEN");
     break;
   case GUIDE_SCREEN:
-    display.buttonTouched = guideScreen.touchPoll(p.x, p.y);
+    if (guideScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on GUIDE_SCREEN");
     break;
   case FOCUSER_SCREEN:
-    display.buttonTouched = dCfocuserScreen.touchPoll(p.x, p.y);
+    if (dcFocuserScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on FOCUSER_SCREEN");
     break;
   case GOTO_SCREEN:
-    display.buttonTouched = gotoScreen.touchPoll(p.x, p.y);
+    if (gotoScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on GOTO_SCREEN");
     break;
   case MORE_SCREEN:
-    display.buttonTouched = moreScreen.touchPoll(p.x, p.y);
+    if (moreScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on MORE_SCREEN");
     break;
   case SETTINGS_SCREEN:
-    display.buttonTouched = settingsScreen.touchPoll(p.x, p.y);
+    if (settingsScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on SETTINGS_SCREEN");
     break;
   case ALIGN_SCREEN:
-    display.buttonTouched = alignScreen.touchPoll(p.x, p.y);
+    if (alignScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on ALIGN_SCREEN");
     break;
   case PLANETS_SCREEN:
-    display.buttonTouched = planetsScreen.touchPoll(p.x, p.y);
+    if (planetsScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on PLANETS_SCREEN");
     break;
   case TREASURE_SCREEN:
-    display.buttonTouched = treasureCatScreen.touchPoll(p.x, p.y);
+    if (treasureCatScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on TREASURE_SCREEN");
     break;
   case CUSTOM_SCREEN:
-    display.buttonTouched = customCatScreen.touchPoll(p.x, p.y);
+    if (customCatScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on CUSTOM_SCREEN");
     break;
   case SHC_CAT_SCREEN:
-    display.buttonTouched = shcCatScreen.touchPoll(p.x, p.y);
+    if (shcCatScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on SHC_CAT_SCREEN");
     break;
   case XSTATUS_SCREEN:
@@ -142,7 +178,9 @@ void TouchScreen::processTouch(ScreenEnum tCurScreen) {
 
 #ifdef ODRIVE_MOTOR_PRESENT
   case ODRIVE_SCREEN:
-    display.buttonTouched = oDriveScreen.touchPoll(p.x, p.y);
+    if (oDriveScreen.touchPoll(p.x, p.y)) {
+      display.buttonTouched = true;
+    }
       //Serial.println("Touch on ODRIVE_SCREEN");
     break;
 #endif
@@ -259,11 +297,11 @@ void TouchScreen::processTouch(ScreenEnum tCurScreen) {
     switch (tCurScreen) {
     case HOME_SCREEN:
       display.setCurrentScreen(FOCUSER_SCREEN);
-      dCfocuserScreen.draw();
+      dcFocuserScreen.draw();
       break;
     case GUIDE_SCREEN:
       display.setCurrentScreen(FOCUSER_SCREEN);
-      dCfocuserScreen.draw();
+      dcFocuserScreen.draw();
       break;
     case FOCUSER_SCREEN:
       display.setCurrentScreen(GUIDE_SCREEN);
@@ -271,7 +309,7 @@ void TouchScreen::processTouch(ScreenEnum tCurScreen) {
       break;
     case GOTO_SCREEN:
       display.setCurrentScreen(FOCUSER_SCREEN);
-      dCfocuserScreen.draw();
+      dcFocuserScreen.draw();
       break;
       //==================================================
 #ifdef ODRIVE_MOTOR_PRESENT
@@ -293,7 +331,7 @@ void TouchScreen::processTouch(ScreenEnum tCurScreen) {
       break;
     case ALIGN_SCREEN:
       display.setCurrentScreen(FOCUSER_SCREEN);
-      dCfocuserScreen.draw();
+      dcFocuserScreen.draw();
       break;
 #else
     case MORE_SCREEN:
@@ -310,7 +348,7 @@ void TouchScreen::processTouch(ScreenEnum tCurScreen) {
       break;
     case ALIGN_SCREEN:
       display.setCurrentScreen(FOCUSER_SCREEN);
-      dCfocuserScreen.draw();
+      dcFocuserScreen.draw();
       break;
 #endif
     default:

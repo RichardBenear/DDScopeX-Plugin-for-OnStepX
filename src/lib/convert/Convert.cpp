@@ -46,28 +46,60 @@ void strncpyex(char *result, const char *source, size_t length) {
   }
 #endif
 
-bool Convert::tzToDouble(double *value, char *hm) {
+// bool Convert::tzToDouble(double *value, char *hm) {
+//   int16_t sign = 1;
+//   int16_t hour, minute = 0;
+
+//   if (strlen(hm) < 1 || strlen(hm) > 6) return false;
+
+//   // determine if the sign was used, skip any '+'
+//   if (hm[0] == '-') { sign = -1; hm++; } else if (hm[0] == '+') hm++;
+
+//   // if there's a minute part convert it and mark the end of the hours string
+//   char* m = strchr(hm,':');
+//   if (m != NULL) {
+//     m[0] = 0;
+//     m++;
+//     if (strlen(m) != 2) return false;
+//     if (!atoi2(m, &minute, false)) return false;
+//     // only these exact minutes are allowed for time zones
+//     if (minute != 45 && minute != 30 && minute != 0) return false;
+//   }
+
+//   if (!atoi2(hm, &hour, false)) return false;
+//   *value = sign*(hour + minute/60.0);
+
+//   return true;
+// }
+
+// Bug fix. I don't know if later versions of OnStep fixed this 
+// If :SG[sHH]# is called 2 times in a row, m[0] = 0; truncates `hm` at the colon!
+bool Convert::tzToDouble(double *value, const char *hm) {
   int16_t sign = 1;
   int16_t hour, minute = 0;
 
-  if (strlen(hm) < 1 || strlen(hm) > 6) return false;
+  if (!hm || strlen(hm) < 1 || strlen(hm) > 6) return false;
 
-  // determine if the sign was used, skip any '+'
-  if (hm[0] == '-') { sign = -1; hm++; } else if (hm[0] == '+') hm++;
+  char temp[8]; // enough for "+06:30"
+  strncpy(temp, hm, sizeof(temp));
+  temp[sizeof(temp) - 1] = '\0';  // null terminate
+  char *ptr = temp;
 
-  // if there's a minute part convert it and mark the end of the hours string
-  char* m = strchr(hm,':');
-  if (m != NULL) {
-    m[0] = 0;
+  if (ptr[0] == '-') { sign = -1; ptr++; }
+  else if (ptr[0] == '+') { ptr++; }
+
+  // Split hour and minute
+  char *m = strchr(ptr, ':');
+  if (m != nullptr) {
+    *m = '\0';  // temporarily split the string
     m++;
     if (strlen(m) != 2) return false;
     if (!atoi2(m, &minute, false)) return false;
-    // only these exact minutes are allowed for time zones
-    if (minute != 45 && minute != 30 && minute != 0) return false;
+    if (minute != 0 && minute != 30 && minute != 45) return false;
   }
 
-  if (!atoi2(hm, &hour, false)) return false;
-  *value = sign*(hour + minute/60.0);
+  if (!atoi2(ptr, &hour, false)) return false;
+  *value = sign * (hour + minute / 60.0);
 
   return true;
 }

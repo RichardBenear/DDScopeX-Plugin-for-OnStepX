@@ -47,6 +47,7 @@ CommandError Home::request() {
 
     // make sure the motors are powered on
     mount.enable(true);
+    goTo.firstGoto = false;
 
     VLF("MSG: Mount, moving to home");
 
@@ -107,6 +108,7 @@ CommandError Home::reset(bool fullReset) {
   // stop tracking and set default rate
   mount.tracking(false);
   mount.trackingRate = hzToSidereal(SIDEREAL_RATE_HZ);
+  goTo.firstGoto = true;
 
   tasks.yieldMicros(10000);
 

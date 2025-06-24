@@ -581,4 +581,4 @@ void DCFocuserScreen::updateFocPosition() {
     }
 }
 
-DCFocuserScreen dCfocuserScreen;
+DCFocuserScreen dcFocuserScreen;

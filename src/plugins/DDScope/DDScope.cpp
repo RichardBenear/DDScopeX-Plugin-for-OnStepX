@@ -1,7 +1,7 @@
 // =====================================================
 // DDScope.cpp
 //
-// Title:  DDScope (Direct Drive Plugin for OnStepX)
+// Title:  DDScopeX (Direct Drive Plugin for OnStepX)
 // Author: Richard Benear
 //
 // Description:
@@ -21,15 +21,16 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
 //
 
 // Firmware version -------------------------------------------------------------------------
 #define PluginName                "DDScope"
-#define DDScopeFwVersionMajor       1
-#define DDScopeFwVersionMinor       03    // minor version 00 to 99
+#define DDScopeFwVersionMajor       3
+#define DDScopeFwVersionMinor       00   // minor version 00 to 99
 
 #include <Arduino.h>
+#include "Config.h"
 #include "display/Display.h"
 #include "DDScope.h"
 #include "src/Common.h"
@@ -39,13 +40,12 @@
 #include "src/libApp/commands/ProcessCmds.h"
 #include "src/plugins/DDScope/display/UsbBridge.h"
 #include "src/plugins/DDScope/display/WifiDisplay.h"
+#include "src/plugins/DDScope/lx200/LX200Handler.h"
 
 #ifdef ODRIVE_MOTOR_PRESENT
   #include "odriveExt/ODriveExt.h"
 #endif
 
-void touchWrapper() { touchScreen.touchScreenPoll(display.currentScreen); }
-void updateScreenWrapper() { display.updateSpecificScreen(); }
 void espWrapper() { wifiDisplay.espPoll(); }
 
 void DDScope::init() {
@@ -53,7 +53,8 @@ void DDScope::init() {
   VF("MSG: Plugins, starting:"); VLF(PluginName);
 
   // Initilize custom pins...may want to move some of these to Features in future
-  pinModeEx(ODRIVE_RST_PIN, OUTPUT);
+  pinMode(ESP32C3_RST_PIN, OUTPUT);
+  digitalWrite(ESP32C3_RST_PIN, HIGH); // Active Low
 
   pinMode(ALT_THERMISTOR_PIN, INPUT); // Analog input
   pinMode(AZ_THERMISTOR_PIN, INPUT); // Analog input
@@ -98,12 +99,15 @@ void DDScope::init() {
   VLF("MSG: Display, Initializing");
   display.init();
 
+  VLF("MSG: LX200 Handler Init");
+  lx200Handler.init();
+
 #ifdef ENABLE_TFT_MIRROR
-  // Communication channel between Teensy and ESP32-S3 for WiFi Screen Mirror
+  // USB is Communication channel between Teensy and ESP32-S3 for WiFi Display
   usbBegin();
    
-  // Task to poll the ESP32-S3 communication state
-  VF("MSG: Starting espPoll task (10ms, priority 3)... ");
+  // // Task to poll the ESP32-S3 communication state
+  VF("MSG: Starting espPoll task (10 ms, priority 3)... ");
   if (tasks.add(10, 0, true, 3, espWrapper, "espPoll")) {
     VLF("success");
   } else {
@@ -111,23 +115,7 @@ void DDScope::init() {
   }
 #endif
 
-// start touchscreen task
-  VF("MSG: Setup, start TouchScreen polling task (rate 333 ms priority 6)... ");
-  uint8_t TShandle = tasks.add(250, 0, true, 3, touchWrapper, "TouchScreen");
-  if (TShandle) {
-    VLF("success");
-  } else {
-    VLF("FAILED!");
-  }
-  tasks.setTimingMode(TShandle, TM_MINIMUM);
-
-  // Update currently selected screen status
-  //   NOTE: this task MUST be a lower priority than the TouchScreen task to prevent
-  //   race conditions that result in the WiFi uncompressedBuffer being overwritten
-  VF("MSG: Setup, start Screen status update task (rate 1000 ms priority 6)... ");
-  uint8_t us_handle = tasks.add(1000, 0, true, 5, updateScreenWrapper, "UpdateSpecificScreen");
-  if (us_handle)  { VLF("success"); } else { VLF("FAILED!"); }
-
+  //=========================================================================
 #ifdef ODRIVE_MOTOR_PRESENT
   VF("MSG: ODrive, ODRIVE_SWAP_AXES = "); if(ODRIVE_SWAP_AXES) VLF("ON"); else VLF("OFF");
   VF("MSG: ODrive, ODRIVE_COMM_MODE = "); if(ODRIVE_COMM_MODE == OD_UART) VLF("SERIAL"); else VLF("CAN bus");
@@ -135,13 +123,6 @@ void DDScope::init() {
 
   VLF("MSG: Draw HomeScreen");
   homeScreen.draw();
-
-  // create/start a task to show the profiler at work
-#if SHOW_TASKS_PROFILER_EVERY_SEC == ON
-profilerHandle = tasks.add(250, 0, true, 2, profiler, "Profilr");
-SERIAL_DEBUG.println("Profiler:  running every second");
-SERIAL_DEBUG.println();
-#endif
 }
 
 DDScope dDScope;

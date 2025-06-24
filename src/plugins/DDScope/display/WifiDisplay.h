@@ -24,16 +24,19 @@ class WifiDisplay
     void sendFrameToEsp(uint8_t frameType);
     size_t compressWithRLE();
     size_t compressWithDeflate();
-    //void displayIpAddress();
     void espPoll();
+    void take_esp_lock();
+    void give_esp_lock();
     void captureSetAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
     bool isScreenCaptureEnabled = false;
     bool isUpdateScreenCaptureEnabled = false;
+    volatile bool espIsLocked = false;  // Simple lock for thread safety
+    String wifiStaIpStr = "";
 
  private:
   
 };
 
-//extern WifiDisplay wifiDisplay;
+extern WifiDisplay wifiDisplay;
 
 #endif

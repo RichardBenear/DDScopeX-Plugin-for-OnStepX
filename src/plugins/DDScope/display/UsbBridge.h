@@ -10,7 +10,7 @@
 extern USBHost myusb;
 extern USBSerial userSerial;
 
-#define SERIAL_ESP userSerial
+#define SERIAL_ESP32S3 userSerial
 
 void usbBegin(void);
 void usbPollTask(void);

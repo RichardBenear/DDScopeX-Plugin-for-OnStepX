@@ -124,7 +124,7 @@ void HomeScreen::draw() {
   
   // Draw the FAN Icon bitmap
   uint8_t extern fan_icon[];
-  tft.drawBitmap(7, 7, fan_icon, 30, 30,  butBackground, ORANGE);
+  tft.drawBitmap(7, 7, fan_icon, 30, 30,  butBackground, butOutline);
 
   // ====== Draw Home Screen Status Text ===========
   // Labels for Real Time data only here, no data displayed yet
@@ -346,7 +346,7 @@ void HomeScreen::updateHomeButtons() {
     digitalWrite(AZ_ENABLED_LED_PIN, LOW); // Turn On AZ LED
   } else { //motor off
     digitalWrite(AZ_ENABLED_LED_PIN, HIGH); // Turn Off AZ LED
-    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN AZM", BUT_OFF);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "AZM Motor", BUT_OFF);
   }
 
   // Enable / Disable Altitude Motor
@@ -356,7 +356,7 @@ void HomeScreen::updateHomeButtons() {
     homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "ALT Enabled", BUT_ON);
   } else { //motor off
     digitalWrite(ALT_ENABLED_LED_PIN, HIGH); // Turn off ALT LED
-    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "EN ALT", BUT_OFF);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "ALT Motor", BUT_OFF);
   }
 
   // Stop all movement
@@ -366,7 +366,7 @@ void HomeScreen::updateHomeButtons() {
     display._redrawBut = true;
     homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "All Stopped", BUT_ON);
   } else { 
-    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "STOP", BUT_OFF);
+    homeButton.draw(ACTION_COL_1_X, ACTION_COL_1_Y + y_offset, "Motors Off", BUT_OFF);
   }
 
   // ============== Column 2 ===============
@@ -499,8 +499,8 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_2_X && px < ACTION_COL_2_X + ACTION_BOXSIZE_X && py > ACTION_COL_2_Y + y_offset && py <  ACTION_COL_2_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    _oDriveDriver->SetPosition(0, 0.0);
-    _oDriveDriver->SetPosition(1, 0.0);
+    _oDriveDriver->setPosition(0, 0.0);
+    _oDriveDriver->setPosition(1, 0.0);
     commandBool(":hF#"); // home Reset
     resetHome = true;
     return true;
