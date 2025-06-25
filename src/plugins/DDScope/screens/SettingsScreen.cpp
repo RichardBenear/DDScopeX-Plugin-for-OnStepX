@@ -203,14 +203,14 @@ void SettingsScreen::setProcessNumPadButton() {
     if (Tselect && sButtonPosition == 9) {
       while (SERIAL_ESP32C3.available()) SERIAL_ESP32C3.read(); 
       while (SERIAL_B.available()) SERIAL_B.read(); 
-      SERIAL_DEBUG.println("Clearing Serial8 and Serial_B RX buffers");
+      SERIAL_DEBUG.println("MSG: Clearing Serial8 and Serial_B RX buffers");
     }
 
     // Special button to Reset the ESP32C3 via Teensy GPIO
     if (Tselect && sButtonPosition == 11) {
       digitalWrite(ESP32C3_RST_PIN, LOW);
-      SERIAL_DEBUG.println("Resetting ESP32C3");
-      delay(2000);
+      SERIAL_DEBUG.println("MSG: Resetting ESP32C3");
+      delay(1);
       digitalWrite(ESP32C3_RST_PIN, HIGH);
     }
 

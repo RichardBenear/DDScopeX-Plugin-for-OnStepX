@@ -370,8 +370,9 @@ void Display::commandWithReply(const char *command, char *reply) {
   if (strcmp(command, ":GI#") == 0) {
     if (wifiDisplay.wifiStaIpStr.startsWith("P:")) {
       String ipOnly = wifiDisplay.wifiStaIpStr.substring(2);  // remove "P:"
-
+  
       snprintf(reply, 32, "%s", ipOnly.c_str());  // Write result to reply
+      V("Got :GI#, sending:"); VL(reply);
     } else {
       reply[0] = '\0';  // Empty response if format invalid
     }

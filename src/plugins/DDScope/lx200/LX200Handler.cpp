@@ -28,12 +28,13 @@ void lxWrapper() { lx200Handler.lxPoll(); }
 //#define SERIAL_ESP_BAUD SERIAL_B_BAUD_DEFAULT
 
 void LX200Handler::init() {
-  pinMode(34, INPUT_PULLUP);  
+  pinMode(34, INPUT_PULLUP);  // Serial8 RX pin
    
   SERIAL_ESP32.begin(SERIAL_ESP_BAUD);
   SERIAL_DEBUG.println("MSG: LX200, Starting ESP32C3 Serial");
   delay(10);
-  // clear any junk in buffers
+  
+  // clear any junk in RX buffers
   while (SERIAL_ESP32.available()) SERIAL_ESP32.read(); 
 
   // start LX200 poll task
