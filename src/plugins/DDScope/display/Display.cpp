@@ -118,7 +118,7 @@ Button menuButton(MENU_X, MENU_Y, MENU_BOXSIZE_X, MENU_BOXSIZE_Y, butOnBackgroun
 CanvasPrint canvDisplayInsPrint(&Inconsolata_Bold8pt7b);
                 
 ScreenEnum Display::currentScreen = HOME_SCREEN;
-bool Display::_nightMode = false;
+//bool Display::_nightMode = false;
 float previousBatVoltage = 2.1;
 char cmdErrGlobal[100] = "";
 static CommandError latchedCmdErr = CE_NONE;
@@ -151,8 +151,7 @@ void Display::init() {
   sdInit(); // initialize the SD card and draw start screen
 
   tft.setRotation(0); // display rotation: Note it is different than touchscreen
-  setNightMode(true); // always start up in Night Mode
-  //delay(1500); // let start screen show for 1.5 sec
+  setColorTheme(THEME_DUSK); // always start up in Dusk mode
 
   // set some defaults
   // NOTE: change these for your own personal settings
@@ -438,28 +437,45 @@ void Display::drawTitle(int text_x, int text_y, const char* label) {
   tft.setFont(&Inconsolata_Bold8pt7b);
 }
 
-// Color Themes (Day or Night)
-void Display::setNightMode(bool nightMode) {
-  _nightMode = nightMode;
-  if (!nightMode) {
-    // Day Color Theme
-    pgBackground = XDARK_MAROON; 
-    butBackground = BLACK;
-    butOnBackground = MAROON;
-    textColor = DIM_YELLOW; 
-    butOutline = ORANGE; 
-  } else {  
-    // Night Color Theme
-    pgBackground = BLACK; 
-    butBackground = DARK_MAROON;
-    butOnBackground = MAROON;
-    textColor = ORANGE;
-    butOutline = ORANGE; 
+// 3 Color Themes are supported
+void Display::setColorTheme(uint8_t index) {
+  _colorThemeIndex = index;
+
+  switch (index) {
+    case 0:  // Day Mode
+      pgBackground    = XDARK_MAROON;
+      butBackground   = BLACK;
+      butOnBackground = DIM_MAROON;
+      textColor       = DIM_YELLOW;
+      butOutline      = ORANGE;
+      break;
+
+    case 1:  // Dusk Mode
+      pgBackground    = BLACK;
+      butBackground   = XDARK_MAROON;
+      butOnBackground = DIM_MAROON;
+      textColor       = ORANGE;
+      butOutline      = ORANGE;
+      break;
+
+    case 2:  // Night Mode
+      pgBackground    = BLACK;
+      butBackground   = XDARK_MAROON;
+      butOnBackground = DIM_MAROON;
+      textColor       = DIM_ORANGE;
+      butOutline      = DIM_ORANGE;
+      break;
+
+    default:
+      // Fallback to Day Mode
+      setColorTheme(THEME_DUSK);
+      return;
   }
+  menuButton.setColors(butOnBackground, butBackground, butOutline);
 }
 
-bool Display::getNightMode() {
-  return _nightMode;
+uint8_t Display::getColorThemeIndex() const {
+  return _colorThemeIndex;
 }
 
 // Update Battery Voltage
@@ -503,8 +519,8 @@ void Display::showGpsStatus() {
     currentScreen == XSTATUS_SCREEN ||
     currentScreen == TREASURE_SCREEN) return;
   uint8_t extern gps_icon[];
-  if (tls.isReady()) {
-  //if (commandBool(":GX89#")) {
+  //if (tls.isReady()) {
+  if (commandBool(":GX89#")) {
     firstGPS = true; // turn on One-shot trigger
     if (!flash) {
       flash = true;
@@ -547,7 +563,7 @@ void Display::showGpsStatus() {
       //   Teensy3Clock.set(TeensyTime);                  // set Teensy time
       // }
     //firstGPS = false;
-    tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, DIM_YELLOW);
+    tft.drawBitmap(278, 3, gps_icon, 37, 37, BLACK, butOutline);
     //}
   }
 }

@@ -77,6 +77,8 @@ CanvasPrint canvGuideInsPrint(&Inconsolata_Bold8pt7b);
 // Draw the GUIDE Page
 void GuideScreen::draw() { 
   setCurrentScreen(GUIDE_SCREEN);
+  guideButton.setColors(butOnBackground, butBackground, butOutline);
+  guideLargeButton.setColors(butOnBackground, butBackground, butOutline);
   #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);
   #endif

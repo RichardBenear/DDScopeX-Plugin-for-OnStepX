@@ -91,6 +91,12 @@ void Button::drawLJ(int x, int y, uint16_t width, uint16_t height, const char* l
   tft.print(label);
 }
 
+void Button::setColors(uint16_t active, uint16_t notActive, uint16_t border) {
+  b_colorActive = active;
+  b_colorNotActive = notActive;
+  b_colorBorder = border;
+}
+
 // =======================================================================
 // ================= Canvas print UI elements ============================
 // =======================================================================

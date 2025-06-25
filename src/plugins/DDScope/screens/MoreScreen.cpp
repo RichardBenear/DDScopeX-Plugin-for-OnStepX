@@ -82,6 +82,9 @@ CanvasPrint canvMoreInsPrint(&Inconsolata_Bold8pt7b);
 // ============= Initialize the Catalog & More page ==================
 void MoreScreen::draw() {
   setCurrentScreen(MORE_SCREEN);
+  moreButton.setColors(butOnBackground, butBackground, butOutline);
+  moreLgButton.setColors(butOnBackground, butBackground, butOutline);
+
   #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);
   #endif

@@ -80,6 +80,8 @@ void CustomCatScreen::init() {
   returnToPage = display.currentScreen; // save page from where this function
                                         // was called so we can return
   display.setCurrentScreen(CUSTOM_SCREEN);
+  customDefButton.setColors(butOnBackground, butBackground, butOutline);
+  customCatButton.setColors(butOnBackground, butBackground, butOutline);
 
 #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);

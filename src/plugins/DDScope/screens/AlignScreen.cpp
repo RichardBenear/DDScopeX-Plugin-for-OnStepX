@@ -92,6 +92,7 @@ CanvasPrint canvAlignInsPrint(&Inconsolata_Bold8pt7b);
 // ---- Draw Alignment Page ----
 void AlignScreen::draw() {
   setCurrentScreen(ALIGN_SCREEN);
+  alignButton.setColors(butOnBackground, butBackground, butOutline);
 
   #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);

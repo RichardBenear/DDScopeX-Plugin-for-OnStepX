@@ -128,9 +128,15 @@ class WifiDisplay;
 #define GREENYELLOW 0xAFE5      /* 173, 255, 172 */
 #define PINK        0xF81F		
 #define XDARK_MAROON 0x1800     /*  99,   0,   0 */   
-#define DARK_MAROON 0x3000      /* 197,   0,   0*/
+#define DARK_MAROON 0x3000      /* 197,   0,   0 */
 #define GRAY_BLACK  0x0840
 #define DARK_RED    0x8140
+#define DIM_ORANGE  0xbb00     
+#define DIM_MAROON  0x5000
+
+#define THEME_DAY   0
+#define THEME_DUSK  1
+#define THEME_NIGHT 2
 
 // recommended cutoff for LiPo battery is 19.2V but want some saftey margin
 #define BATTERY_LOW_VOLTAGE   21.0  
@@ -179,7 +185,7 @@ static XPT2046_Touchscreen ts(TS_CS, TS_IRQ); // Use Interrupts for touchscreen
 static TS_Point p;
 
 // --- Common Globals ---
-// Color Theme - default DAY mode
+// Color Theme 
 extern uint16_t pgBackground; 
 extern uint16_t butBackground;
 extern uint16_t titleBackground;
@@ -229,8 +235,8 @@ class Display {
     #endif
 
     // Day or Night Modes
-    void setNightMode(bool);
-    bool getNightMode();
+    void setColorTheme(uint8_t index);
+    uint8_t getColorThemeIndex() const;
 
     // frequency and duration adjustable tone
     inline void soundFreq(int freq, int duration) { tone(STATUS_BUZZER_PIN, freq, duration); }
@@ -238,7 +244,7 @@ class Display {
     bool getGeneralErrorMessage(char message[], uint8_t error);
 
     static ScreenEnum currentScreen;
-    static bool _nightMode;
+    uint8_t _colorThemeIndex = 1;  // 0 = Day, 1 = Dusk, 2 = Night
     bool _redrawBut = false;
     volatile bool buttonTouched = false;
     uint32_t resetHomeStartTime = 0;
@@ -247,7 +253,6 @@ class Display {
     const GFXfont *default_font = (const GFXfont *)__null;
 
   private:
-    //uint8_t _lastError = 0;
     char lastCmdErr[4] = "";
     bool firstGPS = true;
     bool firstRTC = true;

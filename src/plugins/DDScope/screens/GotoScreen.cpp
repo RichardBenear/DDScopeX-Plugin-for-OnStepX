@@ -95,6 +95,9 @@ char numLabels[12][3] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "-", "0", 
 // Draw the Go To Page
 void GotoScreen::draw() {
   setCurrentScreen(GOTO_SCREEN);
+  gotoButton.setColors(butOnBackground, butBackground, butOutline);
+  gotoLargeButton.setColors(butOnBackground, butBackground, butOutline);
+
   #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);
   #endif

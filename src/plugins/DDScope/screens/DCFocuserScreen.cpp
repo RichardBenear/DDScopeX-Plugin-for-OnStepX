@@ -64,6 +64,26 @@
 #define FOC_SPEED_INC 100 // default to inc/dec of 100 microsec
 #define EN_OFF_TIME 2000 // microseconds
 
+// Focuser Screen Main Button object
+Button focuserButton(
+                0, 0, 0, 0,
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                mainFontWidth, 
+                mainFontHeight, 
+                "");
+
+// Focuser Screen Large Button object
+Button focuserXLargeButton(
+                0, 0, 0, 0,
+                butOnBackground, 
+                butBackground, 
+                butOutline, 
+                xlargeFontWidth, 
+                xlargeFontHeight, 
+                "");
+
 // Canvas Print object Custom Font
 CanvasPrint canvFocuserInsPrint(&Inconsolata_Bold8pt7b);
 
@@ -71,6 +91,9 @@ CanvasPrint canvFocuserInsPrint(&Inconsolata_Bold8pt7b);
 void DCFocuserScreen::draw() {
   tasks.yield(10);
   setCurrentScreen(FOCUSER_SCREEN);
+  focuserButton.setColors(butOnBackground, butBackground, butOutline);
+  focuserXLargeButton.setColors(butOnBackground, butBackground, butOutline);
+
   #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);
   #endif
@@ -178,26 +201,6 @@ bool DCFocuserScreen::focuserButStateChange() {
   }
   return changed;
 }
-
-// Focuser Screen Main Button object
-Button focuserButton(
-                0, 0, 0, 0,
-                butOnBackground, 
-                butBackground, 
-                butOutline, 
-                mainFontWidth, 
-                mainFontHeight, 
-                "");
-
-// Focuser Screen Large Button object
-Button focuserXLargeButton(
-                0, 0, 0, 0,
-                butOnBackground, 
-                butBackground, 
-                butOutline, 
-                xlargeFontWidth, 
-                xlargeFontHeight, 
-                "");
 
 //***** Update Focuser Buttons ******
 void DCFocuserScreen::updateFocuserButtons() {  

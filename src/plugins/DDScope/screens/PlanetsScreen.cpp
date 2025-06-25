@@ -45,6 +45,8 @@ Button planetsButton(
 // Initialize the PLANETS page
 void PlanetsScreen::draw() {
   setCurrentScreen(PLANETS_SCREEN);
+  planetsButton.setColors(butOnBackground, butBackground, butOutline);
+
   #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);
   #endif

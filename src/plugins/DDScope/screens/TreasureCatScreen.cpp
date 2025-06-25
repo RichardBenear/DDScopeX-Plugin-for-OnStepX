@@ -63,6 +63,9 @@ CanvasPrint canvTreasureInsPrint(&Inconsolata_Bold8pt7b);
 void TreasureCatScreen::init() { 
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(TREASURE_SCREEN);
+  treasureDefButton.setColors(butOnBackground, butBackground, butOutline);
+  treasureCatButton.setColors(butOnBackground, butBackground, butOutline);
+
   #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);
   #endif

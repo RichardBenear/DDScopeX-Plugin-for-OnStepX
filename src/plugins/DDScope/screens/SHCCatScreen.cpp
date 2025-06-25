@@ -85,6 +85,9 @@ extern const char *Txt_Bayer[];
 void SHCCatScreen::init(uint8_t catSelected) {
   returnToPage = display.currentScreen; // save page from where this function was called so we can return
   setCurrentScreen(SHC_CAT_SCREEN);
+  shcCatDefButton.setColors(butOnBackground, butBackground, butOutline);
+  shcCatButton.setColors(butOnBackground, butBackground, butOutline);
+
 #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);
 #endif

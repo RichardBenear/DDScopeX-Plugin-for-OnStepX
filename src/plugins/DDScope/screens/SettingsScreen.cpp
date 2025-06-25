@@ -94,6 +94,8 @@ CanvasPrint canvSettingsInsPrint(&Inconsolata_Bold8pt7b);
 // ===== Draw the SETTINGS Page =====
 void SettingsScreen::draw() {
   setCurrentScreen(SETTINGS_SCREEN);
+  settingsButton.setColors(butOnBackground, butBackground, butOutline);
+
   #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);
   #endif

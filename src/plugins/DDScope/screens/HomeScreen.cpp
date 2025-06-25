@@ -110,6 +110,7 @@ CanvasPrint canvHomeInsPrint(&Inconsolata_Bold8pt7b);
 // ===============================================
 void HomeScreen::draw() {
   setCurrentScreen(HOME_SCREEN);
+  homeButton.setColors(butOnBackground, butBackground, butOutline);
 
   #ifdef ENABLE_TFT_MIRROR
     wifiDisplay.enableScreenCapture(true);
@@ -401,12 +402,11 @@ void HomeScreen::updateHomeButtons() {
 
   y_offset = 0;
   // ============== Column 3 ===============
-  // Night / Day Mode
-  if (getNightMode()) {
-    homeButton.draw(ACTION_COL_3_X, ACTION_COL_2_Y + y_offset, "Night Mode", BUT_OFF);  
-  } else { // Day mode
-    homeButton.draw(ACTION_COL_3_X, ACTION_COL_2_Y + y_offset, "Day Mode", BUT_OFF);     
-  }
+  // Night / Dusk / Day  - Theme Modes
+  const char* modeLabels[] = { "Day Mode", "Dusk Mode", "Night Mode" };
+  homeButton.draw(ACTION_COL_3_X, ACTION_COL_2_Y + y_offset,
+                modeLabels[getColorThemeIndex()], BUT_OFF);
+
 
   // Park / unPark Telescope
   y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
@@ -522,22 +522,24 @@ bool HomeScreen::touchPoll(int16_t px, int16_t py) {
   
   y_offset = 0;
   // ======== COLUMN 3 of Buttons - Leftmost ========
-  // Set Night or Day Mode
-  if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
+  // Set Night, Dusk, Day  Theme Modes
+  if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X &&
+      py > ACTION_COL_3_Y + y_offset && py < ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
-    if (!getNightMode()) {
-      setNightMode(true); // toggle on
-    } else {
-      setNightMode(false); // toggle off
-    }
+
+    uint8_t newIndex = (getColorThemeIndex() + 1) % 3;  // cycle through 0 → 1 → 2 → 0
+    setColorTheme(newIndex);
+    homeButton.setColors(butOnBackground, butBackground, butOutline);
+    menuButton.setColors(butOnBackground, butBackground, butOutline);
+
     drawTitle(25, TITLE_TEXT_Y, "DIRECT-DRIVE SCOPE");
-    draw(); // redraw new screen colors
+    draw(); // redraw screen with new colors
     return true;
   }
 
   // Park and UnPark Telescope 
   // Note: if Time/Date not set then you can't unpark
- y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
+  y_offset +=ACTION_BOXSIZE_Y + ACTION_Y_SPACING;
   if (px > ACTION_COL_3_X && px < ACTION_COL_3_X + ACTION_BOXSIZE_X && py > ACTION_COL_3_Y + y_offset && py <  ACTION_COL_3_Y + y_offset + ACTION_BOXSIZE_Y) {
     BEEP;
     // park states: PS_UNPARKED, PS_PARKING, PS_PARKED, PS_PARK_FAILED, PS_UNPARKING}

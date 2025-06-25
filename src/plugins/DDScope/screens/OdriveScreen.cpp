@@ -57,6 +57,8 @@ ODriveVersion oDversion;
 //****** Draw ODrive Screen ******
 void ODriveScreen::draw() {
   setCurrentScreen(ODRIVE_SCREEN);
+  odriveButton.setColors(butOnBackground, butBackground, butOutline);
+
 #ifdef ENABLE_TFT_MIRROR
   wifiDisplay.enableScreenCapture(true);
 #endif
